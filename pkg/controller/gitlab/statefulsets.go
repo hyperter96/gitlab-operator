@@ -54,7 +54,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						corev1.ReadWriteOnce,
 					},
 					Resources: corev1.ResourceRequirements{
-						Requests: getVolumeRequestsGi(2),
+						Requests: getVolumeRequest(cr.Spec.Database.Volume.Capacity),
 					},
 				},
 			},
@@ -190,7 +190,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						corev1.ReadWriteOnce,
 					},
 					Resources: corev1.ResourceRequirements{
-						Requests: getVolumeRequestsGi(cr.Spec.Redis.Volume.Capacity),
+						Requests: getVolumeRequest(cr.Spec.Redis.Volume.Capacity),
 					},
 				},
 			},
@@ -236,9 +236,9 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	})
 }
 
-func getVolumeRequestsGi(size int64) corev1.ResourceList {
+func getVolumeRequest(size string) corev1.ResourceList {
 	return corev1.ResourceList{
-		"storage": *resource.NewQuantity(size*1024*1024*1024, resource.BinarySI),
+		"storage": resource.MustParse(size),
 	}
 }
 

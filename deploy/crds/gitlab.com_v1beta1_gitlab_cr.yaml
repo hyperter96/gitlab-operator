@@ -5,14 +5,24 @@ metadata:
 spec:
   replicas: 1
   enterprise: false
-  externalURL: "http://gitlab.example.com"
+  externalURL: http://gitlab.example.com
+  volume:
+    capacity: 20Gi
+    persist: true
+  config:
+    volume:
+      capacity: 2Gi
+      persist: true
+  data:
+    volume: 10Gi
+    persist: false
   database:
     replicas: 1
     volume:
-      capacity: 4
+      capacity: 8Gi
       persist: true
   redis:
     replicas: 1
     volume:
-      capacity: 4
+      capacity: 8Gi
       persist: true

@@ -6,18 +6,26 @@ import (
 
 // GitlabSpec defines the desired state of Gitlab
 type GitlabSpec struct {
-	Replicas    int32        `json:"replicas"`
-	Enterprise  bool         `json:"enterprise,omitempty"`
-	ExternalURL string       `json:"externalURL,omitempty"`
-	Database    DatabaseSpec `json:"database,omitempty"`
-	Redis       RedisSpec    `json:"redis,omitempty"`
-	Runner      RunnerSpec   `json:"runner,omitempty"`
+	Replicas      int32        `json:"replicas"`
+	Enterprise    bool         `json:"enterprise,omitempty"`
+	ExternalURL   string       `json:"externalURL,omitempty"`
+	Configuration ConfigSpec   `json:"config,omitempty"`
+	Volume        VolumeSpec   `json:"volume,omitempty"`
+	Database      DatabaseSpec `json:"database,omitempty"`
+	Redis         RedisSpec    `json:"redis,omitempty"`
+	Runner        RunnerSpec   `json:"runner,omitempty"`
+	Registry      RegistrySpec `json:"registry,omitempty"`
 }
 
 // RedisSpec defines Redis options
 type RedisSpec struct {
 	Replicas int32      `json:"replicas,omitempty"`
 	Volume   VolumeSpec `json:"volume,omitempty"`
+}
+
+// ConfigSpec defines Redis options
+type ConfigSpec struct {
+	Volume VolumeSpec `json:"volume,omitempty"`
 }
 
 // DatabaseSpec defines database options
@@ -32,10 +40,17 @@ type RunnerSpec struct {
 	Enabled  bool  `json:"enable,omitempty"`
 }
 
+// RegistrySpec defines options for Gitlab registry
+type RegistrySpec struct {
+	Replicas int32      `json:"replicas,omitempty"`
+	Enabled  bool       `json:"enable,omitempty"`
+	Volume   VolumeSpec `json:"volume,omitempty"`
+}
+
 // VolumeSpec defines volume specifications
 type VolumeSpec struct {
 	// Sets the size of the volume in Gi
-	Capacity int64 `json:"capacity,omitempty"`
+	Capacity string `json:"capacity,omitempty"`
 	// Sets whether the data or volume should persist
 	// Should create emptyDir if set to false instead of PVC
 	Persist bool `json:"persist,omitempty"`

@@ -200,6 +200,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				Name:            "redis",
 				Image:           "redis:3.2.4",
 				ImagePullPolicy: corev1.PullIfNotPresent,
+				Command:         []string{"redis-server", "/etc/redis/redis.conf"},
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "redis",
@@ -211,6 +212,11 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						Name:      "data",
 						MountPath: "/var/lib/redis",
 						SubPath:   "redis",
+					},
+					{
+						Name:      "conf",
+						MountPath: "/etc/redis/redis.conf",
+						SubPath:   "redis.conf",
 					},
 				},
 				LivenessProbe: &corev1.Probe{
@@ -230,6 +236,18 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 					},
 					InitialDelaySeconds: 5,
 					TimeoutSeconds:      1,
+				},
+			},
+		},
+		Volumes: []corev1.Volume{
+			{
+				Name: "conf",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: cr.Name + "-gitlab-redis",
+						},
+					},
 				},
 			},
 		},

@@ -77,6 +77,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Gitlab{},
+	})
+	if err != nil {
+		return err
+	}
+
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &gitlabv1beta1.Gitlab{},
@@ -147,13 +155,17 @@ func (r *ReconcileGitlab) isObjectFound(key types.NamespacedName, object runtime
 	return true
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
+// Reconcile child resources used by the operator
 func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) error {
 	if err := r.reconcileSecrets(cr); err != nil {
 		return err
 	}
 
 	if err := r.reconcileConfigMaps(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileServices(cr); err != nil {
 		return err
 	}
 
@@ -165,7 +177,57 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
-	return r.reconcileDeployments(cr)
+	if err := r.reconcileDeployments(cr); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
+	postgres := getPostgresService(cr)
+
+	if r.isObjectFound(types.NamespacedName{Name: postgres.Name, Namespace: postgres.Namespace}, postgres) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), postgres); err != nil {
+		return err
+	}
+
+	redis := getRedisService(cr)
+
+	if r.isObjectFound(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, redis) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), redis); err != nil {
+		return err
+	}
+
+	gitlab := getGitlabService(cr)
+
+	if r.isObjectFound(types.NamespacedName{Name: gitlab.Name, Namespace: gitlab.Namespace}, gitlab) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, gitlab, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), gitlab); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
@@ -193,7 +255,11 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
-	return r.client.Create(context.TODO(), runner)
+	if err := r.client.Create(context.TODO(), runner); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
@@ -208,6 +274,20 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 	}
 
 	if err := r.client.Create(context.TODO(), gitlabConf); err != nil {
+		return err
+	}
+
+	redis := getRedisConfig(cr)
+
+	if r.isObjectFound(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, redis) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), redis); err != nil {
 		return err
 	}
 
@@ -235,22 +315,28 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
-	return r.client.Create(context.TODO(), gitlabRunner)
+	if err := r.client.Create(context.TODO(), gitlabRunner); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitlab) error {
-	registryVolume := getRegistryVolumeClaim(cr)
+	if cr.Spec.Registry.Enabled {
+		registryVolume := getRegistryVolumeClaim(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: registryVolume.Name, Namespace: registryVolume.Namespace}, registryVolume) {
-		return nil
-	}
+		if r.isObjectFound(types.NamespacedName{Name: registryVolume.Name, Namespace: registryVolume.Namespace}, registryVolume) {
+			return nil
+		}
 
-	if err := controllerutil.SetControllerReference(cr, registryVolume, r.scheme); err != nil {
-		return err
-	}
+		if err := controllerutil.SetControllerReference(cr, registryVolume, r.scheme); err != nil {
+			return err
+		}
 
-	if err := r.client.Create(context.TODO(), registryVolume); err != nil {
-		return err
+		if err := r.client.Create(context.TODO(), registryVolume); err != nil {
+			return err
+		}
 	}
 
 	dataVolume := getGitlabDataVolumeClaim(cr)
@@ -277,7 +363,11 @@ func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitl
 		return err
 	}
 
-	return r.client.Create(context.TODO(), configVolume)
+	if err := r.client.Create(context.TODO(), configVolume); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error {
@@ -305,7 +395,11 @@ func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error 
 		return err
 	}
 
-	return r.client.Create(context.TODO(), postgres)
+	if err := r.client.Create(context.TODO(), postgres); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *ReconcileGitlab) reconcileDeployments(cr *gitlabv1beta1.Gitlab) error {
@@ -336,5 +430,9 @@ func (r *ReconcileGitlab) reconcileDeployments(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
-	return r.client.Create(context.TODO(), gitlabCore)
+	if err := r.client.Create(context.TODO(), gitlabCore); err != nil {
+		return err
+	}
+
+	return nil
 }

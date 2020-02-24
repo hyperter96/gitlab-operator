@@ -23,9 +23,10 @@ type Component struct {
 	VolumeClaimTemplates []corev1.PersistentVolumeClaim
 }
 
-// OmnibusConfig struct holds options for configuring
-// Gitlab through omnibus
-type OmnibusConfig struct {
+// RedisConfig struct configures redis password
+// and cluster configuration for large environments
+type RedisConfig struct {
 	// Defines the redis host to be used in the configuration
-	RedisHost string
+	Password string
+	Cluster  bool
 }

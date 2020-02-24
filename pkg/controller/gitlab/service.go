@@ -49,10 +49,10 @@ func getGitlabService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	}
 }
 
-func getRedisService(cr *gitlabv1beta1.Gitlab) corev1.Service {
+func getRedisService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	labels := getLabels(cr, "redis")
 
-	return corev1.Service{
+	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/name"],
 			Namespace: cr.Namespace,
@@ -73,10 +73,10 @@ func getRedisService(cr *gitlabv1beta1.Gitlab) corev1.Service {
 	}
 }
 
-func getPostgresService(cr *gitlabv1beta1.Gitlab) corev1.Service {
+func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	labels := getLabels(cr, "database")
 
-	return corev1.Service{
+	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/name"],
 			Namespace: cr.Namespace,

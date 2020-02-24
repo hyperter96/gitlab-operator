@@ -5,7 +5,7 @@ metadata:
 spec:
   replicas: 1
   enterprise: false
-  externalURL: http://gitlab.example.com
+  externalURL: "http://gitlab.example.com"
   volume:
     capacity: 20Gi
     persist: true
@@ -25,4 +25,9 @@ spec:
     replicas: 1
     volume:
       capacity: 8Gi
+      persist: true
+  registry:
+    enable: true
+    volume:
+      capacity: 10Gi
       persist: true

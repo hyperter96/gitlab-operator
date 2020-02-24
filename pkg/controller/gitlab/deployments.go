@@ -5,7 +5,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func getGenericDeployment(cr *gitlabv1beta1.Gitlab, component Component) *appsv1.Deployment {
@@ -50,9 +49,8 @@ func getGitlabCommunityDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		Containers: []corev1.Container{
 			{
 				Name:            "gitlab",
-				Image:           "gitlab/gitlab-ce:9.3.7-ce.0",
+				Image:           "gitlab/gitlab-ce:10.7.4-ce.0",
 				ImagePullPolicy: corev1.PullIfNotPresent,
-				// Command:         []string{},
 				Env: []corev1.EnvVar{
 					{
 						Name: "GITLAB_ROOT_PASSWORD",
@@ -132,6 +130,28 @@ func getGitlabCommunityDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						},
 					},
 					{
+						Name: "REDIS_HOST",
+						ValueFrom: &corev1.EnvVarSource{
+							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: cr.Name + "-gitlab-config",
+								},
+								Key: "redis_host",
+							},
+						},
+					},
+					{
+						Name: "REDIS_PASSWORD",
+						ValueFrom: &corev1.EnvVarSource{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: cr.Name + "-gitlab-secrets",
+								},
+								Key: "redis_password",
+							},
+						},
+					},
+					{
 						Name: "GITLAB_OMNIBUS_CONFIG",
 						ValueFrom: &corev1.EnvVarSource{
 							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
@@ -171,30 +191,30 @@ func getGitlabCommunityDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						MountPath: "/gitlab-registry",
 					},
 				},
-				LivenessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path: "/health_check?token=SXBAQichEJasbtDSygrD",
-							Port: intstr.IntOrString{
-								IntVal: 8005,
-							},
-						},
-					},
-					InitialDelaySeconds: 180,
-					TimeoutSeconds:      15,
-				},
-				ReadinessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Path: "/health_check?token=SXBAQichEJasbtDSygrD",
-							Port: intstr.IntOrString{
-								IntVal: 8005,
-							},
-						},
-					},
-					InitialDelaySeconds: 15,
-					TimeoutSeconds:      1,
-				},
+				// LivenessProbe: &corev1.Probe{
+				// 	Handler: corev1.Handler{
+				// 		HTTPGet: &corev1.HTTPGetAction{
+				// 			Path: "/health_check",
+				// 			Port: intstr.IntOrString{
+				// 				IntVal: 8005,
+				// 			},
+				// 		},
+				// 	},
+				// 	InitialDelaySeconds: 180,
+				// 	TimeoutSeconds:      15,
+				// },
+				// ReadinessProbe: &corev1.Probe{
+				// 	Handler: corev1.Handler{
+				// 		HTTPGet: &corev1.HTTPGetAction{
+				// 			Path: "/health_check",
+				// 			Port: intstr.IntOrString{
+				// 				IntVal: 8005,
+				// 			},
+				// 		},
+				// 	},
+				// 	InitialDelaySeconds: 15,
+				// 	TimeoutSeconds:      1,
+				// },
 			},
 		},
 		Volumes: []corev1.Volume{

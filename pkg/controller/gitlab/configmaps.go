@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"bytes"
+	"io/ioutil"
 	"strings"
 	"text/template"
 
@@ -12,58 +13,15 @@ import (
 
 func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := getLabels(cr, "config")
-	var parsedConfig bytes.Buffer
 
-	omnibusConfig := `
-	external_url "#{ENV['GITLAB_EXTERNAL_URL']}"
-
-	nginx['enable'] = false
-	registry_nginx['enable'] = false
-	mattermost_nginx['enable'] = false
-
-	gitlab_workhorse['listen_network'] = 'tcp'
-	gitlab_workhorse['listen_addr'] = '0.0.0.0:8005'
-
-	registry['registry_http_addr'] = '0.0.0.0:8105'
-
-	postgresql['enable'] = false
-	gitlab_rails['db_host'] = ENV['POSTGRES_HOST']
-	gitlab_rails['db_password'] = ENV['POSTGRES_PASSWORD']
-	gitlab_rails['db_username'] = ENV['POSTGRES_USER']
-	gitlab_rails['db_database'] = ENV['POSTGRES_DB']
-
-	redis['enable'] = false
-	gitlab_rails['redis_host'] = '{{ .RedisHost }}'
-
-	manage_accounts['enable'] = true
-	manage_storage_directories['manage_etc'] = false
-
-	gitlab_shell['auth_file'] = '/gitlab-data/ssh/authorized_keys'
-	git_data_dir '/gitlab-data/git-data'
-	gitlab_rails['shared_path'] = '/gitlab-data/shared'
-	gitlab_rails['uploads_directory'] = '/gitlab-data/uploads'
-	gitlab_ci['builds_directory'] = '/gitlab-data/builds'
-	gitlab_rails['trusted_proxies'] = ["10.0.0.0/8","172.16.0.0/12","192.168.0.0/16"]
-
-	prometheus['listen_address'] = '0.0.0.0:9090'
-	postgres_exporter['enable'] = true
-	postgres_exporter['env'] = {
-	  'DATA_SOURCE_NAME' => "user=#{ENV['POSTGRES_USER']} host=gitlab-postgresql port=5432 dbname=#{ENV['POSTGRES_DB']} password=#{ENV['POSTGRES_PASSWORD']} sslmode=disable"
+	omnibus, err := ioutil.ReadFile("templates/omnibus.conf")
+	if err != nil {
+		log.Error(err, "Error loading config")
 	}
-	redis_exporter['enable'] = true
-	redis_exporter['flags'] = {
-	  'redis.addr' => "{{ .RedisHost }}:6379",
-	}
-	`
 
 	if cr.Spec.ExternalURL == "" {
 		cr.Spec.ExternalURL = "http://gitlab.example.com"
 	}
-
-	tmpl := template.Must(template.New("omnibus").Parse(omnibusConfig))
-	tmpl.Execute(&parsedConfig, OmnibusConfig{
-		RedisHost: cr.Name + "-redis",
-	})
 
 	var databaseName string = cr.Name + "_gitlab_production"
 	if strings.Contains(databaseName, "-") {
@@ -82,9 +40,9 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 			"postgres_host":         cr.Name + "-database",
 			"postgres_user":         "gitlab",
 			"redis_host":            cr.Name + "-redis",
-			"redis_password":        "redixP@sswordx",
+			"redis_password":        "",
 			"registry_external_url": "",
-			"omnibus_config":        parsedConfig.String(),
+			"omnibus_config":        string(omnibus),
 		},
 	}
 }
@@ -118,4 +76,30 @@ func getGitlabRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 			"entrypoint":  "",
 		},
 	}
+}
+
+func getRedisConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := getLabels(cr, "redis")
+	var redisConf bytes.Buffer
+
+	tmpl := template.Must(template.ParseFiles("/templates/redis.conf"))
+	err := tmpl.Execute(&redisConf, RedisConfig{
+		Password: "redis123",
+		Cluster:  false,
+	})
+	if err != nil {
+		log.Error(err, "Error creating redis.conf")
+	}
+
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name + "-gitlab-redis",
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Data: map[string]string{
+			"redis.conf": redisConf.String(),
+		},
+	}
+
 }

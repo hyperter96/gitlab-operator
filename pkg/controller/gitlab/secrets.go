@@ -17,8 +17,9 @@ func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 		},
 		StringData: map[string]string{
 			"gitlab_root_password":                      "gitlab123",
-			"postgres_password":                         "",
+			"postgres_password":                         "postgres123",
 			"initial_shared_runners_registration_token": "",
+			"redis_password":                            "redis123",
 		},
 		Type: corev1.SecretTypeOpaque,
 	}

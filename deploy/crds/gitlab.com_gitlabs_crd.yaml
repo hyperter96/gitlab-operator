@@ -31,6 +31,21 @@ spec:
         spec:
           description: GitlabSpec defines the desired state of Gitlab
           properties:
+            config:
+              description: ConfigSpec defines Redis options
+              properties:
+                volume:
+                  description: VolumeSpec defines volume specifications
+                  properties:
+                    capacity:
+                      description: Sets the size of the volume in Gi
+                      type: string
+                    persist:
+                      description: Sets whether the data or volume should persist
+                        Should create emptyDir if set to false instead of PVC
+                      type: boolean
+                  type: object
+              type: object
             database:
               description: DatabaseSpec defines database options
               properties:
@@ -42,8 +57,7 @@ spec:
                   properties:
                     capacity:
                       description: Sets the size of the volume in Gi
-                      format: int64
-                      type: integer
+                      type: string
                     persist:
                       description: Sets whether the data or volume should persist
                         Should create emptyDir if set to false instead of PVC
@@ -65,8 +79,27 @@ spec:
                   properties:
                     capacity:
                       description: Sets the size of the volume in Gi
-                      format: int64
-                      type: integer
+                      type: string
+                    persist:
+                      description: Sets whether the data or volume should persist
+                        Should create emptyDir if set to false instead of PVC
+                      type: boolean
+                  type: object
+              type: object
+            registry:
+              description: RegistrySpec defines options for Gitlab registry
+              properties:
+                enable:
+                  type: boolean
+                replicas:
+                  format: int32
+                  type: integer
+                volume:
+                  description: VolumeSpec defines volume specifications
+                  properties:
+                    capacity:
+                      description: Sets the size of the volume in Gi
+                      type: string
                     persist:
                       description: Sets whether the data or volume should persist
                         Should create emptyDir if set to false instead of PVC
@@ -84,6 +117,17 @@ spec:
                 replicas:
                   format: int32
                   type: integer
+              type: object
+            volume:
+              description: VolumeSpec defines volume specifications
+              properties:
+                capacity:
+                  description: Sets the size of the volume in Gi
+                  type: string
+                persist:
+                  description: Sets whether the data or volume should persist Should
+                    create emptyDir if set to false instead of PVC
+                  type: boolean
               type: object
           required:
           - replicas

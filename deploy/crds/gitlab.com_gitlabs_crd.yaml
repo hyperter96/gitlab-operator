@@ -91,9 +91,6 @@ spec:
               properties:
                 enable:
                   type: boolean
-                replicas:
-                  format: int32
-                  type: integer
                 volume:
                   description: VolumeSpec defines volume specifications
                   properties:
@@ -109,15 +106,6 @@ spec:
             replicas:
               format: int32
               type: integer
-            runner:
-              description: RunnerSpec defines options for Gitlab runner
-              properties:
-                enable:
-                  type: boolean
-                replicas:
-                  format: int32
-                  type: integer
-              type: object
             volume:
               description: VolumeSpec defines volume specifications
               properties:

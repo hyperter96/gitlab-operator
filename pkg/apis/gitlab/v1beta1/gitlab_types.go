@@ -13,7 +13,6 @@ type GitlabSpec struct {
 	Volume        VolumeSpec   `json:"volume,omitempty"`
 	Database      DatabaseSpec `json:"database,omitempty"`
 	Redis         RedisSpec    `json:"redis,omitempty"`
-	Runner        RunnerSpec   `json:"runner,omitempty"`
 	Registry      RegistrySpec `json:"registry,omitempty"`
 }
 
@@ -34,17 +33,10 @@ type DatabaseSpec struct {
 	Volume   VolumeSpec `json:"volume,omitempty"`
 }
 
-// RunnerSpec defines options for Gitlab runner
-type RunnerSpec struct {
-	Replicas int32 `json:"replicas,omitempty"`
-	Enabled  bool  `json:"enable,omitempty"`
-}
-
 // RegistrySpec defines options for Gitlab registry
 type RegistrySpec struct {
-	Replicas int32      `json:"replicas,omitempty"`
-	Enabled  bool       `json:"enable,omitempty"`
-	Volume   VolumeSpec `json:"volume,omitempty"`
+	Enabled bool       `json:"enable,omitempty"`
+	Volume  VolumeSpec `json:"volume,omitempty"`
 }
 
 // VolumeSpec defines volume specifications

@@ -404,23 +404,7 @@ func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error 
 
 func (r *ReconcileGitlab) reconcileDeployments(cr *gitlabv1beta1.Gitlab) error {
 
-	if cr.Spec.Runner.Enabled {
-		runner := getRunnerDeployment(cr)
-
-		if r.isObjectFound(types.NamespacedName{Name: runner.Name, Namespace: runner.Namespace}, runner) {
-			return nil
-		}
-
-		if err := controllerutil.SetControllerReference(cr, runner, r.scheme); err != nil {
-			return err
-		}
-
-		if err := r.client.Create(context.TODO(), runner); err != nil {
-			return err
-		}
-	}
-
-	gitlabCore := getGitlabCommunityDeployment(cr)
+	gitlabCore := getGitlabDeployment(cr)
 
 	if r.isObjectFound(types.NamespacedName{Name: gitlabCore.Name, Namespace: gitlabCore.Namespace}, gitlabCore) {
 		return nil

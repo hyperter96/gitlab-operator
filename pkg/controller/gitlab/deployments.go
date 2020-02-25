@@ -40,8 +40,14 @@ func getGenericDeployment(cr *gitlabv1beta1.Gitlab, component Component) *appsv1
 		},
 	}
 }
-func getGitlabCommunityDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
+
+func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
+	var containerImage string = GitlabCommunityImage
 	labels := getLabels(cr, "gitlab")
+
+	if cr.Spec.Enterprise {
+		containerImage = GitlabEnterpriseImage
+	}
 
 	return getGenericDeployment(cr, Component{
 		Labels:   labels,
@@ -49,7 +55,7 @@ func getGitlabCommunityDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		Containers: []corev1.Container{
 			{
 				Name:            "gitlab",
-				Image:           "gitlab/gitlab-ce:10.7.4-ce.0",
+				Image:           containerImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -244,8 +250,4 @@ func getGitlabCommunityDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 		},
 	})
-}
-
-func getRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
-	return &appsv1.Deployment{}
 }

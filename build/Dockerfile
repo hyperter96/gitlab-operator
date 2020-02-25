@@ -5,7 +5,7 @@ ENV OPERATOR=/usr/local/bin/gitlab-operator \
     USER_NAME=gitlab-operator
 
 # Copy config templates
-COPY hack/templates /templates
+COPY build/templates /templates
 
 # install operator binary
 COPY build/_output/bin/gitlab-operator ${OPERATOR}

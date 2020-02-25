@@ -78,3 +78,13 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - list
+  - get
+  - watch
+  - delete

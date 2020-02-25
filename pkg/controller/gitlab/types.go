@@ -8,10 +8,13 @@ const (
 	// GitlabEnterpriseImage represents the gitlab enterprise edition
 	// Image to be deployed in our environment
 	GitlabEnterpriseImage = "gitlab/gitlab-ee:12.8.0-ee.0"
-
 	// GitlabCommunityImage represents the gitlab  Community
 	// edition image to be deployed
 	GitlabCommunityImage = "gitlab/gitlab-ce:12.6.7-ce.0"
+	// PasswordStrengthMedium create eight character password
+	PasswordStrengthMedium = 16
+	// PasswordStrengthStrong defines strong password
+	PasswordStrengthStrong = 21
 )
 
 // Component represents an application / micro-service

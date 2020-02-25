@@ -181,6 +181,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
+	if err := r.reconcileIngress(cr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -415,6 +419,24 @@ func (r *ReconcileGitlab) reconcileDeployments(cr *gitlabv1beta1.Gitlab) error {
 	}
 
 	if err := r.client.Create(context.TODO(), gitlabCore); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
+	ingress := getGitlabIngress(cr)
+
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, ingress) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, ingress, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), ingress); err != nil {
 		return err
 	}
 

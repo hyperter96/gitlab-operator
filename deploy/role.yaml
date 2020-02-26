@@ -70,6 +70,7 @@ rules:
   - gitlab.com
   resources:
   - '*'
+  - runners
   verbs:
   - create
   - delete
@@ -98,4 +99,3 @@ rules:
   - list
   - watch
   - delete
-  

@@ -88,3 +88,14 @@ rules:
   - get
   - watch
   - delete
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - delete
+  

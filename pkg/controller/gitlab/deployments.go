@@ -7,7 +7,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func getGenericDeployment(cr *gitlabv1beta1.Gitlab, component Component) *appsv1.Deployment {
+// GenericDeployment returns a generic deployment
+func GenericDeployment(namespace string, component Component) *appsv1.Deployment {
 	var replicas int32
 	labels := component.Labels
 
@@ -20,7 +21,7 @@ func getGenericDeployment(cr *gitlabv1beta1.Gitlab, component Component) *appsv1
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/name"],
-			Namespace: cr.Namespace,
+			Namespace: namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -49,7 +50,7 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		containerImage = GitlabEnterpriseImage
 	}
 
-	return getGenericDeployment(cr, Component{
+	return GenericDeployment(cr.Namespace, Component{
 		Labels:   labels,
 		Replicas: cr.Spec.Replicas,
 		Containers: []corev1.Container{

@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+func getGilabSecret(cr *gitlabv1beta1.Gitlab, s security) *corev1.Secret {
 	labels := getLabels(cr, "gitlab")
 
 	return &corev1.Secret{
@@ -16,27 +16,10 @@ func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 			Labels:    labels,
 		},
 		StringData: map[string]string{
-			"gitlab_root_password":                      "gitlab123",
-			"postgres_password":                         "postgres123",
-			"initial_shared_runners_registration_token": GeneratePassword(PasswordStrengthMedium),
-			"redis_password":                            "redis123",
-		},
-		Type: corev1.SecretTypeOpaque,
-	}
-}
-
-func getGilabRunnerSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
-	labels := getLabels(cr, "runner")
-
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-runner-secrets",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		StringData: map[string]string{
-			"runner-registration-token": "",
-			"runner-token":              "",
+			"gitlab_root_password":                      s.GitlabRootPassword(),
+			"postgres_password":                         s.PostgresPassword(),
+			"initial_shared_runners_registration_token": s.RunnerRegistrationToken(),
+			"redis_password":                            s.RedisPassword(),
 		},
 		Type: corev1.SecretTypeOpaque,
 	}

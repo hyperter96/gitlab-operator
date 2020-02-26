@@ -11,10 +11,8 @@ const (
 	// GitlabCommunityImage represents the gitlab  Community
 	// edition image to be deployed
 	GitlabCommunityImage = "gitlab/gitlab-ce:12.6.7-ce.0"
-	// PasswordStrengthMedium create eight character password
-	PasswordStrengthMedium = 16
-	// PasswordStrengthStrong defines strong password
-	PasswordStrengthStrong = 21
+	// StrongPassword defines password length
+	StrongPassword = 21
 )
 
 // Component represents an application / micro-service
@@ -42,4 +40,21 @@ type RedisConfig struct {
 	// Defines the redis host to be used in the configuration
 	Password string
 	Cluster  bool
+}
+
+// ComponentPasswords struct has passwords for the different
+// gitlab components
+type ComponentPasswords struct {
+	redis                   string
+	postgres                string
+	gitlabRootPassword      string
+	runnerRegistrationToken string
+}
+
+type security interface {
+	GeneratePasswords()
+	RunnerRegistrationToken() string
+	GitlabRootPassword() string
+	PostgresPassword() string
+	RedisPassword() string
 }

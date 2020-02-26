@@ -62,29 +62,13 @@ func getPostgresInitdbConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	}
 }
 
-func getGitlabRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
-	labels := getLabels(cr, "runner")
-
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-gitlab-runner",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Data: map[string]string{
-			"config.toml": "",
-			"entrypoint":  "",
-		},
-	}
-}
-
-func getRedisConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+func getRedisConfig(cr *gitlabv1beta1.Gitlab, s security) *corev1.ConfigMap {
 	labels := getLabels(cr, "redis")
 	var redisConf bytes.Buffer
 
 	tmpl := template.Must(template.ParseFiles("/templates/redis.conf"))
 	err := tmpl.Execute(&redisConf, RedisConfig{
-		Password: "redis123",
+		Password: s.RedisPassword(),
 		Cluster:  false,
 	})
 	if err != nil {

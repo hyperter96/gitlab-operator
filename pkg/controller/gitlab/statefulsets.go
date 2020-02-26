@@ -4,7 +4,6 @@ import (
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -252,27 +251,4 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 		},
 	})
-}
-
-func getVolumeRequest(size string) corev1.ResourceList {
-	return corev1.ResourceList{
-		"storage": resource.MustParse(size),
-	}
-}
-
-func getLabels(cr *gitlabv1beta1.Gitlab, component string) map[string]string {
-	var edition string = "community"
-
-	if cr.Spec.Enterprise {
-		edition = "enterprise"
-	}
-
-	return map[string]string{
-		"app.kubernetes.io/name":       cr.Name + "-" + component,
-		"app.kubernetes.io/component":  component,
-		"app.kubernetes.io/edition":    edition,
-		"app.kubernetes.io/part-of":    "gitlab",
-		"app.kubernetes.io/managed-by": "gitlab-operator",
-	}
-
 }

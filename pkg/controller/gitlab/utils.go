@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
@@ -16,9 +17,16 @@ import (
 
 // GeneratePassword creates an alphanumeric
 // string to be used as a password
-func GeneratePassword(length int) string {
-	password := make([]byte, length)
-	charset := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890&%^*()-_=?/#!+<>,[]{}")
+func GeneratePassword(options PasswordOptions) string {
+	password := make([]byte, options.Length)
+	charset := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890")
+	special := []byte("+,#?$()&%^*=/!+<>[]{}@-_")
+
+	// add special characters if not database password
+	if !options.Database {
+		charset = append(charset, special...)
+	}
+
 	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for i := range password {
@@ -53,7 +61,7 @@ func IsOpenshift() bool {
 func NewKubernetesClient() (clientset *kubernetes.Clientset, err error) {
 	conf, err := rest.InClusterConfig()
 	if err != nil {
-		log.Error(err, "Unable to get cluster config")
+		log.Error(err, "Unable getting cluster config")
 	}
 
 	clientset, err = kubernetes.NewForConfig(conf)
@@ -78,19 +86,19 @@ func GetSecretValue(namespace, secret, key string) []byte {
 // components
 func (c *ComponentPasswords) GeneratePasswords() {
 	if c.redis == "" {
-		c.redis = GeneratePassword(StrongPassword)
+		c.redis = GeneratePassword(PasswordOptions{Database: false, Length: StrongPassword})
 	}
 
 	if c.postgres == "" {
-		c.postgres = GeneratePassword(StrongPassword)
+		c.postgres = GeneratePassword(PasswordOptions{Database: true, Length: StrongPassword})
 	}
 
 	if c.runnerRegistrationToken == "" {
-		c.runnerRegistrationToken = GeneratePassword(StrongPassword)
+		c.runnerRegistrationToken = GeneratePassword(PasswordOptions{Database: false, Length: StrongPassword})
 	}
 
 	if c.gitlabRootPassword == "" {
-		c.gitlabRootPassword = GeneratePassword(StrongPassword)
+		c.gitlabRootPassword = GeneratePassword(PasswordOptions{Database: false, Length: StrongPassword})
 	}
 }
 
@@ -135,4 +143,14 @@ func getVolumeRequest(size string) corev1.ResourceList {
 	return corev1.ResourceList{
 		"storage": resource.MustParse(size),
 	}
+}
+
+// GetDomainNameOnly separates domain from URL
+func GetDomainNameOnly(url string) string {
+	var domain []string
+	if strings.Contains(url, "://") {
+		domain = strings.Split(url, "://")
+	}
+
+	return domain[1]
 }

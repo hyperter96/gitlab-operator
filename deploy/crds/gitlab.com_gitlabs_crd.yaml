@@ -91,6 +91,8 @@ spec:
               properties:
                 enable:
                   type: boolean
+                externalURL:
+                  type: string
                 volume:
                   description: VolumeSpec defines volume specifications
                   properties:

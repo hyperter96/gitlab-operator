@@ -60,3 +60,20 @@ type security interface {
 	PostgresPassword() string
 	RedisPassword() string
 }
+
+// PasswordOptions provides paramaters to be
+// used when generating passwords
+type PasswordOptions struct {
+	Length   int
+	Database bool
+}
+
+// OmnibusOptions defines options for
+// configuring the gitlab pod
+type OmnibusOptions struct {
+	// Enable gitlab registry
+	RegistryEnabled bool
+	// RegistryExternalURL defines gitlab
+	// registry external URL
+	RegistryExternalURL string
+}

@@ -2,8 +2,6 @@ package gitlab
 
 import (
 	"bytes"
-	"io/ioutil"
-	"strings"
 	"text/template"
 
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
@@ -13,20 +11,24 @@ import (
 
 func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := getLabels(cr, "config")
-
-	omnibus, err := ioutil.ReadFile("templates/omnibus.conf")
-	if err != nil {
-		log.Error(err, "Error loading config")
-	}
+	var omnibus bytes.Buffer
 
 	if cr.Spec.ExternalURL == "" {
 		cr.Spec.ExternalURL = "http://gitlab.example.com"
 	}
 
-	var databaseName string = cr.Name + "_gitlab_production"
-	if strings.Contains(databaseName, "-") {
-		databaseName = strings.ReplaceAll(cr.Name, "-", "_")
+	var registryURL string = cr.Spec.Registry.ExternalURL
+	if registryURL == "" && cr.Spec.Registry.Enabled {
+		registryURL = "http://registry." + GetDomainNameOnly(cr.Spec.ExternalURL)
 	}
+
+	omnibusConf := OmnibusOptions{
+		RegistryEnabled:     cr.Spec.Registry.Enabled,
+		RegistryExternalURL: registryURL,
+	}
+
+	tmpl := template.Must(template.ParseFiles("templates/omnibus.conf"))
+	tmpl.Execute(&omnibus, omnibusConf)
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -35,14 +37,13 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			"external_url":          cr.Spec.ExternalURL,
-			"postgres_db":           databaseName,
+			"gitlab_external_url":   cr.Spec.ExternalURL,
+			"postgres_db":           "gitlab_production",
 			"postgres_host":         cr.Name + "-database",
 			"postgres_user":         "gitlab",
 			"redis_host":            cr.Name + "-redis",
-			"redis_password":        "",
-			"registry_external_url": "",
-			"omnibus_config":        string(omnibus),
+			"registry_external_url": registryURL,
+			"gitlab_omnibus_config": omnibus.String(),
 		},
 	}
 }

@@ -35,8 +35,9 @@ type DatabaseSpec struct {
 
 // RegistrySpec defines options for Gitlab registry
 type RegistrySpec struct {
-	Enabled bool       `json:"enable,omitempty"`
-	Volume  VolumeSpec `json:"volume,omitempty"`
+	Enabled     bool       `json:"enable,omitempty"`
+	ExternalURL string     `json:"externalURL,omitempty"`
+	Volume      VolumeSpec `json:"volume,omitempty"`
 }
 
 // VolumeSpec defines volume specifications

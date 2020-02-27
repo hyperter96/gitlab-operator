@@ -78,7 +78,7 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: cr.Name + "-gitlab-config",
 								},
-								Key: "external_url",
+								Key: "gitlab_external_url",
 							},
 						},
 					},
@@ -166,7 +166,7 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: cr.Name + "-gitlab-config",
 								},
-								Key: "omnibus_config",
+								Key: "gitlab_omnibus_config",
 							},
 						},
 					},

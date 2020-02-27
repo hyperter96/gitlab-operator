@@ -16,6 +16,7 @@ import (
 	"github.com/OchiengEd/gitlab-operator/pkg/controller"
 	"github.com/OchiengEd/gitlab-operator/version"
 
+	gitlab "github.com/OchiengEd/gitlab-operator/pkg/controller/gitlab"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
@@ -109,10 +110,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Add routes scheme
-	if err = routev1.Install(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
+	if gitlab.IsOpenshift() {
+		// Add routes scheme
+		if err = routev1.Install(mgr.GetScheme()); err != nil {
+			log.Error(err, "")
+			os.Exit(1)
+		}
 	}
 
 	// Setup all Controllers

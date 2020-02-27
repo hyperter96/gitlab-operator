@@ -1,0 +1,7 @@
+apiVersion: gitlab.com/v1beta1
+kind: Runner
+metadata:
+  name: example-runner
+spec:
+  # Add fields here
+  size: 3

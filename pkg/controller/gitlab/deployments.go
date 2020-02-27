@@ -8,7 +8,7 @@ import (
 )
 
 // GenericDeployment returns a generic deployment
-func GenericDeployment(namespace string, component Component) *appsv1.Deployment {
+func GenericDeployment(component Component) *appsv1.Deployment {
 	var replicas int32
 	labels := component.Labels
 
@@ -21,7 +21,7 @@ func GenericDeployment(namespace string, component Component) *appsv1.Deployment
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/name"],
-			Namespace: namespace,
+			Namespace: component.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -50,9 +50,10 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		containerImage = GitlabEnterpriseImage
 	}
 
-	return GenericDeployment(cr.Namespace, Component{
-		Labels:   labels,
-		Replicas: cr.Spec.Replicas,
+	return GenericDeployment(Component{
+		Namespace: cr.Namespace,
+		Labels:    labels,
+		Replicas:  cr.Spec.Replicas,
 		Containers: []corev1.Container{
 			{
 				Name:            "gitlab",

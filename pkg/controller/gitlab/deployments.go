@@ -5,6 +5,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // GenericDeployment returns a generic deployment
@@ -199,30 +200,30 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						MountPath: "/gitlab-registry",
 					},
 				},
-				// LivenessProbe: &corev1.Probe{
-				// 	Handler: corev1.Handler{
-				// 		HTTPGet: &corev1.HTTPGetAction{
-				// 			Path: "/health_check",
-				// 			Port: intstr.IntOrString{
-				// 				IntVal: 8005,
-				// 			},
-				// 		},
-				// 	},
-				// 	InitialDelaySeconds: 180,
-				// 	TimeoutSeconds:      15,
-				// },
-				// ReadinessProbe: &corev1.Probe{
-				// 	Handler: corev1.Handler{
-				// 		HTTPGet: &corev1.HTTPGetAction{
-				// 			Path: "/health_check",
-				// 			Port: intstr.IntOrString{
-				// 				IntVal: 8005,
-				// 			},
-				// 		},
-				// 	},
-				// 	InitialDelaySeconds: 15,
-				// 	TimeoutSeconds:      1,
-				// },
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/-/liveness",
+							Port: intstr.IntOrString{
+								IntVal: 8005,
+							},
+						},
+					},
+					InitialDelaySeconds: 180,
+					TimeoutSeconds:      15,
+				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/-/readiness?all=1",
+							Port: intstr.IntOrString{
+								IntVal: 8005,
+							},
+						},
+					},
+					InitialDelaySeconds: 15,
+					TimeoutSeconds:      1,
+				},
 			},
 		},
 		Volumes: []corev1.Volume{

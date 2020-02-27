@@ -10,8 +10,9 @@ import (
 func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	labels := getLabels(cr, "runner")
 
-	return gitlab.GenericDeployment(cr.Namespace, gitlab.Component{
-		Labels: labels,
+	return gitlab.GenericDeployment(gitlab.Component{
+		Labels:    labels,
+		Namespace: cr.Namespace,
 		Containers: []corev1.Container{
 			{
 				Name:    "runner",

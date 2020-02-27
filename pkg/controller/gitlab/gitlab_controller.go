@@ -7,6 +7,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -102,7 +103,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	if IsOpenshift() {
+		// Watch Openshifts route if running on Openshift
 		err = c.Watch(&source.Kind{Type: &routev1.Route{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &gitlabv1beta1.Gitlab{},
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		// Watch Ingress resources in a Kubernetes environment
+		err = c.Watch(&source.Kind{Type: &extensionsv1beta1.Ingress{}}, &handler.EnqueueRequestForOwner{
 			IsController: true,
 			OwnerType:    &gitlabv1beta1.Gitlab{},
 		})
@@ -167,14 +178,14 @@ func (r *ReconcileGitlab) isObjectFound(key types.NamespacedName, object runtime
 
 // Reconcile child resources used by the operator
 func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) error {
-	cp := ComponentPasswords{}
-	cp.GeneratePasswords()
+	creds := ComponentPasswords{}
+	creds.GeneratePasswords()
 
-	if err := r.reconcileSecrets(cr, &cp); err != nil {
+	if err := r.reconcileSecrets(cr, &creds); err != nil {
 		return err
 	}
 
-	if err := r.reconcileConfigMaps(cr, &cp); err != nil {
+	if err := r.reconcileConfigMaps(cr, &creds); err != nil {
 		return err
 	}
 
@@ -195,7 +206,7 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 	}
 
 	if IsOpenshift() {
-		// Deploy an Openshift route when running on Openshift
+		// Deploy an Openshift route if running on Openshift
 		if err := r.reconcileRoute(cr); err != nil {
 			return err
 		}

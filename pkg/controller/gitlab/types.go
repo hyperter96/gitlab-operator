@@ -18,6 +18,8 @@ const (
 // Component represents an application / micro-service
 // that makes part of a larger application
 type Component struct {
+	// Namespace of the component
+	Namespace string
 	// Defines the number of pods for the
 	// component to be created
 	Replicas int32

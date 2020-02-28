@@ -23,7 +23,7 @@ func GeneratePassword(options PasswordOptions) string {
 	special := []byte("+,#?$()&%^*=/!+<>[]{}@-_")
 
 	// add special characters if not database password
-	if !options.Database {
+	if options.EnableSpecialChars {
 		charset = append(charset, special...)
 	}
 
@@ -82,23 +82,35 @@ func GetSecretValue(namespace, secret, key string) []byte {
 	return store.Data[key]
 }
 
-// GeneratePasswords generates passwords for the different gitlab
-// components
-func (c *ComponentPasswords) GeneratePasswords() {
+// GenerateComponentPasswords generates passwords for the
+// different gitlab components
+func (c *ComponentPasswords) GenerateComponentPasswords() {
 	if c.redis == "" {
-		c.redis = GeneratePassword(PasswordOptions{Database: false, Length: StrongPassword})
+		c.redis = GeneratePassword(PasswordOptions{
+			EnableSpecialChars: true,
+			Length:             StrongPassword,
+		})
 	}
 
 	if c.postgres == "" {
-		c.postgres = GeneratePassword(PasswordOptions{Database: true, Length: StrongPassword})
+		c.postgres = GeneratePassword(PasswordOptions{
+			EnableSpecialChars: false,
+			Length:             StrongPassword,
+		})
 	}
 
 	if c.runnerRegistrationToken == "" {
-		c.runnerRegistrationToken = GeneratePassword(PasswordOptions{Database: false, Length: StrongPassword})
+		c.runnerRegistrationToken = GeneratePassword(PasswordOptions{
+			EnableSpecialChars: false,
+			Length:             StrongPassword,
+		})
 	}
 
 	if c.gitlabRootPassword == "" {
-		c.gitlabRootPassword = GeneratePassword(PasswordOptions{Database: false, Length: StrongPassword})
+		c.gitlabRootPassword = GeneratePassword(PasswordOptions{
+			EnableSpecialChars: true,
+			Length:             StrongPassword,
+		})
 	}
 }
 

@@ -54,7 +54,7 @@ type ComponentPasswords struct {
 }
 
 type security interface {
-	GeneratePasswords()
+	GenerateComponentPasswords()
 	RunnerRegistrationToken() string
 	GitlabRootPassword() string
 	PostgresPassword() string
@@ -64,8 +64,11 @@ type security interface {
 // PasswordOptions provides paramaters to be
 // used when generating passwords
 type PasswordOptions struct {
-	Length   int
-	Database bool
+	// Length defines desired password length
+	Length int
+	// EnableSpecialCharacters adds special characters
+	// to generated passwords
+	EnableSpecialChars bool
 }
 
 // OmnibusOptions defines options for

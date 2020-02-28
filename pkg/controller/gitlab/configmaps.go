@@ -27,7 +27,7 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		RegistryExternalURL: registryURL,
 	}
 
-	tmpl := template.Must(template.ParseFiles("templates/omnibus.conf"))
+	tmpl := template.Must(template.ParseFiles("/templates/omnibus.conf"))
 	tmpl.Execute(&omnibus, omnibusConf)
 
 	return &corev1.ConfigMap{

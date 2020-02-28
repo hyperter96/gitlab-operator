@@ -179,7 +179,7 @@ func (r *ReconcileGitlab) isObjectFound(key types.NamespacedName, object runtime
 // Reconcile child resources used by the operator
 func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) error {
 	creds := ComponentPasswords{}
-	creds.GeneratePasswords()
+	creds.GenerateComponentPasswords()
 
 	if err := r.reconcileSecrets(cr, &creds); err != nil {
 		return err

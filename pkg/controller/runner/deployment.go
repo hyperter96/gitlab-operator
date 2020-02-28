@@ -18,17 +18,31 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 				Name:    "runner",
 				Image:   RunnerImage,
 				Command: []string{"/bin/bash", "/scripts/entrypoint"},
+				Lifecycle: &corev1.Lifecycle{
+					PreStop: &corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: []string{"gitlab-runner", "unregister", "--all-runners"},
+						},
+					},
+				},
 				Env: []corev1.EnvVar{
 					{
-						Name:  "CI_SERVER_URL",
-						Value: "http://example-gitlab",
+						Name: "CI_SERVER_URL",
+						ValueFrom: &corev1.EnvVarSource{
+							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: cr.Name + "-runner-scripts",
+								},
+								Key: "ci_server_url",
+							},
+						},
 					},
 					{
 						Name: "CI_SERVER_TOKEN",
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "example-runner-secrets",
+									Name: cr.Name + "-runner-secrets",
 								},
 								Key: "runner-token",
 							},
@@ -39,7 +53,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "example-runner-secret",
+									Name: cr.Name + "-runner-secrets",
 								},
 								Key: "runner-registration-token",
 							},
@@ -144,7 +158,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "example-runner-scripts",
+							Name: cr.Name + "-runner-scripts",
 						},
 					},
 				},

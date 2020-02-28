@@ -4,14 +4,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // RunnerSpec defines the desired state of Runner
 type RunnerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	// GitlabResource represents a Gitlab custom resource. Should
+	// only be used to reference Gitlab instance created by the operator
+	Gitlab GitlabInstanceSpec `json:"gitlab,omitempty"`
+	// Gitlab or Continuous Integration URL
+	GitlabURL string `json:"instanceURL,omitempty"`
+	// Gitlab Runner registration token
+	RegistrationToken string `json:"token,omitempty"`
+}
+
+// GitlabInstanceSpec defines the Gitlab custom
+// resource in the kubernetes
+type GitlabInstanceSpec struct {
+	// Name of gitlab resource in kubernetes / openshift
+	Name string `json:"name,omitempty"`
 }
 
 // RunnerStatus defines the observed state of Runner

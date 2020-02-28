@@ -87,7 +87,7 @@ func GetSecretValue(namespace, secret, key string) []byte {
 func (c *ComponentPasswords) GenerateComponentPasswords() {
 	if c.redis == "" {
 		c.redis = GeneratePassword(PasswordOptions{
-			EnableSpecialChars: true,
+			EnableSpecialChars: false,
 			Length:             StrongPassword,
 		})
 	}

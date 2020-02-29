@@ -1,3 +1,11 @@
+The runner resource can be deployed and linked to a Gitlab.com or any other Gitlab instance that was not created using the operator.
+
+In such a case, be sure to provide the URL of the instance and the runner registration token.
+
+However, when registering to a gitlab instance deployed to the same namespace that was also created by the operator, providing a name only would be sufficient to register the runner.
+
+Note: The runner will default to the Kubernetes executor.
+
 ```
 $ kubectl -n operators get runner
 NAME      AGE

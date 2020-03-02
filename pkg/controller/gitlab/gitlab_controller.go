@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"context"
+	"time"
 
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	routev1 "github.com/openshift/api/route/v1"
@@ -199,6 +200,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 
 	if err := r.reconcileStatefulSets(cr); err != nil {
 		return err
+	}
+
+	for !isDatabaseReady(cr) {
+		time.Sleep(time.Second * 1)
 	}
 
 	if err := r.reconcileDeployments(cr); err != nil {

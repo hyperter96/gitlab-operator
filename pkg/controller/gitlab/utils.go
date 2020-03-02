@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -165,4 +166,30 @@ func GetDomainNameOnly(url string) string {
 	}
 
 	return domain[1]
+}
+
+// Function watches for database to startup.
+// Watches endpoint for pod IP address
+func isDatabaseReady(cr *gitlabv1beta1.Gitlab) bool {
+	var addresses []corev1.EndpointAddress
+	client, err := NewKubernetesClient()
+	if err != nil {
+		log.Error(err, "Unable to acquire client")
+	}
+
+	endpoint, err := client.CoreV1().Endpoints(cr.Namespace).Get(cr.Name+"-database", metav1.GetOptions{})
+	if err != nil {
+		fmt.Printf("Endpoint error; %v", err)
+	}
+	for _, subset := range endpoint.Subsets {
+		addresses = append(addresses, subset.Addresses...)
+	}
+
+	// If more than one IP address is returned,
+	// The database is up and listening for connections
+	if len(addresses) > 0 {
+		return true
+	}
+
+	return false
 }

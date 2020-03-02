@@ -31,7 +31,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						ValueFrom: &corev1.EnvVarSource{
 							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-runner-scripts",
+									Name: cr.Name + "-runner-config",
 								},
 								Key: "ci_server_url",
 							},
@@ -158,7 +158,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cr.Name + "-runner-scripts",
+							Name: cr.Name + "-runner-config",
 						},
 					},
 				},

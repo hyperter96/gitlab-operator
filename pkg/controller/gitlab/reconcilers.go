@@ -37,20 +37,6 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab, s securi
 		return err
 	}
 
-	postgresInit := getPostgresInitdbConfig(cr)
-
-	if r.isObjectFound(types.NamespacedName{Name: postgresInit.Name, Namespace: postgresInit.Namespace}, postgresInit) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, postgresInit, r.scheme); err != nil {
-		return err
-	}
-
-	if err := r.client.Create(context.TODO(), postgresInit); err != nil {
-		return err
-	}
-
 	return nil
 }
 

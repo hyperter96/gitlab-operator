@@ -118,11 +118,6 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						MountPath: "/var/lib/postgresql/data",
 						SubPath:   "postgres",
 					},
-					{
-						Name:      "initdb",
-						MountPath: "/docker-entrypoint-initdb.d",
-						ReadOnly:  true,
-					},
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -153,18 +148,6 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 					},
 					InitialDelaySeconds: 5,
 					TimeoutSeconds:      1,
-				},
-			},
-		},
-		Volumes: []corev1.Volume{
-			{
-				Name: "initdb",
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cr.Name + "-postgres-initdb",
-						},
-					},
 				},
 			},
 		},

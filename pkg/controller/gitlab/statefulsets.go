@@ -61,7 +61,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "postgres",
-				Image:           "postgres:9.6.1",
+				Image:           "postgres:9.6.17",
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -98,10 +98,6 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						},
 					},
 					{
-						Name:  "DB_EXTENSION",
-						Value: "pg_trgm",
-					},
-					{
 						Name:  "PGDATA",
 						Value: "/var/lib/postgresql/data/pgdata",
 					},
@@ -126,12 +122,14 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 								"pg_isready",
 								"-h",
 								"localhost",
-								"-U",
-								"postgres",
+								"--username",
+								"gitlab",
+								"--dbname",
+								"gitlab_production",
 							},
 						},
 					},
-					InitialDelaySeconds: 30,
+					InitialDelaySeconds: 180,
 					TimeoutSeconds:      5,
 				},
 				ReadinessProbe: &corev1.Probe{
@@ -141,8 +139,10 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 								"pg_isready",
 								"-h",
 								"localhost",
-								"-U",
-								"postgres",
+								"--username",
+								"gitlab",
+								"--dbname",
+								"gitlab_production",
 							},
 						},
 					},

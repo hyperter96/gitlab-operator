@@ -160,6 +160,16 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: cr.Name + "-runner-config",
 						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "config.toml",
+								Path: "config.toml",
+							},
+							{
+								Key:  "entrypoint",
+								Path: "entrypoint",
+							},
+						},
 					},
 				},
 			},
@@ -172,7 +182,7 @@ func getLabels(cr *gitlabv1beta1.Runner, component string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":       cr.Name + "-" + component,
 		"app.kubernetes.io/component":  component,
-		"app.kubernetes.io/part-of":    "gitlab",
+		"app.kubernetes.io/part-of":    "runner",
 		"app.kubernetes.io/managed-by": "gitlab-operator",
 	}
 }

@@ -132,7 +132,6 @@ func (r *ReconcileRunner) isObjectFound(key types.NamespacedName, object runtime
 }
 
 func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err error) {
-	// gitlabSecret := cr.Spec.Gitlab.Name + "-gitlab-secrets"
 	if err = r.reconcileSecrets(cr); err != nil {
 		return
 	}

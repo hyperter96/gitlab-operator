@@ -23,8 +23,8 @@ func getRunnerScriptConfig(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 
 	// Gitlab URL should be used for Gitlab instances
 	// outside k8s or the current namespace
-	if cr.Spec.GitlabURL != "" {
-		gitlabURL = cr.Spec.GitlabURL
+	if cr.Spec.Gitlab.URL != "" {
+		gitlabURL = cr.Spec.Gitlab.URL
 	}
 
 	// Access via k8s service is preferred if

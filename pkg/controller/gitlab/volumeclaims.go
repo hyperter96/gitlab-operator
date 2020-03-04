@@ -1,6 +1,8 @@
 package gitlab
 
 import (
+	"reflect"
+
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -8,6 +10,12 @@ import (
 
 func getRegistryVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeClaim {
 	labels := getLabels(cr, "gitlab")
+
+	if reflect.DeepEqual(cr.Spec.Volumes.Registry, gitlabv1beta1.VolumeSpec{}) {
+		return nil
+	}
+
+	volumeSize := cr.Spec.Volumes.Registry.Capacity
 
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -20,7 +28,7 @@ func getRegistryVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeCl
 				corev1.ReadWriteOnce,
 			},
 			Resources: corev1.ResourceRequirements{
-				Requests: getVolumeRequest(cr.Spec.Registry.Volume.Capacity),
+				Requests: getVolumeRequest(volumeSize),
 			},
 		},
 	}
@@ -28,6 +36,12 @@ func getRegistryVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeCl
 
 func getGitlabDataVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeClaim {
 	labels := getLabels(cr, "gitlab")
+
+	if reflect.DeepEqual(cr.Spec.Volumes.Data, gitlabv1beta1.VolumeSpec{}) {
+		return nil
+	}
+
+	volumeSize := cr.Spec.Volumes.Data.Capacity
 
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -40,7 +54,7 @@ func getGitlabDataVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolume
 				corev1.ReadWriteOnce,
 			},
 			Resources: corev1.ResourceRequirements{
-				Requests: getVolumeRequest(cr.Spec.Volume.Capacity),
+				Requests: getVolumeRequest(volumeSize),
 			},
 		},
 	}
@@ -48,6 +62,12 @@ func getGitlabDataVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolume
 
 func getGitlabConfigVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeClaim {
 	labels := getLabels(cr, "gitlab")
+
+	if reflect.DeepEqual(cr.Spec.Volumes.Configuration, gitlabv1beta1.VolumeSpec{}) {
+		return nil
+	}
+
+	volumeSize := cr.Spec.Volumes.Configuration.Capacity
 
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -60,7 +80,7 @@ func getGitlabConfigVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolu
 				corev1.ReadWriteOnce,
 			},
 			Resources: corev1.ResourceRequirements{
-				Requests: getVolumeRequest(cr.Spec.Configuration.Volume.Capacity),
+				Requests: getVolumeRequest(volumeSize),
 			},
 		},
 	}

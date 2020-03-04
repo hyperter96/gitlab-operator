@@ -79,4 +79,8 @@ type OmnibusOptions struct {
 	// RegistryExternalURL defines gitlab
 	// registry external URL
 	RegistryExternalURL string
+	// MontiringNetworks contains a list of networks
+	// That should be allowed to access gitlab metrics,
+	// liveness probe and readiness probe endpoints
+	MonitoringWhitelist string
 }

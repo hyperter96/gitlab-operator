@@ -31,38 +31,12 @@ spec:
         spec:
           description: GitlabSpec defines the desired state of Gitlab
           properties:
-            config:
-              description: ConfigSpec defines Redis options
-              properties:
-                volume:
-                  description: VolumeSpec defines volume specifications
-                  properties:
-                    capacity:
-                      description: Sets the size of the volume in Gi
-                      type: string
-                    persist:
-                      description: Sets whether the data or volume should persist
-                        Should create emptyDir if set to false instead of PVC
-                      type: boolean
-                  type: object
-              type: object
             database:
               description: DatabaseSpec defines database options
               properties:
                 replicas:
                   format: int32
                   type: integer
-                volume:
-                  description: VolumeSpec defines volume specifications
-                  properties:
-                    capacity:
-                      description: Sets the size of the volume in Gi
-                      type: string
-                    persist:
-                      description: Sets whether the data or volume should persist
-                        Should create emptyDir if set to false instead of PVC
-                      type: boolean
-                  type: object
               type: object
             enterprise:
               type: boolean
@@ -74,17 +48,6 @@ spec:
                 replicas:
                   format: int32
                   type: integer
-                volume:
-                  description: VolumeSpec defines volume specifications
-                  properties:
-                    capacity:
-                      description: Sets the size of the volume in Gi
-                      type: string
-                    persist:
-                      description: Sets whether the data or volume should persist
-                        Should create emptyDir if set to false instead of PVC
-                      type: boolean
-                  type: object
               type: object
             registry:
               description: RegistrySpec defines options for Gitlab registry
@@ -93,8 +56,16 @@ spec:
                   type: boolean
                 externalURL:
                   type: string
-                volume:
-                  description: VolumeSpec defines volume specifications
+              type: object
+            replicas:
+              format: int32
+              type: integer
+            volumes:
+              description: ComponentVolumeSpec defines volumes for the different Gitlab
+                peieces
+              properties:
+                config:
+                  description: Gitlab configuration volume
                   properties:
                     capacity:
                       description: Sets the size of the volume in Gi
@@ -104,20 +75,50 @@ spec:
                         Should create emptyDir if set to false instead of PVC
                       type: boolean
                   type: object
-              type: object
-            replicas:
-              format: int32
-              type: integer
-            volume:
-              description: VolumeSpec defines volume specifications
-              properties:
-                capacity:
-                  description: Sets the size of the volume in Gi
-                  type: string
-                persist:
-                  description: Sets whether the data or volume should persist Should
-                    create emptyDir if set to false instead of PVC
-                  type: boolean
+                data:
+                  description: Gitlab rails data volume
+                  properties:
+                    capacity:
+                      description: Sets the size of the volume in Gi
+                      type: string
+                    persist:
+                      description: Sets whether the data or volume should persist
+                        Should create emptyDir if set to false instead of PVC
+                      type: boolean
+                  type: object
+                database:
+                  description: Postgres database volume for PGDATA
+                  properties:
+                    capacity:
+                      description: Sets the size of the volume in Gi
+                      type: string
+                    persist:
+                      description: Sets whether the data or volume should persist
+                        Should create emptyDir if set to false instead of PVC
+                      type: boolean
+                  type: object
+                redis:
+                  description: Redis key value store volume
+                  properties:
+                    capacity:
+                      description: Sets the size of the volume in Gi
+                      type: string
+                    persist:
+                      description: Sets whether the data or volume should persist
+                        Should create emptyDir if set to false instead of PVC
+                      type: boolean
+                  type: object
+                registry:
+                  description: Gitlab registry volume
+                  properties:
+                    capacity:
+                      description: Sets the size of the volume in Gi
+                      type: string
+                    persist:
+                      description: Sets whether the data or volume should persist
+                        Should create emptyDir if set to false instead of PVC
+                      type: boolean
+                  type: object
               type: object
           required:
           - replicas

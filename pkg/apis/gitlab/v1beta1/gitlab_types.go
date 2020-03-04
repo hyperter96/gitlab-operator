@@ -6,38 +6,29 @@ import (
 
 // GitlabSpec defines the desired state of Gitlab
 type GitlabSpec struct {
-	Replicas      int32        `json:"replicas"`
-	Enterprise    bool         `json:"enterprise,omitempty"`
-	ExternalURL   string       `json:"externalURL,omitempty"`
-	Configuration ConfigSpec   `json:"config,omitempty"`
-	Volume        VolumeSpec   `json:"volume,omitempty"`
-	Database      DatabaseSpec `json:"database,omitempty"`
-	Redis         RedisSpec    `json:"redis,omitempty"`
-	Registry      RegistrySpec `json:"registry,omitempty"`
+	Replicas    int32               `json:"replicas"`
+	Enterprise  bool                `json:"enterprise,omitempty"`
+	ExternalURL string              `json:"externalURL,omitempty"`
+	Registry    RegistrySpec        `json:"registry,omitempty"`
+	Redis       RedisSpec           `json:"redis,omitempty"`
+	Database    DatabaseSpec        `json:"database,omitempty"`
+	Volumes     ComponentVolumeSpec `json:"volumes,omitempty"`
 }
 
 // RedisSpec defines Redis options
 type RedisSpec struct {
-	Replicas int32      `json:"replicas,omitempty"`
-	Volume   VolumeSpec `json:"volume,omitempty"`
-}
-
-// ConfigSpec defines Redis options
-type ConfigSpec struct {
-	Volume VolumeSpec `json:"volume,omitempty"`
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // DatabaseSpec defines database options
 type DatabaseSpec struct {
-	Replicas int32      `json:"replicas,omitempty"`
-	Volume   VolumeSpec `json:"volume,omitempty"`
+	Replicas int32 `json:"replicas,omitempty"`
 }
 
 // RegistrySpec defines options for Gitlab registry
 type RegistrySpec struct {
-	Enabled     bool       `json:"enable,omitempty"`
-	ExternalURL string     `json:"externalURL,omitempty"`
-	Volume      VolumeSpec `json:"volume,omitempty"`
+	Enabled     bool   `json:"enable,omitempty"`
+	ExternalURL string `json:"externalURL,omitempty"`
 }
 
 // VolumeSpec defines volume specifications
@@ -47,6 +38,21 @@ type VolumeSpec struct {
 	// Sets whether the data or volume should persist
 	// Should create emptyDir if set to false instead of PVC
 	Persist bool `json:"persist,omitempty"`
+}
+
+// ComponentVolumeSpec defines volumes for
+// the different Gitlab peieces
+type ComponentVolumeSpec struct {
+	// Postgres database volume for PGDATA
+	Postgres VolumeSpec `json:"database,omitempty"`
+	// Redis key value store volume
+	Redis VolumeSpec `json:"redis,omitempty"`
+	// Gitlab configuration volume
+	Configuration VolumeSpec `json:"config,omitempty"`
+	// Gitlab registry volume
+	Registry VolumeSpec `json:"registry,omitempty"`
+	// Gitlab rails data volume
+	Data VolumeSpec `json:"data,omitempty"`
 }
 
 // GitlabStatus defines the observed state of Gitlab

@@ -38,13 +38,13 @@ spec:
                 name:
                   description: Name of gitlab resource in kubernetes / openshift
                   type: string
+                token:
+                  description: Gitlab Runner registration token
+                  type: string
+                url:
+                  description: Gitlab or Continuous Integration URL
+                  type: string
               type: object
-            instanceURL:
-              description: Gitlab or Continuous Integration URL
-              type: string
-            token:
-              description: Gitlab Runner registration token
-              type: string
           type: object
         status:
           description: RunnerStatus defines the observed state of Runner

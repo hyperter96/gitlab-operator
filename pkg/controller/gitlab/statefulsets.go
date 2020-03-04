@@ -1,6 +1,8 @@
 package gitlab
 
 import (
+	"reflect"
+
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +40,12 @@ func getGenericStatefulSet(cr *gitlabv1beta1.Gitlab, component Component) *appsv
 func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := getLabels(cr, "database")
 
+	if reflect.DeepEqual(cr.Spec.Volumes.Registry, gitlabv1beta1.VolumeSpec{}) {
+		return nil
+	}
+
+	volumeSize := cr.Spec.Volumes.Postgres.Capacity
+
 	return getGenericStatefulSet(cr, Component{
 		Labels:   labels,
 		Replicas: cr.Spec.Database.Replicas,
@@ -53,7 +61,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						corev1.ReadWriteOnce,
 					},
 					Resources: corev1.ResourceRequirements{
-						Requests: getVolumeRequest(cr.Spec.Database.Volume.Capacity),
+						Requests: getVolumeRequest(volumeSize),
 					},
 				},
 			},
@@ -100,6 +108,10 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 					{
 						Name:  "PGDATA",
 						Value: "/var/lib/postgresql/data/pgdata",
+					},
+					{
+						Name:  "DB_EXTENSION",
+						Value: "pg_trgm",
 					},
 				},
 				Ports: []corev1.ContainerPort{
@@ -157,6 +169,12 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := getLabels(cr, "redis")
 
+	if reflect.DeepEqual(cr.Spec.Volumes.Registry, gitlabv1beta1.VolumeSpec{}) {
+		return nil
+	}
+
+	volumeSize := cr.Spec.Volumes.Redis.Capacity
+
 	return getGenericStatefulSet(cr, Component{
 		Labels:   labels,
 		Replicas: cr.Spec.Redis.Replicas,
@@ -172,7 +190,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						corev1.ReadWriteOnce,
 					},
 					Resources: corev1.ResourceRequirements{
-						Requests: getVolumeRequest(cr.Spec.Redis.Volume.Capacity),
+						Requests: getVolumeRequest(volumeSize),
 					},
 				},
 			},

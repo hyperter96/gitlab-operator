@@ -5,29 +5,23 @@ metadata:
 spec:
   replicas: 1
   enterprise: false
-  externalURL: "http://gitlab.example.com"
-  volume:
-    capacity: 20Gi
-    persist: true
-  config:
-    volume:
-      capacity: 2Gi
-      persist: true
-  data:
-    volume: 10Gi
-    persist: false
-  database:
-    replicas: 1
-    volume:
-      capacity: 8Gi
-      persist: true
-  redis:
-    replicas: 1
-    volume:
-      capacity: 8Gi
-      persist: true
+  externalURL: "http://gitlab.baisikeli.com"
   registry:
     enable: true
-    volume:
+    externalURL: "http://registry.baisikeli.me"
+  volumes:
+    config:
+      capacity: 2Gi
+      persist: true
+    data:
+      capacity: 10Gi
+      persist: false
+    database:
+      capacity: 8Gi
+      persist: true
+    redis:     
+      capacity: 4Gi
+      persist: true
+    registry:
       capacity: 10Gi
       persist: true

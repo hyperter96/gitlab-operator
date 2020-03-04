@@ -14,6 +14,10 @@ func getRunnerSecret(cr *gitlabv1beta1.Runner) *corev1.Secret {
 	if cr.Spec.Gitlab.Name != "" {
 		gitlabSecret := cr.Spec.Gitlab.Name + "-gitlab-secrets"
 		token = string(gitlab.GetSecretValue(cr.Namespace, gitlabSecret, "initial_shared_runners_registration_token"))
+	} else {
+		// If the Gitlab Name is not provided, the runner will
+		// register using the URL and registration token provided
+		token = cr.Spec.Gitlab.RegistrationToken
 	}
 
 	return &corev1.Secret{

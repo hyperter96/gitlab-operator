@@ -25,6 +25,7 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	omnibusConf := OmnibusOptions{
 		RegistryEnabled:     cr.Spec.Registry.Enabled,
 		RegistryExternalURL: registryURL,
+		MonitoringWhitelist: getMonitoringWhitelist(cr),
 	}
 
 	tmpl := template.Must(template.ParseFiles("/templates/omnibus.conf"))

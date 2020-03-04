@@ -3,6 +3,7 @@ package gitlab
 import (
 	"fmt"
 	"math/rand"
+	"net"
 	"strings"
 	"time"
 
@@ -189,6 +190,89 @@ func isDatabaseReady(cr *gitlabv1beta1.Gitlab) bool {
 	// The database is up and listening for connections
 	if len(addresses) > 0 {
 		return true
+	}
+
+	return false
+}
+
+// The database endpoint returns the gitlab database endpoint
+// Function is used by other functions e.g. isDatabaseReady
+func getOperatorMetricsEndpoints(cr *gitlabv1beta1.Gitlab) (*corev1.Endpoints, error) {
+	operatorMetricsSVC := "gitlab-operator-metrics"
+	client, err := NewKubernetesClient()
+	if err != nil {
+		log.Error(err, "Unable to acquire client")
+	}
+
+	return client.CoreV1().Endpoints(cr.Namespace).Get(operatorMetricsSVC, metav1.GetOptions{})
+}
+
+func getNetworkAddress(address string) string {
+	if !strings.Contains(address, "/") {
+		address = fmt.Sprintf("%s/8", address)
+	}
+
+	_, network, err := net.ParseCIDR(address)
+	if err != nil {
+		log.Error(err, "Unable to get network CIDR")
+	}
+	return network.String()
+}
+
+func getOperatorMetricsServiceNet(cr *gitlabv1beta1.Gitlab) string {
+	operatorMetricsSVC := "gitlab-operator-metrics"
+	client, err := NewKubernetesClient()
+	if err != nil {
+		log.Error(err, "Unable to acquire client")
+	}
+
+	svc, err := client.CoreV1().Services(cr.Namespace).Get(operatorMetricsSVC, metav1.GetOptions{})
+	if err != nil {
+		log.Error(err, "Error getting service")
+	}
+
+	return getNetworkAddress(svc.Spec.ClusterIP)
+}
+
+// Get the Kubernetes service and pod network
+// CIDRs for whitelisting
+func getMonitoringWhitelist(cr *gitlabv1beta1.Gitlab) string {
+	var addresses []corev1.EndpointAddress
+	var networks []string
+	endpoint, err := getOperatorMetricsEndpoints(cr)
+	if err != nil {
+		log.Error(err, "Error getting metrics endpoint")
+	}
+
+	for _, subset := range endpoint.Subsets {
+		addresses = append(addresses, subset.Addresses...)
+	}
+
+	for _, address := range addresses {
+		if address.IP != "" && !isPresent(networks, address.IP) {
+			networks = append(networks, getNetworkAddress(address.IP))
+		}
+	}
+
+	// Get K8s svc network CIDR and add to list of networks
+	svcnet := getOperatorMetricsServiceNet(cr)
+	if !isPresent(networks, svcnet) {
+		networks = append(networks, svcnet)
+	}
+
+	return fmt.Sprintf("['%s']", strings.Join(networks, "', '"))
+}
+
+// Returns true if item is in slice
+func isPresent(slice []string, key string) bool {
+	if len(slice) == 0 {
+		return false
+	}
+
+	for _, item := range slice {
+		if item == key {
+			return true
+		}
 	}
 
 	return false

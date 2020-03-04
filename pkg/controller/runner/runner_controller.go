@@ -125,10 +125,10 @@ func (r *ReconcileRunner) Reconcile(request reconcile.Request) (reconcile.Result
 
 func (r *ReconcileRunner) isObjectFound(key types.NamespacedName, object runtime.Object) bool {
 	if err := r.client.Get(context.TODO(), key, object); err != nil {
-		return false
+		return true
 	}
 
-	return true
+	return false
 }
 
 func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err error) {

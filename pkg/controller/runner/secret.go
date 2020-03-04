@@ -28,7 +28,6 @@ func getRunnerSecret(cr *gitlabv1beta1.Runner) *corev1.Secret {
 		},
 		StringData: map[string]string{
 			"runner-registration-token": token,
-			"runner-token":              "",
 		},
 	}
 }

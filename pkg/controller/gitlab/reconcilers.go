@@ -223,17 +223,31 @@ func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
 }
 
 func (r *ReconcileGitlab) reconcileRoute(cr *gitlabv1beta1.Gitlab) error {
-	route := getGitlabRoute(cr)
+	workhorse := getGitlabRoute(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, route) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, workhorse) {
 		return nil
 	}
 
-	if err := controllerutil.SetControllerReference(cr, route, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, workhorse, r.scheme); err != nil {
 		return err
 	}
 
-	if err := r.client.Create(context.TODO(), route); err != nil {
+	if err := r.client.Create(context.TODO(), workhorse); err != nil {
+		return err
+	}
+
+	registry := getRegistryRoute(cr)
+
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, registry) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), registry); err != nil {
 		return err
 	}
 

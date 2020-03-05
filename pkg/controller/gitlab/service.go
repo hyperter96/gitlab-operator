@@ -24,11 +24,6 @@ func getGitlabService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 					Protocol: corev1.ProtocolTCP,
 				},
 				{
-					Name:     "mattermost",
-					Port:     8065,
-					Protocol: corev1.ProtocolTCP,
-				},
-				{
 					Name:     "registry",
 					Port:     8105,
 					Protocol: corev1.ProtocolTCP,
@@ -38,11 +33,11 @@ func getGitlabService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 					Port:     8005,
 					Protocol: corev1.ProtocolTCP,
 				},
-				{
-					Name:     "prometheus",
-					Port:     9090,
-					Protocol: corev1.ProtocolTCP,
-				},
+				// {
+				// 	Name:     "prometheus",
+				// 	Port:     9090,
+				// 	Protocol: corev1.ProtocolTCP,
+				// },
 			},
 			Type: corev1.ServiceTypeClusterIP,
 		},

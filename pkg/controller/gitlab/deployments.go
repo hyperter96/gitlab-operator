@@ -20,7 +20,7 @@ func GenericDeployment(component Component) *appsv1.Deployment {
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"],
+			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: component.Namespace,
 			Labels:    labels,
 		},
@@ -241,7 +241,7 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "data",
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: labels["app.kubernetes.io/name"] + "-data",
+						ClaimName: labels["app.kubernetes.io/instance"] + "-data",
 					},
 				},
 			},
@@ -249,7 +249,7 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "registry",
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: labels["app.kubernetes.io/name"] + "-registry",
+						ClaimName: labels["app.kubernetes.io/instance"] + "-registry",
 					},
 				},
 			},
@@ -257,7 +257,7 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "config",
 				VolumeSource: corev1.VolumeSource{
 					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: labels["app.kubernetes.io/name"] + "-config",
+						ClaimName: labels["app.kubernetes.io/instance"] + "-config",
 					},
 				},
 			},

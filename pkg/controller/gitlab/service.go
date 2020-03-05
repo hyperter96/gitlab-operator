@@ -11,7 +11,7 @@ func getGitlabService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"],
+			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},
@@ -54,7 +54,7 @@ func getRedisService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"],
+			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},
@@ -78,7 +78,7 @@ func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"],
+			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},

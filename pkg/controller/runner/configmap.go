@@ -36,7 +36,7 @@ func getRunnerScriptConfig(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"] + "-config",
+			Name:      labels["app.kubernetes.io/instance"] + "-config",
 			Namespace: cr.Namespace,
 		},
 		Data: map[string]string{

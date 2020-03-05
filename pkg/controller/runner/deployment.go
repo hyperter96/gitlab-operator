@@ -1,6 +1,8 @@
 package runner
 
 import (
+	"strings"
+
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlab "github.com/OchiengEd/gitlab-operator/pkg/controller/gitlab"
 	appsv1 "k8s.io/api/apps/v1"
@@ -180,7 +182,8 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 func getLabels(cr *gitlabv1beta1.Runner, component string) map[string]string {
 
 	return map[string]string{
-		"app.kubernetes.io/name":       cr.Name + "-" + component,
+		"app.kubernetes.io/name":       cr.Name,
+		"app.kubernetes.io/instance":   strings.Join([]string{cr.Name, component}, "-"),
 		"app.kubernetes.io/component":  component,
 		"app.kubernetes.io/part-of":    "runner",
 		"app.kubernetes.io/managed-by": "gitlab-operator",

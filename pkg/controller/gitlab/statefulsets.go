@@ -14,12 +14,12 @@ func getGenericStatefulSet(cr *gitlabv1beta1.Gitlab, component Component) *appsv
 
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"],
+			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName:          labels["app.kubernetes.io/name"],
+			ServiceName:          labels["app.kubernetes.io/instance"],
 			VolumeClaimTemplates: component.VolumeClaimTemplates,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,

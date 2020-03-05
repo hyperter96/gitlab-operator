@@ -19,7 +19,7 @@ func getRegistryVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeCl
 
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"] + "-registry",
+			Name:      labels["app.kubernetes.io/instance"] + "-registry",
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},
@@ -45,7 +45,7 @@ func getGitlabDataVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolume
 
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"] + "-data",
+			Name:      labels["app.kubernetes.io/instance"] + "-data",
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},
@@ -71,7 +71,7 @@ func getGitlabConfigVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolu
 
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/name"] + "-config",
+			Name:      labels["app.kubernetes.io/instance"] + "-config",
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},

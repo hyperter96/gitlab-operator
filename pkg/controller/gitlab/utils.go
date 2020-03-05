@@ -136,21 +136,23 @@ func (c *ComponentPasswords) RedisPassword() string {
 	return c.redis
 }
 
-func getLabels(cr *gitlabv1beta1.Gitlab, component string) map[string]string {
+func getLabels(cr *gitlabv1beta1.Gitlab, component string) (labels map[string]string) {
 	var edition string = "community"
 
 	if cr.Spec.Enterprise {
 		edition = "enterprise"
 	}
 
-	return map[string]string{
-		"app.kubernetes.io/name":       cr.Name + "-" + component,
+	labels = map[string]string{
+		"app.kubernetes.io/name":       cr.Name,
+		"app.kubernetes.io/instance":   strings.Join([]string{cr.Name, component}, "-"),
 		"app.kubernetes.io/component":  component,
 		"app.kubernetes.io/edition":    edition,
 		"app.kubernetes.io/part-of":    "gitlab",
 		"app.kubernetes.io/managed-by": "gitlab-operator",
 	}
 
+	return
 }
 
 func getVolumeRequest(size string) corev1.ResourceList {

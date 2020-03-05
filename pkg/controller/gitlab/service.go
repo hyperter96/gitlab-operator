@@ -33,11 +33,6 @@ func getGitlabService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 					Port:     8005,
 					Protocol: corev1.ProtocolTCP,
 				},
-				// {
-				// 	Name:     "prometheus",
-				// 	Port:     9090,
-				// 	Protocol: corev1.ProtocolTCP,
-				// },
 			},
 			Type: corev1.ServiceTypeClusterIP,
 		},
@@ -88,6 +83,49 @@ func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 			},
 			Type:      corev1.ServiceTypeClusterIP,
 			ClusterIP: corev1.ClusterIPNone,
+		},
+	}
+}
+
+func getExporterService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
+	labels := getLabels(cr, "gitlab")
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name + "-prometheus-exporters",
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "gitlab-exporter",
+					Port:     9168,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name:     "redis-exporter",
+					Port:     9121,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name:     "postgres-exporter",
+					Port:     9187,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name:     "gitaly-exporter",
+					Port:     9236,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name:     "gitlab-workhorse",
+					Port:     9229,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
 }

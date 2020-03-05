@@ -25,7 +25,7 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab, s securi
 
 	redis := getRedisConfig(cr, s)
 
-	if r.isObjectFound(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, redis) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, redis) {
 		return nil
 	}
 
@@ -44,7 +44,7 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab, s security)
 
 	core := getGilabSecret(cr, s)
 
-	if r.isObjectFound(types.NamespacedName{Name: core.Name, Namespace: core.Namespace}, core) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, core) {
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab, s security)
 func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 	postgres := getPostgresService(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: postgres.Name, Namespace: postgres.Namespace}, postgres) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, postgres) {
 		return nil
 	}
 
@@ -90,7 +90,7 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 
 	gitlab := getGitlabService(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: gitlab.Name, Namespace: gitlab.Namespace}, gitlab) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, gitlab) {
 		return nil
 	}
 
@@ -102,6 +102,20 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
+	exporter := getExporterService(cr)
+
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, exporter) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, exporter, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), exporter); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -109,7 +123,7 @@ func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitl
 	if cr.Spec.Registry.Enabled {
 		registryVolume := getRegistryVolumeClaim(cr)
 
-		if r.isObjectFound(types.NamespacedName{Name: registryVolume.Name, Namespace: registryVolume.Namespace}, registryVolume) {
+		if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, registryVolume) {
 			return nil
 		}
 
@@ -124,7 +138,7 @@ func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitl
 
 	dataVolume := getGitlabDataVolumeClaim(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: dataVolume.Name, Namespace: dataVolume.Namespace}, dataVolume) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, dataVolume) {
 		return nil
 	}
 
@@ -138,7 +152,7 @@ func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitl
 
 	configVolume := getGitlabConfigVolumeClaim(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: configVolume.Name, Namespace: configVolume.Namespace}, configVolume) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, configVolume) {
 		return nil
 	}
 
@@ -157,7 +171,7 @@ func (r *ReconcileGitlab) reconcileDeployments(cr *gitlabv1beta1.Gitlab) error {
 
 	gitlabCore := getGitlabDeployment(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: gitlabCore.Name, Namespace: gitlabCore.Namespace}, gitlabCore) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, gitlabCore) {
 		return nil
 	}
 
@@ -175,7 +189,7 @@ func (r *ReconcileGitlab) reconcileDeployments(cr *gitlabv1beta1.Gitlab) error {
 func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error {
 	redis := getRedisStatefulSet(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: redis.Name, Namespace: redis.Namespace}, redis) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, redis) {
 		return nil
 	}
 
@@ -189,7 +203,7 @@ func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error 
 
 	postgres := getPostgresStatefulSet(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: postgres.Name, Namespace: postgres.Namespace}, postgres) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, postgres) {
 		return nil
 	}
 
@@ -207,7 +221,7 @@ func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error 
 func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
 	ingress := getGitlabIngress(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: ingress.Name, Namespace: ingress.Namespace}, ingress) {
+	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, ingress) {
 		return nil
 	}
 

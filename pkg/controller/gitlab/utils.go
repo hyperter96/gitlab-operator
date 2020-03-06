@@ -234,21 +234,6 @@ func getNetworkAddress(address string) string {
 	return network.String()
 }
 
-func getOperatorMetricsServiceNet(cr *gitlabv1beta1.Gitlab) string {
-	operatorMetricsSVC := "gitlab-operator-metrics"
-	client, err := NewKubernetesClient()
-	if err != nil {
-		log.Error(err, "Unable to acquire client")
-	}
-
-	svc, err := client.CoreV1().Services(cr.Namespace).Get(operatorMetricsSVC, metav1.GetOptions{})
-	if err != nil {
-		log.Error(err, "Error getting service")
-	}
-
-	return getNetworkAddress(svc.Spec.ClusterIP)
-}
-
 // Get the Kubernetes service and pod network
 // CIDRs for whitelisting
 func getMonitoringWhitelist(cr *gitlabv1beta1.Gitlab) string {
@@ -269,12 +254,7 @@ func getMonitoringWhitelist(cr *gitlabv1beta1.Gitlab) string {
 		}
 	}
 
-	// Get K8s svc network CIDR and add to list of networks
-	svcnet := getOperatorMetricsServiceNet(cr)
-	if !isPresent(networks, svcnet) {
-		networks = append(networks, svcnet)
-	}
-
+	// TODO: Consider user provided whitelist
 	return fmt.Sprintf("['%s']", strings.Join(networks, "', '"))
 }
 

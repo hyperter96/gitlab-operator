@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net"
@@ -11,10 +12,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // GeneratePassword creates an alphanumeric
@@ -159,6 +163,15 @@ func getVolumeRequest(size string) corev1.ResourceList {
 	return corev1.ResourceList{
 		"storage": resource.MustParse(size),
 	}
+}
+
+// IsObjectFound checks if kubernetes resource is in the cluster
+func IsObjectFound(client client.Client, key types.NamespacedName, object runtime.Object) bool {
+	if err := client.Get(context.TODO(), key, object); err != nil {
+		return false
+	}
+
+	return true
 }
 
 // GetDomainNameOnly separates domain from URL

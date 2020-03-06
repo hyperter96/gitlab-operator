@@ -4,6 +4,7 @@ import (
 	"context"
 
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlab "github.com/OchiengEd/gitlab-operator/pkg/controller/gitlab"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -123,14 +124,6 @@ func (r *ReconcileRunner) Reconcile(request reconcile.Request) (reconcile.Result
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileRunner) isObjectFound(key types.NamespacedName, object runtime.Object) bool {
-	if err := r.client.Get(context.TODO(), key, object); err != nil {
-		return true
-	}
-
-	return false
-}
-
 func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err error) {
 	if err = r.reconcileSecrets(cr); err != nil {
 		return
@@ -150,7 +143,7 @@ func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err erro
 func (r *ReconcileRunner) reconcileSecrets(cr *gitlabv1beta1.Runner) error {
 	runner := getRunnerSecret(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, runner) {
+	if gitlab.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
 		return nil
 	}
 
@@ -168,7 +161,7 @@ func (r *ReconcileRunner) reconcileSecrets(cr *gitlabv1beta1.Runner) error {
 func (r *ReconcileRunner) reconcileConfigMap(cr *gitlabv1beta1.Runner) error {
 	runner := getRunnerScriptConfig(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, runner) {
+	if gitlab.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
 		return nil
 	}
 
@@ -186,7 +179,7 @@ func (r *ReconcileRunner) reconcileConfigMap(cr *gitlabv1beta1.Runner) error {
 func (r *ReconcileRunner) reconcileDeployments(cr *gitlabv1beta1.Runner) error {
 	runner := getRunnerDeployment(cr)
 
-	if r.isObjectFound(types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, runner) {
+	if gitlab.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
 		return nil
 	}
 

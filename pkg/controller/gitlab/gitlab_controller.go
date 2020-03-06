@@ -11,7 +11,6 @@ import (
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -53,7 +52,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
 	// Watch for changes to secondary resource Pods and requeue the owner Gitlab
 	err = c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
@@ -167,14 +165,6 @@ func (r *ReconcileGitlab) Reconcile(request reconcile.Request) (reconcile.Result
 	}
 
 	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileGitlab) isObjectFound(key types.NamespacedName, object runtime.Object) bool {
-	if err := r.client.Get(context.TODO(), key, object); err != nil {
-		return false
-	}
-
-	return true
 }
 
 // Reconcile child resources used by the operator

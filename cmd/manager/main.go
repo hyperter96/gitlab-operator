@@ -17,6 +17,7 @@ import (
 	"github.com/OchiengEd/gitlab-operator/version"
 
 	gitlab "github.com/OchiengEd/gitlab-operator/pkg/controller/gitlab"
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
@@ -113,6 +114,15 @@ func main() {
 	if gitlab.IsOpenshift() {
 		// Add routes scheme
 		if err = routev1.Install(mgr.GetScheme()); err != nil {
+			log.Error(err, "")
+			os.Exit(1)
+		}
+	}
+
+	if gitlab.IsPrometheusSupported() {
+		// Register prometheus service monitor type if the monitoring V1
+		// endpoint exists
+		if err = monitoringv1.AddToScheme(mgr.GetScheme()); err != nil {
 			log.Error(err, "")
 			os.Exit(1)
 		}

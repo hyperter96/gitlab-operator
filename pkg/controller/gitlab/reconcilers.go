@@ -102,7 +102,7 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
-	exporter := getExporterService(cr)
+	exporter := getMetricsService(cr)
 
 	if IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: exporter.Name}, exporter) {
 		return nil
@@ -261,6 +261,25 @@ func (r *ReconcileGitlab) reconcileRoute(cr *gitlabv1beta1.Gitlab) error {
 	}
 
 	if err := r.client.Create(context.TODO(), registry); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+
+	servicemon := getServiceMonitor(cr)
+
+	if IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: servicemon.Name}, servicemon) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, servicemon, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), servicemon); err != nil {
 		return err
 	}
 

@@ -88,9 +88,11 @@ type OmnibusOptions struct {
 // ReadinessStatus shows status of Gitlab services
 type ReadinessStatus struct {
 	// Returns status of Gitlab rails app
-	WorkhorseStatus string          `json:"status,omitempty"`
-	RedisStatus     []ServiceStatus `json:"redis_check,omitempty"`
-	DatabaseStatus  []ServiceStatus `json:"db_check,omitempty"`
+	WorkhorseStatus string `json:"status,omitempty"`
+	// RedisStatus reports status of redis
+	RedisStatus []ServiceStatus `json:"redis_check,omitempty"`
+	// DatabaseStatus reports status of postgres
+	DatabaseStatus []ServiceStatus `json:"db_check,omitempty"`
 }
 
 // ServiceStatus shows status of a Gitlab

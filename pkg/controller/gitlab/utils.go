@@ -279,3 +279,22 @@ func SetStatus(client client.Client, object runtime.Object) (err error) {
 	err = client.Status().Update(context.TODO(), object)
 	return
 }
+
+// IsPrometheusSupported checks for Prometheus API endpoint
+func IsPrometheusSupported() bool {
+	client, err := NewKubernetesClient()
+	if err != nil {
+		log.Error(err, "Unable to acquire k8s client")
+	}
+
+	servicemonGV := schema.GroupVersion{
+		Group:   "monitoring.coreos.com",
+		Version: "v1",
+	}
+
+	if err := discovery.ServerSupportsVersion(client, servicemonGV); err != nil {
+		return false
+	}
+
+	return true
+}

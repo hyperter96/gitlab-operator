@@ -99,3 +99,13 @@ rules:
   - list
   - watch
   - delete
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - list
+  - create
+  - get
+  - watch
+  - delete

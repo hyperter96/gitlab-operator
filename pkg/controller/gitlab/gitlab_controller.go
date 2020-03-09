@@ -9,6 +9,7 @@ import (
 	"time"
 
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -126,6 +127,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		}
 	}
 
+	if IsPrometheusSupported() {
+		// Watch Openshifts route if running on Openshift
+		err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitor{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &gitlabv1beta1.Gitlab{},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -215,6 +227,13 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 	} else {
 		// Deploy an ingress only if running in Kubernetes
 		if err := r.reconcileIngress(cr); err != nil {
+			return err
+		}
+	}
+
+	if IsPrometheusSupported() {
+		// Deploy a prometheus service monitor
+		if err := r.reconcileServiceMonitor(cr); err != nil {
 			return err
 		}
 	}

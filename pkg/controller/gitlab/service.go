@@ -87,12 +87,12 @@ func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	}
 }
 
-func getExporterService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := getLabels(cr, "gitlab")
+func getMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
+	labels := getLabels(cr, "metrics")
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-prometheus-exporters",
+			Name:      cr.Name + "-gitlab-metrics",
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},

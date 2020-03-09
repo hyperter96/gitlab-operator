@@ -33,7 +33,7 @@ type RegistrySpec struct {
 
 // VolumeSpec defines volume specifications
 type VolumeSpec struct {
-	// Sets the size of the volume in Gi
+	// Sets the size of the volume
 	Capacity string `json:"capacity,omitempty"`
 	// Sets whether the data or volume should persist
 	// Should create emptyDir if set to false instead of PVC

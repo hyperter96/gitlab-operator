@@ -141,7 +141,7 @@ func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err erro
 }
 
 func (r *ReconcileRunner) reconcileSecrets(cr *gitlabv1beta1.Runner) error {
-	runner := getRunnerSecret(cr)
+	runner := getRunnerSecret(r.client, cr)
 
 	if gitlab.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
 		return nil

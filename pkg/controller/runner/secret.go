@@ -5,15 +5,16 @@ import (
 	gitlab "github.com/OchiengEd/gitlab-operator/pkg/controller/gitlab"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func getRunnerSecret(cr *gitlabv1beta1.Runner) *corev1.Secret {
+func getRunnerSecret(client client.Client, cr *gitlabv1beta1.Runner) *corev1.Secret {
 	labels := getLabels(cr, "runner")
 	var token string
 
 	if cr.Spec.Gitlab.Name != "" {
 		gitlabSecret := cr.Spec.Gitlab.Name + "-gitlab-secrets"
-		token = string(gitlab.GetSecretValue(cr.Namespace, gitlabSecret, "initial_shared_runners_registration_token"))
+		token = gitlab.GetSecretValue(client, cr.Namespace, gitlabSecret, "initial_shared_runners_registration_token")
 	} else {
 		// If the Gitlab Name is not provided, the runner will
 		// register using the URL and registration token provided

@@ -75,17 +75,14 @@ func NewKubernetesClient() (clientset *kubernetes.Clientset, err error) {
 }
 
 // GetSecretValue returns the value for a key from an existing secret
-func GetSecretValue(namespace, secret, key string) []byte {
-	client, err := NewKubernetesClient()
-	if err != nil {
-		log.Error(err, "Unable to get kubernetes client")
-	}
+func GetSecretValue(client client.Client, namespace, secret, key string) string {
+	target := &corev1.Secret{}
 
-	store, err := client.CoreV1().Secrets(namespace).Get(secret, metav1.GetOptions{})
+	err := client.Get(context.TODO(), types.NamespacedName{Name: secret, Namespace: namespace}, target)
 	if err != nil {
 		log.Error(err, "Secret not found")
 	}
-	return store.Data[key]
+	return string(target.Data[key])
 }
 
 // GenerateComponentPasswords generates passwords for the

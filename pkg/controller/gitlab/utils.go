@@ -259,6 +259,7 @@ func getMonitoringWhitelist(cr *gitlabv1beta1.Gitlab) string {
 }
 
 // Returns true if item is in slice
+// false, otherwise
 func isPresent(slice []string, key string) bool {
 	if len(slice) == 0 {
 		return false
@@ -271,4 +272,10 @@ func isPresent(slice []string, key string) bool {
 	}
 
 	return false
+}
+
+// SetStatus sets status of custom resource
+func SetStatus(client client.Client, object runtime.Object) (err error) {
+	err = client.Status().Update(context.TODO(), object)
+	return
 }

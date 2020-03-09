@@ -57,9 +57,16 @@ type ComponentVolumeSpec struct {
 
 // GitlabStatus defines the observed state of Gitlab
 type GitlabStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	// Phase represents status of the Gitlab resource
+	Phase    string         `json:"phase,omitempty"`
+	Services ServicesHealth `json:"services,omitempty"`
+}
+
+// ServicesHealth represents the status
+//  of a Gitlab dependent service
+type ServicesHealth struct {
+	Database string `json:"database,omitempty"`
+	Redis    string `json:"redis,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

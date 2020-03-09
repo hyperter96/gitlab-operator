@@ -2,6 +2,10 @@ package gitlab
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
@@ -11,6 +15,7 @@ import (
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -169,6 +174,8 @@ func (r *ReconcileGitlab) Reconcile(request reconcile.Request) (reconcile.Result
 
 // Reconcile child resources used by the operator
 func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) error {
+	r.updateGitlabStatus(cr)
+
 	creds := ComponentPasswords{}
 	creds.GenerateComponentPasswords()
 
@@ -213,4 +220,76 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 	}
 
 	return nil
+}
+
+func (r *ReconcileGitlab) updateGitlabStatus(cr *gitlabv1beta1.Gitlab) error {
+	labels := getLabels(cr, "gitlab")
+	gitlab := &appsv1.Deployment{}
+
+	err := r.client.Get(context.TODO(), types.NamespacedName{Namespace: cr.Namespace, Name: labels["app.kubernetes.io/instance"]}, gitlab)
+	if err != nil && errors.IsNotFound(err) {
+		cr.Status.Phase = "Initializing"
+		SetStatus(r.client, cr)
+		return nil
+	}
+
+	// If the Gitlab deployment exists, attempt to access the readiness check
+	resp, err := http.Get(fmt.Sprintf("http://%s:8005/-/readiness?all=1", labels["app.kubernetes.io/instance"]))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		// Read readiness status response
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		status := &ReadinessStatus{}
+		err = json.Unmarshal(body, status)
+		if err != nil {
+			log.Error(err, "Error unmarshalling readiness status")
+		}
+
+		// Get the status of Redis and Postgres services
+		dbHealth := getServiceHealth(status.DatabaseStatus)
+		redisHealth := getServiceHealth(status.RedisStatus)
+
+		// If current status is the same as the resource
+		// status, return nil
+		if cr.Status.Services.Database == dbHealth &&
+			cr.Status.Services.Redis == redisHealth {
+			return nil
+		}
+
+		if status.WorkhorseStatus == "ok" {
+			cr.Status.Phase = "Running"
+			// Get status of PostreSQL instance(s)
+			cr.Status.Services.Database = dbHealth
+
+			// Get status of redis instance(s)
+			cr.Status.Services.Redis = redisHealth
+
+			SetStatus(r.client, cr)
+		}
+	}
+
+	return nil
+}
+
+// Retrieve health of a subsystem
+func getServiceHealth(service []ServiceStatus) string {
+	if len(service) == 1 {
+		return service[0].Status
+	}
+
+	for _, item := range service {
+		if item.Status != "" {
+			return item.Status
+		}
+	}
+
+	return "unknown"
 }

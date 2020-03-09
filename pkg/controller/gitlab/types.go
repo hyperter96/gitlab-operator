@@ -84,3 +84,17 @@ type OmnibusOptions struct {
 	// liveness probe and readiness probe endpoints
 	MonitoringWhitelist string
 }
+
+// ReadinessStatus shows status of Gitlab services
+type ReadinessStatus struct {
+	// Returns status of Gitlab rails app
+	WorkhorseStatus string          `json:"status,omitempty"`
+	RedisStatus     []ServiceStatus `json:"redis_check,omitempty"`
+	DatabaseStatus  []ServiceStatus `json:"db_check,omitempty"`
+}
+
+// ServiceStatus shows status of a Gitlab
+// dependent service .e.g. Postgres, Redis, Gitaly
+type ServiceStatus struct {
+	Status string `json:"status,omitempty"`
+}

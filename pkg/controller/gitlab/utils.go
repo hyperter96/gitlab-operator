@@ -192,7 +192,7 @@ func isDatabaseReady(cr *gitlabv1beta1.Gitlab) bool {
 
 	endpoint, err := client.CoreV1().Endpoints(cr.Namespace).Get(cr.Name+"-database", metav1.GetOptions{})
 	if err != nil {
-		fmt.Printf("Endpoint error; %v", err)
+		log.Error(err, "Endpoint not found")
 	}
 	for _, subset := range endpoint.Subsets {
 		addresses = append(addresses, subset.Addresses...)

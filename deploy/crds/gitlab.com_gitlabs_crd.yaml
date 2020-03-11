@@ -68,7 +68,7 @@ spec:
                   description: Gitlab configuration volume
                   properties:
                     capacity:
-                      description: Sets the size of the volume in Gi
+                      description: Sets the size of the volume
                       type: string
                     persist:
                       description: Sets whether the data or volume should persist
@@ -79,7 +79,7 @@ spec:
                   description: Gitlab rails data volume
                   properties:
                     capacity:
-                      description: Sets the size of the volume in Gi
+                      description: Sets the size of the volume
                       type: string
                     persist:
                       description: Sets whether the data or volume should persist
@@ -90,7 +90,7 @@ spec:
                   description: Postgres database volume for PGDATA
                   properties:
                     capacity:
-                      description: Sets the size of the volume in Gi
+                      description: Sets the size of the volume
                       type: string
                     persist:
                       description: Sets whether the data or volume should persist
@@ -101,7 +101,7 @@ spec:
                   description: Redis key value store volume
                   properties:
                     capacity:
-                      description: Sets the size of the volume in Gi
+                      description: Sets the size of the volume
                       type: string
                     persist:
                       description: Sets whether the data or volume should persist
@@ -112,7 +112,7 @@ spec:
                   description: Gitlab registry volume
                   properties:
                     capacity:
-                      description: Sets the size of the volume in Gi
+                      description: Sets the size of the volume
                       type: string
                     persist:
                       description: Sets whether the data or volume should persist
@@ -138,6 +138,8 @@ spec:
                 redis:
                   type: string
               type: object
+            stage:
+              type: string
           type: object
       type: object
   version: v1beta1

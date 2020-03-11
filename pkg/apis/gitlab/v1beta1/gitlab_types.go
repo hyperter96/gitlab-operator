@@ -59,6 +59,7 @@ type ComponentVolumeSpec struct {
 type GitlabStatus struct {
 	// Phase represents status of the Gitlab resource
 	Phase    string         `json:"phase,omitempty"`
+	Stage    string         `json:"stage,omitempty"`
 	Services ServicesHealth `json:"services,omitempty"`
 }
 

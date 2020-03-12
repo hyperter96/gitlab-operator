@@ -5,10 +5,10 @@ metadata:
 spec:
   replicas: 1
   enterprise: false
-  externalURL: "http://gitlab.baisikeli.com"
+  externalURL: "http://gitlab.mydomain.com"
   registry:
     enable: true
-    externalURL: "http://registry.baisikeli.me"
+    externalURL: "http://registry.mydomain.com"
   volumes:
     config:
       capacity: 2Gi
@@ -19,7 +19,7 @@ spec:
     database:
       capacity: 8Gi
       persist: true
-    redis:     
+    redis:
       capacity: 4Gi
       persist: true
     registry:

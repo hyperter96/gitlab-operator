@@ -192,8 +192,10 @@ func isDatabaseReady(cr *gitlabv1beta1.Gitlab) bool {
 
 	endpoint, err := client.CoreV1().Endpoints(cr.Namespace).Get(cr.Name+"-database", metav1.GetOptions{})
 	if err != nil {
-		log.Error(err, "Endpoint not found")
+		// Endpoint was not found so return false
+		return false
 	}
+
 	for _, subset := range endpoint.Subsets {
 		addresses = append(addresses, subset.Addresses...)
 	}
@@ -246,7 +248,7 @@ func getMonitoringWhitelist(cr *gitlabv1beta1.Gitlab) string {
 	}
 
 	for _, address := range addresses {
-		if address.IP != "" && !isPresent(networks, address.IP) {
+		if address.IP != "" && !isAddressInList(networks, address.IP) {
 			networks = append(networks, getNetworkAddress(address.IP))
 		}
 	}
@@ -257,7 +259,7 @@ func getMonitoringWhitelist(cr *gitlabv1beta1.Gitlab) string {
 
 // Returns true if item is in slice
 // false, otherwise
-func isPresent(slice []string, key string) bool {
+func isAddressInList(slice []string, key string) bool {
 	if len(slice) == 0 {
 		return false
 	}

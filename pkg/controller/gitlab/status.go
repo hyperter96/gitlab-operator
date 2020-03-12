@@ -13,6 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+const updateInterval = 10
+
 func (r *ReconcileGitlab) updateGitlabStatus(cr *gitlabv1beta1.Gitlab) {
 	labels := getLabels(cr, "gitlab")
 
@@ -30,7 +32,7 @@ func (r *ReconcileGitlab) updateGitlabStatus(cr *gitlabv1beta1.Gitlab) {
 			cr.Status.Stage = "Initializing database"
 			SetStatus(r.client, cr)
 		}
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * updateInterval)
 	}
 
 	// Check status every ten seconds and update status
@@ -49,7 +51,7 @@ func (r *ReconcileGitlab) updateGitlabStatus(cr *gitlabv1beta1.Gitlab) {
 			SetStatus(r.client, cr)
 		}
 
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * updateInterval)
 	}
 
 }

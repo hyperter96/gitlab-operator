@@ -58,24 +58,6 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 						},
 					},
 				},
-				{
-					Host: "prometheus.baisikeli.me",
-					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
-						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
-							Paths: []extensionsv1beta1.HTTPIngressPath{
-								{
-									Path: "/",
-									Backend: extensionsv1beta1.IngressBackend{
-										ServicePort: intstr.IntOrString{
-											IntVal: 9090,
-										},
-										ServiceName: cr.Name + "-gitlab",
-									},
-								},
-							},
-						},
-					},
-				},
 			},
 		},
 	}

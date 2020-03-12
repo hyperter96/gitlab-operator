@@ -1,8 +1,6 @@
 package gitlab
 
 import (
-	"time"
-
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -95,8 +93,6 @@ type ReadinessStatus struct {
 	RedisStatus []ServiceStatus `json:"redis_check,omitempty"`
 	// DatabaseStatus reports status of postgres
 	DatabaseStatus []ServiceStatus `json:"db_check,omitempty"`
-	// LastSyncTime shows when the readiness probe was last checked
-	LastSyncTime time.Time `json:"sync_time,omitempty"`
 }
 
 // ServiceStatus shows status of a Gitlab

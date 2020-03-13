@@ -31,6 +31,8 @@ spec:
         spec:
           description: GitlabSpec defines the desired state of Gitlab
           properties:
+            certificate:
+              type: string
             database:
               description: DatabaseSpec defines database options
               properties:

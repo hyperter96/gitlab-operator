@@ -6,13 +6,14 @@ import (
 
 // GitlabSpec defines the desired state of Gitlab
 type GitlabSpec struct {
-	Replicas    int32               `json:"replicas"`
-	Enterprise  bool                `json:"enterprise,omitempty"`
-	ExternalURL string              `json:"externalURL,omitempty"`
-	Registry    RegistrySpec        `json:"registry,omitempty"`
-	Redis       RedisSpec           `json:"redis,omitempty"`
-	Database    DatabaseSpec        `json:"database,omitempty"`
-	Volumes     ComponentVolumeSpec `json:"volumes,omitempty"`
+	Replicas       int32               `json:"replicas"`
+	Enterprise     bool                `json:"enterprise,omitempty"`
+	ExternalURL    string              `json:"externalURL,omitempty"`
+	TLSCertificate string              `json:"certificate,omitempty"`
+	Registry       RegistrySpec        `json:"registry,omitempty"`
+	Redis          RedisSpec           `json:"redis,omitempty"`
+	Database       DatabaseSpec        `json:"database,omitempty"`
+	Volumes        ComponentVolumeSpec `json:"volumes,omitempty"`
 }
 
 // RedisSpec defines Redis options

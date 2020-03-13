@@ -1,16 +1,18 @@
 package gitlab
 
 import (
+	"strings"
+
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getGitlabIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
+func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingress) {
 	labels := getLabels(cr, "ingress")
 
-	return &extensionsv1beta1.Ingress{
+	ingress = &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-gitlab-ingress",
 			Namespace: cr.Namespace,
@@ -23,7 +25,8 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
 				{
-					Host: "gitlab.baisikeli.me",
+					// External URL for the gitlab instance
+					Host: getHostnameOnly(cr.Spec.ExternalURL),
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
@@ -41,7 +44,8 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 					},
 				},
 				{
-					Host: "registry.baisikeli.me",
+					// External URL for the registry endoint
+					Host: getHostnameOnly(cr.Spec.Registry.ExternalURL),
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
@@ -61,4 +65,36 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 			},
 		},
 	}
+
+	if cr.Spec.TLSCertificate != "" {
+		ingress.Spec.TLS = []extensionsv1beta1.IngressTLS{
+			{
+				SecretName: cr.Spec.TLSCertificate,
+				Hosts:      getExternalURLs(cr),
+			},
+		}
+	}
+
+	return
+}
+
+func getExternalURLs(cr *gitlabv1beta1.Gitlab) []string {
+	var hosts []string
+	if cr.Spec.ExternalURL != "" {
+		hosts = append(hosts, getHostnameOnly(cr.Spec.ExternalURL))
+	}
+
+	if cr.Spec.Registry.ExternalURL != "" {
+		hosts = append(hosts, getHostnameOnly(cr.Spec.Registry.ExternalURL))
+	}
+
+	return hosts
+}
+
+func getHostnameOnly(url string) string {
+	var tld string
+	if strings.Contains(url, "://") {
+		tld = strings.Split(url, "://")[1]
+	}
+	return tld
 }

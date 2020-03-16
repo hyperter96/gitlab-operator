@@ -19,12 +19,12 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	var registryURL string = cr.Spec.Registry.ExternalURL
 	if registryURL == "" && cr.Spec.Registry.Enabled {
-		registryURL = "http://registry." + GetDomainNameOnly(cr.Spec.ExternalURL)
+		registryURL = "http://registry." + DomainNameOnly(cr.Spec.ExternalURL)
 	}
 
 	omnibusConf := OmnibusOptions{
 		RegistryEnabled:     cr.Spec.Registry.Enabled,
-		RegistryExternalURL: registryURL,
+		RegistryExternalURL: parseURL(registryURL),
 		MonitoringWhitelist: getMonitoringWhitelist(cr),
 	}
 
@@ -38,7 +38,7 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			"gitlab_external_url":   cr.Spec.ExternalURL,
+			"gitlab_external_url":   parseURL(cr.Spec.ExternalURL),
 			"postgres_db":           "gitlab_production",
 			"postgres_host":         cr.Name + "-database",
 			"postgres_user":         "gitlab",

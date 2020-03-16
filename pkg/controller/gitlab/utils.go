@@ -171,14 +171,26 @@ func IsObjectFound(client client.Client, key types.NamespacedName, object runtim
 	return true
 }
 
-// GetDomainNameOnly separates domain from URL
-func GetDomainNameOnly(url string) string {
-	var domain []string
+// DomainNameOnly separates domain from URL
+func DomainNameOnly(url string) string {
 	if strings.Contains(url, "://") {
-		domain = strings.Split(url, "://")
+		return strings.Split(url, "://")[1]
 	}
 
-	return domain[1]
+	return url
+}
+
+func parseURL(url string) string {
+	var domain string
+	if strings.Contains(url, "://") {
+		domain = strings.Split(url, "://")[1]
+	}
+
+	if domain != "" {
+		return strings.Join([]string{"http://", domain}, "")
+	}
+
+	return strings.Join([]string{"http://", url}, "")
 }
 
 // Function watches for database to startup.

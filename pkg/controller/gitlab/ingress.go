@@ -1,8 +1,6 @@
 package gitlab
 
 import (
-	"strings"
-
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +24,7 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 			Rules: []extensionsv1beta1.IngressRule{
 				{
 					// External URL for the gitlab instance
-					Host: getHostnameOnly(cr.Spec.ExternalURL),
+					Host: DomainNameOnly(cr.Spec.ExternalURL),
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
@@ -43,29 +41,33 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 						},
 					},
 				},
-				{
-					// External URL for the registry endoint
-					Host: getHostnameOnly(cr.Spec.Registry.ExternalURL),
-					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
-						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
-							Paths: []extensionsv1beta1.HTTPIngressPath{
-								{
-									Path: "/",
-									Backend: extensionsv1beta1.IngressBackend{
-										ServicePort: intstr.IntOrString{
-											IntVal: 8105,
-										},
-										ServiceName: cr.Name + "-gitlab",
-									},
+			},
+		},
+	}
+
+	// Add Registry rule only when registry is enabled
+	if cr.Spec.Registry.Enabled {
+		ingress.Spec.Rules = append(ingress.Spec.Rules, extensionsv1beta1.IngressRule{
+			Host: DomainNameOnly(cr.Spec.Registry.ExternalURL),
+			IngressRuleValue: extensionsv1beta1.IngressRuleValue{
+				HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
+					Paths: []extensionsv1beta1.HTTPIngressPath{
+						{
+							Path: "/",
+							Backend: extensionsv1beta1.IngressBackend{
+								ServicePort: intstr.IntOrString{
+									IntVal: 8105,
 								},
+								ServiceName: cr.Name + "-gitlab",
 							},
 						},
 					},
 				},
 			},
-		},
+		})
 	}
 
+	// Add TLS certificate if TLS secret is provided
 	if cr.Spec.TLSCertificate != "" {
 		ingress.Spec.TLS = []extensionsv1beta1.IngressTLS{
 			{
@@ -81,20 +83,12 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 func getExternalURLs(cr *gitlabv1beta1.Gitlab) []string {
 	var hosts []string
 	if cr.Spec.ExternalURL != "" {
-		hosts = append(hosts, getHostnameOnly(cr.Spec.ExternalURL))
+		hosts = append(hosts, DomainNameOnly(cr.Spec.ExternalURL))
 	}
 
 	if cr.Spec.Registry.ExternalURL != "" {
-		hosts = append(hosts, getHostnameOnly(cr.Spec.Registry.ExternalURL))
+		hosts = append(hosts, DomainNameOnly(cr.Spec.Registry.ExternalURL))
 	}
 
 	return hosts
-}
-
-func getHostnameOnly(url string) string {
-	var tld string
-	if strings.Contains(url, "://") {
-		tld = strings.Split(url, "://")[1]
-	}
-	return tld
 }

@@ -120,7 +120,7 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 }
 
 func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitlab) error {
-	if cr.Spec.Registry.Enabled {
+	if cr.Spec.Registry.Enabled && cr.Spec.Volumes.Registry.Capacity != "" {
 		registryVolume := getRegistryVolumeClaim(cr)
 
 		if IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registryVolume.Name}, registryVolume) {

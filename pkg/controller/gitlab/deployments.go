@@ -103,6 +103,144 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		})
 	}
 
+	envvars := []corev1.EnvVar{
+		{
+			Name: "GITLAB_ROOT_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-secrets",
+					},
+					Key: "gitlab_root_password",
+				},
+			},
+		},
+		{
+			Name: "GITLAB_EXTERNAL_URL",
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-config",
+					},
+					Key: "gitlab_external_url",
+				},
+			},
+		},
+		{
+			Name: "GITLAB_REGISTRY_EXTERNAL_URL",
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-config",
+					},
+					Key: "registry_external_url",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_HOST",
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-config",
+					},
+					Key: "postgres_host",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_USER",
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-config",
+					},
+					Key: "postgres_user",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-secrets",
+					},
+					Key: "postgres_password",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_DB",
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-config",
+					},
+					Key: "postgres_db",
+				},
+			},
+		},
+		{
+			Name: "REDIS_HOST",
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-config",
+					},
+					Key: "redis_host",
+				},
+			},
+		},
+		{
+			Name: "REDIS_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-secrets",
+					},
+					Key: "redis_password",
+				},
+			},
+		},
+		{
+			Name: "GITLAB_OMNIBUS_CONFIG",
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-config",
+					},
+					Key: "gitlab_omnibus_config",
+				},
+			},
+		},
+		{
+			Name: "GITLAB_SHARED_RUNNERS_REGISTRATION_TOKEN",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-secrets",
+					},
+					Key: "initial_shared_runners_registration_token",
+				},
+			},
+		},
+	}
+
+	if cr.Spec.SMTP.Password != "" {
+		envvars = append(envvars, corev1.EnvVar{
+			Name: "GITLAB_SMTP_PASSWORD",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-gitlab-secrets",
+					},
+					Key: "smtp_user_password",
+				},
+			},
+		})
+	}
+
 	return GenericDeployment(Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
@@ -112,129 +250,7 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name:            "gitlab",
 				Image:           containerImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
-				Env: []corev1.EnvVar{
-					{
-						Name: "GITLAB_ROOT_PASSWORD",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-secrets",
-								},
-								Key: "gitlab_root_password",
-							},
-						},
-					},
-					{
-						Name: "GITLAB_EXTERNAL_URL",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "gitlab_external_url",
-							},
-						},
-					},
-					{
-						Name: "GITLAB_REGISTRY_EXTERNAL_URL",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "registry_external_url",
-							},
-						},
-					},
-					{
-						Name: "POSTGRES_HOST",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "postgres_host",
-							},
-						},
-					},
-					{
-						Name: "POSTGRES_USER",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "postgres_user",
-							},
-						},
-					},
-					{
-						Name: "POSTGRES_PASSWORD",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-secrets",
-								},
-								Key: "postgres_password",
-							},
-						},
-					},
-					{
-						Name: "POSTGRES_DB",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "postgres_db",
-							},
-						},
-					},
-					{
-						Name: "REDIS_HOST",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "redis_host",
-							},
-						},
-					},
-					{
-						Name: "REDIS_PASSWORD",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-secrets",
-								},
-								Key: "redis_password",
-							},
-						},
-					},
-					{
-						Name: "GITLAB_OMNIBUS_CONFIG",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "gitlab_omnibus_config",
-							},
-						},
-					},
-					{
-						Name: "GITLAB_SHARED_RUNNERS_REGISTRATION_TOKEN",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-secrets",
-								},
-								Key: "initial_shared_runners_registration_token",
-							},
-						},
-					},
-				},
+				Env:             envvars,
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "registry",

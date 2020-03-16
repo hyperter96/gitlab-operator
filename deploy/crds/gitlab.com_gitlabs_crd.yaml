@@ -40,6 +40,58 @@ spec:
                   format: int32
                   type: integer
               type: object
+            email:
+              description: 'SMTPConfiguration defines options for Gitlab registry
+                More on configuration options available below: https://docs.gitlab.com/omnibus/settings/smtp.html'
+              properties:
+                authentication:
+                  description: 'Authentication represents authentication mechanism
+                    Options include: login, plain, false'
+                  type: string
+                displayName:
+                  description: DisplayName represents the name of the email
+                  type: string
+                domain:
+                  description: Domain represents the email domain
+                  type: string
+                enable:
+                  type: boolean
+                enableSSL:
+                  description: EnableSSL enables/disables SSL
+                  type: boolean
+                enableStartTLS:
+                  description: EnableStartTLS
+                  type: boolean
+                forceSSL:
+                  description: ForceSSL determines if gitlab should force use of SSL
+                    certificates
+                  type: boolean
+                from:
+                  description: EmailFrom represents the from address of outgoing email
+                  type: string
+                host:
+                  description: Host is the SMTP host
+                  type: string
+                opensslVerifyMode:
+                  description: 'OpensslVerifyMode can be: ''none'', ''peer'', ''client_once'',
+                    ''fail_if_no_peer_cert'''
+                  type: string
+                password:
+                  description: Password represents the password for SMTP user
+                  type: string
+                port:
+                  description: Port represents SMTP port
+                  type: integer
+                replyTo:
+                  description: ReplyTO specifies a reply to email address
+                  type: string
+                tls:
+                  description: TLS enables/disables use of TLS certificates
+                  type: boolean
+                username:
+                  description: Username represents the SMTP username for sending email
+                  type: string
+              type: object
             enterprise:
               type: boolean
             externalURL:

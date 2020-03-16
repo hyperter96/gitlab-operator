@@ -28,6 +28,25 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		MonitoringWhitelist: getMonitoringWhitelist(cr),
 	}
 
+	if cr.Spec.SMTP.Host != "" {
+		omnibusConf.SMTP = gitlabv1beta1.SMTPConfiguration{
+			Enable:            cr.Spec.SMTP.Enable,
+			Domain:            cr.Spec.SMTP.Domain,
+			Host:              cr.Spec.SMTP.Host,
+			Port:              cr.Spec.SMTP.Port,
+			Username:          cr.Spec.SMTP.Username,
+			Authentication:    cr.Spec.SMTP.Authentication,
+			EnableStartTLS:    cr.Spec.SMTP.EnableStartTLS,
+			EnableSSL:         cr.Spec.SMTP.EnableSSL,
+			ForceSSL:          cr.Spec.SMTP.ForceSSL,
+			TLS:               cr.Spec.SMTP.TLS,
+			OpensslVerifyMode: cr.Spec.SMTP.OpensslVerifyMode,
+			EmailFrom:         cr.Spec.SMTP.EmailFrom,
+			ReplyTO:           cr.Spec.SMTP.ReplyTO,
+			DisplayName:       cr.Spec.SMTP.DisplayName,
+		}
+	}
+
 	tmpl := template.Must(template.ParseFiles("/templates/omnibus.conf"))
 	tmpl.Execute(&omnibus, omnibusConf)
 

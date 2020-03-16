@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -85,6 +86,8 @@ type OmnibusOptions struct {
 	// That should be allowed to access gitlab metrics,
 	// liveness probe and readiness probe endpoints
 	MonitoringWhitelist string
+	// SMTP server options
+	SMTP gitlabv1beta1.SMTPConfiguration
 }
 
 // ReadinessStatus shows status of Gitlab services

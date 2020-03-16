@@ -10,6 +10,7 @@ type GitlabSpec struct {
 	Enterprise     bool                `json:"enterprise,omitempty"`
 	ExternalURL    string              `json:"externalURL,omitempty"`
 	TLSCertificate string              `json:"certificate,omitempty"`
+	SMTP           SMTPConfiguration   `json:"email,omitempty"`
 	Registry       RegistrySpec        `json:"registry,omitempty"`
 	Redis          RedisSpec           `json:"redis,omitempty"`
 	Database       DatabaseSpec        `json:"database,omitempty"`
@@ -30,6 +31,42 @@ type DatabaseSpec struct {
 type RegistrySpec struct {
 	Enabled     bool   `json:"enable,omitempty"`
 	ExternalURL string `json:"externalURL,omitempty"`
+}
+
+// SMTPConfiguration defines options for Gitlab registry
+// More on configuration options available below:
+// https://docs.gitlab.com/omnibus/settings/smtp.html
+type SMTPConfiguration struct {
+	Enable bool `json:"enable,omitempty"`
+	// Host is the SMTP host
+	Host string `json:"host,omitempty"`
+	// Port represents SMTP port
+	Port int32 `json:"port,omitempty"`
+	// Domain represents the email domain
+	Domain string `json:"domain,omitempty"`
+	// Username represents the SMTP username for sending email
+	Username string `json:"username,omitempty"`
+	// Password represents the password for SMTP user
+	Password string `json:"password,omitempty"`
+	// Authentication represents authentication mechanism
+	// Options include: login, plain, false
+	Authentication string `json:"authentication,omitempty"`
+	// EnableSSL enables/disables SSL
+	EnableSSL bool `json:"enableSSL,omitempty"`
+	// ForceSSL determines if gitlab should force use of SSL certificates
+	ForceSSL bool `json:"forceSSL,omitempty"`
+	// TLS enables/disables use of TLS certificates
+	TLS bool `json:"tls,omitempty"`
+	// EnableStartTLS
+	EnableStartTLS bool `json:"enableStartTLS,omitempty"`
+	// OpensslVerifyMode can be: 'none', 'peer', 'client_once', 'fail_if_no_peer_cert'
+	OpensslVerifyMode string `json:"opensslVerifyMode,omitempty"`
+	// EmailFrom represents the from address of outgoing email
+	EmailFrom string `json:"from,omitempty"`
+	// ReplyTO specifies a reply to email address
+	ReplyTO string `json:"replyTo,omitempty"`
+	// DisplayName represents the name of the email
+	DisplayName string `json:"displayName,omitempty"`
 }
 
 // VolumeSpec defines volume specifications

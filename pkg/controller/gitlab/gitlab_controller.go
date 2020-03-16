@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
@@ -22,6 +23,7 @@ import (
 )
 
 var log = logf.Log.WithName("controller_gitlab")
+var once sync.Once
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -181,7 +183,11 @@ func (r *ReconcileGitlab) Reconcile(request reconcile.Request) (reconcile.Result
 
 // Reconcile child resources used by the operator
 func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) error {
-	go r.updateGitlabStatus(cr)
+	// Ensure only one goroutine is launched to watch
+	// status of the Gitlab custom resource
+	once.Do(func() {
+		go r.updateGitlabStatus(cr)
+	})
 
 	creds := ComponentPasswords{}
 	creds.GenerateComponentPasswords()

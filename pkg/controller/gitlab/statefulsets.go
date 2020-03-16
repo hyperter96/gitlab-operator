@@ -1,8 +1,6 @@
 package gitlab
 
 import (
-	"reflect"
-
 	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,32 +38,39 @@ func getGenericStatefulSet(cr *gitlabv1beta1.Gitlab, component Component) *appsv
 func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := getLabels(cr, "database")
 
-	if reflect.DeepEqual(cr.Spec.Volumes.Registry, gitlabv1beta1.VolumeSpec{}) {
-		return nil
-	}
+	claims := []corev1.PersistentVolumeClaim{}
+	mounts := []corev1.VolumeMount{}
 
-	volumeSize := cr.Spec.Volumes.Postgres.Capacity
-
-	return getGenericStatefulSet(cr, Component{
-		Labels:   labels,
-		Replicas: cr.Spec.Database.Replicas,
-		VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "data",
-					Namespace: cr.Namespace,
-					Labels:    labels,
+	// Mount volume is specified
+	if cr.Spec.Volumes.Postgres.Capacity != "" {
+		volumeSize := cr.Spec.Volumes.Postgres.Capacity
+		claims = append(claims, corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "data",
+				Namespace: cr.Namespace,
+				Labels:    labels,
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{
+					corev1.ReadWriteOnce,
 				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{
-						corev1.ReadWriteOnce,
-					},
-					Resources: corev1.ResourceRequirements{
-						Requests: getVolumeRequest(volumeSize),
-					},
+				Resources: corev1.ResourceRequirements{
+					Requests: getVolumeRequest(volumeSize),
 				},
 			},
-		},
+		})
+
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      "data",
+			MountPath: "/var/lib/postgresql/data",
+			SubPath:   "postgres",
+		})
+	}
+
+	return getGenericStatefulSet(cr, Component{
+		Labels:               labels,
+		Replicas:             cr.Spec.Database.Replicas,
+		VolumeClaimTemplates: claims,
 		Containers: []corev1.Container{
 			{
 				Name:            "postgres",
@@ -120,13 +125,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						ContainerPort: 5432,
 					},
 				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "data",
-						MountPath: "/var/lib/postgresql/data",
-						SubPath:   "postgres",
-					},
-				},
+				VolumeMounts: mounts,
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -169,32 +168,45 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := getLabels(cr, "redis")
 
-	if reflect.DeepEqual(cr.Spec.Volumes.Registry, gitlabv1beta1.VolumeSpec{}) {
-		return nil
+	claims := []corev1.PersistentVolumeClaim{}
+	mounts := []corev1.VolumeMount{
+		// Pre-populating the mounts with the Redis config volume
+		{
+			Name:      "conf",
+			MountPath: "/etc/redis/redis.conf",
+			SubPath:   "redis.conf",
+		},
 	}
 
-	volumeSize := cr.Spec.Volumes.Redis.Capacity
-
-	return getGenericStatefulSet(cr, Component{
-		Labels:   labels,
-		Replicas: cr.Spec.Redis.Replicas,
-		VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "data",
-					Namespace: cr.Namespace,
-					Labels:    labels,
+	if cr.Spec.Volumes.Redis.Capacity != "" {
+		volumeSize := cr.Spec.Volumes.Redis.Capacity
+		claims = append(claims, corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "data",
+				Namespace: cr.Namespace,
+				Labels:    labels,
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{
+					corev1.ReadWriteOnce,
 				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{
-						corev1.ReadWriteOnce,
-					},
-					Resources: corev1.ResourceRequirements{
-						Requests: getVolumeRequest(volumeSize),
-					},
+				Resources: corev1.ResourceRequirements{
+					Requests: getVolumeRequest(volumeSize),
 				},
 			},
-		},
+		})
+
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      "data",
+			MountPath: "/var/lib/redis",
+			SubPath:   "redis",
+		})
+	}
+
+	return getGenericStatefulSet(cr, Component{
+		Labels:               labels,
+		Replicas:             cr.Spec.Redis.Replicas,
+		VolumeClaimTemplates: claims,
 		Containers: []corev1.Container{
 			{
 				Name:            "redis",
@@ -207,18 +219,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						ContainerPort: 6379,
 					},
 				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "data",
-						MountPath: "/var/lib/redis",
-						SubPath:   "redis",
-					},
-					{
-						Name:      "conf",
-						MountPath: "/etc/redis/redis.conf",
-						SubPath:   "redis.conf",
-					},
-				},
+				VolumeMounts: mounts,
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{

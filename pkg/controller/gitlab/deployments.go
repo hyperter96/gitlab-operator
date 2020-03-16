@@ -50,6 +50,59 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		containerImage = GitlabEnterpriseImage
 	}
 
+	// Build list of volumes to used by GitLab deployment
+	volumes := []corev1.Volume{}
+	mounts := []corev1.VolumeMount{}
+
+	if cr.Spec.Volumes.Data.Capacity != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: "data",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: labels["app.kubernetes.io/instance"] + "-data",
+				},
+			},
+		})
+
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      "data",
+			MountPath: "/gitlab-data",
+		})
+	}
+
+	if cr.Spec.Volumes.Configuration.Capacity != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: "config",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: labels["app.kubernetes.io/instance"] + "-config",
+				},
+			},
+		})
+
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      "config",
+			MountPath: "/etc/gitlab",
+		})
+	}
+
+	// Conditionally add registry volume and volume mount
+	if cr.Spec.Registry.Enabled && cr.Spec.Volumes.Registry.Capacity != "" {
+		volumes = append(volumes, corev1.Volume{
+			Name: "registry",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: labels["app.kubernetes.io/instance"] + "-registry",
+				},
+			},
+		})
+
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      "registry",
+			MountPath: "/gitlab-registry",
+		})
+	}
+
 	return GenericDeployment(Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
@@ -196,20 +249,7 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						ContainerPort: 22,
 					},
 				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "config",
-						MountPath: "/etc/gitlab",
-					},
-					{
-						Name:      "data",
-						MountPath: "/gitlab-data",
-					},
-					{
-						Name:      "registry",
-						MountPath: "/gitlab-registry",
-					},
-				},
+				VolumeMounts: mounts,
 				// LivenessProbe: &corev1.Probe{
 				// 	Handler: corev1.Handler{
 				// 		HTTPGet: &corev1.HTTPGetAction{
@@ -236,31 +276,6 @@ func getGitlabDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				// },
 			},
 		},
-		Volumes: []corev1.Volume{
-			{
-				Name: "data",
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: labels["app.kubernetes.io/instance"] + "-data",
-					},
-				},
-			},
-			{
-				Name: "registry",
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: labels["app.kubernetes.io/instance"] + "-registry",
-					},
-				},
-			},
-			{
-				Name: "config",
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: labels["app.kubernetes.io/instance"] + "-config",
-					},
-				},
-			},
-		},
+		Volumes: volumes,
 	})
 }

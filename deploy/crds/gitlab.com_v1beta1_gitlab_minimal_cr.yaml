@@ -1,0 +1,24 @@
+apiVersion: gitlab.com/v1beta1
+kind: Gitlab
+metadata:
+  name: example
+spec:
+  replicas: 1
+  enterprise: false
+  externalURL: "http://gitlab.mydomain.com"
+  volumes:
+    config:
+      capacity: 2Gi
+      persist: true
+    data:
+      capacity: 10Gi
+      persist: false
+    database:
+      capacity: 8Gi
+      persist: true
+    redis:
+      capacity: 4Gi
+      persist: true
+    registry:
+      capacity: 10Gi
+      persist: true

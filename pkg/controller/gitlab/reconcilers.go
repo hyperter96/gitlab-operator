@@ -136,32 +136,36 @@ func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitl
 		}
 	}
 
-	dataVolume := getGitlabDataVolumeClaim(cr)
+	if cr.Spec.Volumes.Data.Capacity != "" {
+		dataVolume := getGitlabDataVolumeClaim(cr)
 
-	if IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: dataVolume.Name}, dataVolume) {
-		return nil
+		if IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: dataVolume.Name}, dataVolume) {
+			return nil
+		}
+
+		if err := controllerutil.SetControllerReference(cr, dataVolume, r.scheme); err != nil {
+			return err
+		}
+
+		if err := r.client.Create(context.TODO(), dataVolume); err != nil {
+			return err
+		}
 	}
 
-	if err := controllerutil.SetControllerReference(cr, dataVolume, r.scheme); err != nil {
-		return err
-	}
+	if cr.Spec.Volumes.Configuration.Capacity != "" {
+		configVolume := getGitlabConfigVolumeClaim(cr)
 
-	if err := r.client.Create(context.TODO(), dataVolume); err != nil {
-		return err
-	}
+		if IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: configVolume.Name}, configVolume) {
+			return nil
+		}
 
-	configVolume := getGitlabConfigVolumeClaim(cr)
+		if err := controllerutil.SetControllerReference(cr, configVolume, r.scheme); err != nil {
+			return err
+		}
 
-	if IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: configVolume.Name}, configVolume) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, configVolume, r.scheme); err != nil {
-		return err
-	}
-
-	if err := r.client.Create(context.TODO(), configVolume); err != nil {
-		return err
+		if err := r.client.Create(context.TODO(), configVolume); err != nil {
+			return err
+		}
 	}
 
 	return nil

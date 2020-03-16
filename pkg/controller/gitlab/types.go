@@ -7,10 +7,12 @@ import (
 const (
 	// GitlabEnterpriseImage represents the gitlab enterprise edition
 	// Image to be deployed in our environment
-	GitlabEnterpriseImage = "gitlab/gitlab-ee:12.8.0-ee.0"
+	GitlabEnterpriseImage = "gitlab/gitlab-ee:12.8.6-ee.0"
 	// GitlabCommunityImage represents the gitlab  Community
 	// edition image to be deployed
-	GitlabCommunityImage = "gitlab/gitlab-ce:12.6.7-ce.0"
+	GitlabCommunityImage = "gitlab/gitlab-ce:12.8.6-ce.0"
+	// GitlabRunnerImage represents the runner image
+	GitlabRunnerImage = "gitlab/gitlab-runner:v12.8.0"
 	// StrongPassword defines password length
 	StrongPassword = 21
 )

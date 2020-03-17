@@ -180,8 +180,9 @@ func DomainNameOnly(url string) string {
 	return url
 }
 
-func parseURL(url string) string {
+func parseURL(url string, secured bool) string {
 	var domain string
+	protocol := "http"
 	if strings.Contains(url, "://") {
 		domain = strings.Split(url, "://")[1]
 	}
@@ -190,7 +191,19 @@ func parseURL(url string) string {
 		return strings.Join([]string{"http://", domain}, "")
 	}
 
-	return strings.Join([]string{"http://", url}, "")
+	if secured {
+		protocol = "https"
+	}
+
+	return strings.Join([]string{protocol, "://", url}, "")
+}
+
+func hasTLS(cr *gitlabv1beta1.Gitlab) bool {
+	if cr.Spec.TLSCertificate != "" {
+		return true
+	}
+
+	return false
 }
 
 // Function watches for database to startup.

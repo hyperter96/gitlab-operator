@@ -24,7 +24,7 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	omnibusConf := OmnibusOptions{
 		RegistryEnabled:     cr.Spec.Registry.Enabled,
-		RegistryExternalURL: parseURL(registryURL),
+		RegistryExternalURL: parseURL(registryURL, hasTLS(cr)),
 		MonitoringWhitelist: getMonitoringWhitelist(cr),
 	}
 
@@ -57,7 +57,7 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			"gitlab_external_url":   parseURL(cr.Spec.ExternalURL),
+			"gitlab_external_url":   parseURL(cr.Spec.ExternalURL, hasTLS(cr)),
 			"postgres_db":           "gitlab_production",
 			"postgres_host":         cr.Name + "-database",
 			"postgres_user":         "gitlab",

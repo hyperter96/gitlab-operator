@@ -12,11 +12,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	"github.com/OchiengEd/gitlab-operator/pkg/apis"
-	"github.com/OchiengEd/gitlab-operator/pkg/controller"
-	"github.com/OchiengEd/gitlab-operator/version"
+	"gitlab.com/ochienged/gitlab-operator/pkg/apis"
+	"gitlab.com/ochienged/gitlab-operator/pkg/controller"
+	"gitlab.com/ochienged/gitlab-operator/version"
 
-	gitlab "github.com/OchiengEd/gitlab-operator/pkg/controller/gitlab"
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -26,6 +25,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
+	gitlab "gitlab.com/ochienged/gitlab-operator/pkg/controller/gitlab"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"

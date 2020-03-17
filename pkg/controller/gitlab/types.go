@@ -1,7 +1,7 @@
 package gitlab
 
 import (
-	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
 

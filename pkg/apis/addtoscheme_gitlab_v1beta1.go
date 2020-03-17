@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	"gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 )
 
 func init() {

@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/OchiengEd/gitlab-operator/pkg/controller/gitlab"
+	"gitlab.com/ochienged/gitlab-operator/pkg/controller/gitlab"
 )
 
 func init() {

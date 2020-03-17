@@ -3,8 +3,8 @@ package runner
 import (
 	"strings"
 
-	gitlabv1beta1 "github.com/OchiengEd/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	gitlab "github.com/OchiengEd/gitlab-operator/pkg/controller/gitlab"
+	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlab "gitlab.com/ochienged/gitlab-operator/pkg/controller/gitlab"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )

@@ -56,7 +56,7 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    repository: https://github.com/OchiengEd/gitlab-operator
+    repository: https://gitlab.com/ochienged/gitlab-operator
     createdAt: 2020-03-11T13:29:00Z
     certified: 'false'
     categories: Integration & Delivery

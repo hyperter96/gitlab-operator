@@ -1,4 +1,6 @@
 # gitlab-operator
+[![Go Report Card](https://goreportcard.com/badge/gitlab.com/ochienged/gitlab-operator "Go Report Card")](https://goreportcard.com/report/gitlab.com/ochienged/gitlab-operator)
+
 The GitLab operator creates and manages GitLab instances/deployments in a container platform such as Openshift or Kubernetes.
 
 ## Requirements

@@ -56,8 +56,8 @@ func (r *ReconcileGitlab) updateGitlabStatus(cr *gitlabv1beta1.Gitlab) {
 
 }
 
-func getReadinessStatus(cr *gitlabv1beta1.Gitlab, service string) (status *ReadinessStatus, err error) {
-	status = &ReadinessStatus{}
+func getReadinessStatus(cr *gitlabv1beta1.Gitlab, service string) (*ReadinessStatus, error) {
+	status := &ReadinessStatus{}
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:8005/-/readiness?all=1", service))
 	if err != nil {
@@ -75,7 +75,7 @@ func getReadinessStatus(cr *gitlabv1beta1.Gitlab, service string) (status *Readi
 		err = json.Unmarshal(body, status)
 	}
 
-	return
+	return status, err
 }
 
 // Retrieve health of a subsystem

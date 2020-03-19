@@ -199,11 +199,7 @@ func parseURL(url string, secured bool) string {
 }
 
 func hasTLS(cr *gitlabv1beta1.Gitlab) bool {
-	if cr.Spec.TLSCertificate != "" {
-		return true
-	}
-
-	return false
+	return cr.Spec.TLSCertificate != ""
 }
 
 // Function watches for database to startup.
@@ -227,11 +223,7 @@ func isDatabaseReady(cr *gitlabv1beta1.Gitlab) bool {
 
 	// If more than one IP address is returned,
 	// The database is up and listening for connections
-	if len(addresses) > 0 {
-		return true
-	}
-
-	return false
+	return len(addresses) > 0
 }
 
 // The database endpoint returns the gitlab database endpoint

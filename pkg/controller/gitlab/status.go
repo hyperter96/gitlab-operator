@@ -73,7 +73,9 @@ func getReadinessStatus(cr *gitlabv1beta1.Gitlab, service string) (*ReadinessSta
 			return status, err
 		}
 
-		err = json.Unmarshal(body, status)
+		if err = json.Unmarshal(body, status); err != nil {
+			return status, err
+		}
 	}
 
 	return status, err

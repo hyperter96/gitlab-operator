@@ -196,6 +196,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
+	if err := r.maskEmailPasword(cr); err != nil {
+		return err
+	}
+
 	if err := r.reconcileConfigMaps(cr, &creds); err != nil {
 		return err
 	}

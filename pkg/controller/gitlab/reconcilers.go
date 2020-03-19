@@ -4,6 +4,7 @@ import (
 	"context"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -55,6 +56,34 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab, s security)
 	if err := r.client.Create(context.TODO(), core); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (r *ReconcileGitlab) maskEmailPasword(cr *gitlabv1beta1.Gitlab) error {
+	gitlab := &gitlabv1beta1.Gitlab{}
+	r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, gitlab)
+
+	if gitlab.Spec.Redis.Replicas == 0 {
+		gitlab.Spec.Redis.Replicas = 1
+	}
+
+	if gitlab.Spec.Database.Replicas == 0 {
+		gitlab.Spec.Database.Replicas = 1
+	}
+
+	// If password is stored in secret and is still visible in CR, update it to emty string
+	emailPasswd := GetSecretValue(r.client, cr.Namespace, cr.Name+"-gitlab-secrets", "smtp_user_password")
+	if gitlab.Spec.SMTP.Password == emailPasswd && cr.Spec.SMTP.Password != "" {
+		// Update CR
+		gitlab.Spec.SMTP.Password = ""
+		if err := r.client.Update(context.TODO(), gitlab); err != nil && errors.IsResourceExpired(err) {
+			return err
+		}
+	}
+
+	// If stored password does not match the CR password,
+	// update the secret and empty the password string in Gitlab CR
 
 	return nil
 }

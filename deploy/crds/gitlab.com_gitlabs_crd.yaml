@@ -33,13 +33,6 @@ spec:
           properties:
             certificate:
               type: string
-            database:
-              description: DatabaseSpec defines database options
-              properties:
-                replicas:
-                  format: int32
-                  type: integer
-              type: object
             email:
               description: 'SMTPConfiguration defines options for Gitlab registry
                 More on configuration options available below: https://docs.gitlab.com/omnibus/settings/smtp.html'
@@ -81,6 +74,7 @@ spec:
                   type: string
                 port:
                   description: Port represents SMTP port
+                  format: int32
                   type: integer
                 replyTo:
                   description: ReplyTO specifies a reply to email address
@@ -96,13 +90,6 @@ spec:
               type: boolean
             externalURL:
               type: string
-            redis:
-              description: RedisSpec defines Redis options
-              properties:
-                replicas:
-                  format: int32
-                  type: integer
-              type: object
             registry:
               description: RegistrySpec defines options for Gitlab registry
               properties:

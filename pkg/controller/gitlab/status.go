@@ -57,6 +57,7 @@ func (r *ReconcileGitlab) updateGitlabStatus(cr *gitlabv1beta1.Gitlab) {
 }
 
 func getReadinessStatus(cr *gitlabv1beta1.Gitlab, service string) (*ReadinessStatus, error) {
+	var err error
 	status := &ReadinessStatus{}
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:8005/-/readiness?all=1", service))

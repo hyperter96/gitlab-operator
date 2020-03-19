@@ -12,8 +12,8 @@ type GitlabSpec struct {
 	TLSCertificate string              `json:"certificate,omitempty"`
 	SMTP           SMTPConfiguration   `json:"email,omitempty"`
 	Registry       RegistrySpec        `json:"registry,omitempty"`
-	Redis          RedisSpec           `json:"redis,omitempty"`
-	Database       DatabaseSpec        `json:"database,omitempty"`
+	Redis          RedisSpec           `json:"-"`
+	Database       DatabaseSpec        `json:"-"`
 	Volumes        ComponentVolumeSpec `json:"volumes,omitempty"`
 }
 

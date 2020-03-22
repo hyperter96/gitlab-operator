@@ -12,23 +12,29 @@ before_script:
 after_script:
   - echo "After script section"
   - echo "For example you might do some cleanup here"
-
+   
 build1:
   stage: build
   script:
     - echo "Do your build here"
+  tags:
+    - openshift
 
 test1:
   stage: test
   script:
     - echo "Do a test here"
     - echo "For example run a test suite"
+  tags:
+    - openshift
 
 test2:
   stage: test
   script:
     - echo "Do another parallel test here"
     - echo "For example run a lint test"
+  tags:
+    - openshift
 
 deploy1:
   stage: deploy

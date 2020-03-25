@@ -8,7 +8,7 @@ const (
 	GitlabType = "gitlab"
 )
 
-// PasswordOptions provides paramaters to be
+// PasswordOptions provides parameters to be
 // used when generating passwords
 type PasswordOptions struct {
 	// Length defines desired password length

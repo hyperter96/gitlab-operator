@@ -1,0 +1,7 @@
+<%=
+   # this works because codebase default content has only `:
+   sq = YAML.load_file('/srv/gitlab/config/sidekiq_queues.yml')
+   
+   sq.to_yaml
+%>
+:concurrency: 25

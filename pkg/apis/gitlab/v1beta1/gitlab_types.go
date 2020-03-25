@@ -7,7 +7,6 @@ import (
 // GitlabSpec defines the desired state of Gitlab
 type GitlabSpec struct {
 	Replicas       int32               `json:"replicas"`
-	Enterprise     bool                `json:"enterprise,omitempty"`
 	ExternalURL    string              `json:"externalURL,omitempty"`
 	TLSCertificate string              `json:"certificate,omitempty"`
 	SMTP           SMTPConfiguration   `json:"email,omitempty"`

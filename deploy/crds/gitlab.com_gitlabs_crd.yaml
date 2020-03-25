@@ -86,8 +86,6 @@ spec:
                   description: Username represents the SMTP username for sending email
                   type: string
               type: object
-            enterprise:
-              type: boolean
             externalURL:
               type: string
             registry:

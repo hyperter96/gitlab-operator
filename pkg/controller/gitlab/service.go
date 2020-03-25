@@ -2,12 +2,13 @@ package gitlab
 
 import (
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getGitlabService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := getLabels(cr, "gitlab")
+	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -40,7 +41,7 @@ func getGitlabService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 }
 
 func getRedisService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := getLabels(cr, "redis")
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -64,7 +65,7 @@ func getRedisService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 }
 
 func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := getLabels(cr, "database")
+	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -88,7 +89,7 @@ func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 }
 
 func getMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := getLabels(cr, "metrics")
+	labels := gitlabutils.Label(cr.Name, "metrics", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

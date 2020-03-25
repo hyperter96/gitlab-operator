@@ -1,14 +1,19 @@
 package gitlab
 
 import (
+	"context"
+
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
-	labels := getLabels(cr, "metrics")
+	labels := gitlabutils.Label(cr.Name, "metrics", gitlabutils.GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -54,4 +59,19 @@ func getServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
 		},
 	}
 
+}
+
+func (r *ReconcileGitlab) reconcilePrometheusServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+
+	servicemon := getServiceMonitor(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: servicemon.Name}, servicemon) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, servicemon, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), servicemon)
 }

@@ -1,25 +1,24 @@
 package runner
 
 import (
-	"bytes"
 	"fmt"
-	"text/template"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getRunnerScriptConfig(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
-	labels := getLabels(cr, "runner")
-	var tomlConf, entryScript bytes.Buffer
+	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
+
 	var gitlabURL string
 
-	toml := template.Must(template.ParseFiles("/templates/runner-config.toml"))
-	toml.Execute(&tomlConf, nil)
-
-	entrypoint := template.Must(template.ParseFiles("/templates/runner-entrypoint.sh"))
-	entrypoint.Execute(&entryScript, nil)
+	configToml := gitlabutils.ReadConfig("/templates/runner-config.toml")
+	entrypointScript := gitlabutils.ReadConfig("/templates/runner-entrypoint.sh")
+	configureScript := gitlabutils.ReadConfig("/templates/runner-configure.sh")
+	registrationScript := gitlabutils.ReadConfig("/templates/runner-registration.sh")
+	aliveScript := gitlabutils.ReadConfig("/templates/runner-check-live.sh")
 
 	// Gitlab URL should be used for Gitlab instances
 	// outside k8s or the current namespace
@@ -40,9 +39,12 @@ func getRunnerScriptConfig(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 			Namespace: cr.Namespace,
 		},
 		Data: map[string]string{
-			"ci_server_url": gitlabURL,
-			"entrypoint":    entryScript.String(),
-			"config.toml":   tomlConf.String(),
+			"ci_server_url":   gitlabURL,
+			"config.toml":     configToml,
+			"entrypoint":      entrypointScript,
+			"check-live":      aliveScript,
+			"register-runner": registrationScript,
+			"configure":       configureScript,
 		},
 	}
 }

@@ -1,0 +1,14 @@
+production:
+  adapter: postgresql
+  encoding: unicode
+  database: gitlabhq_production
+  username: gitlab
+  password: "<%= File.read("/etc/gitlab/postgres/psql-password").strip.dump[1..-2] %>"
+  host: "{{ .Postgres }}"
+  port: 5432
+  pool: 10
+  prepared_statements: false
+  # load_balancing:
+  #   hosts:
+  #     - host1.example.com
+  #     - host2.example.com

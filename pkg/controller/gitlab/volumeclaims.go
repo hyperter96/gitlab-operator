@@ -4,12 +4,13 @@ import (
 	"reflect"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func getRegistryVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeClaim {
-	labels := getLabels(cr, "gitlab")
+	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
 
 	if reflect.DeepEqual(cr.Spec.Volumes.Registry, gitlabv1beta1.VolumeSpec{}) {
 		return nil
@@ -28,14 +29,16 @@ func getRegistryVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeCl
 				corev1.ReadWriteOnce,
 			},
 			Resources: corev1.ResourceRequirements{
-				Requests: getVolumeRequest(volumeSize),
+				Requests: corev1.ResourceList{
+					StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+				},
 			},
 		},
 	}
 }
 
 func getGitlabDataVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeClaim {
-	labels := getLabels(cr, "gitlab")
+	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
 
 	if reflect.DeepEqual(cr.Spec.Volumes.Data, gitlabv1beta1.VolumeSpec{}) {
 		return nil
@@ -54,14 +57,16 @@ func getGitlabDataVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolume
 				corev1.ReadWriteOnce,
 			},
 			Resources: corev1.ResourceRequirements{
-				Requests: getVolumeRequest(volumeSize),
+				Requests: corev1.ResourceList{
+					StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+				},
 			},
 		},
 	}
 }
 
 func getGitlabConfigVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeClaim {
-	labels := getLabels(cr, "gitlab")
+	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
 
 	if reflect.DeepEqual(cr.Spec.Volumes.Configuration, gitlabv1beta1.VolumeSpec{}) {
 		return nil
@@ -80,7 +85,9 @@ func getGitlabConfigVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolu
 				corev1.ReadWriteOnce,
 			},
 			Resources: corev1.ResourceRequirements{
-				Requests: getVolumeRequest(volumeSize),
+				Requests: corev1.ResourceList{
+					StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+				},
 			},
 		},
 	}

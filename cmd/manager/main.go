@@ -25,7 +25,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
-	gitlab "gitlab.com/ochienged/gitlab-operator/pkg/controller/gitlab"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -111,7 +111,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if gitlab.IsOpenshift() {
+	if gitlabutils.IsOpenshift() {
 		// Add routes scheme
 		if err = routev1.Install(mgr.GetScheme()); err != nil {
 			log.Error(err, "")
@@ -119,7 +119,7 @@ func main() {
 		}
 	}
 
-	if gitlab.IsPrometheusSupported() {
+	if gitlabutils.IsPrometheusSupported() {
 		// Register prometheus service monitor type if the monitoring V1
 		// endpoint exists
 		if err = monitoringv1.AddToScheme(mgr.GetScheme()); err != nil {

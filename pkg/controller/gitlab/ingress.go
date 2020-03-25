@@ -2,13 +2,14 @@ package gitlab
 
 import (
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingress) {
-	labels := getLabels(cr, "ingress")
+	labels := gitlabutils.Label(cr.Name, "ingress", gitlabutils.GitlabType)
 
 	ingress = &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{

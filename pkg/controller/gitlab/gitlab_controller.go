@@ -8,6 +8,7 @@ import (
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -104,7 +105,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	if IsOpenshift() {
+	if gitlabutils.IsOpenshift() {
 		// Watch Openshifts route if running on Openshift
 		err = c.Watch(&source.Kind{Type: &routev1.Route{}}, &handler.EnqueueRequestForOwner{
 			IsController: true,
@@ -124,7 +125,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		}
 	}
 
-	if IsPrometheusSupported() {
+	if gitlabutils.IsPrometheusSupported() {
 		// Watch Openshifts route if running on Openshift
 		err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitor{}}, &handler.EnqueueRequestForOwner{
 			IsController: true,
@@ -196,10 +197,6 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
-	if err := r.maskEmailPasword(cr); err != nil {
-		return err
-	}
-
 	if err := r.reconcileConfigMaps(cr, &creds); err != nil {
 		return err
 	}
@@ -209,6 +206,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 	}
 
 	if err := r.reconcilePersistentVolumeClaims(cr); err != nil {
+		return err
+	}
+
+	if err := r.maskEmailPasword(cr); err != nil {
 		return err
 	}
 
@@ -224,24 +225,24 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
-	if IsOpenshift() {
-		// Deploy an Openshift route if running on Openshift
-		if err := r.reconcileRoute(cr); err != nil {
-			return err
-		}
-	} else {
-		// Deploy an ingress only if running in Kubernetes
-		if err := r.reconcileIngress(cr); err != nil {
-			return err
-		}
-	}
+	// if IsOpenshift() {
+	// 	// Deploy an Openshift route if running on Openshift
+	// 	if err := r.reconcileRoute(cr); err != nil {
+	// 		return err
+	// 	}
+	// } else {
+	// 	// Deploy an ingress only if running in Kubernetes
+	// 	if err := r.reconcileIngress(cr); err != nil {
+	// 		return err
+	// 	}
+	// }
 
-	if IsPrometheusSupported() {
-		// Deploy a prometheus service monitor
-		if err := r.reconcileServiceMonitor(cr); err != nil {
-			return err
-		}
-	}
+	// if IsPrometheusSupported() {
+	// 	// Deploy a prometheus service monitor
+	// 	if err := r.reconcileServiceMonitor(cr); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }

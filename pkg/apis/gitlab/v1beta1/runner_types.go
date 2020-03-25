@@ -9,6 +9,7 @@ type RunnerSpec struct {
 	// GitlabResource represents a Gitlab custom resource. Should
 	// only be used to reference Gitlab instance created by the operator
 	Gitlab GitlabInstanceSpec `json:"gitlab,omitempty"`
+	Tags   string             `json:"tags,omitempty"`
 }
 
 // GitlabInstanceSpec defines the Gitlab custom

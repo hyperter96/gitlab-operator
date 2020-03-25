@@ -8,6 +8,7 @@ rules:
   - ""
   resources:
   - pods
+  - pods/exec
   - services
   - services/finalizers
   - endpoints
@@ -109,3 +110,27 @@ rules:
   - get
   - watch
   - delete
+# TODO: Review roles below
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  - rolebindings
+  verbs:
+  - create
+  - list
+  - get
+  - delete
+  - watch

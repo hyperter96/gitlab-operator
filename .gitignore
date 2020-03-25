@@ -76,7 +76,5 @@ tags
 .history
 # Local build tools
 Makefile
-all.yaml
-gitlab-01.yaml
 local
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode

@@ -2,42 +2,32 @@ package gitlab
 
 import (
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	// GitlabEnterpriseImage represents the gitlab enterprise edition
-	// Image to be deployed in our environment
-	GitlabEnterpriseImage = "gitlab/gitlab-ee:12.8.6-ee.0"
-	// GitlabCommunityImage represents the gitlab  Community
-	// edition image to be deployed
-	GitlabCommunityImage = "gitlab/gitlab-ce:12.8.6-ce.0"
-	// GitlabRunnerImage represents the runner image
-	GitlabRunnerImage = "gitlab/gitlab-runner:v12.8.0"
+	// StorageResourceName for defining storage resources
+	StorageResourceName = "storage"
+
+	// CPUResourceName for defining CPU resources
+	CPUResourceName = "cpu"
+
+	// MemoryResourceName defining memory resource
+	MemoryResourceName = "memory"
+
 	// StrongPassword defines password length
 	StrongPassword = 21
 )
 
-// Component represents an application / micro-service
-// that makes part of a larger application
-type Component struct {
-	// Namespace of the component
-	Namespace string
-	// Defines the number of pods for the
-	// component to be created
-	Replicas int32
-	// Labels for the component
-	Labels map[string]string
-	// InitContainers contains a list of containers	that may
-	// need to run before the main application container starts up
-	InitContainers []corev1.Container
-	// Containers containers a list of containers that make up a pod
-	Containers []corev1.Container
-	// Contains a list of volumes used by the containers
-	Volumes []corev1.Volume
-	// Defines volume claims to be used by a statefulset
-	VolumeClaimTemplates []corev1.PersistentVolumeClaim
-}
+var (
+	// ConfigMapDefaultMode for configmap projected volume
+	ConfigMapDefaultMode int32 = 420
+
+	// ProjectedVolumeDefaultMode for projected volume
+	ProjectedVolumeDefaultMode int32 = 256
+
+	// SecretDefaultMode for secret projected volume
+	SecretDefaultMode int32 = 288
+)
 
 // RedisConfig struct configures redis password
 // and cluster configuration for large environments
@@ -62,16 +52,6 @@ type security interface {
 	GitlabRootPassword() string
 	PostgresPassword() string
 	RedisPassword() string
-}
-
-// PasswordOptions provides paramaters to be
-// used when generating passwords
-type PasswordOptions struct {
-	// Length defines desired password length
-	Length int
-	// EnableSpecialCharacters adds special characters
-	// to generated passwords
-	EnableSpecialChars bool
 }
 
 // OmnibusOptions defines options for
@@ -104,4 +84,60 @@ type ReadinessStatus struct {
 // dependent service .e.g. Postgres, Redis, Gitaly
 type ServiceStatus struct {
 	Status string `json:"status,omitempty"`
+}
+
+// GitalyConfig contains service
+// names for Redis and Unicorn
+type GitalyConfig struct {
+	// Name of redis service
+	RedisService string
+
+	// Name of Unicorn service
+	UnicornService string
+}
+
+// UnicornOptions passes options
+// to unicorn templates
+type UnicornOptions struct {
+	ResourceName string
+	Namespace    string
+	ExternalURL  string
+	PostgreSQL   string
+	Registry     string
+	Minio        string
+	Gitaly       string
+	RedisMaster  string
+}
+
+// WorkhorseOptions has
+// options for workhorse
+type WorkhorseOptions struct {
+	RedisMaster string
+}
+
+// ShellOptions passes template
+// options for gitlab shell
+type ShellOptions struct {
+	Unicorn     string
+	RedisMaster string
+}
+
+// SidekiqOptions defines parameters
+// for sidekiq configmap
+type SidekiqOptions struct {
+	RedisMaster    string
+	Postgres       string
+	GitlabDomain   string // ExternalURL no protocol. e.g: gitlab.example.com
+	EnableRegistry bool
+	EmailFrom      string
+	ReplyTo        string
+	MinioDomain    string // hostname e.g. minio.example.com
+	Minio          string // Minio service
+}
+
+// ExporterOptions defines parameters
+// for sidekiq configmap
+type ExporterOptions struct {
+	RedisMaster string
+	Postgres    string
 }

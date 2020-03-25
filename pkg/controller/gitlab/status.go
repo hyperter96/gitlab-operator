@@ -9,6 +9,7 @@ import (
 	"time"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -16,7 +17,7 @@ import (
 const updateInterval = 10
 
 func (r *ReconcileGitlab) updateGitlabStatus(cr *gitlabv1beta1.Gitlab) {
-	labels := getLabels(cr, "gitlab")
+	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
 
 	// If the Gitlab deployment does not exist, we assume the database is still starting up
 	gitlab := &appsv1.Deployment{}

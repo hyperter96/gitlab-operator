@@ -1,0 +1,3 @@
+  # Redis (single instance)
+  url: redis://:<%= URI.escape(File.read("/etc/gitlab/redis/password").strip) %>@{{ .ResourceName }}-{{ .RedisMaster }}:6379
+  id:

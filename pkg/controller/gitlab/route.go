@@ -3,12 +3,13 @@ package gitlab
 import (
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func getGitlabRoute(cr *gitlabv1beta1.Gitlab) *routev1.Route {
-	labels := getLabels(cr, "route")
+	labels := gitlabutils.Label(cr.Name, "route", gitlabutils.GitlabType)
 
 	return &routev1.Route{
 		ObjectMeta: metav1.ObjectMeta{
@@ -33,7 +34,7 @@ func getGitlabRoute(cr *gitlabv1beta1.Gitlab) *routev1.Route {
 
 // Gitlab registry route
 func getRegistryRoute(cr *gitlabv1beta1.Gitlab) *routev1.Route {
-	labels := getLabels(cr, "route")
+	labels := gitlabutils.Label(cr.Name, "route", gitlabutils.GitlabType)
 
 	return &routev1.Route{
 		ObjectMeta: metav1.ObjectMeta{
@@ -58,7 +59,7 @@ func getRegistryRoute(cr *gitlabv1beta1.Gitlab) *routev1.Route {
 
 // SSH route
 func getSecureShellRoute(cr *gitlabv1beta1.Gitlab) *routev1.Route {
-	labels := getLabels(cr, "route")
+	labels := gitlabutils.Label(cr.Name, "route", gitlabutils.GitlabType)
 
 	return &routev1.Route{
 		ObjectMeta: metav1.ObjectMeta{

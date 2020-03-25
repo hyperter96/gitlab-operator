@@ -4,9 +4,10 @@ import (
 	"context"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	gitlab "gitlab.com/ochienged/gitlab-operator/pkg/controller/gitlab"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -78,6 +79,30 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(&source.Kind{Type: &corev1.ServiceAccount{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Runner{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Runner{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &rbacv1.RoleBinding{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Runner{},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -133,6 +158,18 @@ func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err erro
 		return
 	}
 
+	if err = r.reconcileServiceAccount(cr); err != nil {
+		return
+	}
+
+	if err = r.reconcileRunnerRole(cr); err != nil {
+		return
+	}
+
+	if err = r.reconcileRunnerRoleBinding(cr); err != nil {
+		return
+	}
+
 	if err = r.reconcileDeployments(cr); err != nil {
 		return
 	}
@@ -143,7 +180,7 @@ func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err erro
 func (r *ReconcileRunner) reconcileSecrets(cr *gitlabv1beta1.Runner) error {
 	runner := getRunnerSecret(r.client, cr)
 
-	if gitlab.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
 		return nil
 	}
 
@@ -161,7 +198,7 @@ func (r *ReconcileRunner) reconcileSecrets(cr *gitlabv1beta1.Runner) error {
 func (r *ReconcileRunner) reconcileConfigMap(cr *gitlabv1beta1.Runner) error {
 	runner := getRunnerScriptConfig(cr)
 
-	if gitlab.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
 		return nil
 	}
 
@@ -179,7 +216,7 @@ func (r *ReconcileRunner) reconcileConfigMap(cr *gitlabv1beta1.Runner) error {
 func (r *ReconcileRunner) reconcileDeployments(cr *gitlabv1beta1.Runner) error {
 	runner := getRunnerDeployment(cr)
 
-	if gitlab.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
 		return nil
 	}
 
@@ -188,6 +225,60 @@ func (r *ReconcileRunner) reconcileDeployments(cr *gitlabv1beta1.Runner) error {
 	}
 
 	if err := r.client.Create(context.TODO(), runner); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ReconcileRunner) reconcileServiceAccount(cr *gitlabv1beta1.Runner) error {
+	sa := getRunnerServiceAccount(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: sa.Name}, sa) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, sa, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), sa); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ReconcileRunner) reconcileRunnerRole(cr *gitlabv1beta1.Runner) error {
+	role := getRunnerRoles(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: role.Name}, role) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, role, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), role); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ReconcileRunner) reconcileRunnerRoleBinding(cr *gitlabv1beta1.Runner) error {
+	rolebinding := getRunnerRoleBinding(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: rolebinding.Name}, rolebinding) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, rolebinding, r.scheme); err != nil {
+		return err
+	}
+
+	if err := r.client.Create(context.TODO(), rolebinding); err != nil {
 		return err
 	}
 

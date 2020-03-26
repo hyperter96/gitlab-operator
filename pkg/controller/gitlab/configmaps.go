@@ -255,6 +255,48 @@ func getRegistryConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	return registry
 }
 
+func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
+
+	configure := gitlabutils.ReadConfig("/templates/task-runner-configure.sh")
+	gsutilconf := gitlabutils.ReadConfig("/templates/task-runner-configure-gsutil.sh")
+
+	var database, gitlab, resque bytes.Buffer
+	options := TaskRunnerOptions{
+		Namespace:   cr.Namespace,
+		GitlabURL:   cr.Spec.ExternalURL,
+		Minio:       getName(cr.Name, "minio"),
+		MinioURL:    "minio.example.com",
+		Registry:    getName(cr.Name, "registry"),
+		RegistryURL: cr.Spec.Registry.ExternalURL,
+		RedisMaster: getName(cr.Name, "redis"),
+		Gitaly:      getName(cr.Name, "gitaly"),
+		MailFrom:    "gitlab@example.com",
+		ReplyTo:     "noreply@example.com",
+		PostgreSQL:  getName(cr.Name, "database"),
+	}
+	databaseTemplate := template.Must(template.ParseFiles("/templates/task-runner-database.yml.erb"))
+	databaseTemplate.Execute(&database, options)
+
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/task-runner-gitlab.yml.erb"))
+	gitlabTemplate.Execute(&gitlab, options)
+
+	resqueTemplate := template.Must(template.ParseFiles("/templates/task-runner-gitlab.yml.erb"))
+	resqueTemplate.Execute(&resque, options)
+
+	tasker := gitlabutils.GenericConfigMap(cr.Name+"-task-runner-config", cr.Namespace, labels)
+	tasker.Data = map[string]string{
+		"configure":        configure,
+		"configure-gsutil": gsutilconf,
+		"database.yml.erb": database.String(),
+		"gitlab.yml.erb":   gitlab.String(),
+		"resque.yml.erb":   resque.String(),
+		"smtp_settings.rb": "",
+	}
+
+	return tasker
+}
+
 /*
 	Reconcilers for all ConfigMaps come below
 */
@@ -344,7 +386,7 @@ func (r *ReconcileGitlab) reconcileGitlabConfigMap(cr *gitlabv1beta1.Gitlab) err
 }
 
 func (r *ReconcileGitlab) reconcileSidekiqConfigMap(cr *gitlabv1beta1.Gitlab) error {
-	sidekiq := getGitlabConfig(cr)
+	sidekiq := getSidekiqConfig(cr)
 
 	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: sidekiq.Name}, sidekiq) {
 		return nil
@@ -383,4 +425,18 @@ func (r *ReconcileGitlab) reconcileRegistryConfigMap(cr *gitlabv1beta1.Gitlab) e
 	}
 
 	return r.client.Create(context.TODO(), registry)
+}
+
+func (r *ReconcileGitlab) reconcileTaskRunnerConfigMap(cr *gitlabv1beta1.Gitlab) error {
+	taskRunner := getTaskRunnerConfig(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: taskRunner.Name}, taskRunner) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, taskRunner, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), taskRunner)
 }

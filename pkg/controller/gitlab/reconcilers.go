@@ -48,6 +48,14 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab, s securi
 		return err
 	}
 
+	if err := r.reconcileTaskRunnerConfigMap(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileSidekiqConfigMap(cr); err != nil {
+		return err
+	}
+
 	return nil
 }
 

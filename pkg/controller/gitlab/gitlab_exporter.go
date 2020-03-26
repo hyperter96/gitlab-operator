@@ -14,7 +14,7 @@ import (
 func getGitlabExporterDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
 
-	return gitlabutils.GenericDeployment(gitlabutils.Component{
+	exporter := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
 		Replicas:  1,
@@ -206,6 +206,13 @@ func getGitlabExporterDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 		},
 	})
+
+	exporter.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &runAsUser,
+		FSGroup:   &fsGroup,
+	}
+
+	return exporter
 }
 
 func (r *ReconcileGitlab) reconcileGitlabExporterDeployment(cr *gitlabv1beta1.Gitlab) error {

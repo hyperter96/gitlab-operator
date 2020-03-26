@@ -14,7 +14,7 @@ import (
 func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
 
-	return gitlabutils.GenericDeployment(gitlabutils.Component{
+	taskRunner := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
 		Replicas:  1,
@@ -138,7 +138,6 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						Name:      "task-runner-config",
 						MountPath: "/srv/gitlab/config/initializers/smtp_settings.rb",
 						SubPath:   "smtp_settings.rb",
-						ReadOnly:  true,
 					},
 					{
 						Name:      "task-runner-secrets",
@@ -172,7 +171,7 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							{
 								ConfigMap: &corev1.ConfigMapProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-task-runner",
+										Name: cr.Name + "-task-runner-config",
 									},
 								},
 							},
@@ -309,6 +308,13 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 		},
 	})
+
+	taskRunner.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &runAsUser,
+		FSGroup:   &fsGroup,
+	}
+
+	return taskRunner
 }
 
 func (r *ReconcileGitlab) reconcileTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) error {

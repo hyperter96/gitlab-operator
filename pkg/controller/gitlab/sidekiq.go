@@ -15,7 +15,7 @@ import (
 func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "sidekiq", gitlabutils.GitlabType)
 
-	return gitlabutils.GenericDeployment(gitlabutils.Component{
+	sidekiq := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
 		Replicas:  1,
@@ -106,7 +106,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						ReadOnly:  true,
 					},
 					{
-						Name:      "init-sidekiq-secrets",
+						Name:      "sidekiq-secrets",
 						MountPath: "/etc/gitlab",
 						ReadOnly:  true,
 					},
@@ -172,6 +172,13 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 					{
 						Name:  "ENABLE_BOOTSNAP",
 						Value: "1",
+					},
+				},
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "metrics",
+						ContainerPort: 3807,
+						Protocol:      corev1.ProtocolTCP,
 					},
 				},
 				Resources: corev1.ResourceRequirements{
@@ -242,7 +249,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						SubPath:   "smtp_settings.rb",
 					},
 					{
-						Name:      "sidekiq-metrics",
+						Name:      "sidekiq-config",
 						MountPath: "/srv/gitlab/INSTALLATION_TYPE",
 						SubPath:   "installation_type",
 					},
@@ -390,6 +397,13 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 		},
 	})
+
+	sidekiq.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &runAsUser,
+		FSGroup:   &fsGroup,
+	}
+
+	return sidekiq
 }
 
 func (r *ReconcileGitlab) reconcileSidekiqDeployment(cr *gitlabv1beta1.Gitlab) error {

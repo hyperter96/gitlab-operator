@@ -15,7 +15,7 @@ import (
 func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "unicorn", gitlabutils.GitlabType)
 
-	return gitlabutils.GenericDeployment(gitlabutils.Component{
+	unicorn := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
 		Replicas:  1,
@@ -331,6 +331,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 					{
 						Name:      "workhorse-secrets",
 						MountPath: "/etc/gitlab",
+						ReadOnly:  true,
 					},
 					{
 						Name:      "shared-upload-directory",
@@ -347,6 +348,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 					{
 						Name:      "etc-ssl-certs",
 						MountPath: "/etc/ssl/certs/",
+						ReadOnly:  true,
 					},
 				},
 			},
@@ -544,6 +546,13 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 		},
 	})
+
+	unicorn.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &runAsUser,
+		FSGroup:   &fsGroup,
+	}
+
+	return unicorn
 }
 
 func (r *ReconcileGitlab) reconcileUnicornDeployment(cr *gitlabv1beta1.Gitlab) error {

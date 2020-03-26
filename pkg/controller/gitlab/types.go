@@ -149,3 +149,19 @@ type RailsOptions struct {
 	OTPKey        string
 	RSAPrivateKey string
 }
+
+// TaskRunnerOptions defines options
+// for Task Runner configurations
+type TaskRunnerOptions struct {
+	RedisMaster string
+	Namespace   string
+	GitlabURL   string
+	Minio       string
+	MinioURL    string
+	Registry    string
+	RegistryURL string
+	Gitaly      string
+	MailFrom    string
+	ReplyTo     string
+	PostgreSQL  string
+}

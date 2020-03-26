@@ -141,3 +141,10 @@ type ExporterOptions struct {
 	RedisMaster string
 	Postgres    string
 }
+
+// RegistryOptions defines parameters
+// for registry configmap
+type RegistryOptions struct {
+	GitlabDomain string
+	Minio        string
+}

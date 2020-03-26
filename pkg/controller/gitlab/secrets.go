@@ -160,6 +160,47 @@ func getRegistrySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return registry
 }
 
+func getRegistryHTTPSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "registry-http", gitlabutils.GitlabType)
+
+	secret := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             172,
+	})
+
+	registry := gitlabutils.GenericSecret(cr.Name+"-registry-http-secret", cr.Namespace, labels)
+	registry.StringData = map[string]string{
+		"secret": secret,
+	}
+
+	return registry
+}
+
+func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+
+	accesskey := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             64,
+	})
+
+	secretkey := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             10,
+	})
+
+	registry := gitlabutils.GenericSecret(cr.Name+"-minio-secret", cr.Namespace, labels)
+	registry.StringData = map[string]string{
+		"accesskey": accesskey,
+		"secretkey": secretkey,
+	}
+
+	return registry
+}
+
+/***************************************************************
+ * Reconcilers for the different secrets begin below this line *
+ ***************************************************************/
 func (r *ReconcileGitlab) reconcileRegistrySecret(cr *gitlabv1beta1.Gitlab) error {
 	registry := getRegistrySecret(cr)
 
@@ -202,4 +243,32 @@ func (r *ReconcileGitlab) reconcileWorkhorseSecret(cr *gitlabv1beta1.Gitlab) err
 	}
 
 	return r.client.Create(context.TODO(), workhorse)
+}
+
+func (r *ReconcileGitlab) reconcileRegistryHTTPSecret(cr *gitlabv1beta1.Gitlab) error {
+	registry := getRegistryHTTPSecret(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registry.Name}, registry) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), registry)
+}
+
+func (r *ReconcileGitlab) reconcileMinioSecret(cr *gitlabv1beta1.Gitlab) error {
+	minio := getMinioSecret(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), minio)
 }

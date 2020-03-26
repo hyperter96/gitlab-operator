@@ -156,7 +156,7 @@ func getRegistryDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-registry-httpsecret",
+										Name: cr.Name + "-registry-http-secret",
 									},
 									Items: []corev1.KeyToPath{
 										{

@@ -1,0 +1,54 @@
+version: 0.1
+log:
+  fields:
+    service: registry
+  level: warn
+http:
+  debug:
+    addr: ':5001'
+    prometheus:
+      enabled: false
+      path: /metrics
+  draintimeout: 0
+  headers:
+    X-Content-Type-Options: [nosniff]
+  addr: :5000
+  secret: "HTTP_SECRET"
+  relativeurls: false
+health:
+  storagedriver:
+    enabled: false
+    interval: 10s
+    threshold: 3
+auth:
+  token:
+    realm: https://{{ .GitlabDomain }}/jwt/auth
+    service: container_registry
+    issuer: "gitlab-issuer"
+    # This is provided from the initContainer execution, at a known path.
+    rootcertbundle: /etc/docker/registry/certificate.crt
+    autoredirect: false
+compatibility:
+  schema1:
+    enabled: false
+validation:
+  disabled: true
+storage:
+  maintenance:
+    readonly:
+      enabled: false
+  s3:
+    accesskey: "ACCESS_KEY"
+    secretkey: "SECRET_KEY"
+    region: us-east-1
+    regionendpoint: http://{{ .Minio }}:9000
+    bucket: registry
+    secure: true
+    v4auth: true
+    rootdirectory: /
+  cache:
+    blobdescriptor: 'inmemory'
+  delete:
+    enabled: true
+  redirect:
+    disable: true

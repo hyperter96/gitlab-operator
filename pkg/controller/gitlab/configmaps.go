@@ -233,6 +233,28 @@ func getGitlabExporterConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	return exporter
 }
 
+func getRegistryConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
+
+	configure := gitlabutils.ReadConfig("/templates/registry-configure.sh")
+
+	options := RegistryOptions{
+		GitlabDomain: cr.Spec.ExternalURL,
+		Minio:        getName(cr.Name, "mino"),
+	}
+	var configYML bytes.Buffer
+	registryTemplate := template.Must(template.ParseFiles("/templates/registry-config.yml"))
+	registryTemplate.Execute(&configYML, options)
+
+	registry := gitlabutils.GenericConfigMap(cr.Name+"-registry-config", cr.Namespace, labels)
+	registry.Data = map[string]string{
+		"configure":  configure,
+		"config.yml": configYML.String(),
+	}
+
+	return registry
+}
+
 /*
 	Reconcilers for all ConfigMaps come below
 */
@@ -347,4 +369,18 @@ func (r *ReconcileGitlab) reconcileGitlabExporterConfigMap(cr *gitlabv1beta1.Git
 	}
 
 	return r.client.Create(context.TODO(), exporter)
+}
+
+func (r *ReconcileGitlab) reconcileRegistryConfigMap(cr *gitlabv1beta1.Gitlab) error {
+	registry := getRegistryConfig(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registry.Name}, registry) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), registry)
 }

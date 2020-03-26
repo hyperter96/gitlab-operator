@@ -21,11 +21,7 @@ production: &base
     time_zone: "UTC"        
     email_from: "{{ .EmailFrom }}"
     email_display_name: "GitLab"
-<<<<<<< HEAD
     email_reply_to: "{{ .ReplyTo }}"
-=======
-    email_reply_to: "{{ .EmailTo }}"
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928
     email_subject_suffix: ""
   
   gravatar:
@@ -48,11 +44,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-<<<<<<< HEAD
         host: {{ .MinioURL }}
-=======
-        host: minio.example.com
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   lfs:
@@ -68,11 +60,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-<<<<<<< HEAD
         host: {{ .MinioURL }}
-=======
-        host: minio.example.com
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   uploads:
@@ -88,11 +76,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-<<<<<<< HEAD
         host: {{ .MinioURL }}
-=======
-        host: minio.example.com
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   packages:
@@ -108,11 +92,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-<<<<<<< HEAD
         host: {{ .MinioURL }}
-=======
-        host: minio.example.com
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   external_diffs:
@@ -129,11 +109,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-<<<<<<< HEAD
         host: {{ .MinioURL }}
-=======
-        host: minio.example.com
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   
@@ -164,11 +140,7 @@ production: &base
     storages: # You must have at least a `default` storage path.
       default:
         path: /var/opt/gitlab/repo
-<<<<<<< HEAD
         gitaly_address: tcp://{{ .Gitaly }}-0.{{ .Gitaly }}.{{ .Namespace }}:8075
-=======
-        gitaly_address: tcp://{{ .Gitaly }}-0.{{ .ResourceName }}-{{ .Gitaly }}.{{ .Namespace }}:8075
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928
       
   backup:
     path: "tmp/backups"   # Relative paths are relative to Rails.root (default: tmp/backups/)
@@ -199,11 +171,7 @@ production: &base
   ## Registry Integration
   registry:
     enabled: true
-<<<<<<< HEAD
     host: {{ .RegistryURL }}
-=======
-    host: registry.example.com
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928
     api_url: http://{{ .Registry }}:5000
     key: /etc/gitlab/registry/gitlab-registry.key
     issuer: gitlab-issuer

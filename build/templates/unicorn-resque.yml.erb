@@ -1,10 +1,4 @@
-<<<<<<< HEAD
 production:
   # Redis (single instance)
   url: redis://:<%= URI.escape(File.read("/etc/gitlab/redis/password").strip) %>@{{ .RedisMaster }}:6379
   id:
-=======
-  # Redis (single instance)
-  url: redis://:<%= URI.escape(File.read("/etc/gitlab/redis/password").strip) %>@{{ .ResourceName }}-{{ .RedisMaster }}:6379
-  id:
->>>>>>> 50a41077924b41d9a68acf6405141805aacd9928

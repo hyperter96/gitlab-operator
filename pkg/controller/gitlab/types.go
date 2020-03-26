@@ -18,17 +18,6 @@ const (
 	StrongPassword = 21
 )
 
-var (
-	// ConfigMapDefaultMode for configmap projected volume
-	ConfigMapDefaultMode int32 = 420
-
-	// ProjectedVolumeDefaultMode for projected volume
-	ProjectedVolumeDefaultMode int32 = 256
-
-	// SecretDefaultMode for secret projected volume
-	SecretDefaultMode int32 = 288
-)
-
 // RedisConfig struct configures redis password
 // and cluster configuration for large environments
 type RedisConfig struct {
@@ -99,14 +88,17 @@ type GitalyConfig struct {
 // UnicornOptions passes options
 // to unicorn templates
 type UnicornOptions struct {
-	ResourceName string
-	Namespace    string
-	ExternalURL  string
-	PostgreSQL   string
-	Registry     string
-	Minio        string
-	Gitaly       string
-	RedisMaster  string
+	Namespace   string
+	GitlabURL   string
+	PostgreSQL  string
+	Registry    string
+	RegistryURL string
+	Minio       string
+	MinioURL    string
+	Gitaly      string
+	RedisMaster string
+	EmailFrom   string
+	ReplyTo     string
 }
 
 // WorkhorseOptions has
@@ -147,4 +139,13 @@ type ExporterOptions struct {
 type RegistryOptions struct {
 	GitlabDomain string
 	Minio        string
+}
+
+// RailsOptions defines parameters
+// for rails secret
+type RailsOptions struct {
+	SecretKey     string
+	DatabaseKey   string
+	OTPKey        string
+	RSAPrivateKey string
 }

@@ -167,7 +167,7 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "task-runner-config",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								ConfigMap: &corev1.ConfigMapProjection{
@@ -190,7 +190,7 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "init-task-runner-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &ProjectedVolumeDefaultMode,
+						DefaultMode: &gitlabutils.ProjectedVolumeDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								Secret: &corev1.SecretProjection{

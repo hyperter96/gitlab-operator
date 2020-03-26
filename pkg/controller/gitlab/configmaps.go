@@ -90,14 +90,14 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	smtpSettings := gitlabutils.ReadConfig("/templates/unicorn-smtp-settings.rb")
 
 	options := UnicornOptions{
-		ResourceName: cr.Name,
-		Namespace:    cr.Namespace,
-		PostgreSQL:   getName(cr.Name, "database"),
-		ExternalURL:  parseURL(cr.Spec.ExternalURL, hasTLS(cr)),
-		Minio:        "external-minio-instance",
-		Registry:     getName(cr.Name, "registry"),
-		Gitaly:       getName(cr.Name, "gitaly"),
-		RedisMaster:  getName(cr.Name, "redis"),
+		Namespace:   cr.Namespace,
+		PostgreSQL:  getName(cr.Name, "database"),
+		GitlabURL:   cr.Spec.ExternalURL,
+		Minio:       "external-minio-instance",
+		Registry:    getName(cr.Name, "registry"),
+		RegistryURL: cr.Spec.Registry.ExternalURL,
+		Gitaly:      getName(cr.Name, "gitaly"),
+		RedisMaster: getName(cr.Name, "redis"),
 	}
 
 	databaseTemplate := template.Must(template.ParseFiles("/templates/unicorn-database.yml.erb"))

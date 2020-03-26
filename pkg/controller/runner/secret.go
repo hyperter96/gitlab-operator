@@ -23,7 +23,7 @@ func getRunnerSecret(client client.Client, cr *gitlabv1beta1.Runner) *corev1.Sec
 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/instance"] + "-secrets",
+			Name:      labels["app.kubernetes.io/instance"] + "-secret",
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},

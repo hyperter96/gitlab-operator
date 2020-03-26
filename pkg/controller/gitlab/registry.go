@@ -131,7 +131,7 @@ func getRegistryDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "registry-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								ConfigMap: &corev1.ConfigMapProjection{

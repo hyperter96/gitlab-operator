@@ -205,7 +205,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-runner-secrets",
+									Name: cr.Name + "-runner-secret",
 								},
 								Key: "runner-token",
 							},
@@ -216,7 +216,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-runner-secrets",
+									Name: cr.Name + "-runner-secret",
 								},
 								Key: "runner-registration-token",
 							},
@@ -381,6 +381,56 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		},
 		Volumes: []corev1.Volume{
 			{
+				Name: "runner-secrets",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium: corev1.StorageMediumMemory,
+					},
+				},
+			},
+			{
+				Name: "etc-gitlab-runner",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium: corev1.StorageMediumMemory,
+					},
+				},
+			},
+			{
+				Name: "init-runner-secrets",
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
+						Sources: []corev1.VolumeProjection{
+							// {
+							// 	Secret: &corev1.SecretProjection{
+							// 		LocalObjectReference: corev1.LocalObjectReference{
+							// 			Name: cr.Name + "-minio-secret",
+							// 		},
+							// 	},
+							// },
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-runner-secret",
+									},
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "runner-registration-token",
+											Path: "runner-registration-token",
+										},
+										{
+											Key:  "runner-token",
+											Path: "runner-token",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
 				Name: "scripts",
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -404,55 +454,9 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 								Key:  "check-live",
 								Path: "check-live",
 							},
-						},
-					},
-				},
-			},
-			{
-				Name: "runner-secrets",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						Medium: corev1.StorageMediumMemory,
-					},
-				},
-			},
-			{
-				Name: "etc-gitlab-runner",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						Medium: corev1.StorageMediumMemory,
-					},
-				},
-			},
-			{
-				Name: "init-runner-secrets",
-				VolumeSource: corev1.VolumeSource{
-					Projected: &corev1.ProjectedVolumeSource{
-						// DefaultMode: 420,
-						Sources: []corev1.VolumeProjection{
-							// {
-							// 	Secret: &corev1.SecretProjection{
-							// 		LocalObjectReference: corev1.LocalObjectReference{
-							// 			Name: cr.Name + "-minio-secret",
-							// 		},
-							// 	},
-							// },
 							{
-								Secret: &corev1.SecretProjection{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-gitlab-secrets",
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  "runner-registration-token",
-											Path: "runner-registration-token",
-										},
-										{
-											Key:  "runner-token",
-											Path: "runner-token",
-										},
-									},
-								},
+								Key:  "configure",
+								Path: "configure",
 							},
 						},
 					},

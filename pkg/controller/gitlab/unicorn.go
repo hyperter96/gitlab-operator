@@ -84,6 +84,29 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name:            "dependencies",
 				Image:           gitlabutils.GitLabUnicornImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
+				Args:            []string{"/scripts/wait-for-deps"},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "GITALY_FEATURE_DEFAULT_ON",
+						Value: "1",
+					},
+					{
+						Name:  "CONFIG_TEMPLATE_DIRECTORY",
+						Value: "/var/opt/gitlab/templates",
+					},
+					{
+						Name:  "CONFIG_DIRECTORY",
+						Value: "/srv/gitlab/config",
+					},
+					{
+						Name:  "WORKHORSE_ARCHIVE_CACHE_DISABLED",
+						Value: "1",
+					},
+					{
+						Name:  "ENABLE_BOOTSNAP",
+						Value: "1",
+					},
+				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						"cpu": gitlabutils.ResourceQuantity("50m"),
@@ -350,7 +373,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: cr.Name + "-unicorn-config",
 						},
-						DefaultMode: &ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 					},
 				},
 			},
@@ -361,7 +384,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: cr.Name + "-workhorse-config",
 						},
-						DefaultMode: &ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 					},
 				},
 			},
@@ -369,7 +392,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "init-unicorn-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &ProjectedVolumeDefaultMode,
+						DefaultMode: &gitlabutils.ProjectedVolumeDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								Secret: &corev1.SecretProjection{
@@ -452,7 +475,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-gitlab-workhorse-secret",
+										Name: cr.Name + "-workhorse-secret",
 									},
 									Items: []corev1.KeyToPath{
 										{

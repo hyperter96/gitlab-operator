@@ -448,7 +448,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 								},
 							},
 						},
-						DefaultMode: &SecretDefaultMode,
+						DefaultMode: &gitlabutils.SecretDefaultMode,
 					},
 				},
 			},

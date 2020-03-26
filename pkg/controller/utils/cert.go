@@ -58,6 +58,21 @@ func PrivateKeyRSA() (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
+// RSAPrivateKeyPEM returns an RSA private key in PEM format
+func RSAPrivateKeyPEM() (string, error) {
+	key, err := PrivateKeyRSA()
+	if err != nil {
+		return "", err
+	}
+
+	return string(pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(key),
+		},
+	)), nil
+}
+
 // KeyCertificate returns certificate, privateKey and error
 func KeyCertificate() ([]byte, []byte, error) {
 	key, err := PrivateKeyRSA()

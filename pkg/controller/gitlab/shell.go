@@ -148,7 +148,7 @@ func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: cr.Name + "-shell-config",
 						},
-						DefaultMode: &ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 					},
 				},
 			},
@@ -165,7 +165,7 @@ func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 								Path: "sshd_config",
 							},
 						},
-						DefaultMode: &ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 					},
 				},
 			},
@@ -173,7 +173,7 @@ func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "shell-init-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &SecretDefaultMode,
+						DefaultMode: &gitlabutils.SecretDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								Secret: &corev1.SecretProjection{

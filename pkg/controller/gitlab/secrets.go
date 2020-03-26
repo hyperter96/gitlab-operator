@@ -1,7 +1,9 @@
 package gitlab
 
 import (
+	"bytes"
 	"context"
+	"text/template"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
@@ -176,6 +178,48 @@ func getRegistryHTTPSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return registry
 }
 
+func getRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "rails", gitlabutils.GitlabType)
+
+	secretkey := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             129,
+	})
+
+	otpkey := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             129,
+	})
+
+	dbkey := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             129,
+	})
+
+	privateKey, err := gitlabutils.RSAPrivateKeyPEM()
+	if err != nil {
+		log.Error(err, "Error getting RSA private key")
+	}
+
+	options := RailsOptions{
+		SecretKey:     secretkey,
+		OTPKey:        otpkey,
+		DatabaseKey:   dbkey,
+		RSAPrivateKey: privateKey,
+	}
+
+	var secret bytes.Buffer
+	secretsTemplate := template.Must(template.ParseFiles("/templates/rails-secret.yml"))
+	secretsTemplate.Execute(&secret, options)
+
+	rails := gitlabutils.GenericSecret(cr.Name+"-rails-secret", cr.Namespace, labels)
+	rails.StringData = map[string]string{
+		"secrets.yml": secret.String(),
+	}
+
+	return rails
+}
+
 func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
 
@@ -257,6 +301,20 @@ func (r *ReconcileGitlab) reconcileRegistryHTTPSecret(cr *gitlabv1beta1.Gitlab) 
 	}
 
 	return r.client.Create(context.TODO(), registry)
+}
+
+func (r *ReconcileGitlab) reconcileRailsSecret(cr *gitlabv1beta1.Gitlab) error {
+	rails := getRailsSecret(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: rails.Name}, rails) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, rails, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), rails)
 }
 
 func (r *ReconcileGitlab) reconcileMinioSecret(cr *gitlabv1beta1.Gitlab) error {

@@ -91,6 +91,10 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab, s security)
 		return err
 	}
 
+	if err := r.reconcileRailsSecret(cr); err != nil {
+		return err
+	}
+
 	if err := r.reconcileMinioSecret(cr); err != nil {
 		return err
 	}

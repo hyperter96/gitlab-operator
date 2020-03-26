@@ -145,7 +145,7 @@ func getGitlabExporterDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "gitlab-exporter-config",
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
-						DefaultMode: &ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: cr.Name + "-gitlab-exporter-config",
 						},
@@ -156,7 +156,7 @@ func getGitlabExporterDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "init-gitlab-exporter-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &ProjectedVolumeDefaultMode,
+						DefaultMode: &gitlabutils.ProjectedVolumeDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								Secret: &corev1.SecretProjection{

@@ -267,7 +267,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "sidekiq-config",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								ConfigMap: &corev1.ConfigMapProjection{
@@ -284,7 +284,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "init-sidekiq-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &ProjectedVolumeDefaultMode,
+						DefaultMode: &gitlabutils.ProjectedVolumeDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								Secret: &corev1.SecretProjection{

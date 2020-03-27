@@ -1,10 +1,12 @@
 package gitlab
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
 	"strings"
+	"text/template"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
@@ -193,11 +195,34 @@ func SetStatus(client client.Client, object runtime.Object) (err error) {
 
 func gitalyShellConfigs(cr *gitlabv1beta1.Gitlab) GitalyConfig {
 	return GitalyConfig{
-		RedisService:   strings.Join([]string{cr.Name, "-redis"}, "-"),
-		UnicornService: strings.Join([]string{cr.Name, "-unicorn"}, "-"),
+		RedisMaster: strings.Join([]string{cr.Name, "redis"}, "-"),
+		Unicorn:     strings.Join([]string{cr.Name, "unicorn"}, "-"),
 	}
 }
 
 func getName(cr, component string) string {
 	return strings.Join([]string{cr, component}, "-")
+}
+
+func getDatabaseConfiguration(postgres string) string {
+	var config bytes.Buffer
+	options := ConfigOptions{
+		Postgres: postgres,
+	}
+
+	postgresTemplate := template.Must(template.ParseFiles("/templates/database.yml.erb"))
+	postgresTemplate.Execute(&config, options)
+
+	return config.String()
+}
+
+func getRedisConfiguration(redis string) string {
+	var config bytes.Buffer
+	options := ConfigOptions{
+		RedisMaster: redis,
+	}
+	resqueTemplate := template.Must(template.ParseFiles("/templates/resque.yml.erb"))
+	resqueTemplate.Execute(&config, options)
+
+	return config.String()
 }

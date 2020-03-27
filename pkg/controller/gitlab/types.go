@@ -79,10 +79,10 @@ type ServiceStatus struct {
 // names for Redis and Unicorn
 type GitalyConfig struct {
 	// Name of redis service
-	RedisService string
+	RedisMaster string
 
 	// Name of Unicorn service
-	UnicornService string
+	Unicorn string
 }
 
 // UnicornOptions passes options
@@ -118,7 +118,7 @@ type ShellOptions struct {
 // for sidekiq configmap
 type SidekiqOptions struct {
 	RedisMaster    string
-	Postgres       string
+	PostgreSQL     string
 	GitlabDomain   string // ExternalURL no protocol. e.g: gitlab.example.com
 	EnableRegistry bool
 	EmailFrom      string
@@ -128,7 +128,7 @@ type SidekiqOptions struct {
 }
 
 // ExporterOptions defines parameters
-// for sidekiq configmap
+// for metrics exporter configmap
 type ExporterOptions struct {
 	RedisMaster string
 	Postgres    string
@@ -164,4 +164,11 @@ type TaskRunnerOptions struct {
 	MailFrom    string
 	ReplyTo     string
 	PostgreSQL  string
+}
+
+// ConfigOptions has options for
+// Redis and Postgres configs
+type ConfigOptions struct {
+	RedisMaster string
+	Postgres    string
 }

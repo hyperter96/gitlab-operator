@@ -81,7 +81,6 @@ func getGitalyConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 // TODO: Get Minio/Object storage
 func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "unicorn", gitlabutils.GitlabType)
-	var database, gitlab, resque bytes.Buffer
 
 	unicorn := gitlabutils.GenericConfigMap(cr.Name+"-unicorn-config", cr.Namespace, labels)
 
@@ -91,29 +90,24 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	options := UnicornOptions{
 		Namespace:   cr.Namespace,
-		PostgreSQL:  getName(cr.Name, "database"),
 		GitlabURL:   cr.Spec.ExternalURL,
 		Minio:       "external-minio-instance",
 		Registry:    getName(cr.Name, "registry"),
 		RegistryURL: cr.Spec.Registry.ExternalURL,
 		Gitaly:      getName(cr.Name, "gitaly"),
 		RedisMaster: getName(cr.Name, "redis"),
+		PostgreSQL:  getName(cr.Name, "database"),
 	}
 
-	databaseTemplate := template.Must(template.ParseFiles("/templates/unicorn-database.yml.erb"))
-	databaseTemplate.Execute(&database, options)
-
+	var gitlab bytes.Buffer
 	gitlabTemplate := template.Must(template.ParseFiles("/templates/unicorn-gitlab.yml.erb"))
 	gitlabTemplate.Execute(&gitlab, options)
 
-	resqueTemplate := template.Must(template.ParseFiles("/templates/unicorn-resque.yml.erb"))
-	resqueTemplate.Execute(&resque, options)
-
 	unicorn.Data = map[string]string{
 		"configure":         configure,
-		"database.yml.erb":  database.String(),
 		"gitlab.yml.erb":    gitlab.String(),
-		"resque.yml.erb":    resque.String(),
+		"database.yml.erb":  getDatabaseConfiguration(options.PostgreSQL),
+		"resque.yml.erb":    getRedisConfiguration(options.RedisMaster),
 		"installation_type": labels["app.kubernetes.io/managed-by"],
 		"smtp_settings.rb":  smtpSettings,
 		"unicorn.rb":        unicornRB,
@@ -179,7 +173,7 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	options := SidekiqOptions{
 		RedisMaster:    getName(cr.Name, "redis"),
-		Postgres:       getName(cr.Name, "database"),
+		PostgreSQL:     getName(cr.Name, "database"),
 		GitlabDomain:   cr.Spec.ExternalURL,
 		EnableRegistry: true,
 		EmailFrom:      "gitlab.example.com",
@@ -188,21 +182,15 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		Minio:          getName(cr.Name, "minio"),
 	}
 
-	var database, gitlab, resque bytes.Buffer
-	databaseTemplate := template.Must(template.ParseFiles("/templates/sidekiq-database.yml.erb"))
-	databaseTemplate.Execute(&database, options)
-
+	var gitlab bytes.Buffer
 	gitlabTemplate := template.Must(template.ParseFiles("/templates/sidekiq-gitlab.yml.erb"))
 	gitlabTemplate.Execute(&gitlab, options)
-
-	redisTemplate := template.Must(template.ParseFiles("/templates/sidekiq-resque.yml.erb"))
-	redisTemplate.Execute(&resque, options)
 
 	sidekiq := gitlabutils.GenericConfigMap(cr.Name+"-sidekiq-config", cr.Namespace, labels)
 	sidekiq.Data = map[string]string{
 		"configure":              configureScript,
-		"database.yml.erb":       database.String(),
-		"resque.yml.erb":         resque.String(),
+		"database.yml.erb":       getDatabaseConfiguration(options.PostgreSQL),
+		"resque.yml.erb":         getRedisConfiguration(options.RedisMaster),
 		"gitlab.yml.erb":         gitlab.String(),
 		"smtp_settings.rb":       "",
 		"sidekiq_queues.yml.erb": queuesYML,
@@ -261,36 +249,31 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	configure := gitlabutils.ReadConfig("/templates/task-runner-configure.sh")
 	gsutilconf := gitlabutils.ReadConfig("/templates/task-runner-configure-gsutil.sh")
 
-	var database, gitlab, resque bytes.Buffer
 	options := TaskRunnerOptions{
 		Namespace:   cr.Namespace,
 		GitlabURL:   cr.Spec.ExternalURL,
 		Minio:       getName(cr.Name, "minio"),
+		RedisMaster: getName(cr.Name, "redis"),
+		PostgreSQL:  getName(cr.Name, "database"),
 		MinioURL:    "minio.example.com",
 		Registry:    getName(cr.Name, "registry"),
 		RegistryURL: cr.Spec.Registry.ExternalURL,
-		RedisMaster: getName(cr.Name, "redis"),
 		Gitaly:      getName(cr.Name, "gitaly"),
 		MailFrom:    "gitlab@example.com",
 		ReplyTo:     "noreply@example.com",
-		PostgreSQL:  getName(cr.Name, "database"),
 	}
-	databaseTemplate := template.Must(template.ParseFiles("/templates/task-runner-database.yml.erb"))
-	databaseTemplate.Execute(&database, options)
 
+	var gitlab bytes.Buffer
 	gitlabTemplate := template.Must(template.ParseFiles("/templates/task-runner-gitlab.yml.erb"))
 	gitlabTemplate.Execute(&gitlab, options)
-
-	resqueTemplate := template.Must(template.ParseFiles("/templates/task-runner-gitlab.yml.erb"))
-	resqueTemplate.Execute(&resque, options)
 
 	tasker := gitlabutils.GenericConfigMap(cr.Name+"-task-runner-config", cr.Namespace, labels)
 	tasker.Data = map[string]string{
 		"configure":        configure,
 		"configure-gsutil": gsutilconf,
-		"database.yml.erb": database.String(),
 		"gitlab.yml.erb":   gitlab.String(),
-		"resque.yml.erb":   resque.String(),
+		"database.yml.erb": getDatabaseConfiguration(options.PostgreSQL),
+		"resque.yml.erb":   getRedisConfiguration(options.RedisMaster),
 		"smtp_settings.rb": "",
 	}
 

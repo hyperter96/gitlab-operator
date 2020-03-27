@@ -67,7 +67,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name:            "dependencies",
 				Image:           gitlabutils.GitLabSidekigImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
-				Command:         []string{"/scripts/wait-for-deps"},
+				Args:            []string{"/scripts/wait-for-deps"},
 				Env: []corev1.EnvVar{
 					{
 						Name:  "GITALY_FEATURE_DEFAULT_ON",

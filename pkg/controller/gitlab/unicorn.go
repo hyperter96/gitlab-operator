@@ -172,7 +172,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Lifecycle: &corev1.Lifecycle{
 					PreStop: &corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: []string{"/bin/bash", "-s", "pkill -SIGQUIT -f 'unicorn master'"},
+							Command: []string{"/bin/bash", "-c", "pkill -SIGQUIT -f 'unicorn master'"},
 						},
 					},
 				},

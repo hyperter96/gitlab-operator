@@ -2,6 +2,7 @@ package utils
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -86,6 +87,36 @@ func GenericDeployment(component Component) *appsv1.Deployment {
 					InitContainers: component.InitContainers,
 					Containers:     component.Containers,
 					Volumes:        component.Volumes,
+				},
+			},
+		},
+	}
+}
+
+// GenericJob retuns a Kubernetes Job
+func GenericJob(component Component) *batchv1.Job {
+	labels := component.Labels
+	var replicas int32 = 1
+
+	return &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labels["app.kubernetes.io/instance"],
+			Namespace: component.Namespace,
+			Labels:    labels,
+		},
+		Spec: batchv1.JobSpec{
+			Parallelism: &replicas,
+			Completions: &replicas,
+			// BackoffLimit: 6,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					InitContainers: component.InitContainers,
+					Containers:     component.Containers,
+					Volumes:        component.Volumes,
+					RestartPolicy:  corev1.RestartPolicyOnFailure,
 				},
 			},
 		},

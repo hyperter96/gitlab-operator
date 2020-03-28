@@ -280,6 +280,33 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	return tasker
 }
 
+func getMigrationsConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "migrations", gitlabutils.GitlabType)
+
+	configure := gitlabutils.ReadConfig("/templates/migration-configure.sh")
+
+	options := MigrationOptions{
+		Namespace:   cr.Namespace,
+		RedisMaster: getName(cr.Name, "redis"),
+		PostgreSQL:  getName(cr.Name, "database"),
+		Gitaly:      getName(cr.Name, "gitaly"),
+	}
+
+	var gitlab bytes.Buffer
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/migration-gitlab.yml.erb"))
+	gitlabTemplate.Execute(&gitlab, options)
+
+	tasker := gitlabutils.GenericConfigMap(cr.Name+"-migrations-config", cr.Namespace, labels)
+	tasker.Data = map[string]string{
+		"configure":        configure,
+		"gitlab.yml.erb":   gitlab.String(),
+		"database.yml.erb": getDatabaseConfiguration(options.PostgreSQL),
+		"resque.yml.erb":   getRedisConfiguration(options.RedisMaster),
+	}
+
+	return tasker
+}
+
 /*
 	Reconcilers for all ConfigMaps come below
 */
@@ -422,4 +449,18 @@ func (r *ReconcileGitlab) reconcileTaskRunnerConfigMap(cr *gitlabv1beta1.Gitlab)
 	}
 
 	return r.client.Create(context.TODO(), taskRunner)
+}
+
+func (r *ReconcileGitlab) reconcileMigrationsConfigMap(cr *gitlabv1beta1.Gitlab) error {
+	migration := getMigrationsConfig(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: migration.Name}, migration) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, migration, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), migration)
 }

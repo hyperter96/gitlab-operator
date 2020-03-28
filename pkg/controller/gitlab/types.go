@@ -172,3 +172,12 @@ type ConfigOptions struct {
 	RedisMaster string
 	Postgres    string
 }
+
+// MigrationOptions provides options
+// required by the migrations job
+type MigrationOptions struct {
+	Namespace   string
+	RedisMaster string
+	PostgreSQL  string
+	Gitaly      string
+}

@@ -56,6 +56,10 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab, s securi
 		return err
 	}
 
+	if err := r.reconcileMigrationsConfigMap(cr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -134,6 +138,15 @@ func (r *ReconcileGitlab) maskEmailPasword(cr *gitlabv1beta1.Gitlab) error {
 
 	// If stored password does not match the CR password,
 	// update the secret and empty the password string in Gitlab CR
+
+	return nil
+}
+
+func (r *ReconcileGitlab) reconcileJobs(cr *gitlabv1beta1.Gitlab) error {
+
+	if err := r.reconcileMigrationsJob(cr); err != nil {
+		return err
+	}
 
 	return nil
 }

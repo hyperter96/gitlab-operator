@@ -110,6 +110,16 @@ rules:
   - get
   - watch
   - delete
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - list
+  - get
+  - delete
+  - watch    
 # TODO: Review roles below
 - apiGroups:
   - ""

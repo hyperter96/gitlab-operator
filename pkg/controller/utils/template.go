@@ -96,7 +96,11 @@ func GenericDeployment(component Component) *appsv1.Deployment {
 // GenericJob retuns a Kubernetes Job
 func GenericJob(component Component) *batchv1.Job {
 	labels := component.Labels
-	var replicas int32 = 1
+	var (
+		replicas          int32 = 1
+		backoffLimit      int32 = 6
+		activeDeadlineSec int64 = 3600
+	)
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -105,9 +109,10 @@ func GenericJob(component Component) *batchv1.Job {
 			Labels:    labels,
 		},
 		Spec: batchv1.JobSpec{
-			Parallelism: &replicas,
-			Completions: &replicas,
-			// BackoffLimit: 6,
+			Parallelism:           &replicas,
+			Completions:           &replicas,
+			BackoffLimit:          &backoffLimit,
+			ActiveDeadlineSeconds: &activeDeadlineSec,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,

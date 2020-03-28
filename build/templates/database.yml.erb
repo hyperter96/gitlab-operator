@@ -4,7 +4,7 @@ production:
   database: gitlabhq_production
   username: gitlab
   password: "<%= File.read('/etc/gitlab/postgres/psql-password').strip.dump[1..-2] %>"
-  host: "{{ .Postgres }}"
+  host: {{ .Postgres }}
   port: 5432
   pool: 10
   prepared_statements: false

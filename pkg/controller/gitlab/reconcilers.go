@@ -152,59 +152,31 @@ func (r *ReconcileGitlab) reconcileJobs(cr *gitlabv1beta1.Gitlab) error {
 }
 
 func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
-	postgres := getPostgresService(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
+	if err := r.reconcilePostgresService(cr); err != nil {
 		return err
 	}
 
-	if err := r.client.Create(context.TODO(), postgres); err != nil {
+	if err := r.reconcileRedisService(cr); err != nil {
 		return err
 	}
 
-	redis := getRedisService(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
+	if err := r.reconcileGitalyService(cr); err != nil {
 		return err
 	}
 
-	if err := r.client.Create(context.TODO(), redis); err != nil {
+	if err := r.reconcileRegistryService(cr); err != nil {
 		return err
 	}
 
-	gitlab := getGitlabService(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitlab.Name}, gitlab) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, gitlab, r.scheme); err != nil {
+	if err := r.reconcileUnicornService(cr); err != nil {
 		return err
 	}
 
-	if err := r.client.Create(context.TODO(), gitlab); err != nil {
+	if err := r.reconcileShellService(cr); err != nil {
 		return err
 	}
 
-	exporter := getMetricsService(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: exporter.Name}, exporter) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, exporter, r.scheme); err != nil {
-		return err
-	}
-
-	if err := r.client.Create(context.TODO(), exporter); err != nil {
+	if err := r.reconcileGitlabExporterService(cr); err != nil {
 		return err
 	}
 

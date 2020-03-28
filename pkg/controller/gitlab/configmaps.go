@@ -27,7 +27,7 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	gitlab := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-config", cr.Namespace, labels)
 	gitlab.Data = map[string]string{
 		"gitlab_external_url":   parseURL(cr.Spec.ExternalURL, hasTLS(cr)),
-		"postgres_db":           "gitlab_production",
+		"postgres_db":           "gitlabhq_production",
 		"postgres_host":         cr.Name + "-database",
 		"postgres_user":         "gitlab",
 		"redis_host":            cr.Name + "-redis",

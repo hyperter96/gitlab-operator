@@ -474,7 +474,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	}
 
 	// Set runner to use specific service account
-	runner.Spec.Template.Spec.ServiceAccountName = cr.Name + "-runner"
+	runner.Spec.Template.Spec.ServiceAccountName = "gitlab-runner"
 
 	return runner
 }

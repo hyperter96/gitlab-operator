@@ -4,7 +4,6 @@ import (
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -21,15 +20,11 @@ func getRunnerSecret(client client.Client, cr *gitlabv1beta1.Runner) *corev1.Sec
 		token = cr.Spec.Gitlab.RegistrationToken
 	}
 
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/instance"] + "-secret",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		StringData: map[string]string{
-			"runner-registration-token": token,
-			"runner-token":              "",
-		},
+	runnerSecret := gitlabutils.GenericSecret(labels["app.kubernetes.io/instance"]+"-secret", cr.Namespace, labels)
+	runnerSecret.StringData = map[string]string{
+		"runner-registration-token": token,
+		"runner-token":              "",
 	}
+
+	return runnerSecret
 }

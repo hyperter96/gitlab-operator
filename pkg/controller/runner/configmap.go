@@ -6,10 +6,9 @@ import (
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func getRunnerScriptConfig(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
+func getRunnerConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
 
 	var gitlabURL string
@@ -33,18 +32,15 @@ func getRunnerScriptConfig(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 		gitlabURL = fmt.Sprintf("http://%s:8005", service)
 	}
 
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/instance"] + "-config",
-			Namespace: cr.Namespace,
-		},
-		Data: map[string]string{
-			"ci_server_url":   gitlabURL,
-			"config.toml":     configToml,
-			"entrypoint":      entrypointScript,
-			"check-live":      aliveScript,
-			"register-runner": registrationScript,
-			"configure":       configureScript,
-		},
+	runnerConfigMap := gitlabutils.GenericConfigMap(labels["app.kubernetes.io/instance"]+"-config", cr.Namespace, labels)
+	runnerConfigMap.Data = map[string]string{
+		"ci_server_url":   gitlabURL,
+		"config.toml":     configToml,
+		"entrypoint":      entrypointScript,
+		"check-live":      aliveScript,
+		"register-runner": registrationScript,
+		"configure":       configureScript,
 	}
+
+	return runnerConfigMap
 }

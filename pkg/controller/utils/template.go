@@ -49,8 +49,9 @@ func GenericStatefulSet(component Component) *appsv1.StatefulSet {
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers: component.Containers,
-					Volumes:    component.Volumes,
+					InitContainers: component.InitContainers,
+					Containers:     component.Containers,
+					Volumes:        component.Volumes,
 				},
 			},
 		},

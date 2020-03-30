@@ -16,6 +16,12 @@ const (
 
 	// StrongPassword defines password length
 	StrongPassword = 21
+
+	// DatabaseName defines name of GitLab database in PostgreSQL
+	DatabaseName = "gitlabhq_production"
+
+	// DatabaseUser defines name of user in PostgreSQL
+	DatabaseUser = "gitlab"
 )
 
 // RedisConfig struct configures redis password

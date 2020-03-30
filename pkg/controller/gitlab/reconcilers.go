@@ -60,22 +60,24 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab, s securi
 		return err
 	}
 
+	if err := r.reconcilePostgresInitDBConfigMap(cr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab, s security) error {
 
-	core := getGilabSecret(cr, s)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: core.Name}, core) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, core, r.scheme); err != nil {
+	if err := r.reconcileGitlabSecret(cr, s); err != nil {
 		return err
 	}
 
-	if err := r.client.Create(context.TODO(), core); err != nil {
+	if err := r.reconcilePostgresSecret(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRedisSecret(cr); err != nil {
 		return err
 	}
 

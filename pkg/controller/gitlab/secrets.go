@@ -17,7 +17,6 @@ func getGilabSecret(cr *gitlabv1beta1.Gitlab, s security) *corev1.Secret {
 
 	secrets := map[string]string{
 		"gitlab_root_password":                      s.GitlabRootPassword(),
-		"postgres_password":                         s.PostgresPassword(),
 		"initial_shared_runners_registration_token": s.RunnerRegistrationToken(),
 		"redis_password":                            s.RedisPassword(),
 	}
@@ -99,37 +98,17 @@ func (r *ReconcileGitlab) reconcileShellSecret(cr *gitlabv1beta1.Gitlab) error {
 	return r.client.Create(context.TODO(), shell)
 }
 
-func getGitlabRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
-	labels := gitlabutils.Label(cr.Name, "rails", gitlabutils.GitlabType)
-
-	rails := gitlabutils.GenericSecret(cr.Name+"-rails-secret", cr.Namespace, labels)
-	rails.StringData = map[string]string{
-		"secrets.yml": "",
-	}
-
-	return rails
-}
-
-func (r *ReconcileGitlab) reconcileGitlabRailsSecret(cr *gitlabv1beta1.Gitlab) error {
-	shell := getGitlabRailsSecret(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: shell.Name}, shell) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, shell, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), shell)
-}
-
 func getGitalySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "gitaly", gitlabutils.GitlabType)
 
+	token := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             64,
+	})
+
 	gitaly := gitlabutils.GenericSecret(cr.Name+"-gitaly-secret", cr.Namespace, labels)
 	gitaly.StringData = map[string]string{
-		"token": "",
+		"token": token,
 	}
 
 	return gitaly
@@ -242,6 +221,44 @@ func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return registry
 }
 
+func getPostgresSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "postgres", gitlabutils.GitlabType)
+
+	gitlabPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             36,
+	})
+
+	postgresPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             36,
+	})
+
+	postgres := gitlabutils.GenericSecret(cr.Name+"-postgresql-secret", cr.Namespace, labels)
+	postgres.StringData = map[string]string{
+		"postgresql-password":          gitlabPassword,
+		"postgresql-postgres-password": postgresPassword,
+	}
+
+	return postgres
+}
+
+func getRedisSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
+
+	password := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             36,
+	})
+
+	redis := gitlabutils.GenericSecret(cr.Name+"-redis-secret", cr.Namespace, labels)
+	redis.StringData = map[string]string{
+		"secret": password,
+	}
+
+	return redis
+}
+
 /***************************************************************
  * Reconcilers for the different secrets begin below this line *
  ***************************************************************/
@@ -329,4 +346,46 @@ func (r *ReconcileGitlab) reconcileMinioSecret(cr *gitlabv1beta1.Gitlab) error {
 	}
 
 	return r.client.Create(context.TODO(), minio)
+}
+
+func (r *ReconcileGitlab) reconcilePostgresSecret(cr *gitlabv1beta1.Gitlab) error {
+	postgres := getPostgresSecret(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), postgres)
+}
+
+func (r *ReconcileGitlab) reconcileRedisSecret(cr *gitlabv1beta1.Gitlab) error {
+	redis := getRedisSecret(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), redis)
+}
+
+func (r *ReconcileGitlab) reconcileGitlabSecret(cr *gitlabv1beta1.Gitlab, s security) error {
+	core := getGilabSecret(cr, s)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: core.Name}, core) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, core, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), core)
 }

@@ -9,14 +9,35 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
 
+	var (
+		runAsUser   int64 = 0
+		pgRunAsUser int64 = 1001
+	)
+
+	dshmSize := gitlabutils.ResourceQuantity("1Gi")
+
 	claims := []corev1.PersistentVolumeClaim{}
-	mounts := []corev1.VolumeMount{}
+	mounts := []corev1.VolumeMount{
+		{
+			Name:      "custom-init-scripts",
+			MountPath: "/docker-entrypoint-initdb.d/",
+		},
+		{
+			Name:      "postgresql-password",
+			MountPath: "/opt/bitnami/postgresql/secrets/",
+		},
+		{
+			Name:      "dshm",
+			MountPath: "/dev/shm",
+		},
+	}
 
 	// Mount volume is specified
 	if cr.Spec.Volumes.Postgres.Capacity != "" {
@@ -41,8 +62,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      "data",
-			MountPath: "/var/lib/postgresql/data",
-			SubPath:   "postgres",
+			MountPath: "/bitnami/postgresql",
 		})
 	}
 
@@ -51,52 +71,79 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Namespace:            cr.Namespace,
 		Replicas:             cr.Spec.Database.Replicas,
 		VolumeClaimTemplates: claims,
+		InitContainers: []corev1.Container{
+			{
+				Name:            "init-chmod-data",
+				Image:           gitlabutils.MiniDebImage,
+				ImagePullPolicy: corev1.PullAlways,
+				Command: []string{
+					"sh",
+					"-c",
+					"mkdir -p /bitnami/postgresql/data; chmod 700 /bitnami/postgresql/data; find /bitnami/postgresql -mindepth 0 -maxdepth 1 -not -name \".snapshot\" -not -name \"lost+found\" | xargs chown -R 1001:1001 ; chmod -R 777 /dev/shm",
+				},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu":    gitlabutils.ResourceQuantity("250m"),
+						"memory": gitlabutils.ResourceQuantity("256Mi"),
+					},
+				},
+				SecurityContext: &corev1.SecurityContext{
+					RunAsUser: &runAsUser,
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "data",
+						MountPath: "/bitnami/postgresql",
+					},
+					{
+						Name:      "dshm",
+						MountPath: "/dev/shm",
+					},
+				},
+			},
+		},
 		Containers: []corev1.Container{
 			{
 				Name:            "postgres",
-				Image:           "postgres:9.6.17",
+				Image:           gitlabutils.PostgresImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
-						Name: "POSTGRES_USER",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "postgres_user",
-							},
-						},
+						Name:  "BITNAMI_DEBUG",
+						Value: "false",
 					},
 					{
-						Name: "POSTGRES_PASSWORD",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-secrets",
-								},
-								Key: "postgres_password",
-							},
-						},
+						Name:  "POSTGRESQL_PORT_NUMBER",
+						Value: "5432",
 					},
 					{
-						Name: "POSTGRES_DB",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-config",
-								},
-								Key: "postgres_db",
-							},
-						},
+						Name:  "POSTGRESQL_VOLUME_DIR",
+						Value: "/bitnami/postgresql",
 					},
 					{
 						Name:  "PGDATA",
-						Value: "/var/lib/postgresql/data/pgdata",
+						Value: "/bitnami/postgresql/data",
 					},
 					{
-						Name:  "DB_EXTENSION",
-						Value: "pg_trgm",
+						Name:  "POSTGRES_POSTGRES_PASSWORD_FILE",
+						Value: "/opt/bitnami/postgresql/secrets/postgresql-postgres-password",
+					},
+					{
+						Name:  "POSTGRES_USER",
+						Value: DatabaseUser,
+					},
+					{
+						Name:  "POSTGRES_PASSWORD_FILE",
+						Value: "/opt/bitnami/postgresql/secrets/postgresql-password",
+					},
+					{
+						Name:  "POSTGRES_DB",
+						Value: DatabaseName,
+					},
+
+					{
+						Name:  "POSTGRESQL_ENABLE_LDAP",
+						Value: "no",
 					},
 				},
 				Ports: []corev1.ContainerPort{
@@ -105,7 +152,15 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						ContainerPort: 5432,
 					},
 				},
-				VolumeMounts: mounts,
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu":    gitlabutils.ResourceQuantity("250m"),
+						"memory": gitlabutils.ResourceQuantity("256Mi"),
+					},
+				},
+				SecurityContext: &corev1.SecurityContext{
+					RunAsUser: &pgRunAsUser,
+				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -120,7 +175,10 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 							},
 						},
 					},
-					InitialDelaySeconds: 180,
+					FailureThreshold:    6,
+					InitialDelaySeconds: 30,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
 					TimeoutSeconds:      5,
 				},
 				ReadinessProbe: &corev1.Probe{
@@ -137,8 +195,107 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 							},
 						},
 					},
+					FailureThreshold:    6,
 					InitialDelaySeconds: 5,
-					TimeoutSeconds:      1,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      5,
+				},
+				VolumeMounts: mounts,
+			},
+			{
+				Name:            "metrics",
+				Image:           gitlabutils.PostgresExporterImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "DATA_SOURCE_URI",
+						Value: "127.0.0.1:5432/gitlabhq_production?sslmode=disable",
+					},
+					{
+						Name:  "DATA_SOURCE_PASS_FILE",
+						Value: "/opt/bitnami/postgresql/secrets/postgresql-password",
+					},
+					{
+						Name:  "DATA_SOURCE_USER",
+						Value: DatabaseUser,
+					},
+				},
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "metrics",
+						ContainerPort: 9187,
+						Protocol:      corev1.ProtocolTCP,
+					},
+				},
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/",
+							Port: intstr.IntOrString{
+								IntVal: 9187,
+							},
+							Scheme: corev1.URISchemeHTTP,
+						},
+					},
+					InitialDelaySeconds: 5,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      5,
+					FailureThreshold:    6,
+				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/",
+							Port: intstr.IntOrString{
+								IntVal: 9187,
+							},
+							Scheme: corev1.URISchemeHTTP,
+						},
+					},
+					InitialDelaySeconds: 5,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      5,
+					FailureThreshold:    6,
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "postgresql-password",
+						MountPath: "/opt/bitnami/postgresql/secrets/",
+					},
+				},
+			},
+		},
+		Volumes: []corev1.Volume{
+			{
+				Name: "postgresql-password",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:  cr.Name + "-postgresql-secret",
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
+					},
+				},
+			},
+			{
+				Name: "custom-init-scripts",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: cr.Name + "-postgresql-initdb-config",
+						},
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
+					},
+				},
+			},
+			{
+				Name: "dshm",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium:    corev1.StorageMediumMemory,
+						SizeLimit: &dshmSize,
+					},
 				},
 			},
 		},

@@ -307,6 +307,19 @@ func getMigrationsConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	return tasker
 }
 
+func getPostgresInitDBConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "postgres", gitlabutils.GitlabType)
+
+	script := gitlabutils.ReadConfig("/templates/postgresql-pgtrm.sh")
+
+	postgres := gitlabutils.GenericConfigMap(cr.Name+"-postgresql-initdb-config", cr.Namespace, labels)
+	postgres.Data = map[string]string{
+		"enable_extensions.sh": script,
+	}
+
+	return postgres
+}
+
 /*
 	Reconcilers for all ConfigMaps come below
 */
@@ -463,4 +476,18 @@ func (r *ReconcileGitlab) reconcileMigrationsConfigMap(cr *gitlabv1beta1.Gitlab)
 	}
 
 	return r.client.Create(context.TODO(), migration)
+}
+
+func (r *ReconcileGitlab) reconcilePostgresInitDBConfigMap(cr *gitlabv1beta1.Gitlab) error {
+	initdb := getPostgresInitDBConfig(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: initdb.Name}, initdb) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, initdb, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), initdb)
 }

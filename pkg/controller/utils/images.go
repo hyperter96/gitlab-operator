@@ -44,9 +44,6 @@ const (
 	// RedisExporterImage exports redis metrics for prometheus
 	RedisExporterImage = "docker.io/bitnami/redis-exporter:1.3.5-debian-9-r23"
 
-	// PostgresExporterImage is image for PostgreSQL
-	PostgresExporterImage = "docker.io/bitnami/postgres-exporter:0.7.0-debian-9-r12"
-
 	// ConfigMapReloadImage provides util to detect configmap changes
 	ConfigMapReloadImage = "jimmidyson/configmap-reload:v0.3.0"
 
@@ -55,4 +52,13 @@ const (
 
 	// GitLabCertificatesImage is image for certificates
 	GitLabCertificatesImage = "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20171114-r3"
+
+	// PostgresImage is the image for PostgreSQL database
+	PostgresImage = "docker.io/bitnami/postgresql:10.9.0"
+
+	// PostgresExporterImage is the image for the Postgres Metrics exporter container
+	PostgresExporterImage = "docker.io/bitnami/postgres-exporter:0.7.0-debian-9-r12"
+
+	// MiniDebImage is the image used by the postgres init container to fix filesystem permissions
+	MiniDebImage = "docker.io/bitnami/minideb:stretch"
 )

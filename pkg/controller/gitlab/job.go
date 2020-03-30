@@ -191,11 +191,11 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-gitlab-secrets",
+										Name: cr.Name + "-postgresql-secret",
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  "postgres_password",
+											Key:  "postgresql-password",
 											Path: "postgres/psql-password",
 										},
 									},

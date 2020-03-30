@@ -162,7 +162,15 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
+	if err := r.reconcilePostgresHeadlessService(cr); err != nil {
+		return err
+	}
+
 	if err := r.reconcileRedisService(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRedisHeadlessService(cr); err != nil {
 		return err
 	}
 

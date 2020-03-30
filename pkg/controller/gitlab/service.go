@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"context"
+	"strings"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
@@ -11,6 +12,30 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+func getRedisHeadlessService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      strings.Join([]string{labels["app.kubernetes.io/instance"], "headless"}, "-"),
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "redis",
+					Port:     6379,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			Type:      corev1.ServiceTypeClusterIP,
+			ClusterIP: corev1.ClusterIPNone,
+		},
+	}
+}
 
 func getRedisService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
@@ -27,6 +52,29 @@ func getRedisService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 				{
 					Name:     "redis",
 					Port:     6379,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func getPostgresHeadlessService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
+	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      strings.Join([]string{labels["app.kubernetes.io/instance"], "headless"}, "-"),
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "postgres",
+					Port:     5432,
 					Protocol: corev1.ProtocolTCP,
 				},
 			},
@@ -54,8 +102,7 @@ func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 					Protocol: corev1.ProtocolTCP,
 				},
 			},
-			Type:      corev1.ServiceTypeClusterIP,
-			ClusterIP: corev1.ClusterIPNone,
+			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
 }
@@ -203,8 +250,36 @@ func (r *ReconcileGitlab) reconcilePostgresService(cr *gitlabv1beta1.Gitlab) err
 	return r.client.Create(context.TODO(), postgres)
 }
 
+func (r *ReconcileGitlab) reconcilePostgresHeadlessService(cr *gitlabv1beta1.Gitlab) error {
+	postgres := getPostgresHeadlessService(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), postgres)
+}
+
 func (r *ReconcileGitlab) reconcileRedisService(cr *gitlabv1beta1.Gitlab) error {
 	redis := getRedisService(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), redis)
+}
+
+func (r *ReconcileGitlab) reconcileRedisHeadlessService(cr *gitlabv1beta1.Gitlab) error {
+	redis := getRedisHeadlessService(cr)
 
 	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
 		return nil

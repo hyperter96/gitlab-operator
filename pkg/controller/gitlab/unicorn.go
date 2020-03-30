@@ -438,11 +438,11 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-gitlab-secrets",
+										Name: cr.Name + "-redis-secret",
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  "redis_password",
+											Key:  "secret",
 											Path: "redis/password",
 										},
 									},

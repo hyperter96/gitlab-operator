@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"strings"
+
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +41,7 @@ func GenericStatefulSet(component Component) *appsv1.StatefulSet {
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName:          labels["app.kubernetes.io/instance"],
+			ServiceName:          strings.Join([]string{labels["app.kubernetes.io/instance"], "headless"}, "-"),
 			VolumeClaimTemplates: component.VolumeClaimTemplates,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,

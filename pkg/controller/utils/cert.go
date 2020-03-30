@@ -49,8 +49,8 @@ func getClientCertificate() x509.Certificate {
 }
 
 // PrivateKeyRSA returns a RSA private key
-func PrivateKeyRSA() (*rsa.PrivateKey, error) {
-	privateKey, err := rsa.GenerateKey(rand.Reader, keyBitSize)
+func PrivateKeyRSA(size int) (*rsa.PrivateKey, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, size)
 	if err != nil {
 		return nil, err
 	}
@@ -58,9 +58,9 @@ func PrivateKeyRSA() (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-// RSAPrivateKeyPEM returns an RSA private key in PEM format
-func RSAPrivateKeyPEM() (string, error) {
-	key, err := PrivateKeyRSA()
+// SigningRSAKey returns an RSA private key of size 2048 bits
+func SigningRSAKey() (string, error) {
+	key, err := PrivateKeyRSA(2048)
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +75,7 @@ func RSAPrivateKeyPEM() (string, error) {
 
 // KeyCertificate returns certificate, privateKey and error
 func KeyCertificate() ([]byte, []byte, error) {
-	key, err := PrivateKeyRSA()
+	key, err := PrivateKeyRSA(keyBitSize)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -170,7 +170,7 @@ func getShellConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
 	var script bytes.Buffer
 
-	shellConfigs := gitlabutils.ReadConfig("/templates/shell-configure.sh")
+	configureScript := gitlabutils.ReadConfig("/templates/shell-configure.sh")
 	sshdConfig := gitlabutils.ReadConfig("/templates/shell-sshd-config")
 
 	options := ShellOptions{
@@ -183,8 +183,8 @@ func getShellConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	shell := gitlabutils.GenericConfigMap(cr.Name+"-shell-config", cr.Namespace, labels)
 	shell.Data = map[string]string{
-		"config.yml.erb": shellConfigs,
-		"configure":      script.String(),
+		"configure":      configureScript,
+		"config.yml.erb": script.String(),
 		"sshd_config":    sshdConfig,
 	}
 
@@ -223,6 +223,7 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		"resque.yml.erb":         getRedisConfiguration(options.RedisMaster),
 		"gitlab.yml.erb":         gitlab.String(),
 		"smtp_settings.rb":       "",
+		"installation_type":      "gitlab-operator",
 		"sidekiq_queues.yml.erb": queuesYML,
 	}
 

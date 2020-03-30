@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"regexp"
 	"strings"
 	"time"
 
@@ -114,6 +115,16 @@ func ReadConfig(filename string) string {
 		fmt.Printf("Error reading %s: %v", filename, err)
 	}
 	return string(content)
+}
+
+// RemoveEmptyLines removes empty lines from block string
+func RemoveEmptyLines(block string) string {
+	re, err := regexp.Compile("\n\n")
+	if err != nil {
+		fmt.Printf("Error building pattern: %v", err)
+	}
+
+	return re.ReplaceAllString(block, "\n")
 }
 
 // Password creates an password string based

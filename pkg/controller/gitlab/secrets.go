@@ -3,6 +3,7 @@ package gitlab
 import (
 	"bytes"
 	"context"
+	"strings"
 	"text/template"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
@@ -184,7 +185,7 @@ func getRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 		Length:             129,
 	})
 
-	privateKey, err := gitlabutils.RSAPrivateKeyPEM()
+	privateKey, err := gitlabutils.SigningRSAKey()
 	if err != nil {
 		log.Error(err, "Error getting RSA private key")
 	}
@@ -193,7 +194,7 @@ func getRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 		SecretKey:     secretkey,
 		OTPKey:        otpkey,
 		DatabaseKey:   dbkey,
-		RSAPrivateKey: privateKey,
+		RSAPrivateKey: strings.Split(privateKey, "\n"),
 	}
 
 	var secret bytes.Buffer
@@ -202,7 +203,7 @@ func getRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 
 	rails := gitlabutils.GenericSecret(cr.Name+"-rails-secret", cr.Namespace, labels)
 	rails.StringData = map[string]string{
-		"secrets.yml": secret.String(),
+		"secrets.yml": gitlabutils.RemoveEmptyLines(secret.String()),
 	}
 
 	return rails

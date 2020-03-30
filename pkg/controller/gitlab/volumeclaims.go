@@ -30,7 +30,7 @@ func getRegistryVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolumeCl
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+					"storage": gitlabutils.ResourceQuantity(volumeSize),
 				},
 			},
 		},
@@ -58,7 +58,7 @@ func getGitlabDataVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolume
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+					"storage": gitlabutils.ResourceQuantity(volumeSize),
 				},
 			},
 		},
@@ -86,7 +86,7 @@ func getGitlabConfigVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolu
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
-					StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+					"storage": gitlabutils.ResourceQuantity(volumeSize),
 				},
 			},
 		},

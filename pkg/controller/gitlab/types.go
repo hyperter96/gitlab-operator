@@ -5,15 +5,6 @@ import (
 )
 
 const (
-	// StorageResourceName for defining storage resources
-	StorageResourceName = "storage"
-
-	// CPUResourceName for defining CPU resources
-	CPUResourceName = "cpu"
-
-	// MemoryResourceName defining memory resource
-	MemoryResourceName = "memory"
-
 	// StrongPassword defines password length
 	StrongPassword = 21
 
@@ -149,7 +140,7 @@ type RailsOptions struct {
 	SecretKey     string
 	DatabaseKey   string
 	OTPKey        string
-	RSAPrivateKey string
+	RSAPrivateKey []string
 }
 
 // TaskRunnerOptions defines options

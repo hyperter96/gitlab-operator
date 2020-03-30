@@ -12,6 +12,9 @@ var (
 	// ConfigMapDefaultMode for configmap projected volume
 	ConfigMapDefaultMode int32 = 420
 
+	// ExecutableDefaultMode for configmap projected volume
+	ExecutableDefaultMode int32 = 493
+
 	// ProjectedVolumeDefaultMode for projected volume
 	ProjectedVolumeDefaultMode int32 = 256
 

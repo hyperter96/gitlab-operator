@@ -54,7 +54,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+						"storage": gitlabutils.ResourceQuantity(volumeSize),
 					},
 				},
 			},
@@ -307,25 +307,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 
 	var runAsUser int64 = 1001
 
-	redisEntrypoint := `
-	if [[ -n $REDIS_PASSWORD_FILE ]]; then
-		password_aux=$(cat ${REDIS_PASSWORD_FILE})
-		export REDIS_PASSWORD=$password_aux
-	fi
-	if [[ ! -f /opt/bitnami/redis/etc/master.conf ]];then
-		cp /opt/bitnami/redis/mounted-etc/master.conf /opt/bitnami/redis/etc/master.conf
-	fi
-	if [[ ! -f /opt/bitnami/redis/etc/redis.conf ]];then
-		cp /opt/bitnami/redis/mounted-etc/redis.conf /opt/bitnami/redis/etc/redis.conf
-	fi
-	ARGS=("--port" "${REDIS_PORT}")
-	ARGS+=("--requirepass" "${REDIS_PASSWORD}")
-	ARGS+=("--masterauth" "${REDIS_PASSWORD}")
-	ARGS+=("--include" "/opt/bitnami/redis/etc/redis.conf")
-	ARGS+=("--include" "/opt/bitnami/redis/etc/master.conf")
-	/run.sh ${ARGS[@]}
-	`
-
+	redisEntrypoint := gitlabutils.ReadConfig("/templates/redis-entrypoint.sh")
 	claims := []corev1.PersistentVolumeClaim{}
 	mounts := []corev1.VolumeMount{
 		// Pre-populating the mounts with the Redis config volume
@@ -361,7 +343,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+						"storage": gitlabutils.ResourceQuantity(volumeSize),
 					},
 				},
 			},
@@ -464,7 +446,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				Name: "health",
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
-						// DefaultMode: 493,
+						DefaultMode: &gitlabutils.ExecutableDefaultMode,
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: cr.Name + "-redis-health-config",
 						},
@@ -527,7 +509,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						StorageResourceName: gitlabutils.ResourceQuantity(volumeSize),
+						"storage": gitlabutils.ResourceQuantity(volumeSize),
 					},
 				},
 			},
@@ -566,7 +548,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				ImagePullPolicy: corev1.PullAlways,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						StorageResourceName: gitlabutils.ResourceQuantity("50m"),
+						"cpu": gitlabutils.ResourceQuantity("50m"),
 					},
 				},
 				VolumeMounts: []corev1.VolumeMount{
@@ -599,7 +581,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						StorageResourceName: gitlabutils.ResourceQuantity("50m"),
+						"cpu": gitlabutils.ResourceQuantity("50m"),
 					},
 				},
 			},
@@ -657,10 +639,10 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				Name: "gitaly-config",
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: cr.Name + "-gitaly-config",
 						},
-						// DefaultMode: 420,
 					},
 				},
 			},
@@ -693,7 +675,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-gitlab-shell-secret",
+										Name: cr.Name + "-shell-secret",
 									},
 									Items: []corev1.KeyToPath{
 										{

@@ -41,6 +41,9 @@ const (
 	// GitLabTaskRunnerImage is for task runner deployment
 	GitLabTaskRunnerImage = "registry.gitlab.com/gitlab-org/build/cng/gitlab-task-runner-ee:v12.8.7"
 
+	// RedisImage contains the Redis image
+	RedisImage = "docker.io/bitnami/redis:5.0.7-debian-9-r50"
+
 	// RedisExporterImage exports redis metrics for prometheus
 	RedisExporterImage = "docker.io/bitnami/redis-exporter:1.3.5-debian-9-r23"
 

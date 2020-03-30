@@ -16,58 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// GenerateComponentPasswords generates passwords for the
-// different gitlab components
-func (c *ComponentPasswords) GenerateComponentPasswords() {
-	if c.redis == "" {
-		c.redis = gitlabutils.Password(gitlabutils.PasswordOptions{
-			EnableSpecialChars: false,
-			Length:             StrongPassword,
-		})
-	}
-
-	if c.postgres == "" {
-		c.postgres = gitlabutils.Password(gitlabutils.PasswordOptions{
-			EnableSpecialChars: false,
-			Length:             StrongPassword,
-		})
-	}
-
-	if c.runnerRegistrationToken == "" {
-		c.runnerRegistrationToken = gitlabutils.Password(gitlabutils.PasswordOptions{
-			EnableSpecialChars: false,
-			Length:             StrongPassword,
-		})
-	}
-
-	if c.gitlabRootPassword == "" {
-		c.gitlabRootPassword = gitlabutils.Password(gitlabutils.PasswordOptions{
-			EnableSpecialChars: true,
-			Length:             StrongPassword,
-		})
-	}
-}
-
-// RunnerRegistrationToken returns password for linking runner to gitlab
-func (c *ComponentPasswords) RunnerRegistrationToken() string {
-	return c.runnerRegistrationToken
-}
-
-// GitlabRootPassword returns gitlab root password for web interface
-func (c *ComponentPasswords) GitlabRootPassword() string {
-	return c.gitlabRootPassword
-}
-
-// PostgresPassword returns postgres password
-func (c *ComponentPasswords) PostgresPassword() string {
-	return c.postgres
-}
-
-// RedisPassword returns redis password
-func (c *ComponentPasswords) RedisPassword() string {
-	return c.redis
-}
-
 // DomainNameOnly separates domain from URL
 func DomainNameOnly(url string) string {
 	if strings.Contains(url, "://") {
@@ -191,13 +139,6 @@ func isAddressInList(slice []string, key string) bool {
 func SetStatus(client client.Client, object runtime.Object) (err error) {
 	err = client.Status().Update(context.TODO(), object)
 	return
-}
-
-func gitalyShellConfigs(cr *gitlabv1beta1.Gitlab) GitalyConfig {
-	return GitalyConfig{
-		RedisMaster: strings.Join([]string{cr.Name, "redis"}, "-"),
-		Unicorn:     strings.Join([]string{cr.Name, "unicorn"}, "-"),
-	}
 }
 
 func getName(cr, component string) string {

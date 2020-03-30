@@ -38,23 +38,44 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	return gitlab
 }
 
-func getRedisConfig(cr *gitlabv1beta1.Gitlab, s security) *corev1.ConfigMap {
+func getRedisConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
-	var redisConf bytes.Buffer
+	masterConf := gitlabutils.ReadConfig("/templates/redis-master.conf")
+	replicaConf := gitlabutils.ReadConfig("/templates/redis-replica.conf")
+	redisConf := gitlabutils.ReadConfig("/templates/redis.conf")
 
-	tmpl := template.Must(template.ParseFiles("/templates/redis.conf"))
-	tmpl.Execute(&redisConf, RedisConfig{
-		Password: s.RedisPassword(),
-		Cluster:  false,
-	})
-
-	redis := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-redis", cr.Namespace, labels)
+	redis := gitlabutils.GenericConfigMap(cr.Name+"-redis-config", cr.Namespace, labels)
 	redis.Data = map[string]string{
-		"redis.conf": redisConf.String(),
+		"master.conf":  masterConf,
+		"redis.conf":   redisConf,
+		"replica.conf": replicaConf,
 	}
 
 	return redis
+}
+
+func getRedisSciptsConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
+
+	localLiveness := gitlabutils.ReadConfig("/templates/redis-liveness_local.sh")
+	masterAndLocalLiveness := gitlabutils.ReadConfig("/templates/redis-liveness_local_and_master.sh")
+	masterLiveness := gitlabutils.ReadConfig("/templates/redis-liveness_master.sh")
+	localReadiness := gitlabutils.ReadConfig("/templates/redis-readiness_local.sh")
+	masterAndLocalReadiness := gitlabutils.ReadConfig("/templates/redis-readiness_local_and_master.sh")
+	masterReadiness := gitlabutils.ReadConfig("/templates/redis-readiness_master.sh")
+
+	scripts := gitlabutils.GenericConfigMap(cr.Name+"-redis-health-config", cr.Namespace, labels)
+	scripts.Data = map[string]string{
+		"ping_liveness_local.sh":             localLiveness,
+		"ping_liveness_local_and_master.sh":  masterAndLocalLiveness,
+		"ping_liveness_master.sh":            masterLiveness,
+		"ping_readiness_local.sh":            localReadiness,
+		"ping_readiness_local_and_master.sh": masterAndLocalReadiness,
+		"ping_readiness_master.sh":           masterReadiness,
+	}
+
+	return scripts
 }
 
 func getGitalyConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
@@ -62,9 +83,14 @@ func getGitalyConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	gitaly := gitlabutils.GenericConfigMap(cr.Name+"-gitaly-config", cr.Namespace, labels)
 
+	options := GitalyOptions{
+		RedisMaster: getName(cr.Name, "redis"),
+		Unicorn:     getName(cr.Name, "unicorn"),
+	}
+
 	var shell bytes.Buffer
 	shellTemplate := template.Must(template.ParseFiles("/templates/gitaly-shell-config.yml.erb"))
-	shellTemplate.Execute(&shell, gitalyShellConfigs(cr))
+	shellTemplate.Execute(&shell, options)
 
 	gitalyConf := gitlabutils.ReadConfig("/templates/gitaly-config.toml.erb")
 	configureScript := gitlabutils.ReadConfig("/templates/gitaly-configure.sh")
@@ -144,7 +170,7 @@ func getShellConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
 	var script bytes.Buffer
 
-	shellConfigs := gitlabutils.ReadConfig("/templates/shell-config.yml.erb")
+	shellConfigs := gitlabutils.ReadConfig("/templates/shell-configure.sh")
 	sshdConfig := gitlabutils.ReadConfig("/templates/shell-sshd-config")
 
 	options := ShellOptions{
@@ -152,7 +178,7 @@ func getShellConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		RedisMaster: getName(cr.Name, "redis"),
 	}
 
-	configureTemplate := template.Must(template.ParseFiles("/templates/shell-configure.sh"))
+	configureTemplate := template.Must(template.ParseFiles("/templates/shell-config.yml.erb"))
 	configureTemplate.Execute(&script, options)
 
 	shell := gitlabutils.GenericConfigMap(cr.Name+"-shell-config", cr.Namespace, labels)
@@ -176,6 +202,10 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		PostgreSQL:     getName(cr.Name, "database"),
 		GitlabDomain:   cr.Spec.ExternalURL,
 		EnableRegistry: true,
+		Registry:       getName(cr.Name, "registry"),
+		RegistryDomain: cr.Spec.Registry.ExternalURL,
+		Gitaly:         getName(cr.Name, "gitaly"),
+		Namespace:      cr.Namespace,
 		EmailFrom:      "gitlab.example.com",
 		ReplyTo:        "noreply@example.com",
 		MinioDomain:    "minio.example.com",
@@ -352,8 +382,8 @@ func (r *ReconcileGitlab) reconcileGitalyConfigMap(cr *gitlabv1beta1.Gitlab) err
 	return r.client.Create(context.TODO(), gitaly)
 }
 
-func (r *ReconcileGitlab) reconcileRedisConfigMap(cr *gitlabv1beta1.Gitlab, s security) error {
-	redis := getRedisConfig(cr, s)
+func (r *ReconcileGitlab) reconcileRedisConfigMap(cr *gitlabv1beta1.Gitlab) error {
+	redis := getRedisConfig(cr)
 
 	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
 		return nil
@@ -364,6 +394,20 @@ func (r *ReconcileGitlab) reconcileRedisConfigMap(cr *gitlabv1beta1.Gitlab, s se
 	}
 
 	return r.client.Create(context.TODO(), redis)
+}
+
+func (r *ReconcileGitlab) reconcileRedisScriptsConfigMap(cr *gitlabv1beta1.Gitlab) error {
+	scripts := getRedisSciptsConfig(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: scripts.Name}, scripts) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, scripts, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), scripts)
 }
 
 func (r *ReconcileGitlab) reconcileUnicornConfigMap(cr *gitlabv1beta1.Gitlab) error {

@@ -305,13 +305,45 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
+	var runAsUser int64 = 1001
+
+	redisEntrypoint := `
+	if [[ -n $REDIS_PASSWORD_FILE ]]; then
+		password_aux=$(cat ${REDIS_PASSWORD_FILE})
+		export REDIS_PASSWORD=$password_aux
+	fi
+	if [[ ! -f /opt/bitnami/redis/etc/master.conf ]];then
+		cp /opt/bitnami/redis/mounted-etc/master.conf /opt/bitnami/redis/etc/master.conf
+	fi
+	if [[ ! -f /opt/bitnami/redis/etc/redis.conf ]];then
+		cp /opt/bitnami/redis/mounted-etc/redis.conf /opt/bitnami/redis/etc/redis.conf
+	fi
+	ARGS=("--port" "${REDIS_PORT}")
+	ARGS+=("--requirepass" "${REDIS_PASSWORD}")
+	ARGS+=("--masterauth" "${REDIS_PASSWORD}")
+	ARGS+=("--include" "/opt/bitnami/redis/etc/redis.conf")
+	ARGS+=("--include" "/opt/bitnami/redis/etc/master.conf")
+	/run.sh ${ARGS[@]}
+	`
+
 	claims := []corev1.PersistentVolumeClaim{}
 	mounts := []corev1.VolumeMount{
 		// Pre-populating the mounts with the Redis config volume
 		{
-			Name:      "conf",
-			MountPath: "/etc/redis/redis.conf",
-			SubPath:   "redis.conf",
+			Name:      "health",
+			MountPath: "/health",
+		},
+		{
+			Name:      "redis-password",
+			MountPath: "/opt/bitnami/redis/secrets/",
+		},
+		{
+			Name:      "config",
+			MountPath: "/opt/bitnami/redis/mounted-etc",
+		},
+		{
+			Name:      "redis-tmp-conf",
+			MountPath: "/opt/bitnami/redis/etc/",
 		},
 	}
 
@@ -337,8 +369,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      "data",
-			MountPath: "/var/lib/redis",
-			SubPath:   "redis",
+			MountPath: "/data",
 		})
 	}
 
@@ -350,45 +381,126 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "redis",
-				Image:           "redis:3.2.4",
+				Image:           gitlabutils.RedisImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
-				Command:         []string{"redis-server", "/etc/redis/redis.conf"},
+				Command:         []string{"/bin/bash", "-c", redisEntrypoint},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "REDIS_REPLICATION_MODE",
+						Value: "master",
+					},
+					{
+						Name:  "REDIS_PASSWORD_FILE",
+						Value: "/opt/bitnami/redis/secrets/redis-password",
+					},
+					{
+						Name:  "REDIS_PORT",
+						Value: "6379",
+					},
+				},
+				SecurityContext: &corev1.SecurityContext{
+					RunAsUser: &runAsUser,
+				},
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "redis",
 						ContainerPort: 6379,
+						Protocol:      corev1.ProtocolTCP,
 					},
 				},
 				VolumeMounts: mounts,
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: []string{"redis-cli", "ping"},
+							Command: []string{"sh", "-c", "/health/ping_liveness_local.sh 5"},
 						},
 					},
-					InitialDelaySeconds: 30,
+					FailureThreshold:    5,
+					InitialDelaySeconds: 5,
+					PeriodSeconds:       5,
+					SuccessThreshold:    1,
 					TimeoutSeconds:      5,
 				},
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: []string{"redis-cli", "ping"},
+							Command: []string{"sh", "-c", "/health/ping_readiness_local.sh 5"},
 						},
 					},
+					FailureThreshold:    5,
 					InitialDelaySeconds: 5,
+					PeriodSeconds:       5,
+					SuccessThreshold:    1,
 					TimeoutSeconds:      1,
+				},
+			},
+			{
+				Name:            "metrics",
+				Image:           gitlabutils.RedisExporterImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "REDIS_ALIAS",
+						Value: cr.Name + "-redis",
+					},
+				},
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "metrics",
+						ContainerPort: 9121,
+						Protocol:      corev1.ProtocolTCP,
+					},
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "redis-password",
+						MountPath: "/secrets/",
+					},
 				},
 			},
 		},
 		Volumes: []corev1.Volume{
 			{
-				Name: "conf",
+				Name: "health",
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
+						// DefaultMode: 493,
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cr.Name + "-gitlab-redis",
+							Name: cr.Name + "-redis-health-config",
 						},
 					},
+				},
+			},
+			{
+				Name: "redis-password",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
+						SecretName:  cr.Name + "-redis-secret",
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "secret",
+								Path: "redis-password",
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "config",
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: cr.Name + "-redis-config",
+						},
+					},
+				},
+			},
+			{
+				Name: "redis-tmp-conf",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		},

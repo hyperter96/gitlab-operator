@@ -10,13 +10,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab, s security) error {
+func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 
 	if err := r.reconcileGitalyConfigMap(cr); err != nil {
 		return err
 	}
 
-	if err := r.reconcileRedisConfigMap(cr, s); err != nil {
+	if err := r.reconcileRedisConfigMap(cr); err != nil {
 		return err
 	}
 
@@ -64,12 +64,16 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab, s securi
 		return err
 	}
 
+	if err := r.reconcileRedisScriptsConfigMap(cr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab, s security) error {
+func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 
-	if err := r.reconcileGitlabSecret(cr, s); err != nil {
+	if err := r.reconcileGitlabSecret(cr); err != nil {
 		return err
 	}
 

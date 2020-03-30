@@ -16,7 +16,7 @@ auth_file: "/home/git/.ssh/authorized_keys"
 redis:
   host: {{ .RedisMaster }}
   port: 6379
-  pass: "<%= File.read("/etc/gitlab-secrets/redis/redis_password").strip.dump[1..-2] %>"
+  pass: "<%= File.read('/etc/gitlab-secrets/redis/redis_password').strip.dump[1..-2] %>"
   database: nil
   namespace: resque:gitlab
 

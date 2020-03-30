@@ -12,13 +12,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func getGilabSecret(cr *gitlabv1beta1.Gitlab, s security) *corev1.Secret {
+func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
 
+	registrationToken := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             32,
+	})
+
+	rootPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: true,
+		Length:             46,
+	})
+
 	secrets := map[string]string{
-		"gitlab_root_password":                      s.GitlabRootPassword(),
-		"initial_shared_runners_registration_token": s.RunnerRegistrationToken(),
-		"redis_password":                            s.RedisPassword(),
+		"gitlab_root_password":                      rootPassword,
+		"initial_shared_runners_registration_token": registrationToken,
 	}
 
 	if cr.Spec.SMTP.Password != "" {
@@ -376,8 +385,8 @@ func (r *ReconcileGitlab) reconcileRedisSecret(cr *gitlabv1beta1.Gitlab) error {
 	return r.client.Create(context.TODO(), redis)
 }
 
-func (r *ReconcileGitlab) reconcileGitlabSecret(cr *gitlabv1beta1.Gitlab, s security) error {
-	core := getGilabSecret(cr, s)
+func (r *ReconcileGitlab) reconcileGitlabSecret(cr *gitlabv1beta1.Gitlab) error {
+	core := getGilabSecret(cr)
 
 	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: core.Name}, core) {
 		return nil

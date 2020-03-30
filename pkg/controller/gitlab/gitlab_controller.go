@@ -199,14 +199,11 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		go r.updateGitlabStatus(cr)
 	})
 
-	creds := ComponentPasswords{}
-	creds.GenerateComponentPasswords()
-
-	if err := r.reconcileSecrets(cr, &creds); err != nil {
+	if err := r.reconcileSecrets(cr); err != nil {
 		return err
 	}
 
-	if err := r.reconcileConfigMaps(cr, &creds); err != nil {
+	if err := r.reconcileConfigMaps(cr); err != nil {
 		return err
 	}
 

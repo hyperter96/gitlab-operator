@@ -41,14 +41,6 @@ type ComponentPasswords struct {
 	runnerRegistrationToken string
 }
 
-type security interface {
-	GenerateComponentPasswords()
-	RunnerRegistrationToken() string
-	GitlabRootPassword() string
-	PostgresPassword() string
-	RedisPassword() string
-}
-
 // OmnibusOptions defines options for
 // configuring the gitlab pod
 type OmnibusOptions struct {
@@ -81,9 +73,9 @@ type ServiceStatus struct {
 	Status string `json:"status,omitempty"`
 }
 
-// GitalyConfig contains service
+// GitalyOptions contains service
 // names for Redis and Unicorn
-type GitalyConfig struct {
+type GitalyOptions struct {
 	// Name of redis service
 	RedisMaster string
 
@@ -127,6 +119,10 @@ type SidekiqOptions struct {
 	PostgreSQL     string
 	GitlabDomain   string // ExternalURL no protocol. e.g: gitlab.example.com
 	EnableRegistry bool
+	Registry       string
+	RegistryDomain string
+	Gitaly         string
+	Namespace      string
 	EmailFrom      string
 	ReplyTo        string
 	MinioDomain    string // hostname e.g. minio.example.com

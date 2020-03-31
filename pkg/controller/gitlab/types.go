@@ -1,9 +1,5 @@
 package gitlab
 
-import (
-	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
-)
-
 const (
 	// StrongPassword defines password length
 	StrongPassword = 21
@@ -21,31 +17,6 @@ type RedisConfig struct {
 	// Defines the redis host to be used in the configuration
 	Password string
 	Cluster  bool
-}
-
-// ComponentPasswords struct has passwords for the different
-// gitlab components
-type ComponentPasswords struct {
-	redis                   string
-	postgres                string
-	gitlabRootPassword      string
-	runnerRegistrationToken string
-}
-
-// OmnibusOptions defines options for
-// configuring the gitlab pod
-type OmnibusOptions struct {
-	// Enable gitlab registry
-	RegistryEnabled bool
-	// RegistryExternalURL defines gitlab
-	// registry external URL
-	RegistryExternalURL string
-	// MontiringNetworks contains a list of networks
-	// That should be allowed to access gitlab metrics,
-	// liveness probe and readiness probe endpoints
-	MonitoringWhitelist string
-	// SMTP server options
-	SMTP gitlabv1beta1.SMTPConfiguration
 }
 
 // ReadinessStatus shows status of Gitlab services

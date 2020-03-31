@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"encoding/base64"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -125,6 +127,11 @@ func RemoveEmptyLines(block string) string {
 	}
 
 	return re.ReplaceAllString(block, "\n")
+}
+
+// EncodeString accepts strings and returns a base64 encoded string
+func EncodeString(message string) string {
+	return base64.StdEncoding.EncodeToString([]byte(message))
 }
 
 // Password creates an password string based

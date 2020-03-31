@@ -22,8 +22,8 @@ func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	})
 
 	rootPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
-		EnableSpecialChars: true,
-		Length:             46,
+		EnableSpecialChars: false,
+		Length:             36,
 	})
 
 	secrets := map[string]string{
@@ -269,6 +269,23 @@ func getRedisSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return redis
 }
 
+func getWorkhorseSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "workhorse", gitlabutils.GitlabType)
+
+	sharedSecret := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             32,
+	})
+	encodedSecret := gitlabutils.EncodeString(sharedSecret)
+
+	workhorse := gitlabutils.GenericSecret(cr.Name+"-workhorse-secret", cr.Namespace, labels)
+	workhorse.StringData = map[string]string{
+		"shared_secret": encodedSecret,
+	}
+
+	return workhorse
+}
+
 /***************************************************************
  * Reconcilers for the different secrets begin below this line *
  ***************************************************************/
@@ -284,22 +301,6 @@ func (r *ReconcileGitlab) reconcileRegistrySecret(cr *gitlabv1beta1.Gitlab) erro
 	}
 
 	return r.client.Create(context.TODO(), registry)
-}
-
-func getWorkhorseSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
-	labels := gitlabutils.Label(cr.Name, "workhorse", gitlabutils.GitlabType)
-
-	sharedSecret := gitlabutils.Password(gitlabutils.PasswordOptions{
-		EnableSpecialChars: false,
-		Length:             45,
-	})
-
-	workhorse := gitlabutils.GenericSecret(cr.Name+"-workhorse-secret", cr.Namespace, labels)
-	workhorse.StringData = map[string]string{
-		"shared_secret": sharedSecret,
-	}
-
-	return workhorse
 }
 
 func (r *ReconcileGitlab) reconcileWorkhorseSecret(cr *gitlabv1beta1.Gitlab) error {

@@ -95,46 +95,6 @@ func getNetworkAddress(address string) string {
 	return network.String()
 }
 
-// Get the Kubernetes service and pod network
-// CIDRs for whitelisting
-func getMonitoringWhitelist(cr *gitlabv1beta1.Gitlab) string {
-	var addresses []corev1.EndpointAddress
-	var networks []string
-	endpoint, err := getOperatorMetricsEndpoints(cr)
-	if err != nil {
-		log.Error(err, "Error getting metrics endpoint")
-	}
-
-	for _, subset := range endpoint.Subsets {
-		addresses = append(addresses, subset.Addresses...)
-	}
-
-	for _, address := range addresses {
-		if address.IP != "" && !isAddressInList(networks, address.IP) {
-			networks = append(networks, getNetworkAddress(address.IP))
-		}
-	}
-
-	// TODO: Consider user provided whitelist
-	return fmt.Sprintf("['%s']", strings.Join(networks, "', '"))
-}
-
-// Returns true if item is in slice
-// false, otherwise
-func isAddressInList(slice []string, key string) bool {
-	if len(slice) == 0 {
-		return false
-	}
-
-	for _, item := range slice {
-		if item == key {
-			return true
-		}
-	}
-
-	return false
-}
-
 // SetStatus sets status of custom resource
 func SetStatus(client client.Client, object runtime.Object) (err error) {
 	err = client.Status().Update(context.TODO(), object)

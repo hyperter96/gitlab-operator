@@ -12,17 +12,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func getServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
-	labels := gitlabutils.Label(cr.Name, "metrics", gitlabutils.GitlabType)
+func getGitlabMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
+	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
+
+	serviceLabels := labels
+	serviceLabels["subsystem"] = "metrics"
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-gitlab-metrics",
+			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: cr.Namespace,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Selector: metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: serviceLabels,
 			},
 			Endpoints: []monitoringv1.Endpoint{
 				{
@@ -31,28 +34,32 @@ func getServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
 						IntVal: 9168,
 					},
 				},
-				{
-					Path: "/metrics",
-					TargetPort: &intstr.IntOrString{
-						IntVal: 9121,
-					},
-				},
+			},
+		},
+	}
+
+}
+
+func getPostgresMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
+	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+
+	serviceLabels := labels
+	serviceLabels["subsystem"] = "metrics"
+
+	return &monitoringv1.ServiceMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labels["app.kubernetes.io/instance"],
+			Namespace: cr.Namespace,
+		},
+		Spec: monitoringv1.ServiceMonitorSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: serviceLabels,
+			},
+			Endpoints: []monitoringv1.Endpoint{
 				{
 					Path: "/metrics",
 					TargetPort: &intstr.IntOrString{
 						IntVal: 9187,
-					},
-				},
-				{
-					Path: "/metrics",
-					TargetPort: &intstr.IntOrString{
-						IntVal: 9236,
-					},
-				},
-				{
-					Path: "/metrics",
-					TargetPort: &intstr.IntOrString{
-						IntVal: 9229,
 					},
 				},
 			},
@@ -61,17 +68,75 @@ func getServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
 
 }
 
-func (r *ReconcileGitlab) reconcilePrometheusServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+func getRedisMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
-	servicemon := getServiceMonitor(cr)
+	serviceLabels := labels
+	serviceLabels["subsystem"] = "metrics"
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: servicemon.Name}, servicemon) {
+	return &monitoringv1.ServiceMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labels["app.kubernetes.io/instance"],
+			Namespace: cr.Namespace,
+		},
+		Spec: monitoringv1.ServiceMonitorSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: serviceLabels,
+			},
+			Endpoints: []monitoringv1.Endpoint{
+				{
+					Path: "/metrics",
+					TargetPort: &intstr.IntOrString{
+						IntVal: 9121,
+					},
+				},
+			},
+		},
+	}
+
+}
+
+func (r *ReconcileGitlab) reconcileGitlabMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+
+	gitlab := getGitlabMetricsServiceMonitor(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitlab.Name}, gitlab) {
 		return nil
 	}
 
-	if err := controllerutil.SetControllerReference(cr, servicemon, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, gitlab, r.scheme); err != nil {
 		return err
 	}
 
-	return r.client.Create(context.TODO(), servicemon)
+	return r.client.Create(context.TODO(), gitlab)
+}
+
+func (r *ReconcileGitlab) reconcilePostgresMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+
+	postgres := getPostgresMetricsServiceMonitor(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), postgres)
+}
+
+func (r *ReconcileGitlab) reconcileRedisMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+
+	redis := getRedisMetricsServiceMonitor(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), redis)
 }

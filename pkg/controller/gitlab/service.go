@@ -215,6 +215,7 @@ func getShellService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 
 func getGitlabExporterService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
+	labels["subsystem"] = "metrics"
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -238,6 +239,7 @@ func getGitlabExporterService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 
 func getRedisMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
+	labels["subsystem"] = "metrics"
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -261,6 +263,7 @@ func getRedisMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 
 func getPostgresMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+	labels["subsystem"] = "metrics"
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

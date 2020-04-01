@@ -356,7 +356,15 @@ func (r *ReconcileGitlab) reconcileRoute(cr *gitlabv1beta1.Gitlab) error {
 
 func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
 
-	if err := r.reconcilePrometheusServiceMonitor(cr); err != nil {
+	if err := r.reconcileGitlabMetricsServiceMonitor(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcilePostgresMetricsServiceMonitor(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRedisMetricsServiceMonitor(cr); err != nil {
 		return err
 	}
 

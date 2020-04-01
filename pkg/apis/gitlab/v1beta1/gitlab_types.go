@@ -63,7 +63,7 @@ type SMTPConfiguration struct {
 	// EmailFrom represents the from address of outgoing email
 	EmailFrom string `json:"from,omitempty"`
 	// ReplyTO specifies a reply to email address
-	ReplyTO string `json:"replyTo,omitempty"`
+	ReplyTo string `json:"replyTo,omitempty"`
 	// DisplayName represents the name of the email
 	DisplayName string `json:"displayName,omitempty"`
 }

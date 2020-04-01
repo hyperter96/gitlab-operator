@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -126,4 +127,26 @@ func getRedisConfiguration(redis string) string {
 	resqueTemplate.Execute(&config, options)
 
 	return config.String()
+}
+
+// IsEmailConfigured returns true if SMTP is configured for the
+// Gitlab resource. False, otherwise
+func IsEmailConfigured(cr *gitlabv1beta1.Gitlab) bool {
+	return !reflect.DeepEqual(cr.Spec.SMTP, gitlabv1beta1.SMTPConfiguration{})
+}
+
+// Return emailFrom and ReplyTo values
+func setupSMTPOptions(cr *gitlabv1beta1.Gitlab) (emailFrom, replyTo string) {
+	if cr.Spec.SMTP.EmailFrom != "" {
+		emailFrom = cr.Spec.SMTP.EmailFrom
+	} else if cr.Spec.SMTP.EmailFrom == "" && gitlabutils.IsEmailAddress(cr.Spec.SMTP.Username) {
+		emailFrom = cr.Spec.SMTP.Username
+	}
+
+	if cr.Spec.SMTP.ReplyTo != "" {
+		replyTo = cr.Spec.SMTP.ReplyTo
+	} else if cr.Spec.SMTP.ReplyTo == "" && gitlabutils.IsEmailAddress(cr.Spec.SMTP.Username) {
+		replyTo = cr.Spec.SMTP.Username
+	}
+	return
 }

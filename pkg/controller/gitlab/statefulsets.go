@@ -491,7 +491,6 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 
 // TODO 1: Remove hard corded volume size
 // TODO 2: Remove hard corded CPU resources
-// TODO 3: Add Gitaly secrets
 func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "gitaly", gitlabutils.GitlabType)
 
@@ -536,7 +535,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		},
 	}
 
-	return gitlabutils.GenericStatefulSet(gitlabutils.Component{
+	gitaly := gitlabutils.GenericStatefulSet(gitlabutils.Component{
 		Labels:               labels,
 		Namespace:            cr.Namespace,
 		Replicas:             cr.Spec.Redis.Replicas,
@@ -713,6 +712,10 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 		},
 	})
+
+	gitaly.Spec.ServiceName = labels["app.kubernetes.io/instance"]
+
+	return gitaly
 }
 
 func (r *ReconcileGitlab) reconcilePostgresStatefulSet(cr *gitlabv1beta1.Gitlab) error {

@@ -33,9 +33,9 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 									Path: "/",
 									Backend: extensionsv1beta1.IngressBackend{
 										ServicePort: intstr.IntOrString{
-											IntVal: 8005,
+											IntVal: 8181,
 										},
-										ServiceName: cr.Name + "-gitlab",
+										ServiceName: cr.Name + "-unicorn",
 									},
 								},
 							},
@@ -57,9 +57,9 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 							Path: "/",
 							Backend: extensionsv1beta1.IngressBackend{
 								ServicePort: intstr.IntOrString{
-									IntVal: 8105,
+									IntVal: 5000,
 								},
-								ServiceName: cr.Name + "-gitlab",
+								ServiceName: cr.Name + "-registry",
 							},
 						},
 					},

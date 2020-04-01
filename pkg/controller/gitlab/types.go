@@ -125,7 +125,7 @@ type TaskRunnerOptions struct {
 	Registry    string
 	RegistryURL string
 	Gitaly      string
-	MailFrom    string
+	EmailFrom   string
 	ReplyTo     string
 	PostgreSQL  string
 }

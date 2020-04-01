@@ -105,6 +105,7 @@ func getGitalyConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 }
 
 // TODO: Get Minio/Object storage
+// TODO 2: Expose .MinioURL
 func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "unicorn", gitlabutils.GitlabType)
 
@@ -118,11 +119,16 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		Namespace:   cr.Namespace,
 		GitlabURL:   cr.Spec.ExternalURL,
 		Minio:       "external-minio-instance",
+		MinioURL:    "minio.example.me",
 		Registry:    getName(cr.Name, "registry"),
 		RegistryURL: cr.Spec.Registry.ExternalURL,
 		Gitaly:      getName(cr.Name, "gitaly"),
 		RedisMaster: getName(cr.Name, "redis"),
 		PostgreSQL:  getName(cr.Name, "database"),
+	}
+
+	if IsEmailConfigured(cr) {
+		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
 	}
 
 	var gitlab bytes.Buffer
@@ -206,10 +212,12 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		RegistryDomain: cr.Spec.Registry.ExternalURL,
 		Gitaly:         getName(cr.Name, "gitaly"),
 		Namespace:      cr.Namespace,
-		EmailFrom:      "gitlab.example.com",
-		ReplyTo:        "noreply@example.com",
 		MinioDomain:    "minio.example.com",
 		Minio:          getName(cr.Name, "minio"),
+	}
+
+	if IsEmailConfigured(cr) {
+		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
 	}
 
 	var gitlab bytes.Buffer
@@ -290,8 +298,10 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		Registry:    getName(cr.Name, "registry"),
 		RegistryURL: cr.Spec.Registry.ExternalURL,
 		Gitaly:      getName(cr.Name, "gitaly"),
-		MailFrom:    "gitlab@example.com",
-		ReplyTo:     "noreply@example.com",
+	}
+
+	if IsEmailConfigured(cr) {
+		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
 	}
 
 	var gitlab bytes.Buffer

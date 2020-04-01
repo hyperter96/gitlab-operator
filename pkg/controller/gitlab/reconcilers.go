@@ -194,10 +194,19 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
+	if err := r.reconcilePostgresMetricsService(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileRedisMetricsService(cr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitlab) error {
+
 	if cr.Spec.Registry.Enabled && cr.Spec.Volumes.Registry.Capacity != "" {
 		registryVolume := getRegistryVolumeClaim(cr)
 
@@ -279,6 +288,7 @@ func (r *ReconcileGitlab) reconcileDeployments(cr *gitlabv1beta1.Gitlab) error {
 }
 
 func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error {
+
 	if err := r.reconcileRedisStatefulSet(cr); err != nil {
 		return err
 	}

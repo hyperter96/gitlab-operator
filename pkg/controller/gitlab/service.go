@@ -236,6 +236,52 @@ func getGitlabExporterService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	}
 }
 
+func getRedisMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labels["app.kubernetes.io/instance"] + "-metrics",
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     9121,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func getPostgresMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
+	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labels["app.kubernetes.io/instance"] + "-metrics",
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "metrics",
+					Port:     9187,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
 func (r *ReconcileGitlab) reconcilePostgresService(cr *gitlabv1beta1.Gitlab) error {
 	postgres := getPostgresService(cr)
 
@@ -360,4 +406,32 @@ func (r *ReconcileGitlab) reconcileGitlabExporterService(cr *gitlabv1beta1.Gitla
 	}
 
 	return r.client.Create(context.TODO(), exporter)
+}
+
+func (r *ReconcileGitlab) reconcilePostgresMetricsService(cr *gitlabv1beta1.Gitlab) error {
+	postgres := getPostgresMetricsService(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), postgres)
+}
+
+func (r *ReconcileGitlab) reconcileRedisMetricsService(cr *gitlabv1beta1.Gitlab) error {
+	redis := getRedisMetricsService(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), redis)
 }

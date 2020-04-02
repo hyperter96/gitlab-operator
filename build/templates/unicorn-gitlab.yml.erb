@@ -3,12 +3,10 @@ production: &base
     host: {{ .GitlabURL }}
     https: true
     max_request_duration_seconds: 57
-    impersonation_enabled: 
+    impersonation_enabled: false
     usage_ping_enabled: true
     default_can_create_group: true
     username_changing_enabled: true
-    issue_closing_pattern: 
-    default_theme: 
     default_projects_features:
       issues: true
       merge_requests: true

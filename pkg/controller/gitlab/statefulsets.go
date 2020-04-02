@@ -17,7 +17,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
 
 	var (
-		runAsUser   int64 = 0
+		runAsUser   int64
 		pgRunAsUser int64 = 1001
 	)
 

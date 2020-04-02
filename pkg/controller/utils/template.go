@@ -96,7 +96,7 @@ func GenericDeployment(component Component) *appsv1.Deployment {
 	}
 }
 
-// GenericJob retuns a Kubernetes Job
+// GenericJob returns a Kubernetes Job
 func GenericJob(component Component) *batchv1.Job {
 	labels := component.Labels
 	var (

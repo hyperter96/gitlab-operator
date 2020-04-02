@@ -371,11 +371,24 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			{
 				Name: "unicorn-config",
 				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cr.Name + "-unicorn-config",
+					Projected: &corev1.ProjectedVolumeSource{
+						DefaultMode: &gitlabutils.ProjectedVolumeDefaultMode,
+						Sources: []corev1.VolumeProjection{
+							{
+								ConfigMap: &corev1.ConfigMapProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-unicorn-config",
+									},
+								},
+							},
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-smtp-settings-secret",
+									},
+								},
+							},
 						},
-						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 					},
 				},
 			},

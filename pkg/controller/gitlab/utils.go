@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -149,4 +150,22 @@ func setupSMTPOptions(cr *gitlabv1beta1.Gitlab) (emailFrom, replyTo string) {
 		replyTo = cr.Spec.SMTP.Username
 	}
 	return
+}
+
+// This function checks the GitLab kind SMTP options and
+// returns an smtp_settings.rb file in string format
+func getSMTPSettings(cr *gitlabv1beta1.Gitlab) string {
+	var settings bytes.Buffer
+
+	if reflect.DeepEqual(cr.Spec.SMTP, gitlabv1beta1.SMTPConfiguration{}) {
+		return ""
+	}
+
+	smtpTemplate := template.Must(template.ParseFiles("/templates/smtp_settings.rb"))
+	smtpTemplate.Execute(&settings, cr.Spec.SMTP)
+
+	// Remove whitespaces
+	pattern := regexp.MustCompile(`(?m)^\s+[\n\r]+|[\r\n]+\s+\z`)
+
+	return pattern.ReplaceAllString(settings.String(), "\n")
 }

@@ -36,7 +36,6 @@ type RegistrySpec struct {
 // More on configuration options available below:
 // https://docs.gitlab.com/omnibus/settings/smtp.html
 type SMTPConfiguration struct {
-	Enable bool `json:"enable,omitempty"`
 	// Host is the SMTP host
 	Host string `json:"host,omitempty"`
 	// Port represents SMTP port
@@ -48,18 +47,16 @@ type SMTPConfiguration struct {
 	// Password represents the password for SMTP user
 	Password string `json:"password,omitempty"`
 	// Authentication represents authentication mechanism
-	// Options include: login, plain, false
+	// Options include: login, plain, cram_md5
 	Authentication string `json:"authentication,omitempty"`
-	// EnableSSL enables/disables SSL
+	// EnableSSL enables/disables SSL/TLS
 	EnableSSL bool `json:"enableSSL,omitempty"`
-	// ForceSSL determines if gitlab should force use of SSL certificates
-	ForceSSL bool `json:"forceSSL,omitempty"`
-	// TLS enables/disables use of TLS certificates
-	TLS bool `json:"tls,omitempty"`
-	// EnableStartTLS
+	// EnableStartTLS enables starttls
 	EnableStartTLS bool `json:"enableStartTLS,omitempty"`
-	// OpensslVerifyMode can be: 'none', 'peer', 'client_once', 'fail_if_no_peer_cert'
-	OpensslVerifyMode string `json:"opensslVerifyMode,omitempty"`
+	// OpenSSLVerifyMode sets how OpenSSL checks the
+	// certificate whenever TLS is used
+	// OpenSSLVerifyMode can be: 'none', 'peer'
+	OpenSSLVerifyMode string `json:"opensslVerifyMode,omitempty"`
 	// EmailFrom represents the from address of outgoing email
 	EmailFrom string `json:"from,omitempty"`
 	// ReplyTO specifies a reply to email address

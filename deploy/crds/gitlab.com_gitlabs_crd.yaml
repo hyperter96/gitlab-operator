@@ -39,25 +39,19 @@ spec:
               properties:
                 authentication:
                   description: 'Authentication represents authentication mechanism
-                    Options include: login, plain, false'
+                    Options include: login, plain, cram_md5'
                   type: string
                 displayName:
-                  description: DisplayName represents the name of the email
+                  description: DisplayName represents the name of the email sender
                   type: string
                 domain:
                   description: Domain represents the email domain
                   type: string
-                enable:
-                  type: boolean
                 enableSSL:
-                  description: EnableSSL enables/disables SSL
+                  description: EnableSSL enables/disables SSL/TLS
                   type: boolean
                 enableStartTLS:
-                  description: EnableStartTLS
-                  type: boolean
-                forceSSL:
-                  description: ForceSSL determines if gitlab should force use of SSL
-                    certificates
+                  description: EnableStartTLS enables starttls
                   type: boolean
                 from:
                   description: EmailFrom represents the from address of outgoing email
@@ -66,8 +60,8 @@ spec:
                   description: Host is the SMTP host
                   type: string
                 opensslVerifyMode:
-                  description: 'OpensslVerifyMode can be: ''none'', ''peer'', ''client_once'',
-                    ''fail_if_no_peer_cert'''
+                  description: 'OpenSSLVerifyMode sets how OpenSSL checks the certificate
+                    whenever TLS is used OpenSSLVerifyMode can be: ''none'', ''peer'''
                   type: string
                 password:
                   description: Password represents the password for SMTP user
@@ -77,11 +71,8 @@ spec:
                   format: int32
                   type: integer
                 replyTo:
-                  description: ReplyTO specifies a reply to email address
+                  description: ReplyTo specifies a reply to email address
                   type: string
-                tls:
-                  description: TLS enables/disables use of TLS certificates
-                  type: boolean
                 username:
                   description: Username represents the SMTP username for sending email
                   type: string

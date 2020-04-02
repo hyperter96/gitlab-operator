@@ -274,12 +274,19 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Name: "sidekiq-config",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
+						DefaultMode: &gitlabutils.ProjectedVolumeDefaultMode,
 						Sources: []corev1.VolumeProjection{
 							{
 								ConfigMap: &corev1.ConfigMapProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: cr.Name + "-sidekiq-config",
+									},
+								},
+							},
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-smtp-settings-secret",
 									},
 								},
 							},

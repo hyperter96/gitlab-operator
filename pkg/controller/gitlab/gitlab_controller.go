@@ -247,12 +247,12 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		}
 	}
 
-	// if IsPrometheusSupported() {
-	// 	// Deploy a prometheus service monitor
-	// 	if err := r.reconcileServiceMonitor(cr); err != nil {
-	// 		return err
-	// 	}
-	// }
+	if gitlabutils.IsPrometheusSupported() {
+		// Deploy a prometheus service monitor
+		if err := r.reconcileServiceMonitor(cr); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

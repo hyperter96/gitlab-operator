@@ -113,7 +113,6 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	configure := gitlabutils.ReadConfig("/templates/unicorn-configure.sh")
 	unicornRB := gitlabutils.ReadConfig("/templates/unicorn.rb")
-	smtpSettings := gitlabutils.ReadConfig("/templates/unicorn-smtp-settings.rb")
 
 	options := UnicornOptions{
 		Namespace:   cr.Namespace,
@@ -141,7 +140,6 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		"database.yml.erb":  getDatabaseConfiguration(options.PostgreSQL),
 		"resque.yml.erb":    getRedisConfiguration(options.RedisMaster),
 		"installation_type": labels["app.kubernetes.io/managed-by"],
-		"smtp_settings.rb":  smtpSettings,
 		"unicorn.rb":        unicornRB,
 	}
 
@@ -230,7 +228,6 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		"database.yml.erb":       getDatabaseConfiguration(options.PostgreSQL),
 		"resque.yml.erb":         getRedisConfiguration(options.RedisMaster),
 		"gitlab.yml.erb":         gitlab.String(),
-		"smtp_settings.rb":       "",
 		"installation_type":      "gitlab-operator",
 		"sidekiq_queues.yml.erb": queuesYML,
 	}
@@ -315,7 +312,6 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		"gitlab.yml.erb":   gitlab.String(),
 		"database.yml.erb": getDatabaseConfiguration(options.PostgreSQL),
 		"resque.yml.erb":   getRedisConfiguration(options.RedisMaster),
-		"smtp_settings.rb": "",
 	}
 
 	return tasker

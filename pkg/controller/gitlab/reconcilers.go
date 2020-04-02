@@ -113,6 +113,10 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
+	if err := r.reconcileSMTPSettingsSecret(cr); err != nil {
+		return err
+	}
+
 	if err := r.reconcileMinioSecret(cr); err != nil {
 		return err
 	}

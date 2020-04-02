@@ -175,6 +175,13 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 									},
 								},
 							},
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-smtp-settings-secret",
+									},
+								},
+							},
 						},
 					},
 				},

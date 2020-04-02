@@ -286,6 +286,17 @@ func getWorkhorseSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return workhorse
 }
 
+func getSMTPSettingsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "smtp", gitlabutils.GitlabType)
+
+	settings := gitlabutils.GenericSecret(cr.Name+"-smtp-settings-secret", cr.Namespace, labels)
+	settings.StringData = map[string]string{
+		"smtp_settings.rb": getSMTPSettings(cr),
+	}
+
+	return settings
+}
+
 /***************************************************************
  * Reconcilers for the different secrets begin below this line *
  ***************************************************************/
@@ -399,4 +410,18 @@ func (r *ReconcileGitlab) reconcileGitlabSecret(cr *gitlabv1beta1.Gitlab) error 
 	}
 
 	return r.client.Create(context.TODO(), core)
+}
+
+func (r *ReconcileGitlab) reconcileSMTPSettingsSecret(cr *gitlabv1beta1.Gitlab) error {
+	smtp := getSMTPSettingsSecret(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: smtp.Name}, smtp) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, smtp, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), smtp)
 }

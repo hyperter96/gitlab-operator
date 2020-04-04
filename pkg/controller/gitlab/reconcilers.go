@@ -309,18 +309,16 @@ func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error 
 }
 
 func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
-	ingress := getGitlabIngress(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: ingress.Name}, ingress) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, ingress, r.scheme); err != nil {
+	if err := r.reconcileGitlabIngress(cr); err != nil {
 		return err
 	}
 
-	if err := r.client.Create(context.TODO(), ingress); err != nil {
-		return err
+	if cr.Spec.Registry.Enabled {
+		// Create the container registry ingress if registry is enabled
+		if err := r.reconcileRegistryIngress(cr); err != nil {
+			return err
+		}
 	}
 
 	return nil

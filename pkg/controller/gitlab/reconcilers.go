@@ -68,6 +68,10 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
+	if err := r.reconcileMinioScriptConfigMap(cr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -206,6 +210,10 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 		return err
 	}
 
+	if err := r.reconcileMinioService(cr); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -319,6 +327,10 @@ func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
 		if err := r.reconcileRegistryIngress(cr); err != nil {
 			return err
 		}
+	}
+
+	if err := r.reconcileMinioIngress(cr); err != nil {
+		return err
 	}
 
 	return nil

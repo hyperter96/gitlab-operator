@@ -79,15 +79,15 @@ type ShellOptions struct {
 type SidekiqOptions struct {
 	RedisMaster    string
 	PostgreSQL     string
-	GitlabDomain   string // ExternalURL no protocol. e.g: gitlab.example.com
+	GitlabURL      string // ExternalURL no protocol. e.g: gitlab.example.com
 	EnableRegistry bool
 	Registry       string
-	RegistryDomain string
+	RegistryURL    string
 	Gitaly         string
 	Namespace      string
 	EmailFrom      string
 	ReplyTo        string
-	MinioDomain    string // hostname e.g. minio.example.com
+	MinioURL       string // hostname e.g. minio.example.com
 	Minio          string // Minio service
 }
 
@@ -101,8 +101,8 @@ type ExporterOptions struct {
 // RegistryOptions defines parameters
 // for registry configmap
 type RegistryOptions struct {
-	GitlabDomain string
-	Minio        string
+	GitlabURL string
+	Minio     string
 }
 
 // RailsOptions defines parameters

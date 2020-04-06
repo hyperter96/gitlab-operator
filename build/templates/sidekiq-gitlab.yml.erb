@@ -1,6 +1,6 @@
 production: &base
   gitlab:
-    host: {{ .GitlabDomain }}
+    host: {{ .GitlabURL }}
     https: true
     max_request_duration_seconds: 57
     impersonation_enabled: false
@@ -42,7 +42,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioDomain }}
+        host: {{ .MinioURL }}
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   lfs:
@@ -58,7 +58,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioDomain }}
+        host: {{ .MinioURL }}
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   uploads:
@@ -74,7 +74,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioDomain }}
+        host: {{ .MinioURL }}
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   packages:
@@ -90,7 +90,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioDomain }}
+        host: {{ .MinioURL }}
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   external_diffs:
@@ -107,7 +107,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioDomain }}
+        host: {{ .MinioURL }}
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   pseudonymizer:
@@ -119,7 +119,7 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioDomain }}
+        host: {{ .MinioURL }}
         endpoint: http://{{ .Minio }}:9000
         path_style: true
   
@@ -130,7 +130,7 @@ production: &base
   ## Registry Integration
   registry:
     enabled: true
-    host: {{ .RegistryDomain }}
+    host: {{ .RegistryURL }}
     api_url: http://{{ .Registry }}:5000
     key: /etc/gitlab/registry/gitlab-registry.key
     issuer: gitlab-issuer

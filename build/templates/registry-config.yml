@@ -22,7 +22,7 @@ health:
     threshold: 3
 auth:
   token:
-    realm: https://{{ .GitlabDomain }}/jwt/auth
+    realm: https://{{ .GitlabURL }}/jwt/auth
     service: container_registry
     issuer: "gitlab-issuer"
     # This is provided from the initContainer execution, at a known path.

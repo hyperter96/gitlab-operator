@@ -114,6 +114,45 @@ func getRegistryIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.In
 	return
 }
 
+func getMinioIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
+	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+
+	return &extensionsv1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name + "-minio-ingress",
+			Namespace: cr.Namespace,
+			Labels:    labels,
+			Annotations: map[string]string{
+				"kubernetes.io/tls-acme":      "true",
+				"kubernetes.io/ingress.class": "nginx",
+			},
+		},
+		Spec: extensionsv1beta1.IngressSpec{
+			Rules: []extensionsv1beta1.IngressRule{
+				{
+					// Add Registry rule only when registry is enabled
+					Host: DomainNameOnly(cr.Spec.Minio.URL),
+					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
+						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
+							Paths: []extensionsv1beta1.HTTPIngressPath{
+								{
+									Path: "/",
+									Backend: extensionsv1beta1.IngressBackend{
+										ServicePort: intstr.IntOrString{
+											IntVal: 9000,
+										},
+										ServiceName: cr.Name + "-minio",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func (r *ReconcileGitlab) reconcileGitlabIngress(cr *gitlabv1beta1.Gitlab) error {
 	gitlab := getGitlabIngress(cr)
 
@@ -140,6 +179,20 @@ func (r *ReconcileGitlab) reconcileRegistryIngress(cr *gitlabv1beta1.Gitlab) err
 	}
 
 	return r.client.Create(context.TODO(), registry)
+}
+
+func (r *ReconcileGitlab) reconcileMinioIngress(cr *gitlabv1beta1.Gitlab) error {
+	minio := getMinioIngress(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), minio)
 }
 
 func getExternalURLs(cr *gitlabv1beta1.Gitlab) []string {

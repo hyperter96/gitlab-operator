@@ -42,7 +42,7 @@ spec:
                     Options include: login, plain, cram_md5'
                   type: string
                 displayName:
-                  description: DisplayName represents the name of the email sender
+                  description: DisplayName represents the name of the email
                   type: string
                 domain:
                   description: Domain represents the email domain
@@ -71,7 +71,7 @@ spec:
                   format: int32
                   type: integer
                 replyTo:
-                  description: ReplyTo specifies a reply to email address
+                  description: ReplyTO specifies a reply to email address
                   type: string
                 username:
                   description: Username represents the SMTP username for sending email
@@ -79,6 +79,31 @@ spec:
               type: object
             externalURL:
               type: string
+            minio:
+              description: MinioSpec defines options for Gitlab registry
+              properties:
+                capacity:
+                  description: Capacity defines the storage volume capacity used by
+                    each minio node. E.g. if the size is set to 10Gi and you have
+                    4 replicas, a total of 40Gi will be required by minio
+                  type: string
+                credentials:
+                  description: Credentials contains the name of the secret that contains
+                    the `accesskey` and `secretkey` values required to access an existing
+                    minio instance. Should be an even number equal to or larger than
+                    four
+                  type: string
+                enable:
+                  type: boolean
+                replicas:
+                  description: Replicas dictates the number of minio nodes to deploy
+                  format: int32
+                  type: integer
+                url:
+                  description: URL provides a domain / DNS name that can be used to
+                    reach the minio deployment
+                  type: string
+              type: object
             registry:
               description: RegistrySpec defines options for Gitlab registry
               properties:

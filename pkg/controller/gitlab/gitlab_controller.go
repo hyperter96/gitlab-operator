@@ -223,6 +223,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
+	if err := r.reconcileMinioInstance(cr); err != nil {
+		return err
+	}
+
 	for !isDatabaseReady(cr) {
 		time.Sleep(time.Second * 1)
 	}
@@ -252,6 +256,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		if err := r.reconcileServiceMonitor(cr); err != nil {
 			return err
 		}
+	}
+
+	if err := r.reconcileBucketJob(cr); err != nil {
+		return err
 	}
 
 	return nil

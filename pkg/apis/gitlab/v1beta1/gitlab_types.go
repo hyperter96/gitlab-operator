@@ -11,6 +11,7 @@ type GitlabSpec struct {
 	TLSCertificate string              `json:"certificate,omitempty"`
 	SMTP           SMTPConfiguration   `json:"email,omitempty"`
 	Registry       RegistrySpec        `json:"registry,omitempty"`
+	Minio          MinioSpec           `json:"minio,omitempty"`
 	Redis          RedisSpec           `json:"-"`
 	Database       DatabaseSpec        `json:"-"`
 	Volumes        ComponentVolumeSpec `json:"volumes,omitempty"`
@@ -30,6 +31,25 @@ type DatabaseSpec struct {
 type RegistrySpec struct {
 	Enabled     bool   `json:"enable,omitempty"`
 	ExternalURL string `json:"externalURL,omitempty"`
+}
+
+// MinioSpec defines options for Gitlab registry
+type MinioSpec struct {
+	Enabled bool `json:"enable,omitempty"`
+	// URL provides a domain / DNS name that can be used
+	// to reach the minio deployment
+	URL string `json:"url,omitempty"`
+	// Replicas dictates the number of minio nodes to deploy
+	Replicas int32 `json:"replicas,omitempty"`
+	// Credentials contains the name of the secret that contains
+	// the `accesskey` and `secretkey` values required to access
+	// an existing minio instance. Should be an even number equal
+	// to or larger than four
+	Credentials string `json:"credentials,omitempty"`
+	// Capacity defines the storage volume capacity used by each
+	// minio node. E.g. if the size is set to 10Gi and you have 4
+	// replicas, a total of 40Gi will be required by minio
+	Capacity string `json:"capacity,omitempty"`
 }
 
 // SMTPConfiguration defines options for Gitlab registry

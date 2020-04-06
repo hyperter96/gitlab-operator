@@ -212,20 +212,15 @@ func getRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
 
-	accesskey := gitlabutils.Password(gitlabutils.PasswordOptions{
+	secretKey := gitlabutils.Password(gitlabutils.PasswordOptions{
 		EnableSpecialChars: false,
-		Length:             64,
-	})
-
-	secretkey := gitlabutils.Password(gitlabutils.PasswordOptions{
-		EnableSpecialChars: false,
-		Length:             10,
+		Length:             48,
 	})
 
 	registry := gitlabutils.GenericSecret(cr.Name+"-minio-secret", cr.Namespace, labels)
 	registry.StringData = map[string]string{
-		"accesskey": accesskey,
-		"secretkey": secretkey,
+		"accesskey": "gitlab",
+		"secretkey": secretKey,
 	}
 
 	return registry

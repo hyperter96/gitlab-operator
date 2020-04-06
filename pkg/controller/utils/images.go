@@ -64,4 +64,10 @@ const (
 
 	// MiniDebImage is the image used by the postgres init container to fix filesystem permissions
 	MiniDebImage = "docker.io/bitnami/minideb:stretch"
+
+	// MinioImage used to deploy minio cluster
+	MinioImage = "minio/minio:RELEASE.2020-01-03T19-12-21Z"
+
+	// MinioClientImage provides the minio client image to use
+	MinioClientImage = "minio/mc:RELEASE.2018-07-13T00-53-22Z"
 )

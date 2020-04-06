@@ -117,8 +117,8 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	options := UnicornOptions{
 		Namespace:   cr.Namespace,
 		GitlabURL:   cr.Spec.ExternalURL,
-		Minio:       "external-minio-instance",
-		MinioURL:    "minio.example.me",
+		Minio:       getName(cr.Name, "minio"),
+		MinioURL:    DomainNameOnly(cr.Spec.Minio.URL),
 		Registry:    getName(cr.Name, "registry"),
 		RegistryURL: cr.Spec.Registry.ExternalURL,
 		Gitaly:      getName(cr.Name, "gitaly"),
@@ -204,13 +204,13 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	options := SidekiqOptions{
 		RedisMaster:    getName(cr.Name, "redis"),
 		PostgreSQL:     getName(cr.Name, "database"),
-		GitlabDomain:   cr.Spec.ExternalURL,
+		GitlabURL:      cr.Spec.ExternalURL,
 		EnableRegistry: true,
 		Registry:       getName(cr.Name, "registry"),
-		RegistryDomain: cr.Spec.Registry.ExternalURL,
+		RegistryURL:    cr.Spec.Registry.ExternalURL,
 		Gitaly:         getName(cr.Name, "gitaly"),
 		Namespace:      cr.Namespace,
-		MinioDomain:    "minio.example.com",
+		MinioURL:       DomainNameOnly(cr.Spec.Minio.URL),
 		Minio:          getName(cr.Name, "minio"),
 	}
 
@@ -263,8 +263,8 @@ func getRegistryConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	configure := gitlabutils.ReadConfig("/templates/registry-configure.sh")
 
 	options := RegistryOptions{
-		GitlabDomain: cr.Spec.ExternalURL,
-		Minio:        getName(cr.Name, "mino"),
+		GitlabURL: cr.Spec.ExternalURL,
+		Minio:     getName(cr.Name, "minio"),
 	}
 	var configYML bytes.Buffer
 	registryTemplate := template.Must(template.ParseFiles("/templates/registry-config.yml"))
@@ -282,16 +282,13 @@ func getRegistryConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
 
-	configure := gitlabutils.ReadConfig("/templates/task-runner-configure.sh")
-	gsutilconf := gitlabutils.ReadConfig("/templates/task-runner-configure-gsutil.sh")
-
 	options := TaskRunnerOptions{
 		Namespace:   cr.Namespace,
 		GitlabURL:   cr.Spec.ExternalURL,
 		Minio:       getName(cr.Name, "minio"),
 		RedisMaster: getName(cr.Name, "redis"),
 		PostgreSQL:  getName(cr.Name, "database"),
-		MinioURL:    "minio.example.com",
+		MinioURL:    DomainNameOnly(cr.Spec.Minio.URL),
 		Registry:    getName(cr.Name, "registry"),
 		RegistryURL: cr.Spec.Registry.ExternalURL,
 		Gitaly:      getName(cr.Name, "gitaly"),
@@ -301,13 +298,18 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
 	}
 
-	var gitlab bytes.Buffer
+	gsutilconf := gitlabutils.ReadConfig("/templates/task-runner-configure-gsutil.sh")
+
+	var configure, gitlab bytes.Buffer
+	configureTemplate := template.Must(template.ParseFiles("/templates/task-runner-configure.sh"))
+	configureTemplate.Execute(&configure, options)
+
 	gitlabTemplate := template.Must(template.ParseFiles("/templates/task-runner-gitlab.yml.erb"))
 	gitlabTemplate.Execute(&gitlab, options)
 
 	tasker := gitlabutils.GenericConfigMap(cr.Name+"-task-runner-config", cr.Namespace, labels)
 	tasker.Data = map[string]string{
-		"configure":        configure,
+		"configure":        configure.String(),
 		"configure-gsutil": gsutilconf,
 		"gitlab.yml.erb":   gitlab.String(),
 		"database.yml.erb": getDatabaseConfiguration(options.PostgreSQL),
@@ -355,6 +357,19 @@ func getPostgresInitDBConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	}
 
 	return postgres
+}
+
+func getMinioScriptConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+
+	script := gitlabutils.ReadConfig("/templates/initialize-buckets.sh")
+
+	init := gitlabutils.GenericConfigMap(cr.Name+"-minio-script", cr.Namespace, labels)
+	init.Data = map[string]string{
+		"initialize": script,
+	}
+
+	return init
 }
 
 /*
@@ -541,4 +556,18 @@ func (r *ReconcileGitlab) reconcilePostgresInitDBConfigMap(cr *gitlabv1beta1.Git
 	}
 
 	return r.client.Create(context.TODO(), initdb)
+}
+
+func (r *ReconcileGitlab) reconcileMinioScriptConfigMap(cr *gitlabv1beta1.Gitlab) error {
+	minio := getMinioScriptConfig(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), minio)
 }

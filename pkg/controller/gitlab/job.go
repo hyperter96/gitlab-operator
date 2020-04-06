@@ -245,6 +245,70 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 	return migration
 }
 
+func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
+	labels := gitlabutils.Label(cr.Name, "bucket", gitlabutils.GitlabType)
+
+	return gitlabutils.GenericJob(gitlabutils.Component{
+		Namespace: cr.Namespace,
+		Labels:    labels,
+		Containers: []corev1.Container{
+			{
+				Name:            "mc",
+				Image:           gitlabutils.MinioClientImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Command:         []string{"/bin/sh", "/config/initialize"},
+				Env: []corev1.EnvVar{
+					{
+						Name:  "MINIO_ENDPOINT",
+						Value: cr.Name + "-minio",
+					},
+					{
+						Name:  "MINIO_PORT",
+						Value: "9000",
+					},
+				},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu": gitlabutils.ResourceQuantity("50m"),
+					},
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "minio-config",
+						MountPath: "/config",
+					},
+				},
+			},
+		},
+		Volumes: []corev1.Volume{
+			{
+				Name: "minio-config",
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
+						Sources: []corev1.VolumeProjection{
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-minio-secret",
+									},
+								},
+							},
+							{
+								ConfigMap: &corev1.ConfigMapProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-minio-script",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+}
+
 func (r *ReconcileGitlab) reconcileMigrationsJob(cr *gitlabv1beta1.Gitlab) error {
 	migration := getMigrationsJob(cr)
 
@@ -257,4 +321,18 @@ func (r *ReconcileGitlab) reconcileMigrationsJob(cr *gitlabv1beta1.Gitlab) error
 	}
 
 	return r.client.Create(context.TODO(), migration)
+}
+
+func (r *ReconcileGitlab) reconcileBucketJob(cr *gitlabv1beta1.Gitlab) error {
+	minio := createMinioBucketsJob(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), minio)
 }

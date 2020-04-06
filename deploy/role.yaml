@@ -120,3 +120,15 @@ rules:
   - get
   - delete
   - watch
+- apiGroups:
+  - miniocontroller.min.io
+  resources:
+  - minioinstances
+  verbs:
+  - create
+  - list
+  - watch
+  - delete
+  - update
+  - patch
+

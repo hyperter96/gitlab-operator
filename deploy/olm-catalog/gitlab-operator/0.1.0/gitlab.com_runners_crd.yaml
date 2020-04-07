@@ -45,6 +45,8 @@ spec:
                   description: Gitlab or Continuous Integration URL
                   type: string
               type: object
+            tags:
+              type: string
           type: object
         status:
           description: RunnerStatus defines the observed state of Runner

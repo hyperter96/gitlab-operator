@@ -61,6 +61,8 @@ metadata:
     certified: 'false'
     categories: Integration & Delivery
     containerImage: quay.io/eochieng/gitlab-operator:v0.1.0
+    support: GitLab, Inc.
+    description: An operator to deploy and manage GitLab Runner and GitLab
   name: gitlab-operator.v0.1.0
   namespace: placeholder
 spec:
@@ -72,11 +74,39 @@ spec:
       name: gitlabs.gitlab.com
       version: v1beta1
       displayName: GitLab
+      resources:
+      - kind: StatefulSets
+        version: apps/v1
+      - kind: Deployments
+        version: apps/v1
+      - kind: Job
+        version: batch/v1
+      - kind: ConfigMap
+        version: v1
+      - kind: Secret
+        version: v1
+      - kind: PersistentVolumeClaim
+        version: v1
+      - kind: Ingress
+        version: extensions/v1beta1
+      - kind: Route
+        version: v1
+      - kind: ServiceMonitor
+        version: monitoring.coreos.com/v1
     - description: Runner is the Schema for the runners API
       kind: Runner
       name: runners.gitlab.com
       version: v1beta1
       displayName: Runner
+      resources:
+        - kind: Pod
+          version: v1
+        - kind: ConfigMap
+          version: v1
+        - kind: Secret
+          version: v1
+        - kind: PersistentVolumeClaim
+          version: v1
   description: |
     The Gitlab operator is responsible for managing your GitLab deployment in your Kubernetes or Openshift container platform. GitLab provides a suite of tools that would be useful in the lifecycle of a software project. From project planning and source code management to CI/CD and monitoring.
 
@@ -85,8 +115,7 @@ spec:
     ## Usage
     A GitLab Runner is a project responsible for executing your continuous integration jobs and sending back your results to GitLab. Consequently, a runner should be deployed after a GitLab resource has been deployed.
 
-    In the event you desire to link a runner to a GitLab instance in a different namespace or the hosted GitLab (or https://gitlab.com), you will need
-    to provide a URL and registration token as shown in the example below:  
+    In the event you desire to link a runner to a GitLab instance in a different namespace or the hosted GitLab (or https://gitlab.com), you will need to provide a URL and registration token as shown in the example below:
 
     ```
     apiVersion: gitlab.com/v1beta1
@@ -246,6 +275,31 @@ spec:
           - watch
           - delete
         serviceAccountName: gitlab-operator
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          - events
+          - pods
+          - pods/attach
+          - pods/exec
+          - pods/log
+          - services
+          - services/status
+          - services/proxy
+          - services/finalizers
+          - resourcequotas          
+          - persistentvolumeclaims
+          - configmaps
+          verbs:
+          - create
+          - list
+          - watch
+          - delete
+          - patch
+          - update
+        serviceAccountName: gitlab-runner        
     strategy: deployment
   installModes:
   - supported: true

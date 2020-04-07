@@ -31,23 +31,78 @@ spec:
         spec:
           description: GitlabSpec defines the desired state of Gitlab
           properties:
-            database:
-              description: DatabaseSpec defines database options
+            certificate:
+              type: string
+            email:
+              description: 'SMTPConfiguration defines options for Gitlab registry
+                More on configuration options available below: https://docs.gitlab.com/omnibus/settings/smtp.html'
               properties:
-                replicas:
+                authentication:
+                  description: 'Authentication represents authentication mechanism
+                    Options include: login, plain, cram_md5'
+                  type: string
+                displayName:
+                  description: DisplayName represents the name of the email
+                  type: string
+                domain:
+                  description: Domain represents the email domain
+                  type: string
+                enableSSL:
+                  description: EnableSSL enables/disables SSL/TLS
+                  type: boolean
+                enableStartTLS:
+                  description: EnableStartTLS enables starttls
+                  type: boolean
+                from:
+                  description: EmailFrom represents the from address of outgoing email
+                  type: string
+                host:
+                  description: Host is the SMTP host
+                  type: string
+                opensslVerifyMode:
+                  description: 'OpenSSLVerifyMode sets how OpenSSL checks the certificate
+                    whenever TLS is used OpenSSLVerifyMode can be: ''none'', ''peer'''
+                  type: string
+                password:
+                  description: Password represents the password for SMTP user
+                  type: string
+                port:
+                  description: Port represents SMTP port
                   format: int32
                   type: integer
+                replyTo:
+                  description: ReplyTO specifies a reply to email address
+                  type: string
+                username:
+                  description: Username represents the SMTP username for sending email
+                  type: string
               type: object
-            enterprise:
-              type: boolean
             externalURL:
               type: string
-            redis:
-              description: RedisSpec defines Redis options
+            minio:
+              description: MinioSpec defines options for Gitlab registry
               properties:
+                capacity:
+                  description: Capacity defines the storage volume capacity used by
+                    each minio node. E.g. if the size is set to 10Gi and you have
+                    4 replicas, a total of 40Gi will be required by minio
+                  type: string
+                credentials:
+                  description: Credentials contains the name of the secret that contains
+                    the `accesskey` and `secretkey` values required to access an existing
+                    minio instance. Should be an even number equal to or larger than
+                    four
+                  type: string
+                enable:
+                  type: boolean
                 replicas:
+                  description: Replicas dictates the number of minio nodes to deploy
                   format: int32
                   type: integer
+                url:
+                  description: URL provides a domain / DNS name that can be used to
+                    reach the minio deployment
+                  type: string
               type: object
             registry:
               description: RegistrySpec defines options for Gitlab registry

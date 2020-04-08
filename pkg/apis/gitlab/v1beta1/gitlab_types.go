@@ -112,16 +112,17 @@ type ComponentVolumeSpec struct {
 // GitlabStatus defines the observed state of Gitlab
 type GitlabStatus struct {
 	// Phase represents status of the Gitlab resource
-	Phase    string         `json:"phase,omitempty"`
-	Stage    string         `json:"stage,omitempty"`
-	Services ServicesHealth `json:"services,omitempty"`
+	Phase       string `json:"phase,omitempty"`
+	Stage       string `json:"stage,omitempty"`
+	HealthCheck `json:"health,omitempty"`
 }
 
-// ServicesHealth represents the status
-//  of a Gitlab dependent service
-type ServicesHealth struct {
-	Database string `json:"database,omitempty"`
-	Redis    string `json:"redis,omitempty"`
+// HealthCheck represents the status
+//  of services that make up Gitlab
+type HealthCheck struct {
+	Postgres  string `json:"database,omitempty"`
+	Redis     string `json:"redis,omitempty"`
+	Workhorse string `json:"workhorse,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

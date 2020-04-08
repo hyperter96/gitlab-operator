@@ -2,7 +2,6 @@ package gitlab
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net"
 	"reflect"
@@ -14,8 +13,6 @@ import (
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DomainNameOnly separates domain from URL
@@ -95,12 +92,6 @@ func getNetworkAddress(address string) string {
 		log.Error(err, "Unable to get network CIDR")
 	}
 	return network.String()
-}
-
-// SetStatus sets status of custom resource
-func SetStatus(client client.Client, object runtime.Object) (err error) {
-	err = client.Status().Update(context.TODO(), object)
-	return
 }
 
 func getName(cr, component string) string {

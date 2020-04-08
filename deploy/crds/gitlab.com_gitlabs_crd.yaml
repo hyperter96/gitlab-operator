@@ -181,18 +181,20 @@ spec:
         status:
           description: GitlabStatus defines the observed state of Gitlab
           properties:
-            phase:
-              description: Phase represents status of the Gitlab resource
-              type: string
-            services:
-              description: ServicesHealth represents the status  of a Gitlab dependent
-                service
+            health:
+              description: HealthCheck represents the status  of services that make
+                up Gitlab
               properties:
                 database:
                   type: string
                 redis:
                   type: string
+                workhorse:
+                  type: string
               type: object
+            phase:
+              description: Phase represents status of the Gitlab resource
+              type: string
             stage:
               type: string
           type: object

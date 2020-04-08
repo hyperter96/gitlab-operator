@@ -2,7 +2,6 @@ package gitlab
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
@@ -25,7 +24,6 @@ import (
 )
 
 var log = logf.Log.WithName("controller_gitlab")
-var once sync.Once
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -193,11 +191,6 @@ func (r *ReconcileGitlab) Reconcile(request reconcile.Request) (reconcile.Result
 
 // Reconcile child resources used by the operator
 func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) error {
-	// Ensure only one goroutine is launched to watch
-	// status of the Gitlab custom resource
-	once.Do(func() {
-		go r.updateGitlabStatus(cr)
-	})
 
 	if err := r.reconcileSecrets(cr); err != nil {
 		return err
@@ -259,6 +252,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 	}
 
 	if err := r.reconcileBucketJob(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileGitlabStatus(cr); err != nil {
 		return err
 	}
 

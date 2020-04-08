@@ -1,13 +1,6 @@
 package utils
 
 const (
-	// GitlabEnterpriseImage represents the gitlab enterprise edition
-	// Image to be deployed in our environment
-	GitlabEnterpriseImage = "gitlab/gitlab-ee:12.8.6-ee.0"
-	// GitlabCommunityImage represents the gitlab  Community
-	// edition image to be deployed
-	GitlabCommunityImage = "gitlab/gitlab-ce:12.8.6-ce.0"
-
 	// GitlabRunnerImage represents the runner image
 	GitlabRunnerImage = "registry.gitlab.com/ochienged/gitlab-operator/gitlab-runner"
 
@@ -46,9 +39,6 @@ const (
 
 	// RedisExporterImage exports redis metrics for prometheus
 	RedisExporterImage = "docker.io/bitnami/redis-exporter:1.3.5-debian-9-r23"
-
-	// ConfigMapReloadImage provides util to detect configmap changes
-	ConfigMapReloadImage = "jimmidyson/configmap-reload:v0.3.0"
 
 	// BusyboxImage used for init containers
 	BusyboxImage = "busybox:latest"

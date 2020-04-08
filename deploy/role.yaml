@@ -9,6 +9,7 @@ rules:
   resources:
   - pods
   - pods/exec
+  - pods/log
   - services
   - services/finalizers
   - endpoints

@@ -50,6 +50,11 @@ spec:
           type: object
         status:
           description: RunnerStatus defines the observed state of Runner
+          properties:
+            phase:
+              type: string
+            registration:
+              type: string
           type: object
       type: object
   version: v1beta1

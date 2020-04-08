@@ -137,6 +137,14 @@ func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err erro
 		return
 	}
 
+	if err = r.runnerRegistrationTokenConcealment(cr); err != nil {
+		return
+	}
+
+	if err = r.reconcileRunnerStatus(cr); err != nil {
+		return
+	}
+
 	return
 }
 
@@ -192,4 +200,18 @@ func (r *ReconcileRunner) reconcileDeployments(cr *gitlabv1beta1.Runner) error {
 	}
 
 	return nil
+}
+
+func (r *ReconcileRunner) runnerRegistrationTokenConcealment(cr *gitlabv1beta1.Runner) error {
+	runner := &gitlabv1beta1.Runner{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, runner)
+	if err != nil {
+		return err
+	}
+
+	if runner.Spec.Gitlab.RegistrationToken != "" {
+		runner.Spec.Gitlab.RegistrationToken = ""
+	}
+
+	return r.client.Update(context.TODO(), runner)
 }

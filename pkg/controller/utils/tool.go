@@ -162,3 +162,8 @@ func IsEmailAddress(email string) bool {
 	re := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.-]+\.[a-z.]{2,4}$`)
 	return re.MatchString(email)
 }
+
+// IsPodRunning function tells user if pod is running
+func IsPodRunning(pod *corev1.Pod) bool {
+	return pod.Status.Phase == "Running"
+}

@@ -25,9 +25,8 @@ type GitlabInstanceSpec struct {
 
 // RunnerStatus defines the observed state of Runner
 type RunnerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	Phase        string `json:"phase,omitempty"`
+	Registration string `json:"registration,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

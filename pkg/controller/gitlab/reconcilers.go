@@ -77,6 +77,10 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 
 func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 
+	if err := r.reconcileGitlabCASecret(cr); err != nil {
+		return err
+	}
+
 	if err := r.reconcileGitlabSecret(cr); err != nil {
 		return err
 	}
@@ -94,10 +98,6 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 	}
 
 	if err := r.reconcileShellSecret(cr); err != nil {
-		return err
-	}
-
-	if err := r.reconcileRegistrySecret(cr); err != nil {
 		return err
 	}
 
@@ -379,6 +379,19 @@ func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) erro
 	}
 
 	if err := r.reconcileRedisMetricsServiceMonitor(cr); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ReconcileGitlab) reconcileGitlabCertificates(cr *gitlabv1beta1.Gitlab) error {
+
+	if err := r.reconcileRegistrySecret(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileGitlabCertSecret(cr); err != nil {
 		return err
 	}
 

@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
@@ -220,9 +221,21 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
-	for !isDatabaseReady(cr) {
-		time.Sleep(time.Second * 1)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		for !isDatabaseReady(cr) {
+			time.Sleep(time.Second * 1)
+		}
+		wg.Done()
+	}()
+
+	if err := r.reconcileGitlabCertificates(cr); err != nil {
+		return err
 	}
+
+	wg.Wait()
 
 	if err := r.reconcileJobs(cr); err != nil {
 		return err

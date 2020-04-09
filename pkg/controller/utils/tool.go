@@ -13,6 +13,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -166,4 +167,19 @@ func IsEmailAddress(email string) bool {
 // IsPodRunning function tells user if pod is running
 func IsPodRunning(pod *corev1.Pod) bool {
 	return pod.Status.Phase == "Running"
+}
+
+// SecretData gets a secret by name and returns its data
+func SecretData(name, namespace string) map[string][]byte {
+	client, err := NewKubernetesClient()
+	if err != nil {
+		return map[string][]byte{}
+	}
+
+	secret, err := client.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return map[string][]byte{}
+	}
+
+	return secret.Data
 }

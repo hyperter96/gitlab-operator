@@ -124,28 +124,26 @@ func getGitalySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return gitaly
 }
 
-func (r *ReconcileGitlab) reconcileGitalySecret(cr *gitlabv1beta1.Gitlab) error {
-	gitaly := getGitalySecret(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitaly.Name}, gitaly) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, gitaly, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), gitaly)
-}
-
 func getRegistrySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
 
-	key, cert := gitlabutils.Keypair(gitlabutils.KeyCertificate())
+	// Retrieve CA cert amd key
+	caSecret := gitlabutils.SecretData("gitlab-ca-cert", cr.Namespace)
+	caKey, _ := gitlabutils.ParsePEMPrivateKey(caSecret["tls.key"])
+	caCert, _ := gitlabutils.ParsePEMCertificate(caSecret["tls.crt"])
+	caCertPEM := gitlabutils.EncodeCertificateToPEM(caCert)
+
+	hostnames := []string{}
+	privateKey, _ := gitlabutils.PrivateKeyRSA(4096)
+	keyPEM := gitlabutils.EncodePrivateKeyToPEM(privateKey)
+	certificate, _ := gitlabutils.ClientCertificate(privateKey, caKey, caCert, hostnames)
+	certPEM := gitlabutils.EncodeCertificateToPEM(certificate)
+
 	registry := gitlabutils.GenericSecret(cr.Name+"-registry-secret", cr.Namespace, labels)
 	registry.StringData = map[string]string{
-		"registry-auth.crt": cert,
-		"registry-auth.key": key,
+		"registry-auth.crt": string(certPEM),
+		"registry-auth.key": string(keyPEM),
+		"ca.crt":            string(caCertPEM),
 	}
 
 	return registry
@@ -185,10 +183,8 @@ func getRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 		Length:             129,
 	})
 
-	privateKey, err := gitlabutils.SigningRSAKey()
-	if err != nil {
-		log.Error(err, "Error getting RSA private key")
-	}
+	key, _ := gitlabutils.PrivateKeyRSA(2048)
+	privateKey := string(gitlabutils.EncodePrivateKeyToPEM(key))
 
 	options := RailsOptions{
 		SecretKey:     secretkey,
@@ -292,9 +288,107 @@ func getSMTPSettingsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return settings
 }
 
+func getGitlabHTTPSCertificate(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
+
+	caSecret := gitlabutils.SecretData("gitlab-ca-cert", cr.Namespace)
+	caKey, _ := gitlabutils.ParsePEMPrivateKey(caSecret["tls.key"])
+	caCert, _ := gitlabutils.ParsePEMCertificate(caSecret["tls.crt"])
+	caCertPEM := gitlabutils.EncodeCertificateToPEM(caCert)
+
+	// Add hostnames to be secured by cert
+	hostnames := []string{cr.Spec.ExternalURL}
+	if cr.Spec.Registry.Enabled {
+		hostnames = append(hostnames, cr.Spec.Registry.ExternalURL)
+	}
+
+	privateKey, _ := gitlabutils.PrivateKeyRSA(4096)
+	keyPEM := gitlabutils.EncodePrivateKeyToPEM(privateKey)
+	certificate, err := gitlabutils.ClientCertificate(privateKey, caKey, caCert, hostnames)
+	if err != nil {
+		log.Error(err, "Error creating client cert")
+	}
+	certPEM := gitlabutils.EncodeCertificateToPEM(certificate)
+
+	cert := gitlabutils.GenericSecret(cr.Name+"-gitlab-cert", cr.Namespace, labels)
+	cert.Type = corev1.SecretTypeTLS
+	cert.StringData = map[string]string{
+		"tls.crt": string(certPEM),
+		"tls.key": string(keyPEM),
+		"ca.crt":  string(caCertPEM),
+	}
+
+	return cert
+}
+
+func getCertificateAuthoritySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "gitlab-ca", gitlabutils.GitlabType)
+
+	key, _ := gitlabutils.PrivateKeyRSA(4096)
+	pemKey := gitlabutils.EncodePrivateKeyToPEM(key)
+	certificate, _ := gitlabutils.CACertificate(key)
+	caCert := gitlabutils.EncodeCertificateToPEM(certificate)
+
+	cert := gitlabutils.GenericSecret("gitlab-ca-cert", cr.Namespace, labels)
+	cert.Type = corev1.SecretTypeTLS
+	cert.StringData = map[string]string{
+		"tls.crt": string(caCert),
+		"tls.key": string(pemKey),
+	}
+
+	return cert
+}
+
+// func getRegistryCertificate(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+// 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
+
+// 	certificate, key, err := gitlabutils.KeyCertificate()
+// 	if err != nil {
+// 		log.Error(err, "")
+// 	}
+
+// 	cert := gitlabutils.GenericSecret(cr.Name+"-registry-cert", cr.Namespace, labels)
+// 	cert.Type = corev1.SecretTypeTLS
+// 	cert.StringData = map[string]string{
+// 		"tls.crt": string(certificate),
+// 		"tls.key": string(key),
+// 	}
+
+// 	return cert
+// }
+
 /***************************************************************
  * Reconcilers for the different secrets begin below this line *
  ***************************************************************/
+
+func (r *ReconcileGitlab) reconcileGitalySecret(cr *gitlabv1beta1.Gitlab) error {
+	gitaly := getGitalySecret(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitaly.Name}, gitaly) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, gitaly, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), gitaly)
+}
+
+func (r *ReconcileGitlab) reconcileGitlabCASecret(cr *gitlabv1beta1.Gitlab) error {
+	ca := getCertificateAuthoritySecret(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: ca.Name}, ca) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, ca, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), ca)
+}
+
 func (r *ReconcileGitlab) reconcileRegistrySecret(cr *gitlabv1beta1.Gitlab) error {
 	registry := getRegistrySecret(cr)
 
@@ -420,3 +514,31 @@ func (r *ReconcileGitlab) reconcileSMTPSettingsSecret(cr *gitlabv1beta1.Gitlab) 
 
 	return r.client.Create(context.TODO(), smtp)
 }
+
+func (r *ReconcileGitlab) reconcileGitlabCertSecret(cr *gitlabv1beta1.Gitlab) error {
+	gitlab := getGitlabHTTPSCertificate(cr)
+
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitlab.Name}, gitlab) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, gitlab, r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), gitlab)
+}
+
+// func (r *ReconcileGitlab) reconcileRegistryCertSecret(cr *gitlabv1beta1.Gitlab) error {
+// 	registry := getRegistryCertificate(cr)
+
+// 	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registry.Name}, registry) {
+// 		return nil
+// 	}
+
+// 	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
+// 		return err
+// 	}
+
+// 	return r.client.Create(context.TODO(), registry)
+// }

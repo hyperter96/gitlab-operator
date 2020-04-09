@@ -58,6 +58,13 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 				Hosts:      getExternalURLs(cr),
 			},
 		}
+	} else {
+		ingress.Spec.TLS = []extensionsv1beta1.IngressTLS{
+			{
+				SecretName: cr.Name + "-gitlab-cert",
+				Hosts:      getExternalURLs(cr),
+			},
+		}
 	}
 
 	return
@@ -106,6 +113,13 @@ func getRegistryIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.In
 		ingress.Spec.TLS = []extensionsv1beta1.IngressTLS{
 			{
 				SecretName: cr.Spec.TLSCertificate,
+				Hosts:      getExternalURLs(cr),
+			},
+		}
+	} else {
+		ingress.Spec.TLS = []extensionsv1beta1.IngressTLS{
+			{
+				SecretName: cr.Name + "-gitlab-cert",
 				Hosts:      getExternalURLs(cr),
 			},
 		}

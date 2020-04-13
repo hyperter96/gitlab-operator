@@ -35,7 +35,11 @@ func (r *ReconcileGitlab) maskEmailPasword(cr *gitlabv1beta1.Gitlab) error {
 	r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, gitlab)
 
 	// If password is stored in secret and is still visible in CR, update it to emty string
-	emailPasswd := gitlabutils.GetSecretValue(r.client, cr.Namespace, cr.Name+"-smtp-settings-secret", "smtp_user_password")
+	emailPasswd, err := gitlabutils.GetSecretValue(r.client, cr.Namespace, cr.Name+"-smtp-settings-secret", "smtp_user_password")
+	if err != nil {
+		log.Error(err, "")
+	}
+
 	if gitlab.Spec.SMTP.Password == emailPasswd && cr.Spec.SMTP.Password != "" {
 		// Update CR
 		gitlab.Spec.SMTP.Password = ""

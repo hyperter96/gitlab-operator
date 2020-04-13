@@ -127,7 +127,11 @@ func (in *GitlabSpec) DeepCopyInto(out *GitlabSpec) {
 	*out = *in
 	out.SMTP = in.SMTP
 	out.Registry = in.Registry
-	out.Minio = in.Minio
+	if in.Minio != nil {
+		in, out := &in.Minio, &out.Minio
+		*out = new(MinioSpec)
+		**out = **in
+	}
 	if in.Redis != nil {
 		in, out := &in.Redis, &out.Redis
 		*out = new(RedisSpec)

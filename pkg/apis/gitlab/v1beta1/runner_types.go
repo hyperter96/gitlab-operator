@@ -9,7 +9,11 @@ type RunnerSpec struct {
 	// GitlabResource represents a Gitlab custom resource. Should
 	// only be used to reference Gitlab instance created by the operator
 	Gitlab GitlabInstanceSpec `json:"gitlab,omitempty"`
-	Tags   string             `json:"tags,omitempty"`
+	// RegistrationToken is name of secret with the
+	// runner_registration_token key used to register the runner
+	RegistrationToken string `json:"token,omitempty"`
+	// Tags passes the runner tags
+	Tags string `json:"tags,omitempty"`
 }
 
 // GitlabInstanceSpec defines the Gitlab custom
@@ -19,8 +23,6 @@ type GitlabInstanceSpec struct {
 	Name string `json:"name,omitempty"`
 	// Gitlab or Continuous Integration URL
 	URL string `json:"url,omitempty"`
-	// Gitlab Runner registration token
-	RegistrationToken string `json:"token,omitempty"`
 }
 
 // RunnerStatus defines the observed state of Runner

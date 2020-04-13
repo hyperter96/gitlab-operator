@@ -24,8 +24,8 @@ func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	})
 
 	secrets := map[string]string{
-		"gitlab_root_password":                      rootPassword,
-		"initial_shared_runners_registration_token": registrationToken,
+		"gitlab_root_password":      rootPassword,
+		"runner_registration_token": registrationToken,
 	}
 
 	gitlab := gitlabutils.GenericSecret(cr.Name+"-gitlab-secrets", cr.Namespace, labels)

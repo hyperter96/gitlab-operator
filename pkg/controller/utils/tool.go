@@ -100,14 +100,14 @@ func NewKubernetesClient() (clientset *kubernetes.Clientset, err error) {
 }
 
 // GetSecretValue returns the value for a key from an existing secret
-func GetSecretValue(client client.Client, namespace, secret, key string) string {
+func GetSecretValue(client client.Client, namespace, secret, key string) (string, error) {
 	target := &corev1.Secret{}
 
 	err := client.Get(context.TODO(), types.NamespacedName{Name: secret, Namespace: namespace}, target)
 	if err != nil {
-		fmt.Printf("Secret not found: %v", err)
+		return "", err
 	}
-	return string(target.Data[key])
+	return string(target.Data[key]), err
 }
 
 // ReadConfig returns contents of file as string

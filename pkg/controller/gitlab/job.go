@@ -78,7 +78,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: cr.Name + "-gitlab-secrets",
 								},
-								Key: "initial_shared_runners_registration_token",
+								Key: "runner_registration_token",
 							},
 						},
 					},

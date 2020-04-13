@@ -38,18 +38,25 @@ spec:
                 name:
                   description: Name of gitlab resource in kubernetes / openshift
                   type: string
-                token:
-                  description: Gitlab Runner registration token
-                  type: string
                 url:
                   description: Gitlab or Continuous Integration URL
                   type: string
               type: object
             tags:
+              description: Tags passes the runner tags
+              type: string
+            token:
+              description: RegistrationToken is name of secret with the runner_registration_token
+                key used to register the runner
               type: string
           type: object
         status:
           description: RunnerStatus defines the observed state of Runner
+          properties:
+            phase:
+              type: string
+            registration:
+              type: string
           type: object
       type: object
   version: v1beta1

@@ -2,31 +2,24 @@ package gitlab
 
 import (
 	"bytes"
-	"context"
 	"text/template"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
 
-	if cr.Spec.ExternalURL == "" {
-		cr.Spec.ExternalURL = "http://gitlab.example.com"
-	}
-
-	var registryURL string = cr.Spec.Registry.ExternalURL
-	if registryURL == "" && cr.Spec.Registry.Enabled {
-		registryURL = "http://registry." + DomainNameOnly(cr.Spec.ExternalURL)
+	var registryURL string = cr.Spec.Registry.URL
+	if registryURL == "" && !cr.Spec.Registry.Disabled {
+		registryURL = getRegistryURL(cr)
 	}
 
 	gitlab := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-config", cr.Namespace, labels)
 	gitlab.Data = map[string]string{
-		"gitlab_external_url":   parseURL(cr.Spec.ExternalURL, hasTLS(cr)),
+		"gitlab_external_url":   parseURL(getGitlabURL(cr), hasTLS(cr)),
 		"postgres_db":           "gitlabhq_production",
 		"postgres_host":         cr.Name + "-database",
 		"postgres_user":         "gitlab",
@@ -116,11 +109,11 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	options := UnicornOptions{
 		Namespace:   cr.Namespace,
-		GitlabURL:   cr.Spec.ExternalURL,
+		GitlabURL:   cr.Spec.URL,
 		Minio:       getName(cr.Name, "minio"),
-		MinioURL:    DomainNameOnly(cr.Spec.Minio.URL),
+		MinioURL:    getMinioURL(cr),
 		Registry:    getName(cr.Name, "registry"),
-		RegistryURL: cr.Spec.Registry.ExternalURL,
+		RegistryURL: getRegistryURL(cr),
 		Gitaly:      getName(cr.Name, "gitaly"),
 		RedisMaster: getName(cr.Name, "redis"),
 		PostgreSQL:  getName(cr.Name, "database"),
@@ -204,13 +197,13 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	options := SidekiqOptions{
 		RedisMaster:    getName(cr.Name, "redis"),
 		PostgreSQL:     getName(cr.Name, "database"),
-		GitlabURL:      cr.Spec.ExternalURL,
+		GitlabURL:      getGitlabURL(cr),
 		EnableRegistry: true,
 		Registry:       getName(cr.Name, "registry"),
-		RegistryURL:    cr.Spec.Registry.ExternalURL,
+		RegistryURL:    getRegistryURL(cr),
 		Gitaly:         getName(cr.Name, "gitaly"),
 		Namespace:      cr.Namespace,
-		MinioURL:       DomainNameOnly(cr.Spec.Minio.URL),
+		MinioURL:       getMinioURL(cr),
 		Minio:          getName(cr.Name, "minio"),
 	}
 
@@ -263,7 +256,7 @@ func getRegistryConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	configure := gitlabutils.ReadConfig("/templates/registry-configure.sh")
 
 	options := RegistryOptions{
-		GitlabURL: cr.Spec.ExternalURL,
+		GitlabURL: getGitlabURL(cr),
 		Minio:     getName(cr.Name, "minio"),
 	}
 	var configYML bytes.Buffer
@@ -284,13 +277,13 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	options := TaskRunnerOptions{
 		Namespace:   cr.Namespace,
-		GitlabURL:   cr.Spec.ExternalURL,
+		GitlabURL:   getGitlabURL(cr),
 		Minio:       getName(cr.Name, "minio"),
 		RedisMaster: getName(cr.Name, "redis"),
 		PostgreSQL:  getName(cr.Name, "database"),
-		MinioURL:    DomainNameOnly(cr.Spec.Minio.URL),
+		MinioURL:    getMinioURL(cr),
 		Registry:    getName(cr.Name, "registry"),
-		RegistryURL: cr.Spec.Registry.ExternalURL,
+		RegistryURL: getRegistryURL(cr),
 		Gitaly:      getName(cr.Name, "gitaly"),
 	}
 
@@ -372,202 +365,60 @@ func getMinioScriptConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	return init
 }
 
-/*
-	Reconcilers for all ConfigMaps come below
-*/
+//	Reconciler for all ConfigMaps come below
+func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
+	var configmaps []*corev1.ConfigMap
 
-func (r *ReconcileGitlab) reconcileShellConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	shell := getShellConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: shell.Name}, shell) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, shell, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), shell)
-}
-
-func (r *ReconcileGitlab) reconcileGitalyConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	gitaly := getGitalyConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitaly.Name}, gitaly) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, gitaly, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), gitaly)
-}
-
-func (r *ReconcileGitlab) reconcileRedisConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	redis := getRedisConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
-		return nil
-	}
+	redisScripts := getRedisSciptsConfig(cr)
 
-	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), redis)
-}
-
-func (r *ReconcileGitlab) reconcileRedisScriptsConfigMap(cr *gitlabv1beta1.Gitlab) error {
-	scripts := getRedisSciptsConfig(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: scripts.Name}, scripts) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, scripts, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), scripts)
-}
-
-func (r *ReconcileGitlab) reconcileUnicornConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	unicorn := getUnicornConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: unicorn.Name}, unicorn) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, unicorn, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), unicorn)
-}
-
-func (r *ReconcileGitlab) reconcileWorkhorseConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	workhorse := getWorkhorseConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: workhorse.Name}, workhorse) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, workhorse, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), workhorse)
-}
-
-func (r *ReconcileGitlab) reconcileGitlabConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	gitlab := getGitlabConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitlab.Name}, gitlab) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, gitlab, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), gitlab)
-}
-
-func (r *ReconcileGitlab) reconcileSidekiqConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	sidekiq := getSidekiqConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: sidekiq.Name}, sidekiq) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, sidekiq, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), sidekiq)
-}
-
-func (r *ReconcileGitlab) reconcileGitlabExporterConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	exporter := getGitlabExporterConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: exporter.Name}, exporter) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, exporter, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), exporter)
-}
-
-func (r *ReconcileGitlab) reconcileRegistryConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	registry := getRegistryConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registry.Name}, registry) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), registry)
-}
-
-func (r *ReconcileGitlab) reconcileTaskRunnerConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	taskRunner := getTaskRunnerConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: taskRunner.Name}, taskRunner) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, taskRunner, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), taskRunner)
-}
-
-func (r *ReconcileGitlab) reconcileMigrationsConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	migration := getMigrationsConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: migration.Name}, migration) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, migration, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), migration)
-}
-
-func (r *ReconcileGitlab) reconcilePostgresInitDBConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	initdb := getPostgresInitDBConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: initdb.Name}, initdb) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, initdb, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), initdb)
-}
-
-func (r *ReconcileGitlab) reconcileMinioScriptConfigMap(cr *gitlabv1beta1.Gitlab) error {
 	minio := getMinioScriptConfig(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
-		return nil
+	configmaps = append(configmaps,
+		shell,
+		gitaly,
+		redis,
+		redisScripts,
+		unicorn,
+		workhorse,
+		initdb,
+		gitlab,
+		sidekiq,
+		exporter,
+		registry,
+		taskRunner,
+		migration,
+		minio,
+	)
+
+	for _, cm := range configmaps {
+		if err := r.createKubernetesResource(cr, cm); err != nil {
+			return err
+		}
 	}
 
-	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), minio)
+	return nil
 }

@@ -17,6 +17,8 @@ import (
 func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
 
+	minioOptions := getMinioOverrides(cr.Spec.Minio)
+
 	return &miniov1beta1.MinIOInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-minio",
@@ -27,7 +29,7 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 			Metadata: &metav1.ObjectMeta{
 				Labels: labels,
 			},
-			Replicas: cr.Spec.Minio.Replicas,
+			Replicas: minioOptions.Replicas,
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					"cpu":    gitlabutils.ResourceQuantity("250m"),
@@ -38,6 +40,7 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 			CredsSecret: &corev1.LocalObjectReference{
 				Name: cr.Name + "-minio-secret",
 			},
+			RequestAutoCert: false,
 			Env: []corev1.EnvVar{
 				{
 					Name:  "MINIO_BROWSER",
@@ -80,7 +83,7 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 					},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							"storage": gitlabutils.ResourceQuantity(cr.Spec.Minio.Capacity),
+							"storage": gitlabutils.ResourceQuantity(minioOptions.Capacity),
 						},
 					},
 				},

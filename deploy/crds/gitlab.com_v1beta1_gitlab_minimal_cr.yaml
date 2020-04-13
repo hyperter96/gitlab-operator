@@ -4,8 +4,7 @@ metadata:
   name: example
 spec:
   replicas: 1
-  enterprise: false
-  externalURL: "http://gitlab.mydomain.com"
+  url: "http://gitlab.example.com"
   volumes:
     config:
       capacity: 2Gi

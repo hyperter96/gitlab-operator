@@ -1,15 +1,11 @@
 package gitlab
 
 import (
-	"context"
-
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getGitlabMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
@@ -96,47 +92,27 @@ func getRedisMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.Servi
 
 }
 
-func (r *ReconcileGitlab) reconcileGitlabMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+
+	var servicemonitors []*monitoringv1.ServiceMonitor
 
 	gitlab := getGitlabMetricsServiceMonitor(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitlab.Name}, gitlab) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, gitlab, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), gitlab)
-}
-
-func (r *ReconcileGitlab) reconcilePostgresMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
-
 	postgres := getPostgresMetricsServiceMonitor(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), postgres)
-}
-
-func (r *ReconcileGitlab) reconcileRedisMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
 
 	redis := getRedisMetricsServiceMonitor(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
-		return nil
+	servicemonitors = append(servicemonitors,
+		gitlab,
+		postgres,
+		redis,
+	)
+
+	for _, sm := range servicemonitors {
+		if err := r.createKubernetesResource(cr, sm); err != nil {
+			return err
+		}
 	}
 
-	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), redis)
+	return nil
 }

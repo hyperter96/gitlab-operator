@@ -193,11 +193,11 @@ func (r *ReconcileGitlab) Reconcile(request reconcile.Request) (reconcile.Result
 // Reconcile child resources used by the operator
 func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) error {
 
-	if err := r.reconcileSecrets(cr); err != nil {
+	if err := r.reconcileConfigMaps(cr); err != nil {
 		return err
 	}
 
-	if err := r.reconcileConfigMaps(cr); err != nil {
+	if err := r.reconcileSecrets(cr); err != nil {
 		return err
 	}
 

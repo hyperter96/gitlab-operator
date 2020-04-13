@@ -4,11 +4,10 @@ metadata:
   name: example
 spec:
   replicas: 1
-  enterprise: false
-  externalURL: "http://gitlab.mydomain.com"
+  url: "http://gitlab.mydomain.com"
   registry:
     enable: true
-    externalURL: "http://registry.mydomain.com"
+    url: "http://registry.mydomain.com"
   volumes:
     config:
       capacity: 2Gi

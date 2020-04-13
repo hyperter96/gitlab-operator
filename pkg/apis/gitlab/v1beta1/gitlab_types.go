@@ -6,15 +6,15 @@ import (
 
 // GitlabSpec defines the desired state of Gitlab
 type GitlabSpec struct {
-	Replicas       int32               `json:"replicas"`
-	ExternalURL    string              `json:"externalURL,omitempty"`
-	TLSCertificate string              `json:"certificate,omitempty"`
-	SMTP           SMTPConfiguration   `json:"email,omitempty"`
-	Registry       RegistrySpec        `json:"registry,omitempty"`
-	Minio          MinioSpec           `json:"minio,omitempty"`
-	Redis          RedisSpec           `json:"-"`
-	Database       DatabaseSpec        `json:"-"`
-	Volumes        ComponentVolumeSpec `json:"volumes,omitempty"`
+	Replicas int32               `json:"replicas"`
+	URL      string              `json:"url,omitempty"`
+	TLS      string              `json:"tlsSecret,omitempty"`
+	SMTP     SMTPConfiguration   `json:"email,omitempty"`
+	Registry RegistrySpec        `json:"registry,omitempty"`
+	Minio    *MinioSpec          `json:"minio,omitempty"`
+	Redis    *RedisSpec          `json:"redis,omitempty"`
+	Database *DatabaseSpec       `json:"postgresql,omitempty"`
+	Volumes  ComponentVolumeSpec `json:"volumes,omitempty"`
 }
 
 // RedisSpec defines Redis options
@@ -29,18 +29,22 @@ type DatabaseSpec struct {
 
 // RegistrySpec defines options for Gitlab registry
 type RegistrySpec struct {
-	Enabled     bool   `json:"enable,omitempty"`
-	ExternalURL string `json:"externalURL,omitempty"`
+	Disabled bool   `json:"disable,omitempty"`
+	URL      string `json:"url,omitempty"`
+	TLS      string `json:"tlsSecret,omitempty"`
 }
 
 // MinioSpec defines options for Gitlab registry
 type MinioSpec struct {
-	Enabled bool `json:"enable,omitempty"`
+	Disabled bool `json:"disable,omitempty"`
 	// URL provides a domain / DNS name that can be used
 	// to reach the minio deployment
 	URL string `json:"url,omitempty"`
 	// Replicas dictates the number of minio nodes to deploy
 	Replicas int32 `json:"replicas,omitempty"`
+	// TLS is the name of the secret containing the tls certificate
+	// used to secure the minio endpoint
+	TLS string `json:"tlsSecret,omitempty"`
 	// Credentials contains the name of the secret that contains
 	// the `accesskey` and `secretkey` values required to access
 	// an existing minio instance. Should be an even number equal
@@ -112,9 +116,9 @@ type ComponentVolumeSpec struct {
 // GitlabStatus defines the observed state of Gitlab
 type GitlabStatus struct {
 	// Phase represents status of the Gitlab resource
-	Phase       string `json:"phase,omitempty"`
-	Stage       string `json:"stage,omitempty"`
-	HealthCheck `json:"health,omitempty"`
+	Phase       string       `json:"phase,omitempty"`
+	Stage       string       `json:"stage,omitempty"`
+	HealthCheck *HealthCheck `json:"health,omitempty"`
 }
 
 // HealthCheck represents the status

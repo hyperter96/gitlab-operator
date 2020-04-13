@@ -2,15 +2,12 @@ package gitlab
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"text/template"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
@@ -29,10 +26,6 @@ func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	secrets := map[string]string{
 		"gitlab_root_password":                      rootPassword,
 		"initial_shared_runners_registration_token": registrationToken,
-	}
-
-	if cr.Spec.SMTP.Password != "" {
-		secrets["smtp_user_password"] = cr.Spec.SMTP.Password
 	}
 
 	gitlab := gitlabutils.GenericSecret(cr.Name+"-gitlab-secrets", cr.Namespace, labels)
@@ -64,20 +57,6 @@ func getShellSSHKeysSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return keys
 }
 
-func (r *ReconcileGitlab) reconcileShellSSHKeysSecret(cr *gitlabv1beta1.Gitlab) error {
-	keys := getShellSSHKeysSecret(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: keys.Name}, keys) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, keys, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), keys)
-}
-
 func getShellSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
 
@@ -92,20 +71,6 @@ func getShellSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	}
 
 	return shell
-}
-
-func (r *ReconcileGitlab) reconcileShellSecret(cr *gitlabv1beta1.Gitlab) error {
-	shell := getShellSecret(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: shell.Name}, shell) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, shell, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), shell)
 }
 
 func getGitalySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
@@ -124,7 +89,7 @@ func getGitalySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return gitaly
 }
 
-func getRegistrySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+func getRegistryCertSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
 
 	// Retrieve CA cert amd key
@@ -285,6 +250,10 @@ func getSMTPSettingsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 		"smtp_settings.rb": getSMTPSettings(cr),
 	}
 
+	if cr.Spec.SMTP.Password != "" {
+		settings.StringData["smtp_user_password"] = cr.Spec.SMTP.Password
+	}
+
 	return settings
 }
 
@@ -297,9 +266,14 @@ func getGitlabHTTPSCertificate(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	caCertPEM := gitlabutils.EncodeCertificateToPEM(caCert)
 
 	// Add hostnames to be secured by cert
-	hostnames := []string{cr.Spec.ExternalURL}
-	if cr.Spec.Registry.Enabled {
-		hostnames = append(hostnames, cr.Spec.Registry.ExternalURL)
+	hostnames := []string{getGitlabURL(cr)}
+	if !cr.Spec.Registry.Disabled {
+		hostnames = append(hostnames, getRegistryURL(cr))
+	}
+
+	minio := getMinioOverrides(cr.Spec.Minio)
+	if !minio.Disabled {
+		hostnames = append(hostnames, getMinioURL(cr))
 	}
 
 	privateKey, _ := gitlabutils.PrivateKeyRSA(4096)
@@ -339,206 +313,72 @@ func getCertificateAuthoritySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return cert
 }
 
-// func getRegistryCertificate(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
-// 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
+// Reconciler for secrets
+func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
+	var secrets []*corev1.Secret
 
-// 	certificate, key, err := gitlabutils.KeyCertificate()
-// 	if err != nil {
-// 		log.Error(err, "")
-// 	}
-
-// 	cert := gitlabutils.GenericSecret(cr.Name+"-registry-cert", cr.Namespace, labels)
-// 	cert.Type = corev1.SecretTypeTLS
-// 	cert.StringData = map[string]string{
-// 		"tls.crt": string(certificate),
-// 		"tls.key": string(key),
-// 	}
-
-// 	return cert
-// }
-
-/***************************************************************
- * Reconcilers for the different secrets begin below this line *
- ***************************************************************/
-
-func (r *ReconcileGitlab) reconcileGitalySecret(cr *gitlabv1beta1.Gitlab) error {
 	gitaly := getGitalySecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitaly.Name}, gitaly) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, gitaly, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), gitaly)
-}
-
-func (r *ReconcileGitlab) reconcileGitlabCASecret(cr *gitlabv1beta1.Gitlab) error {
 	ca := getCertificateAuthoritySecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: ca.Name}, ca) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, ca, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), ca)
-}
-
-func (r *ReconcileGitlab) reconcileRegistrySecret(cr *gitlabv1beta1.Gitlab) error {
-	registry := getRegistrySecret(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registry.Name}, registry) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), registry)
-}
-
-func (r *ReconcileGitlab) reconcileWorkhorseSecret(cr *gitlabv1beta1.Gitlab) error {
 	workhorse := getWorkhorseSecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: workhorse.Name}, workhorse) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, workhorse, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), workhorse)
-}
-
-func (r *ReconcileGitlab) reconcileRegistryHTTPSecret(cr *gitlabv1beta1.Gitlab) error {
 	registry := getRegistryHTTPSecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registry.Name}, registry) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), registry)
-}
-
-func (r *ReconcileGitlab) reconcileRailsSecret(cr *gitlabv1beta1.Gitlab) error {
 	rails := getRailsSecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: rails.Name}, rails) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, rails, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), rails)
-}
-
-func (r *ReconcileGitlab) reconcileMinioSecret(cr *gitlabv1beta1.Gitlab) error {
 	minio := getMinioSecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), minio)
-}
-
-func (r *ReconcileGitlab) reconcilePostgresSecret(cr *gitlabv1beta1.Gitlab) error {
 	postgres := getPostgresSecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), postgres)
-}
-
-func (r *ReconcileGitlab) reconcileRedisSecret(cr *gitlabv1beta1.Gitlab) error {
 	redis := getRedisSecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), redis)
-}
-
-func (r *ReconcileGitlab) reconcileGitlabSecret(cr *gitlabv1beta1.Gitlab) error {
 	core := getGilabSecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: core.Name}, core) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, core, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), core)
-}
-
-func (r *ReconcileGitlab) reconcileSMTPSettingsSecret(cr *gitlabv1beta1.Gitlab) error {
 	smtp := getSMTPSettingsSecret(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: smtp.Name}, smtp) {
-		return nil
+	shell := getShellSecret(cr)
+
+	keys := getShellSSHKeysSecret(cr)
+
+	secrets = append(secrets,
+		ca,
+		gitaly,
+		registry,
+		workhorse,
+		rails,
+		minio,
+		postgres,
+		redis,
+		core,
+		smtp,
+		shell,
+		keys,
+	)
+
+	for _, secret := range secrets {
+		if err := r.createKubernetesResource(cr, secret); err != nil {
+			return err
+		}
 	}
 
-	if err := controllerutil.SetControllerReference(cr, smtp, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), smtp)
+	return nil
 }
 
-func (r *ReconcileGitlab) reconcileGitlabCertSecret(cr *gitlabv1beta1.Gitlab) error {
+func (r *ReconcileGitlab) reconcileGitlabCertificates(cr *gitlabv1beta1.Gitlab) error {
+	var certs []*corev1.Secret
+
+	registry := getRegistryCertSecret(cr)
+
 	gitlab := getGitlabHTTPSCertificate(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitlab.Name}, gitlab) {
-		return nil
+	certs = append(certs, registry, gitlab)
+
+	for _, cert := range certs {
+		if err := r.createKubernetesResource(cr, cert); err != nil {
+			return err
+		}
 	}
 
-	if err := controllerutil.SetControllerReference(cr, gitlab, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), gitlab)
+	return nil
 }
-
-// func (r *ReconcileGitlab) reconcileRegistryCertSecret(cr *gitlabv1beta1.Gitlab) error {
-// 	registry := getRegistryCertificate(cr)
-
-// 	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registry.Name}, registry) {
-// 		return nil
-// 	}
-
-// 	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
-// 		return err
-// 	}
-
-// 	return r.client.Create(context.TODO(), registry)
-// }

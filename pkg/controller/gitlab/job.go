@@ -1,14 +1,10 @@
 package gitlab
 
 import (
-	"context"
-
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
@@ -309,30 +305,15 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 	})
 }
 
-func (r *ReconcileGitlab) reconcileMigrationsJob(cr *gitlabv1beta1.Gitlab) error {
-	migration := getMigrationsJob(cr)
+func (r *ReconcileGitlab) reconcileBucketJob(cr *gitlabv1beta1.Gitlab) error {
+	buckets := createMinioBucketsJob(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: migration.Name}, migration) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, migration, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), migration)
+	return r.createKubernetesResource(cr, buckets)
 }
 
-func (r *ReconcileGitlab) reconcileBucketJob(cr *gitlabv1beta1.Gitlab) error {
-	minio := createMinioBucketsJob(cr)
+func (r *ReconcileGitlab) reconcileJobs(cr *gitlabv1beta1.Gitlab) error {
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
-		return nil
-	}
+	migration := getMigrationsJob(cr)
 
-	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), minio)
+	return r.createKubernetesResource(cr, migration)
 }

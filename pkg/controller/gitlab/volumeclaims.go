@@ -92,3 +92,32 @@ func getGitlabConfigVolumeClaim(cr *gitlabv1beta1.Gitlab) *corev1.PersistentVolu
 		},
 	}
 }
+
+func (r *ReconcileGitlab) reconcilePersistentVolumeClaims(cr *gitlabv1beta1.Gitlab) error {
+
+	if !cr.Spec.Registry.Disabled && cr.Spec.Volumes.Registry.Capacity != "" {
+		registryVolume := getRegistryVolumeClaim(cr)
+
+		if err := r.createKubernetesResource(cr, registryVolume); err != nil {
+			return err
+		}
+	}
+
+	if cr.Spec.Volumes.Data.Capacity != "" {
+		dataVolume := getGitlabDataVolumeClaim(cr)
+
+		if err := r.createKubernetesResource(cr, dataVolume); err != nil {
+			return err
+		}
+	}
+
+	if cr.Spec.Volumes.Configuration.Capacity != "" {
+		configVolume := getGitlabConfigVolumeClaim(cr)
+
+		if err := r.createKubernetesResource(cr, configVolume); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

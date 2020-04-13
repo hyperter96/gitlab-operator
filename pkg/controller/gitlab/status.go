@@ -61,14 +61,14 @@ func (r *ReconcileGitlab) reconcileGitlabStatus(cr *gitlabv1beta1.Gitlab) error 
 	return nil
 }
 
-func getReadinessStatus(cr *gitlabv1beta1.Gitlab) gitlabv1beta1.HealthCheck {
+func getReadinessStatus(cr *gitlabv1beta1.Gitlab) *gitlabv1beta1.HealthCheck {
 	var err error
 	status := &ReadinessStatus{}
 
 	resp, err := http.Get(fmt.Sprintf("http://%s:8181/-/readiness?all=1", cr.Name+"-unicorn"))
 	if err != nil {
 		log.Error(err, "Unable to retrieve status")
-		return gitlabv1beta1.HealthCheck{}
+		return nil
 	}
 	defer resp.Body.Close()
 
@@ -77,12 +77,12 @@ func getReadinessStatus(cr *gitlabv1beta1.Gitlab) gitlabv1beta1.HealthCheck {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Error(err, "Unable to read status")
-			return gitlabv1beta1.HealthCheck{}
+			return nil
 		}
 
 		if err = json.Unmarshal(body, status); err != nil {
 			log.Error(err, "Unable to convert response to struct")
-			return gitlabv1beta1.HealthCheck{}
+			return nil
 		}
 	}
 
@@ -90,7 +90,7 @@ func getReadinessStatus(cr *gitlabv1beta1.Gitlab) gitlabv1beta1.HealthCheck {
 }
 
 // Retrieve health of a subsystem
-func parseStatus(status *ReadinessStatus) gitlabv1beta1.HealthCheck {
+func parseStatus(status *ReadinessStatus) *gitlabv1beta1.HealthCheck {
 	var result gitlabv1beta1.HealthCheck
 
 	if status.WorkhorseStatus != "" {
@@ -106,7 +106,7 @@ func parseStatus(status *ReadinessStatus) gitlabv1beta1.HealthCheck {
 		result.Postgres = status.DatabaseStatus[0].Status
 	}
 
-	return result
+	return &result
 }
 
 func (r *ReconcileGitlab) isPostgresDeployed(cr *gitlabv1beta1.Gitlab) bool {

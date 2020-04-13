@@ -12,10 +12,10 @@ metadata:
           },
           "spec": {
             "enterprise": false,
-            "externalURL": "http://gitlab.example.com",
+            "url": "http://gitlab.example.com",
             "registry": {
               "enable": true,
-              "externalURL": "http://registry.example.com"
+              "url": "http://registry.example.com"
             },
             "replicas": 1,
             "volumes": {

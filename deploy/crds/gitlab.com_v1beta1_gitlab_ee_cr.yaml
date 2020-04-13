@@ -5,10 +5,10 @@ metadata:
 spec:
   replicas: 1
   enterprise: true
-  externalURL: "http://gitlab.domain.com"
+  url: "http://gitlab.example.com"
   registry:
     enable: true
-    externalURL: "http://registry.domain.com"
+    url: "http://registry.example.com"
   volumes:
     config:
       capacity: 2Gi

@@ -43,7 +43,7 @@ func parseURL(url string, secured bool) string {
 }
 
 func hasTLS(cr *gitlabv1beta1.Gitlab) bool {
-	return cr.Spec.TLSCertificate != ""
+	return cr.Spec.TLS != ""
 }
 
 // Function watches for database to startup.
@@ -159,4 +159,63 @@ func getSMTPSettings(cr *gitlabv1beta1.Gitlab) string {
 	pattern := regexp.MustCompile(`(?m)^\s+[\n\r]+|[\r\n]+\s+\z`)
 
 	return pattern.ReplaceAllString(settings.String(), "\n")
+}
+
+func getPostgresOverrides(postgres *gitlabv1beta1.DatabaseSpec) gitlabv1beta1.DatabaseSpec {
+	if postgres != nil {
+		return *postgres
+	}
+
+	var replicas int32 = 1
+	return gitlabv1beta1.DatabaseSpec{
+		Replicas: replicas,
+	}
+}
+
+func getRedisOverrides(redis *gitlabv1beta1.RedisSpec) gitlabv1beta1.RedisSpec {
+	if redis != nil {
+		return *redis
+	}
+
+	var replicas int32 = 1
+	return gitlabv1beta1.RedisSpec{
+		Replicas: replicas,
+	}
+}
+
+func getMinioOverrides(minio *gitlabv1beta1.MinioSpec) gitlabv1beta1.MinioSpec {
+	if minio != nil {
+		return *minio
+	}
+
+	var replicas int32 = 4
+	return gitlabv1beta1.MinioSpec{
+		Replicas: replicas,
+		Capacity: "5Gi",
+	}
+}
+
+func getGitlabURL(cr *gitlabv1beta1.Gitlab) string {
+	if cr.Spec.URL != "" {
+		return DomainNameOnly(cr.Spec.URL)
+	}
+
+	return "gitlab.example.com"
+}
+
+func getRegistryURL(cr *gitlabv1beta1.Gitlab) string {
+	if cr.Spec.Registry.URL != "" {
+		return DomainNameOnly(cr.Spec.Registry.URL)
+	}
+
+	return "registry.example.com"
+}
+
+func getMinioURL(cr *gitlabv1beta1.Gitlab) string {
+	minio := getMinioOverrides(cr.Spec.Minio)
+	if cr.Spec.Minio != nil {
+		return DomainNameOnly(minio.URL)
+	}
+
+	return "minio.example.com"
 }

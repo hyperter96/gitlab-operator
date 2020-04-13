@@ -79,7 +79,7 @@ type ShellOptions struct {
 type SidekiqOptions struct {
 	RedisMaster    string
 	PostgreSQL     string
-	GitlabURL      string // ExternalURL no protocol. e.g: gitlab.example.com
+	GitlabURL      string // URL without protocol. e.g: gitlab.example.com
 	EnableRegistry bool
 	Registry       string
 	RegistryURL    string

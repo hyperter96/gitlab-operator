@@ -48,10 +48,10 @@ spec:
     tls: false
     username: <email_addr_for_gitlab>@gmail.com
   enterprise: false
-  externalURL: gitlab.mydomain.tld
+  url: gitlab.mydomain.tld
   registry:
     enable: true
-    externalURL: registry.mydomain.tld
+    url: registry.mydomain.tld
   replicas: 1
   volumes:
     config:

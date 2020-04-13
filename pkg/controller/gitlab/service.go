@@ -1,16 +1,13 @@
 package gitlab
 
 import (
-	"context"
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getRedisHeadlessService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
@@ -308,170 +305,53 @@ func getMinioService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	}
 }
 
-func (r *ReconcileGitlab) reconcilePostgresService(cr *gitlabv1beta1.Gitlab) error {
+func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
+	var services []*corev1.Service
+
 	postgres := getPostgresService(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
-		return nil
-	}
+	postgresHeadless := getPostgresHeadlessService(cr)
 
-	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), postgres)
-}
-
-func (r *ReconcileGitlab) reconcilePostgresHeadlessService(cr *gitlabv1beta1.Gitlab) error {
-	postgres := getPostgresHeadlessService(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), postgres)
-}
-
-func (r *ReconcileGitlab) reconcileRedisService(cr *gitlabv1beta1.Gitlab) error {
 	redis := getRedisService(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
-		return nil
-	}
+	redisHeadless := getRedisHeadlessService(cr)
 
-	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), redis)
-}
-
-func (r *ReconcileGitlab) reconcileRedisHeadlessService(cr *gitlabv1beta1.Gitlab) error {
-	redis := getRedisHeadlessService(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), redis)
-}
-
-func (r *ReconcileGitlab) reconcileGitalyService(cr *gitlabv1beta1.Gitlab) error {
 	gitaly := getGitalyService(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitaly.Name}, gitaly) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, gitaly, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), gitaly)
-}
-
-func (r *ReconcileGitlab) reconcileRegistryService(cr *gitlabv1beta1.Gitlab) error {
 	registry := getRegistryService(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: registry.Name}, registry) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, registry, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), registry)
-}
-
-func (r *ReconcileGitlab) reconcileUnicornService(cr *gitlabv1beta1.Gitlab) error {
 	unicorn := getUnicornService(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: unicorn.Name}, unicorn) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, unicorn, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), unicorn)
-}
-
-func (r *ReconcileGitlab) reconcileShellService(cr *gitlabv1beta1.Gitlab) error {
 	shell := getShellService(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: shell.Name}, shell) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, shell, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), shell)
-}
-
-func (r *ReconcileGitlab) reconcileGitlabExporterService(cr *gitlabv1beta1.Gitlab) error {
 	exporter := getGitlabExporterService(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: exporter.Name}, exporter) {
-		return nil
-	}
+	postgresMetrics := getPostgresMetricsService(cr)
 
-	if err := controllerutil.SetControllerReference(cr, exporter, r.scheme); err != nil {
-		return err
-	}
+	redisMetrics := getRedisMetricsService(cr)
 
-	return r.client.Create(context.TODO(), exporter)
-}
-
-func (r *ReconcileGitlab) reconcilePostgresMetricsService(cr *gitlabv1beta1.Gitlab) error {
-	postgres := getPostgresMetricsService(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), postgres)
-}
-
-func (r *ReconcileGitlab) reconcileRedisMetricsService(cr *gitlabv1beta1.Gitlab) error {
-	redis := getRedisMetricsService(cr)
-
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), redis)
-}
-
-func (r *ReconcileGitlab) reconcileMinioService(cr *gitlabv1beta1.Gitlab) error {
 	minio := getMinioService(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
-		return nil
+	services = append(services,
+		postgres,
+		postgresHeadless,
+		postgresMetrics,
+		redis,
+		redisHeadless,
+		redisMetrics,
+		gitaly,
+		registry,
+		unicorn,
+		shell,
+		exporter,
+		minio,
+	)
+
+	for _, svc := range services {
+		if err := r.createKubernetesResource(cr, svc); err != nil {
+			return err
+		}
 	}
 
-	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), minio)
+	return nil
 }

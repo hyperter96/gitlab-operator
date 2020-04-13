@@ -1,16 +1,12 @@
 package gitlab
 
 import (
-	"context"
-
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
@@ -66,10 +62,12 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		})
 	}
 
+	psqlOptions := getPostgresOverrides(cr.Spec.Database)
+
 	return gitlabutils.GenericStatefulSet(gitlabutils.Component{
 		Labels:               labels,
 		Namespace:            cr.Namespace,
-		Replicas:             cr.Spec.Database.Replicas,
+		Replicas:             psqlOptions.Replicas,
 		VolumeClaimTemplates: claims,
 		InitContainers: []corev1.Container{
 			{
@@ -355,10 +353,12 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		})
 	}
 
+	redisOptions := getRedisOverrides(cr.Spec.Redis)
+
 	return gitlabutils.GenericStatefulSet(gitlabutils.Component{
 		Labels:               labels,
 		Namespace:            cr.Namespace,
-		Replicas:             cr.Spec.Redis.Replicas,
+		Replicas:             redisOptions.Replicas,
 		VolumeClaimTemplates: claims,
 		Containers: []corev1.Container{
 			{
@@ -494,6 +494,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "gitaly", gitlabutils.GitlabType)
 
+	var replicas int32 = 1
 	volumeSize := "10Gi"
 	claims := []corev1.PersistentVolumeClaim{
 		{
@@ -538,7 +539,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	gitaly := gitlabutils.GenericStatefulSet(gitlabutils.Component{
 		Labels:               labels,
 		Namespace:            cr.Namespace,
-		Replicas:             cr.Spec.Redis.Replicas,
+		Replicas:             replicas,
 		VolumeClaimTemplates: claims,
 		InitContainers: []corev1.Container{
 			{
@@ -718,44 +719,23 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	return gitaly
 }
 
-func (r *ReconcileGitlab) reconcilePostgresStatefulSet(cr *gitlabv1beta1.Gitlab) error {
+func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error {
+
+	var statefulsets []*appsv1.StatefulSet
+
 	postgres := getPostgresStatefulSet(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: postgres.Name}, postgres) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, postgres, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), postgres)
-}
-
-func (r *ReconcileGitlab) reconcileRedisStatefulSet(cr *gitlabv1beta1.Gitlab) error {
 	redis := getRedisStatefulSet(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: redis.Name}, redis) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, redis, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), redis)
-}
-
-func (r *ReconcileGitlab) reconcileGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) error {
 	gitaly := getGitalyStatefulSet(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: gitaly.Name}, gitaly) {
-		return nil
+	statefulsets = append(statefulsets, postgres, redis, gitaly)
+
+	for _, statefulset := range statefulsets {
+		if err := r.createKubernetesResource(cr, statefulset); err != nil {
+			return err
+		}
 	}
 
-	if err := controllerutil.SetControllerReference(cr, gitaly, r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), gitaly)
+	return nil
 }

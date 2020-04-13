@@ -31,8 +31,6 @@ spec:
         spec:
           description: GitlabSpec defines the desired state of Gitlab
           properties:
-            certificate:
-              type: string
             email:
               description: 'SMTPConfiguration defines options for Gitlab registry
                 More on configuration options available below: https://docs.gitlab.com/omnibus/settings/smtp.html'
@@ -77,8 +75,6 @@ spec:
                   description: Username represents the SMTP username for sending email
                   type: string
               type: object
-            externalURL:
-              type: string
             minio:
               description: MinioSpec defines options for Gitlab registry
               properties:
@@ -93,28 +89,52 @@ spec:
                     minio instance. Should be an even number equal to or larger than
                     four
                   type: string
-                enable:
+                disable:
                   type: boolean
                 replicas:
                   description: Replicas dictates the number of minio nodes to deploy
                   format: int32
                   type: integer
+                tlsSecret:
+                  description: TLS is the name of the secret containing the tls certificate
+                    used to secure the minio endpoint
+                  type: string
                 url:
                   description: URL provides a domain / DNS name that can be used to
                     reach the minio deployment
                   type: string
               type: object
+            postgresql:
+              description: DatabaseSpec defines database options
+              properties:
+                replicas:
+                  format: int32
+                  type: integer
+              type: object
+            redis:
+              description: RedisSpec defines Redis options
+              properties:
+                replicas:
+                  format: int32
+                  type: integer
+              type: object
             registry:
               description: RegistrySpec defines options for Gitlab registry
               properties:
-                enable:
+                disable:
                   type: boolean
-                externalURL:
+                tlsSecret:
+                  type: string
+                url:
                   type: string
               type: object
             replicas:
               format: int32
               type: integer
+            tlsSecret:
+              type: string
+            url:
+              type: string
             volumes:
               description: ComponentVolumeSpec defines volumes for the different Gitlab
                 peieces
@@ -181,18 +201,20 @@ spec:
         status:
           description: GitlabStatus defines the observed state of Gitlab
           properties:
-            phase:
-              description: Phase represents status of the Gitlab resource
-              type: string
-            services:
-              description: ServicesHealth represents the status  of a Gitlab dependent
-                service
+            health:
+              description: HealthCheck represents the status  of services that make
+                up Gitlab
               properties:
                 database:
                   type: string
                 redis:
                   type: string
+                workhorse:
+                  type: string
               type: object
+            phase:
+              description: Phase represents status of the Gitlab resource
+              type: string
             stage:
               type: string
           type: object

@@ -4,10 +4,6 @@ metadata:
   name: example
 spec:
   replicas: 1
-  url: "http://gitlab.mydomain.com"
-  registry:
-    enable: true
-    url: "http://registry.mydomain.com"
   volumes:
     config:
       capacity: 2Gi

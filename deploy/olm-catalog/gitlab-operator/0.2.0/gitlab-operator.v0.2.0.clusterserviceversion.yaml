@@ -17,22 +17,79 @@ metadata:
             "token": "runner-token-secret",
             "tags": "openshift, test"
          }
-        }
+        },
+        {
+          "apiVersion": "gitlab.com/v1beta1",
+          "kind": "Gitlab",
+          "metadata": {
+              "name": "example"
+          },
+          "spec": {
+              "replicas": 1,
+              "volumes": {
+                  "config": {
+                      "capacity": "2Gi",
+                      "persist": true
+                  },
+                  "data": {
+                      "capacity": "10Gi",
+                      "persist": false
+                  },
+                  "database": {
+                      "capacity": "8Gi",
+                      "persist": true
+                  },
+                  "redis": {
+                      "capacity": "4Gi",
+                      "persist": true
+                  },
+                  "registry": {
+                      "capacity": "10Gi",
+                      "persist": true
+                  }
+              }
+          }
+      }
       ]
     capabilities: Basic Install
     repository: https://gitlab.com/ochienged/gitlab-operator
     createdAt: 2020-03-11T13:29:00Z
     certified: 'false'
     categories: Integration & Delivery
-    containerImage: quay.io/eochieng/gitlab-operator:v0.1.1
+    containerImage: quay.io/eochieng/gitlab-operator:latest
     support: GitLab, Inc.
     description: An operator to deploy and manage GitLab Runner and GitLab(coming soon)
-  name: gitlab-operator.v0.1.1
+  name: gitlab-operator.v0.2.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
-    owned:    
+    owned:
+    - description: Gitlab is the Schema for the gitlabs API
+      kind: Gitlab
+      name: gitlabs.gitlab.com
+      version: v1beta1
+      displayName: GitLab
+      resources:
+        - kind: StatefulSets
+          version: v1
+        - kind: Deployments
+          version: v1
+        - kind: Job
+          version: v1
+        - kind: ConfigMap
+          version: v1
+        - kind: Secret
+          version: v1
+        - kind: PersistentVolumeClaim
+          version: v1
+        - kind: Ingress
+          version: v1beta1
+        - kind: Route
+          version: v1
+        - kind: ServiceMonitor
+          version: v1
+      specDescriptors: []    
     - description: Runner is the Schema for the runners API
       kind: Runner
       name: runners.gitlab.com
@@ -137,7 +194,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: gitlab-operator
-                image: quay.io/eochieng/gitlab-operator:v0.1.1
+                image: quay.io/eochieng/gitlab-operator:latest
                 imagePullPolicy: Always
                 name: gitlab-operator
                 resources: {}
@@ -327,4 +384,5 @@ spec:
       url: https://about.gitlab.com/
     - name: GitLab CI/CD
       url: https://about.gitlab.com/stages-devops-lifecycle/continuous-integration/
-  version: 0.1.1
+  replaces: 0.1.1
+  version: 0.2.0

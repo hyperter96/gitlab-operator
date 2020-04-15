@@ -2,7 +2,7 @@ package utils
 
 const (
 	// GitlabRunnerImage represents the runner image
-	GitlabRunnerImage = "registry.gitlab.com/ochienged/gitlab-operator/gitlab-runner"
+	GitlabRunnerImage = "registry.gitlab.com/ochienged/gitlab-runner-ubi:latest"
 
 	// GitlabRunnerHelperImage represents the runner image
 	GitlabRunnerHelperImage = "registry.gitlab.com/ochienged/gitlab-operator/gitlab-runner-helper"
@@ -24,9 +24,6 @@ const (
 
 	// GitLabSidekigImage provides means to deploy a background job processor for GitLab
 	GitLabSidekigImage = "registry.gitlab.com/gitlab-org/build/cng/gitlab-sidekiq-ee:v12.8.7"
-
-	// GitLabRunnerImage is for the runners
-	GitLabRunnerImage = "gitlab/gitlab-runner:alpine-v12.8.0"
 
 	// GitLabExporterImage is for exporter deployment
 	GitLabExporterImage = "registry.gitlab.com/gitlab-org/build/cng/gitlab-exporter:6.0.0"

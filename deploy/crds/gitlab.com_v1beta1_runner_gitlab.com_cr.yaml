@@ -5,4 +5,5 @@ metadata:
 spec:
   gitlab:
     url: https://gitlab.com
-    token: TOKEN_REDACTED
+  token: runner-token-secret
+  tags: openshift, test

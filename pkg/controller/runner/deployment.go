@@ -22,7 +22,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "configure",
-				Image:           gitlabutils.GitLabRunnerImage,
+				Image:           gitlabutils.GitlabRunnerImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"sh", "/config/configure"},
 				Env: []corev1.EnvVar{
@@ -179,7 +179,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		Containers: []corev1.Container{
 			{
 				Name:    "runner",
-				Image:   gitlabutils.GitLabRunnerImage,
+				Image:   gitlabutils.GitlabRunnerImage,
 				Command: []string{"/bin/bash", "/scripts/entrypoint"},
 				Lifecycle: &corev1.Lifecycle{
 					PreStop: &corev1.Handler{
@@ -369,10 +369,6 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						MountPath: "/secrets",
 					},
 					{
-						Name:      "etc-gitlab-runner",
-						MountPath: "/home/gitlab-runner/.gitlab-runner",
-					},
-					{
 						Name:      "scripts",
 						MountPath: "/scripts",
 					},
@@ -382,14 +378,6 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		Volumes: []corev1.Volume{
 			{
 				Name: "runner-secrets",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{
-						Medium: corev1.StorageMediumMemory,
-					},
-				},
-			},
-			{
-				Name: "etc-gitlab-runner",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						Medium: corev1.StorageMediumMemory,
@@ -466,8 +454,11 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	})
 
 	// Set security context
-	var fsGroup int64 = 65533
-	var runUser int64 = 100
+	var (
+		fsGroup int64 = 65533
+		runUser int64 = 100
+	)
+
 	runner.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		FSGroup:   &fsGroup,
 		RunAsUser: &runUser,

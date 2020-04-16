@@ -58,7 +58,7 @@ metadata:
     categories: Integration & Delivery
     containerImage: quay.io/eochieng/gitlab-operator:latest
     support: GitLab, Inc.
-    description: An operator to deploy and manage GitLab Runner and GitLab(coming soon)
+    description: An operator to deploy and manage GitLab Runner and GitLab instances
   name: gitlab-operator.v0.2.0
   namespace: placeholder
 spec:
@@ -89,7 +89,85 @@ spec:
           version: v1
         - kind: ServiceMonitor
           version: v1
-      specDescriptors: []    
+      specDescriptors:
+      - description: Replicas provides the number of GitLab instances to deploy
+        displayName: replicas
+        path: replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:GitLab
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The URL through which the GitLab instance will be accessed through e.g. gitlab.example.com
+        displayName: Gitlab URL 
+        path: url
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:GitLab
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The name of the TLS secret containing the certificate that will secure the Gitlab URL
+        displayName: GitLab Certificate
+        path: tls
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:GitLab
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Toggle to disable the Registry
+        displayName: Disable registry
+        path: registry.disable
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Registry
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: The URL at which GitLab container registry will be accessed at e.g. registry.example.com
+        displayName: Container Registry URL
+        path: registry.url
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Registry
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The name of the TLS secret containing the certificate that will secure the Registry URL
+        displayName: Registry Certificate
+        path: registry.tls
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Registry
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: The URL at which the S3 compatible object storage lives
+        displayName: Minio URL
+        path: minio.url
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Minio
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The name of the TLS secret containing the certificate that will secure the Registry URL
+        displayName: S3 Certificate
+        path: minio.tls
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Minio
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Number of Minio pods. Should be even number greater than four
+        displayName: Replicas
+        path: minio.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Minio
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The secret containing S3 accesskey and secretkey values
+        displayName: S3 Credentials
+        path: minio.credentials
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Minio
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: The capacity of the block volume to be used by each replica
+        displayName: Storage capacity
+        path: minio.capacity
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Minio
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Number of Redis pods
+        displayName: Replicas
+        path: redis.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Redis
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Number of Postgresql pods
+        displayName: Replicas
+        path: postgresql.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:fieldGroup:Postgresql
+        - urn:alm:descriptor:com.tectonic.ui:text
     - description: Runner is the Schema for the runners API
       kind: Runner
       name: runners.gitlab.com
@@ -133,18 +211,16 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
   description: |
-    The Gitlab operator is responsible for managing GitLab runner instances in your Kubernetes or Openshift container platform. GitLab provides a suite of tools that would be useful in the lifecycle of a software project. From project planning and source code management to CI/CD and monitoring.
+    The Gitlab operator is responsible for managing GitLab server and GitLab runner instances in your Kubernetes or Openshift container platform. GitLab provides a suite of tools that would be useful in the lifecycle of a software project. From project planning and source code management to CI/CD and monitoring.
 
     GitLab provides a complete DevOps platform in a single application.
-
-    Support for deploying GitLab instances in container platforms will be coming soon in v0.2.0 of the operator.
 
     ## Usage
     A GitLab Runner is a project responsible for executing your continuous integration jobs and sending back your results to GitLab.
 
     To link a runner to a self-hosted GitLab instance or the hosted GitLab (https://gitlab.com), you need to first create a secret containing the `runner_registration_token` before creating a runner instance:  
 
-      `$ kubectl -n operators create secret generic myrunner-secret --from-literal runner_registration_token=_REDACTED_`
+      `$ kubectl -n operators create secret generic runner-token-secret --from-literal runner_registration_token=_REDACTED_`
     
 
     The runner instance can be deployed with the manifests below:  
@@ -384,5 +460,5 @@ spec:
       url: https://about.gitlab.com/
     - name: GitLab CI/CD
       url: https://about.gitlab.com/stages-devops-lifecycle/continuous-integration/
-  replaces: 0.1.1
+  replaces: gitlab-operator.v0.1.1
   version: 0.2.0

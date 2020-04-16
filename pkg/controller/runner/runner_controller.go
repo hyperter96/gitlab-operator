@@ -3,11 +3,13 @@ package runner
 import (
 	"context"
 
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -78,6 +80,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitorList{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Runner{},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -141,21 +151,17 @@ func (r *ReconcileRunner) reconcileResources(cr *gitlabv1beta1.Runner) (err erro
 		return
 	}
 
+	if err = r.reconcileRunnerMetrics(cr); err != nil {
+		return
+	}
+
 	return
 }
 
 func (r *ReconcileRunner) reconcileSecrets(cr *gitlabv1beta1.Runner) error {
 	tokens := getRunnerSecret(r.client, cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: tokens.Name}, tokens) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, tokens, r.scheme); err != nil {
-		return err
-	}
-
-	if err := r.client.Create(context.TODO(), tokens); err != nil {
+	if err := r.createKubernetesResource(cr, tokens); err != nil {
 		return err
 	}
 
@@ -165,15 +171,7 @@ func (r *ReconcileRunner) reconcileSecrets(cr *gitlabv1beta1.Runner) error {
 func (r *ReconcileRunner) reconcileConfigMap(cr *gitlabv1beta1.Runner) error {
 	configs := getRunnerConfigMap(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: configs.Name}, configs) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, configs, r.scheme); err != nil {
-		return err
-	}
-
-	if err := r.client.Create(context.TODO(), configs); err != nil {
+	if err := r.createKubernetesResource(cr, configs); err != nil {
 		return err
 	}
 
@@ -183,17 +181,27 @@ func (r *ReconcileRunner) reconcileConfigMap(cr *gitlabv1beta1.Runner) error {
 func (r *ReconcileRunner) reconcileDeployments(cr *gitlabv1beta1.Runner) error {
 	runner := getRunnerDeployment(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: runner.Name}, runner) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, runner, r.scheme); err != nil {
-		return err
-	}
-
-	if err := r.client.Create(context.TODO(), runner); err != nil {
+	if err := r.createKubernetesResource(cr, runner); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func objectNamespacedName(obj interface{}) types.NamespacedName {
+	object := obj.(metav1.Object)
+	return types.NamespacedName{Name: object.GetName(), Namespace: object.GetNamespace()}
+}
+
+func (r *ReconcileRunner) createKubernetesResource(cr *gitlabv1beta1.Runner, object interface{}) error {
+
+	if gitlabutils.IsObjectFound(r.client, objectNamespacedName(object), object.(runtime.Object)) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, object.(metav1.Object), r.scheme); err != nil {
+		return err
+	}
+
+	return r.client.Create(context.TODO(), object.(runtime.Object))
 }

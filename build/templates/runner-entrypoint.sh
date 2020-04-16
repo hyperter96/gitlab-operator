@@ -24,4 +24,4 @@ if ! sh /scripts/register-runner; then
 fi
 
 # Start the runner
-exec /entrypoint run --user=gitlab-runner --working-directory=/var/tmp/gitlab-runner
+exec /entrypoint run --user=gitlab-runner --working-directory=/var/tmp/gitlab-runner --listen-address=0.0.0.0

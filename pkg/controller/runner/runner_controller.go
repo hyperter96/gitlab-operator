@@ -80,12 +80,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitorList{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &gitlabv1beta1.Runner{},
-	})
-	if err != nil {
-		return err
+	if gitlabutils.IsPrometheusSupported() {
+		err = c.Watch(&source.Kind{Type: &monitoringv1.ServiceMonitor{}}, &handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &gitlabv1beta1.Runner{},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

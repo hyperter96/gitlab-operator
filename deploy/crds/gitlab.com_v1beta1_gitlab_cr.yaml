@@ -7,10 +7,7 @@ spec:
   volumes:
     database:
       capacity: 8Gi
-      persist: true
     redis:
       capacity: 4Gi
-      persist: true
-    registry:
+    repositories:
       capacity: 10Gi
-      persist: true

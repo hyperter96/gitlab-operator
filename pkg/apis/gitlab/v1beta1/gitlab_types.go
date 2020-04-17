@@ -105,7 +105,7 @@ type ComponentVolumeSpec struct {
 	// Redis key value store volume
 	Redis VolumeSpec `json:"redis,omitempty"`
 	// Gitlab registry volume
-	Registry VolumeSpec `json:"registry,omitempty"`
+	Repositories VolumeSpec `json:"repositories,omitempty"`
 }
 
 // GitlabStatus defines the observed state of Gitlab

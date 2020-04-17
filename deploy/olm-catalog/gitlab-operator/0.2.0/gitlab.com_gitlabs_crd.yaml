@@ -159,7 +159,7 @@ spec:
                       description: StorageClass from which volume should originate
                       type: string
                   type: object
-                registry:
+                repositories:
                   description: Gitlab registry volume
                   properties:
                     capacity:

@@ -489,13 +489,12 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	})
 }
 
-// TODO 1: Remove hard corded volume size
-// TODO 2: Remove hard corded CPU resources
+// TODO 1: Remove hard corded CPU resources
 func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "gitaly", gitlabutils.GitlabType)
 
 	var replicas int32 = 1
-	volumeSize := "10Gi"
+
 	claims := []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -509,7 +508,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						"storage": gitlabutils.ResourceQuantity(volumeSize),
+						"storage": gitlabutils.ResourceQuantity(cr.Spec.Volumes.Repositories.Capacity),
 					},
 				},
 			},

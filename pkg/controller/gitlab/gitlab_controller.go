@@ -205,10 +205,6 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
-	if err := r.reconcilePersistentVolumeClaims(cr); err != nil {
-		return err
-	}
-
 	if err := r.maskEmailPasword(cr); err != nil {
 		return err
 	}

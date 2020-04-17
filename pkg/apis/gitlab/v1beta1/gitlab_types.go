@@ -91,11 +91,10 @@ type SMTPConfiguration struct {
 
 // VolumeSpec defines volume specifications
 type VolumeSpec struct {
-	// Sets the size of the volume
+	// Capacity of the volume
 	Capacity string `json:"capacity,omitempty"`
-	// Sets whether the data or volume should persist
-	// Should create emptyDir if set to false instead of PVC
-	Persist bool `json:"persist,omitempty"`
+	// StorageClass from which volume should originate
+	StorageClass string `json:"storageClass,omitempty"`
 }
 
 // ComponentVolumeSpec defines volumes for
@@ -105,12 +104,8 @@ type ComponentVolumeSpec struct {
 	Postgres VolumeSpec `json:"database,omitempty"`
 	// Redis key value store volume
 	Redis VolumeSpec `json:"redis,omitempty"`
-	// Gitlab configuration volume
-	Configuration VolumeSpec `json:"config,omitempty"`
 	// Gitlab registry volume
 	Registry VolumeSpec `json:"registry,omitempty"`
-	// Gitlab rails data volume
-	Data VolumeSpec `json:"data,omitempty"`
 }
 
 // GitlabStatus defines the observed state of Gitlab

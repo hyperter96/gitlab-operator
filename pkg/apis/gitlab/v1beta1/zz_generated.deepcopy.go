@@ -13,9 +13,7 @@ func (in *ComponentVolumeSpec) DeepCopyInto(out *ComponentVolumeSpec) {
 	*out = *in
 	out.Postgres = in.Postgres
 	out.Redis = in.Redis
-	out.Configuration = in.Configuration
 	out.Registry = in.Registry
-	out.Data = in.Data
 	return
 }
 

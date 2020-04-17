@@ -5,12 +5,6 @@ metadata:
 spec:
   replicas: 1
   volumes:
-    config:
-      capacity: 2Gi
-      persist: true
-    data:
-      capacity: 10Gi
-      persist: false
     database:
       capacity: 8Gi
       persist: true

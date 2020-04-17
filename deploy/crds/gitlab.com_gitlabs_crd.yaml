@@ -139,60 +139,35 @@ spec:
               description: ComponentVolumeSpec defines volumes for the different Gitlab
                 peieces
               properties:
-                config:
-                  description: Gitlab configuration volume
-                  properties:
-                    capacity:
-                      description: Sets the size of the volume
-                      type: string
-                    persist:
-                      description: Sets whether the data or volume should persist
-                        Should create emptyDir if set to false instead of PVC
-                      type: boolean
-                  type: object
-                data:
-                  description: Gitlab rails data volume
-                  properties:
-                    capacity:
-                      description: Sets the size of the volume
-                      type: string
-                    persist:
-                      description: Sets whether the data or volume should persist
-                        Should create emptyDir if set to false instead of PVC
-                      type: boolean
-                  type: object
                 database:
                   description: Postgres database volume for PGDATA
                   properties:
                     capacity:
-                      description: Sets the size of the volume
+                      description: Capacity of the volume
                       type: string
-                    persist:
-                      description: Sets whether the data or volume should persist
-                        Should create emptyDir if set to false instead of PVC
-                      type: boolean
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
                   type: object
                 redis:
                   description: Redis key value store volume
                   properties:
                     capacity:
-                      description: Sets the size of the volume
+                      description: Capacity of the volume
                       type: string
-                    persist:
-                      description: Sets whether the data or volume should persist
-                        Should create emptyDir if set to false instead of PVC
-                      type: boolean
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
                   type: object
                 registry:
                   description: Gitlab registry volume
                   properties:
                     capacity:
-                      description: Sets the size of the volume
+                      description: Capacity of the volume
                       type: string
-                    persist:
-                      description: Sets whether the data or volume should persist
-                        Should create emptyDir if set to false instead of PVC
-                      type: boolean
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
                   type: object
               type: object
           required:

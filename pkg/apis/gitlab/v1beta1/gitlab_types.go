@@ -53,7 +53,7 @@ type MinioSpec struct {
 	// Capacity defines the storage volume capacity used by each
 	// minio node. E.g. if the size is set to 10Gi and you have 4
 	// replicas, a total of 40Gi will be required by minio
-	Capacity string `json:"capacity,omitempty"`
+	Volume VolumeSpec `json:"volume"`
 }
 
 // SMTPConfiguration defines options for Gitlab registry

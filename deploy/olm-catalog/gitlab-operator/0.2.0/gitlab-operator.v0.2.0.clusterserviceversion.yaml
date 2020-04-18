@@ -28,17 +28,17 @@ metadata:
               "replicas": 1,
               "volumes": {
                   "database": {
-                      "capacity": "8Gi",
+                      "capacity": "8Gi"
                   },
                   "redis": {
-                      "capacity": "4Gi",
+                      "capacity": "4Gi"
                   },
                   "repositories": {
-                      "capacity": "10Gi",
+                      "capacity": "10Gi"
                   }
               }
           }
-      }
+        }
       ]
     capabilities: Basic Install
     repository: https://gitlab.com/ochienged/gitlab-operator

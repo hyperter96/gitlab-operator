@@ -185,13 +185,18 @@ func getRedisOverrides(redis *gitlabv1beta1.RedisSpec) gitlabv1beta1.RedisSpec {
 
 func getMinioOverrides(minio *gitlabv1beta1.MinioSpec) gitlabv1beta1.MinioSpec {
 	if minio != nil {
+		if minio.Volume.Capacity == "" {
+			minio.Volume.Capacity = "5Gi"
+		}
 		return *minio
 	}
 
 	var replicas int32 = 4
 	return gitlabv1beta1.MinioSpec{
 		Replicas: replicas,
-		Capacity: "5Gi",
+		Volume: gitlabv1beta1.VolumeSpec{
+			Capacity: "5Gi",
+		},
 	}
 }
 

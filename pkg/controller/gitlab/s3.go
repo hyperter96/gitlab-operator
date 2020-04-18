@@ -19,7 +19,7 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 
 	minioOptions := getMinioOverrides(cr.Spec.Minio)
 
-	return &miniov1beta1.MinIOInstance{
+	minio := &miniov1beta1.MinIOInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-minio",
 			Labels:    labels,
@@ -83,13 +83,19 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 					},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							"storage": gitlabutils.ResourceQuantity(minioOptions.Capacity),
+							"storage": gitlabutils.ResourceQuantity(minioOptions.Volume.Capacity),
 						},
 					},
 				},
 			},
 		},
 	}
+
+	if minioOptions.Volume.StorageClass != "" {
+		minio.Spec.VolumeClaimTemplate.Spec.StorageClassName = &minioOptions.Volume.StorageClass
+	}
+
+	return minio
 }
 
 func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error {

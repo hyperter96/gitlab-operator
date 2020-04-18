@@ -78,11 +78,6 @@ spec:
             minio:
               description: MinioSpec defines options for Gitlab registry
               properties:
-                capacity:
-                  description: Capacity defines the storage volume capacity used by
-                    each minio node. E.g. if the size is set to 10Gi and you have
-                    4 replicas, a total of 40Gi will be required by minio
-                  type: string
                 credentials:
                   description: Credentials contains the name of the secret that contains
                     the `accesskey` and `secretkey` values required to access an existing
@@ -103,6 +98,20 @@ spec:
                   description: URL provides a domain / DNS name that can be used to
                     reach the minio deployment
                   type: string
+                volume:
+                  description: Capacity defines the storage volume capacity used by
+                    each minio node. E.g. if the size is set to 10Gi and you have
+                    4 replicas, a total of 40Gi will be required by minio
+                  properties:
+                    capacity:
+                      description: Capacity of the volume
+                      type: string
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
+                  type: object
+              required:
+              - volume
               type: object
             postgresql:
               description: DatabaseSpec defines database options

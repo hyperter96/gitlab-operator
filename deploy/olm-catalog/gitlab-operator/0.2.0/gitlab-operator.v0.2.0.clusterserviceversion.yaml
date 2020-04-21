@@ -167,6 +167,8 @@ spec:
           version: v1
         - kind: deployments
           version: v1
+        - kind: replicasets
+          version: v1
         - kind: ConfigMap
           version: v1
         - kind: Secret
@@ -197,6 +199,17 @@ spec:
       - description: The name of a GitLab instance deployed by the operator. To be supported in v0.2.x of operator
         displayName: GitLab Name
         path: gitlab.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      statusDescriptors:
+      - description: The phase shows the current status of the lifecycle state of the GitLab runner
+        displayName: Phase
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The Registration status reports if the GitLab runner successfully registered
+        displayName: Registration
+        path: registration
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
   description: |

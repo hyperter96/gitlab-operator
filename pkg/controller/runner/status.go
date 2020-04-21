@@ -56,15 +56,19 @@ func runnerRegistrationStatus(log string) string {
 	return string(registration[len(registration)-1])
 }
 
-func (r *ReconcileRunner) updateRunnerStatus(cr *gitlabv1beta1.Runner, status string) error {
+func (r *ReconcileRunner) updateRunnerStatus(cr *gitlabv1beta1.Runner, consoleLog string) error {
 	runner := &gitlabv1beta1.Runner{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, runner)
 	if err != nil {
 		return err
 	}
 
-	runner.Status.Phase = "Running"
-	runner.Status.Registration = status
+	if consoleLog != "" {
+		runner.Status.Phase = "Running"
+		runner.Status.Registration = runnerRegistrationStatus(consoleLog)
+	} else {
+		runner.Status.Phase = "Initializing"
+	}
 
 	return r.client.Status().Update(context.TODO(), runner)
 }
@@ -89,11 +93,8 @@ func (r *ReconcileRunner) reconcileRunnerStatus(cr *gitlabv1beta1.Runner) error 
 		}
 	}
 
-	if log != "" {
-		err := r.updateRunnerStatus(cr, runnerRegistrationStatus(log))
-		if err != nil {
-			return err
-		}
+	if err := r.updateRunnerStatus(cr, log); err != nil {
+		return err
 	}
 
 	return nil

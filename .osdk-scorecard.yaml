@@ -1,6 +1,7 @@
 scorecard:
   # Setting a global scorecard option
   output: json
+  bundle: "deploy/olm-catalog/gitlab-operator"
   plugins:
     - basic:
         cr-manifest:

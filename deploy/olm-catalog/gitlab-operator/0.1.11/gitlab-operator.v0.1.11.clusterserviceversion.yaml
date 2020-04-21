@@ -314,6 +314,7 @@ spec:
           - delete
           - patch
           - update
+          - get
         serviceAccountName: gitlab-runner
     strategy: deployment
   installModes:

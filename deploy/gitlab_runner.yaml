@@ -28,6 +28,7 @@ rules:
   - configmaps
   verbs:
   - create
+  - get
   - list
   - watch
   - delete

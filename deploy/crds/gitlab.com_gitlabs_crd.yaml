@@ -110,8 +110,6 @@ spec:
                       description: StorageClass from which volume should originate
                       type: string
                   type: object
-              required:
-              - volume
               type: object
             postgresql:
               description: DatabaseSpec defines database options

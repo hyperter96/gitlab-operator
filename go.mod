@@ -4,15 +4,16 @@ go 1.13
 
 require (
 	github.com/coreos/prometheus-operator v0.34.0
+	github.com/jetstack/cert-manager v0.14.2
 	github.com/minio/minio-operator v0.0.0-20200321170334-b6403bdd65fe
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/operator-framework/operator-sdk v0.15.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
-	k8s.io/api v0.0.0
-	k8s.io/apimachinery v0.0.0
+	k8s.io/api v0.17.3
+	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v12.0.0+incompatible
-	sigs.k8s.io/controller-runtime v0.4.0
+	sigs.k8s.io/controller-runtime v0.5.1-0.20200307095134-d0de78d9f1c1
 )
 
 // Pinned to kubernetes-1.16.2

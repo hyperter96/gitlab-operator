@@ -19,8 +19,8 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 			Namespace: cr.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
-				"kubernetes.io/tls-acme":      "true",
 				"kubernetes.io/ingress.class": "nginx",
+				"cert-manager.io/issuer":      cr.Name + "-issuer",
 			},
 		},
 		Spec: extensionsv1beta1.IngressSpec{
@@ -63,8 +63,8 @@ func getRegistryIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.In
 			Namespace: cr.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
-				"kubernetes.io/tls-acme":      "true",
 				"kubernetes.io/ingress.class": "nginx",
+				"cert-manager.io/issuer":      cr.Name + "-issuer",
 			},
 		},
 		Spec: extensionsv1beta1.IngressSpec{
@@ -105,8 +105,8 @@ func getMinioIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 			Namespace: cr.Namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
-				"kubernetes.io/tls-acme":      "true",
 				"kubernetes.io/ingress.class": "nginx",
+				"cert-manager.io/issuer":      cr.Name + "-issuer",
 			},
 		},
 		Spec: extensionsv1beta1.IngressSpec{
@@ -160,7 +160,7 @@ func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
 }
 
 func getGitlabIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
-	tlsSecret := cr.Name + "-gitlab-cert"
+	tlsSecret := cr.Name + "-gitlab-tls"
 
 	if cr.Spec.TLS != "" {
 		tlsSecret = cr.Spec.TLS
@@ -175,7 +175,7 @@ func getGitlabIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressT
 }
 
 func getRegistryIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
-	tlsSecret := cr.Name + "-gitlab-cert"
+	tlsSecret := cr.Name + "-registry-tls"
 
 	if cr.Spec.TLS != "" {
 		tlsSecret = cr.Spec.Registry.TLS
@@ -190,7 +190,7 @@ func getRegistryIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.Ingres
 }
 
 func getMinioIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
-	tlsSecret := cr.Name + "-gitlab-cert"
+	tlsSecret := cr.Name + "-minio-tls"
 
 	if cr.Spec.TLS != "" {
 		tlsSecret = cr.Spec.Minio.TLS

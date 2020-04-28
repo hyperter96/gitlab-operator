@@ -17,6 +17,7 @@ import (
 	"gitlab.com/ochienged/gitlab-operator/version"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -130,6 +131,11 @@ func main() {
 	}
 
 	if err = miniov1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err = certmanagerv1alpha2.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}

@@ -1,20 +1,22 @@
 package v1beta1
 
 import (
+	acmev1alpha2 "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GitlabSpec defines the desired state of Gitlab
 type GitlabSpec struct {
-	Replicas int32               `json:"replicas"`
-	URL      string              `json:"url,omitempty"`
-	TLS      string              `json:"tlsSecret,omitempty"`
-	SMTP     SMTPConfiguration   `json:"email,omitempty"`
-	Registry RegistrySpec        `json:"registry,omitempty"`
-	Minio    *MinioSpec          `json:"minio,omitempty"`
-	Redis    *RedisSpec          `json:"redis,omitempty"`
-	Database *DatabaseSpec       `json:"postgresql,omitempty"`
-	Volumes  ComponentVolumeSpec `json:"volumes,omitempty"`
+	Replicas   int32               `json:"replicas"`
+	URL        string              `json:"url,omitempty"`
+	TLS        string              `json:"tlsSecret,omitempty"`
+	SMTP       SMTPConfiguration   `json:"email,omitempty"`
+	Registry   RegistrySpec        `json:"registry,omitempty"`
+	Minio      *MinioSpec          `json:"minio,omitempty"`
+	Redis      *RedisSpec          `json:"redis,omitempty"`
+	Database   *DatabaseSpec       `json:"postgresql,omitempty"`
+	CertIssuer *ACMEOptions        `json:"acme,omitempty"`
+	Volumes    ComponentVolumeSpec `json:"volumes,omitempty"`
 }
 
 // RedisSpec defines Redis options
@@ -87,6 +89,28 @@ type SMTPConfiguration struct {
 	ReplyTo string `json:"replyTo,omitempty"`
 	// DisplayName represents the name of the email
 	DisplayName string `json:"displayName,omitempty"`
+}
+
+// ACMEOptions defines the values for the
+// ACME service that will provide certificates
+type ACMEOptions struct {
+	// Email is the email for this account
+	// +optional
+	Email string `json:"email,omitempty"`
+
+	// Server is the ACME server URL
+	// Default to letsencrypt production URL
+	//+optional
+	Server string `json:"server,omitempty"`
+
+	// If true, skip verifying the ACME server TLS certificate
+	// +optional
+	SkipTLSVerify bool `json:"skipTLSVerify,omitempty"`
+
+	// ExternalAccountBinding is a reference to a CA external account of the ACME
+	// server.
+	// +optional
+	ExternalAccountBinding *acmev1alpha2.ACMEExternalAccountBinding `json:"externalAccountBinding,omitempty"`
 }
 
 // VolumeSpec defines volume specifications

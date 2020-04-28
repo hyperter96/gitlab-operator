@@ -6,6 +6,7 @@ import (
 	"time"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
@@ -106,6 +107,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	err = c.Watch(&source.Kind{Type: &batchv1.Job{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Gitlab{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &certmanagerv1alpha2.Issuer{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Gitlab{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &certmanagerv1alpha2.Certificate{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &gitlabv1beta1.Gitlab{},
 	})
@@ -228,6 +245,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 	}()
 
 	if err := r.reconcileGitlabCertificates(cr); err != nil {
+		return err
+	}
+
+	if err := r.reconcileCertManagerCertificates(cr); err != nil {
 		return err
 	}
 

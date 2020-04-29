@@ -13,6 +13,7 @@ require (
 	k8s.io/api v0.17.3
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v12.0.0+incompatible
+	github.com/jetstack/cert-manager v0.14.3
 	sigs.k8s.io/controller-runtime v0.5.1-0.20200307095134-d0de78d9f1c1
 )
 

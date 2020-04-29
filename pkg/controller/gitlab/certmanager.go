@@ -19,6 +19,20 @@ func GetIssuerConfig(cr *gitlabv1beta1.Gitlab) certmanagerv1alpha2.IssuerConfig 
 			cr.Spec.CertIssuer.Server = "https://acme-v02.api.letsencrypt.org/directory"
 		}
 
+		var solvers []acmev1alpha2.ACMEChallengeSolver = cr.Spec.CertIssuer.Solvers
+		if len(solvers) == 0 {
+			solvers = []acmev1alpha2.ACMEChallengeSolver{
+				{
+					Selector: &acmev1alpha2.CertificateDNSNameSelector{},
+					HTTP01: &acmev1alpha2.ACMEChallengeSolverHTTP01{
+						Ingress: &acmev1alpha2.ACMEChallengeSolverHTTP01Ingress{
+							Class: &ingressClass,
+						},
+					},
+				},
+			}
+		}
+
 		return certmanagerv1alpha2.IssuerConfig{
 			ACME: &acmev1alpha2.ACMEIssuer{
 				Email:                  cr.Spec.CertIssuer.Email,
@@ -30,16 +44,7 @@ func GetIssuerConfig(cr *gitlabv1beta1.Gitlab) certmanagerv1alpha2.IssuerConfig 
 						Name: cr.Name + "-issuer-key",
 					},
 				},
-				Solvers: []acmev1alpha2.ACMEChallengeSolver{
-					{
-						Selector: &acmev1alpha2.CertificateDNSNameSelector{},
-						HTTP01: &acmev1alpha2.ACMEChallengeSolverHTTP01{
-							Ingress: &acmev1alpha2.ACMEChallengeSolverHTTP01Ingress{
-								Class: &ingressClass,
-							},
-						},
-					},
-				},
+				Solvers: solvers,
 			},
 		}
 	}

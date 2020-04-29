@@ -111,6 +111,11 @@ type ACMEOptions struct {
 	// server.
 	// +optional
 	ExternalAccountBinding *acmev1alpha2.ACMEExternalAccountBinding `json:"externalAccountBinding,omitempty"`
+
+	// Solvers is a list of challenge solvers that will be used to solve
+	// ACME challenges for the matching domains.
+	// +optional
+	Solvers []acmev1alpha2.ACMEChallengeSolver `json:"solvers,omitempty"`
 }
 
 // VolumeSpec defines volume specifications

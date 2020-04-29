@@ -17,6 +17,13 @@ func (in *ACMEOptions) DeepCopyInto(out *ACMEOptions) {
 		*out = new(v1alpha2.ACMEExternalAccountBinding)
 		**out = **in
 	}
+	if in.Solvers != nil {
+		in, out := &in.Solvers, &out.Solvers
+		*out = make([]v1alpha2.ACMEChallengeSolver, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 

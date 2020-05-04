@@ -244,12 +244,10 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		wg.Done()
 	}()
 
-	if err := r.reconcileGitlabCertificates(cr); err != nil {
-		return err
-	}
-
-	if err := r.reconcileCertManagerCertificates(cr); err != nil {
-		return err
+	if RequiresCertManagerCertificate(cr).All() {
+		if err := r.reconcileCertManagerCertificates(cr); err != nil {
+			return err
+		}
 	}
 
 	wg.Wait()

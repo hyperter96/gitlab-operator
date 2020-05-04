@@ -92,23 +92,15 @@ func getGitalySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 func getRegistryCertSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
 
-	// Retrieve CA cert amd key
-	caSecret := gitlabutils.SecretData("gitlab-ca-cert", cr.Namespace)
-	caKey, _ := gitlabutils.ParsePEMPrivateKey(caSecret["tls.key"])
-	caCert, _ := gitlabutils.ParsePEMCertificate(caSecret["tls.crt"])
-	caCertPEM := gitlabutils.EncodeCertificateToPEM(caCert)
-
-	hostnames := []string{}
 	privateKey, _ := gitlabutils.PrivateKeyRSA(4096)
 	keyPEM := gitlabutils.EncodePrivateKeyToPEM(privateKey)
-	certificate, _ := gitlabutils.ClientCertificate(privateKey, caKey, caCert, hostnames)
+	certificate, _ := gitlabutils.ClientCertificate(privateKey, []string{})
 	certPEM := gitlabutils.EncodeCertificateToPEM(certificate)
 
 	registry := gitlabutils.GenericSecret(cr.Name+"-registry-secret", cr.Namespace, labels)
 	registry.StringData = map[string]string{
 		"registry-auth.crt": string(certPEM),
 		"registry-auth.key": string(keyPEM),
-		"ca.crt":            string(caCertPEM),
 	}
 
 	return registry
@@ -257,73 +249,17 @@ func getSMTPSettingsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return settings
 }
 
-func getGitlabHTTPSCertificate(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
-	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
-
-	caSecret := gitlabutils.SecretData("gitlab-ca-cert", cr.Namespace)
-	caKey, _ := gitlabutils.ParsePEMPrivateKey(caSecret["tls.key"])
-	caCert, _ := gitlabutils.ParsePEMCertificate(caSecret["tls.crt"])
-	caCertPEM := gitlabutils.EncodeCertificateToPEM(caCert)
-
-	// Add hostnames to be secured by cert
-	hostnames := []string{getGitlabURL(cr)}
-	if !cr.Spec.Registry.Disabled {
-		hostnames = append(hostnames, getRegistryURL(cr))
-	}
-
-	minio := getMinioOverrides(cr.Spec.Minio)
-	if !minio.Disabled {
-		hostnames = append(hostnames, getMinioURL(cr))
-	}
-
-	privateKey, _ := gitlabutils.PrivateKeyRSA(4096)
-	keyPEM := gitlabutils.EncodePrivateKeyToPEM(privateKey)
-	certificate, err := gitlabutils.ClientCertificate(privateKey, caKey, caCert, hostnames)
-	if err != nil {
-		log.Error(err, "Error creating client cert")
-	}
-	certPEM := gitlabutils.EncodeCertificateToPEM(certificate)
-
-	cert := gitlabutils.GenericSecret(cr.Name+"-gitlab-cert", cr.Namespace, labels)
-	cert.Type = corev1.SecretTypeTLS
-	cert.StringData = map[string]string{
-		"tls.crt": string(certPEM),
-		"tls.key": string(keyPEM),
-		"ca.crt":  string(caCertPEM),
-	}
-
-	return cert
-}
-
-func getCertificateAuthoritySecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
-	labels := gitlabutils.Label(cr.Name, "gitlab-ca", gitlabutils.GitlabType)
-
-	key, _ := gitlabutils.PrivateKeyRSA(4096)
-	pemKey := gitlabutils.EncodePrivateKeyToPEM(key)
-	certificate, _ := gitlabutils.CACertificate(key)
-	caCert := gitlabutils.EncodeCertificateToPEM(certificate)
-
-	cert := gitlabutils.GenericSecret("gitlab-ca-cert", cr.Namespace, labels)
-	cert.Type = corev1.SecretTypeTLS
-	cert.StringData = map[string]string{
-		"tls.crt": string(caCert),
-		"tls.key": string(pemKey),
-	}
-
-	return cert
-}
-
 // Reconciler for secrets
 func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 	var secrets []*corev1.Secret
 
 	gitaly := getGitalySecret(cr)
 
-	ca := getCertificateAuthoritySecret(cr)
-
 	workhorse := getWorkhorseSecret(cr)
 
 	registry := getRegistryHTTPSecret(cr)
+
+	registryCert := getRegistryCertSecret(cr)
 
 	rails := getRailsSecret(cr)
 
@@ -342,9 +278,9 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 	keys := getShellSSHKeysSecret(cr)
 
 	secrets = append(secrets,
-		ca,
 		gitaly,
 		registry,
+		registryCert,
 		workhorse,
 		rails,
 		minio,
@@ -358,24 +294,6 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 
 	for _, secret := range secrets {
 		if err := r.createKubernetesResource(cr, secret); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *ReconcileGitlab) reconcileGitlabCertificates(cr *gitlabv1beta1.Gitlab) error {
-	var certs []*corev1.Secret
-
-	registry := getRegistryCertSecret(cr)
-
-	gitlab := getGitlabHTTPSCertificate(cr)
-
-	certs = append(certs, registry, gitlab)
-
-	for _, cert := range certs {
-		if err := r.createKubernetesResource(cr, cert); err != nil {
 			return err
 		}
 	}

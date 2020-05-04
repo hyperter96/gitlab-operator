@@ -1525,7 +1525,7 @@ spec:
                   description: Replicas dictates the number of minio nodes to deploy
                   format: int32
                   type: integer
-                tlsSecret:
+                tls:
                   description: TLS is the name of the secret containing the tls certificate
                     used to secure the minio endpoint
                   type: string
@@ -1565,7 +1565,7 @@ spec:
               properties:
                 disable:
                   type: boolean
-                tlsSecret:
+                tls:
                   type: string
                 url:
                   type: string
@@ -1573,7 +1573,7 @@ spec:
             replicas:
               format: int32
               type: integer
-            tlsSecret:
+            tls:
               type: string
             url:
               type: string

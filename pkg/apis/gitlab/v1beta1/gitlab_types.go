@@ -9,7 +9,7 @@ import (
 type GitlabSpec struct {
 	Replicas   int32               `json:"replicas"`
 	URL        string              `json:"url,omitempty"`
-	TLS        string              `json:"tlsSecret,omitempty"`
+	TLS        string              `json:"tls,omitempty"`
 	SMTP       SMTPConfiguration   `json:"email,omitempty"`
 	Registry   RegistrySpec        `json:"registry,omitempty"`
 	Minio      *MinioSpec          `json:"minio,omitempty"`
@@ -33,7 +33,7 @@ type DatabaseSpec struct {
 type RegistrySpec struct {
 	Disabled bool   `json:"disable,omitempty"`
 	URL      string `json:"url,omitempty"`
-	TLS      string `json:"tlsSecret,omitempty"`
+	TLS      string `json:"tls,omitempty"`
 }
 
 // MinioSpec defines options for Gitlab registry
@@ -46,7 +46,7 @@ type MinioSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 	// TLS is the name of the secret containing the tls certificate
 	// used to secure the minio endpoint
-	TLS string `json:"tlsSecret,omitempty"`
+	TLS string `json:"tls,omitempty"`
 	// Credentials contains the name of the secret that contains
 	// the `accesskey` and `secretkey` values required to access
 	// an existing minio instance. Should be an even number equal

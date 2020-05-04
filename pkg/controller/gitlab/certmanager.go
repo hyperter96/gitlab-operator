@@ -72,7 +72,50 @@ func CertificateIssuer(cr *gitlabv1beta1.Gitlab) *certmanagerv1alpha2.Issuer {
 	return issuer
 }
 
+// EndpointTLS informs which services require
+// to be secured using generated TLS certificates
+type EndpointTLS struct {
+	gitlab   bool
+	registry bool
+	minio    bool
+}
+
+// RequiresCertManagerCertificate function returns true an administrator
+// did not provide a TLS ceritificate for an endpoint
+func RequiresCertManagerCertificate(cr *gitlabv1beta1.Gitlab) EndpointTLS {
+	return EndpointTLS{
+		gitlab:   cr.Spec.TLS == "",
+		registry: cr.Spec.Registry.TLS == "",
+		minio:    cr.Spec.Minio.TLS == "",
+	}
+}
+
+// GitLab returns true if GitLab endpoint requires
+// a cert-manager provisioned certificate
+func (ep EndpointTLS) GitLab() bool {
+	return ep.gitlab
+}
+
+// Registry returns true if Registry endpoint requires
+// a cert-manager provisioned certificate
+func (ep EndpointTLS) Registry() bool {
+	return ep.registry
+}
+
+// Minio returns true if Minio endpoint requires
+// a cert-manager provisioned certificate
+func (ep EndpointTLS) Minio() bool {
+	return ep.minio
+}
+
+// All returns true if all ingresses require
+// a cert-manager certificate
+func (ep EndpointTLS) All() bool {
+	return ep.gitlab || ep.registry || ep.minio
+}
+
 func (r *ReconcileGitlab) reconcileCertManagerCertificates(cr *gitlabv1beta1.Gitlab) error {
+	// certificates := RequiresCertificate(cr)
 
 	issuer := CertificateIssuer(cr)
 

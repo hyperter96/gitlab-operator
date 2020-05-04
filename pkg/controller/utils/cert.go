@@ -75,9 +75,10 @@ func EncodeCertificateToPEM(cert *x509.Certificate) []byte {
 }
 
 // ClientCertificate returns certificate, privateKey and error
-// Takes an RSA private key, CA cert, CA key and slice of hosts
+// Takes an RSA private key and slice of hosts
 // Returns: certificate, error
-func ClientCertificate(key *rsa.PrivateKey, caKey *rsa.PrivateKey, caCert *x509.Certificate, hosts []string) (*x509.Certificate, error) {
+func ClientCertificate(key *rsa.PrivateKey, hosts []string) (*x509.Certificate, error) {
+
 	cert := templateCertificate(clientCertType)
 
 	if len(hosts) > 0 {
@@ -86,7 +87,7 @@ func ClientCertificate(key *rsa.PrivateKey, caKey *rsa.PrivateKey, caCert *x509.
 		}
 	}
 
-	certificateDER, err := x509.CreateCertificate(rand.Reader, &cert, caCert, &key.PublicKey, caKey)
+	certificateDER, err := x509.CreateCertificate(rand.Reader, &cert, &cert, &key.PublicKey, key)
 	if err != nil {
 		return nil, err
 	}

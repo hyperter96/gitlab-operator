@@ -8,20 +8,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// IngressAnnotations generates annotation for ingresses
+func IngressAnnotations(cr *gitlabv1beta1.Gitlab, annotate bool) map[string]string {
+	annotation := map[string]string{
+		"kubernetes.io/ingress.class": "nginx",
+	}
+
+	if annotate {
+		annotation["cert-manager.io/issuer"] = cr.Name + "-issuer"
+	}
+
+	return annotation
+}
+
 func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingress) {
 	labels := gitlabutils.Label(cr.Name, "ingress", gitlabutils.GitlabType)
 
-	tls := getGitlabIngressCert(cr)
-
 	ingress = &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-gitlab-ingress",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "nginx",
-				"cert-manager.io/issuer":      cr.Name + "-issuer",
-			},
+			Name:        cr.Name + "-gitlab-ingress",
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: IngressAnnotations(cr, RequiresCertManagerCertificate(cr).GitLab()),
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
@@ -45,7 +53,7 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 					},
 				},
 			},
-			TLS: tls,
+			TLS: getGitlabIngressCert(cr),
 		},
 	}
 
@@ -55,17 +63,12 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingr
 func getRegistryIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.Ingress) {
 	labels := gitlabutils.Label(cr.Name, "ingress", gitlabutils.GitlabType)
 
-	tls := getRegistryIngressCert(cr)
-
 	return &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-registry-ingress",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "nginx",
-				"cert-manager.io/issuer":      cr.Name + "-issuer",
-			},
+			Name:        cr.Name + "-registry-ingress",
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: IngressAnnotations(cr, RequiresCertManagerCertificate(cr).Registry()),
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
@@ -89,7 +92,7 @@ func getRegistryIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.In
 					},
 				},
 			},
-			TLS: tls,
+			TLS: getRegistryIngressCert(cr),
 		},
 	}
 }
@@ -97,17 +100,12 @@ func getRegistryIngress(cr *gitlabv1beta1.Gitlab) (ingress *extensionsv1beta1.In
 func getMinioIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
 
-	tls := getMinioIngressCert(cr)
-
 	return &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-minio-ingress",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class": "nginx",
-				"cert-manager.io/issuer":      cr.Name + "-issuer",
-			},
+			Name:        cr.Name + "-minio-ingress",
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: IngressAnnotations(cr, RequiresCertManagerCertificate(cr).Minio()),
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
@@ -131,7 +129,7 @@ func getMinioIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 					},
 				},
 			},
-			TLS: tls,
+			TLS: getMinioIngressCert(cr),
 		},
 	}
 }
@@ -160,46 +158,57 @@ func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
 }
 
 func getGitlabIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
-	tlsSecret := cr.Name + "-gitlab-tls"
-
-	if cr.Spec.TLS != "" {
-		tlsSecret = cr.Spec.TLS
+	if RequiresCertManagerCertificate(cr).GitLab() {
+		return []extensionsv1beta1.IngressTLS{
+			{
+				Hosts:      []string{getGitlabURL(cr)},
+				SecretName: cr.Name + "-gitlab-tls",
+			},
+		}
 	}
 
 	return []extensionsv1beta1.IngressTLS{
 		{
 			Hosts:      []string{getGitlabURL(cr)},
-			SecretName: tlsSecret,
+			SecretName: cr.Spec.TLS,
 		},
 	}
 }
 
 func getRegistryIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
-	tlsSecret := cr.Name + "-registry-tls"
 
-	if cr.Spec.TLS != "" {
-		tlsSecret = cr.Spec.Registry.TLS
+	if RequiresCertManagerCertificate(cr).Registry() {
+		return []extensionsv1beta1.IngressTLS{
+			{
+				Hosts:      []string{getRegistryURL(cr)},
+				SecretName: cr.Name + "-registry-tls",
+			},
+		}
 	}
 
 	return []extensionsv1beta1.IngressTLS{
 		{
 			Hosts:      []string{getRegistryURL(cr)},
-			SecretName: tlsSecret,
+			SecretName: cr.Spec.Registry.TLS,
 		},
 	}
 }
 
 func getMinioIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
-	tlsSecret := cr.Name + "-minio-tls"
 
-	if cr.Spec.TLS != "" {
-		tlsSecret = cr.Spec.Minio.TLS
+	if RequiresCertManagerCertificate(cr).Minio() {
+		return []extensionsv1beta1.IngressTLS{
+			{
+				Hosts:      []string{getMinioURL(cr)},
+				SecretName: cr.Name + "-minio-tls",
+			},
+		}
 	}
 
 	return []extensionsv1beta1.IngressTLS{
 		{
 			Hosts:      []string{getMinioURL(cr)},
-			SecretName: tlsSecret,
+			SecretName: cr.Spec.Minio.TLS,
 		},
 	}
 }

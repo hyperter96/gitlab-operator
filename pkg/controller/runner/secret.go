@@ -9,7 +9,8 @@ import (
 
 func getRunnerSecret(client client.Client, cr *gitlabv1beta1.Runner) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
-	var gitlabSecret string
+	var gitlabSecret, token string
+	var err error
 
 	if cr.Spec.Gitlab.Name != "" {
 		gitlabSecret = cr.Spec.Gitlab.Name + "-gitlab-secrets"
@@ -21,9 +22,11 @@ func getRunnerSecret(client client.Client, cr *gitlabv1beta1.Runner) *corev1.Sec
 		gitlabSecret = cr.Spec.RegistrationToken
 	}
 
-	token, err := gitlabutils.GetSecretValue(client, cr.Namespace, gitlabSecret, "runner_registration_token")
-	if err != nil {
-		log.Error(err, "Secret not found!")
+	for token == "" {
+		token, err = gitlabutils.GetSecretValue(client, cr.Namespace, gitlabSecret, "runner_registration_token")
+		if err != nil {
+			log.Error(err, "Secret not found!")
+		}
 	}
 
 	runnerSecret := gitlabutils.GenericSecret(labels["app.kubernetes.io/instance"]+"-secret", cr.Namespace, labels)

@@ -407,6 +407,19 @@ spec:
           - delete
           - update
           - patch
+        - apiGroups:
+          - cert-manager.io
+          resources:
+          - issuers
+          - certificates
+          verbs:
+          - create
+          - get
+          - list
+          - delete
+          - watch
+          - patch
+          - update
         serviceAccountName: gitlab-operator
       - rules:
         - apiGroups:
@@ -432,7 +445,17 @@ spec:
           - delete
           - patch
           - update
-        serviceAccountName: gitlab-runner        
+        serviceAccountName: gitlab-runner
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          resourceNames:
+          - anyuid
+          verbs:
+          - use
+        serviceAccountName: gitlab
     strategy: deployment
   installModes:
   - supported: true
@@ -454,5 +477,5 @@ spec:
       url: https://about.gitlab.com/
     - name: GitLab CI/CD
       url: https://about.gitlab.com/stages-devops-lifecycle/continuous-integration/
-  replaces: gitlab-operator.v0.1.1
+  replaces: gitlab-operator.v0.1.11
   version: 0.2.0

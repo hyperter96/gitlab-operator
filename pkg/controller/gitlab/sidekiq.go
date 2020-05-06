@@ -410,6 +410,8 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		FSGroup:   &fsGroup,
 	}
 
+	sidekiq.Spec.Template.Spec.ServiceAccountName = "gitlab"
+
 	return sidekiq
 }
 

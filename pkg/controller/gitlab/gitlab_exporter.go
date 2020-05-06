@@ -212,6 +212,8 @@ func getGitlabExporterDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		FSGroup:   &fsGroup,
 	}
 
+	exporter.Spec.Template.Spec.ServiceAccountName = "gitlab"
+
 	return exporter
 }
 

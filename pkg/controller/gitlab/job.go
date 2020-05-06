@@ -238,6 +238,8 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 		FSGroup:   &fsGroup,
 	}
 
+	migration.Spec.Template.Spec.ServiceAccountName = "gitlab"
+
 	return migration
 }
 

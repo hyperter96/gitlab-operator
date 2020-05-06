@@ -236,6 +236,8 @@ func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		RunAsUser: &runAsUser,
 	}
 
+	shell.Spec.Template.Spec.ServiceAccountName = "gitlab"
+
 	return shell
 }
 

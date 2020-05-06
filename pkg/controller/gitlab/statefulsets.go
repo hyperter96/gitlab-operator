@@ -64,7 +64,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 
 	psqlOptions := getPostgresOverrides(cr.Spec.Database)
 
-	return gitlabutils.GenericStatefulSet(gitlabutils.Component{
+	psql := gitlabutils.GenericStatefulSet(gitlabutils.Component{
 		Labels:               labels,
 		Namespace:            cr.Namespace,
 		Replicas:             psqlOptions.Replicas,
@@ -298,12 +298,19 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 		},
 	})
+
+	psql.Spec.Template.Spec.ServiceAccountName = "gitlab"
+
+	return psql
 }
 
 func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
-	var runAsUser int64 = 1001
+	var (
+		runAsUser int64 = 1001
+		initUser  int64
+	)
 
 	redisEntrypoint := gitlabutils.ReadConfig("/templates/redis-entrypoint.sh")
 	claims := []corev1.PersistentVolumeClaim{}
@@ -355,11 +362,38 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 
 	redisOptions := getRedisOverrides(cr.Spec.Redis)
 
-	return gitlabutils.GenericStatefulSet(gitlabutils.Component{
+	redis := gitlabutils.GenericStatefulSet(gitlabutils.Component{
 		Labels:               labels,
 		Namespace:            cr.Namespace,
 		Replicas:             redisOptions.Replicas,
 		VolumeClaimTemplates: claims,
+		InitContainers: []corev1.Container{
+			{
+				Name:            "init-chmod-data",
+				Image:           gitlabutils.MiniDebImage,
+				ImagePullPolicy: corev1.PullAlways,
+				Command: []string{
+					"sh",
+					"-c",
+					"mkdir /data/redis; find /data -mindepth 0 -maxdepth 1 -not -name \".snapshot\" -not -name \"lost+found\" | xargs chown -R 1001:1001 ",
+				},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu":    gitlabutils.ResourceQuantity("250m"),
+						"memory": gitlabutils.ResourceQuantity("256Mi"),
+					},
+				},
+				SecurityContext: &corev1.SecurityContext{
+					RunAsUser: &initUser,
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "data",
+						MountPath: "/data",
+					},
+				},
+			},
+		},
 		Containers: []corev1.Container{
 			{
 				Name:            "redis",
@@ -487,6 +521,10 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 		},
 	})
+
+	redis.Spec.Template.Spec.ServiceAccountName = "gitlab"
+
+	return redis
 }
 
 // TODO 1: Remove hard corded CPU resources

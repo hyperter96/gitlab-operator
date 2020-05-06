@@ -565,6 +565,8 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		FSGroup:   &fsGroup,
 	}
 
+	unicorn.Spec.Template.Spec.ServiceAccountName = "gitlab"
+
 	return unicorn
 }
 

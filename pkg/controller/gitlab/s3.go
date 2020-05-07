@@ -101,6 +101,10 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error {
 	minio := getMinioInstance(cr)
 
+	if !gitlabutils.IsMinioAvailable() {
+		return nil
+	}
+
 	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
 		return nil
 	}

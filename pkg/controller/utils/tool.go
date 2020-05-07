@@ -183,3 +183,23 @@ func SecretData(name, namespace string) map[string][]byte {
 
 	return secret.Data
 }
+
+// IsMinioAvailable checks if Minio API provided
+// by minio operator is present
+func IsMinioAvailable() bool {
+	client, err := NewKubernetesClient()
+	if err != nil {
+		fmt.Printf("Unable to get kubernetes client: %v", err)
+	}
+
+	routeGV := schema.GroupVersion{
+		Group:   "miniooperator.min.io",
+		Version: "v1beta1",
+	}
+
+	if err := discovery.ServerSupportsVersion(client, routeGV); err != nil {
+		return false
+	}
+
+	return true
+}

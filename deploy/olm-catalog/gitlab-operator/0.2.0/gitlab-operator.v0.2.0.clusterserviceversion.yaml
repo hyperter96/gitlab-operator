@@ -366,10 +366,13 @@ spec:
           - get
           - watch
           - delete
+          - update
+          - patch
         - apiGroups:
           - route.openshift.io
           resources:
           - routes
+          - routes/custom-host
           verbs:
           - create
           - get

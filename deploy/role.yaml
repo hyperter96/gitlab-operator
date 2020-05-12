@@ -95,6 +95,7 @@ rules:
   - route.openshift.io
   resources:
   - routes
+  - routes/custom-host
   verbs:
   - create
   - get
@@ -132,4 +133,16 @@ rules:
   - delete
   - update
   - patch
-
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - issuers
+  - certificates
+  verbs:
+  - create
+  - get
+  - list
+  - delete
+  - watch
+  - patch
+  - update

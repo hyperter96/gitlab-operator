@@ -260,16 +260,9 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
-	if gitlabutils.IsOpenshift() {
-		// Deploy an Openshift route if running on Openshift
-		if err := r.reconcileRoute(cr); err != nil {
-			return err
-		}
-	} else {
-		// Deploy an ingress only if running in Kubernetes
-		if err := r.reconcileIngress(cr); err != nil {
-			return err
-		}
+	// Deploy ingress to expose GitLab
+	if err := r.reconcileIngress(cr); err != nil {
+		return err
 	}
 
 	if gitlabutils.IsPrometheusSupported() {

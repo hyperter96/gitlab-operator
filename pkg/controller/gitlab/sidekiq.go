@@ -406,8 +406,8 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	})
 
 	sidekiq.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		RunAsUser: &runAsUser,
-		FSGroup:   &fsGroup,
+		RunAsUser: &localUser,
+		FSGroup:   &localUser,
 	}
 
 	sidekiq.Spec.Template.Spec.ServiceAccountName = "gitlab"

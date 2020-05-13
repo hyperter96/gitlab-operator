@@ -234,8 +234,8 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 	})
 
 	migration.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		RunAsUser: &runAsUser,
-		FSGroup:   &fsGroup,
+		RunAsUser: &localUser,
+		FSGroup:   &localUser,
 	}
 
 	migration.Spec.Template.Spec.ServiceAccountName = "gitlab"

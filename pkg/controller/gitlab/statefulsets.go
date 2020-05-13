@@ -13,8 +13,8 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
 
 	var (
-		runAsUser   int64
-		pgRunAsUser int64 = 1001
+		adminUser    int64
+		postgresUser int64 = 1001
 	)
 
 	dshmSize := gitlabutils.ResourceQuantity("1Gi")
@@ -86,7 +86,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 					},
 				},
 				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: &runAsUser,
+					RunAsUser: &adminUser,
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
@@ -155,9 +155,6 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						"cpu":    gitlabutils.ResourceQuantity("250m"),
 						"memory": gitlabutils.ResourceQuantity("256Mi"),
 					},
-				},
-				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: &pgRunAsUser,
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -300,6 +297,10 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	})
 
 	psql.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	psql.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &postgresUser,
+		FSGroup:   &postgresUser,
+	}
 
 	return psql
 }
@@ -307,10 +308,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
-	var (
-		runAsUser int64 = 1001
-		initUser  int64
-	)
+	var redisUser int64 = 1001
 
 	redisEntrypoint := gitlabutils.ReadConfig("/templates/redis-entrypoint.sh")
 	claims := []corev1.PersistentVolumeClaim{}
@@ -367,33 +365,6 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Namespace:            cr.Namespace,
 		Replicas:             redisOptions.Replicas,
 		VolumeClaimTemplates: claims,
-		InitContainers: []corev1.Container{
-			{
-				Name:            "init-chmod-data",
-				Image:           gitlabutils.MiniDebImage,
-				ImagePullPolicy: corev1.PullAlways,
-				Command: []string{
-					"sh",
-					"-c",
-					"mkdir /data/redis; find /data -mindepth 0 -maxdepth 1 -not -name \".snapshot\" -not -name \"lost+found\" | xargs chown -R 1001:1001 ",
-				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						"cpu":    gitlabutils.ResourceQuantity("250m"),
-						"memory": gitlabutils.ResourceQuantity("256Mi"),
-					},
-				},
-				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: &initUser,
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      "data",
-						MountPath: "/data",
-					},
-				},
-			},
-		},
 		Containers: []corev1.Container{
 			{
 				Name:            "redis",
@@ -413,9 +384,6 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						Name:  "REDIS_PORT",
 						Value: "6379",
 					},
-				},
-				SecurityContext: &corev1.SecurityContext{
-					RunAsUser: &runAsUser,
 				},
 				Ports: []corev1.ContainerPort{
 					{
@@ -523,6 +491,10 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	})
 
 	redis.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	redis.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &redisUser,
+		FSGroup:   &redisUser,
+	}
 
 	return redis
 }
@@ -784,12 +756,26 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 
 	gitaly.Spec.ServiceName = labels["app.kubernetes.io/instance"]
 
+	gitaly.Spec.Template.Spec.ServiceAccountName = "gitlab"
 	gitaly.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &gitalyUserID,
 		FSGroup:   &gitalyUserID,
 	}
-
-	gitaly.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	gitaly.Spec.Template.Spec.Affinity = &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 1,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: "kubernetes.io/hostname",
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: labels,
+						},
+					},
+				},
+			},
+		},
+	}
 
 	return gitaly
 }

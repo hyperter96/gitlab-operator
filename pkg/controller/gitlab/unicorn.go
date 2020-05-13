@@ -561,8 +561,8 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	})
 
 	unicorn.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		RunAsUser: &runAsUser,
-		FSGroup:   &fsGroup,
+		RunAsUser: &localUser,
+		FSGroup:   &localUser,
 	}
 
 	unicorn.Spec.Template.Spec.ServiceAccountName = "gitlab"

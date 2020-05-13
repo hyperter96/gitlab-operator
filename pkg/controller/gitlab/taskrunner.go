@@ -317,8 +317,8 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	})
 
 	taskRunner.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		RunAsUser: &runAsUser,
-		FSGroup:   &fsGroup,
+		RunAsUser: &localUser,
+		FSGroup:   &localUser,
 	}
 
 	taskRunner.Spec.Template.Spec.ServiceAccountName = "gitlab"

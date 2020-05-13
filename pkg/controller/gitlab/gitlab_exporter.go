@@ -208,8 +208,8 @@ func getGitlabExporterDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	})
 
 	exporter.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		RunAsUser: &runAsUser,
-		FSGroup:   &fsGroup,
+		RunAsUser: &localUser,
+		FSGroup:   &localUser,
 	}
 
 	exporter.Spec.Template.Spec.ServiceAccountName = "gitlab"

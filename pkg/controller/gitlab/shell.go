@@ -11,10 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var (
-	fsGroup   int64 = 1000
-	runAsUser int64 = 1000
-)
+var localUser int64 = 1000
 
 func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
@@ -232,8 +229,8 @@ func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	})
 
 	shell.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		FSGroup:   &fsGroup,
-		RunAsUser: &runAsUser,
+		FSGroup:   &localUser,
+		RunAsUser: &localUser,
 	}
 
 	shell.Spec.Template.Spec.ServiceAccountName = "gitlab"

@@ -532,6 +532,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "gitaly", gitlabutils.GitlabType)
 
 	var replicas int32 = 1
+	var gitalyUserID int64 = 1000
 
 	claims := []corev1.PersistentVolumeClaim{
 		{
@@ -628,7 +629,37 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 				Name:            "gitaly",
 				Image:           gitlabutils.GitalyImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
-				VolumeMounts:    mounts,
+				Env: []corev1.EnvVar{
+					{
+						Name:  "CONFIG_TEMPLATE_DIRECTORY",
+						Value: "/etc/gitaly/templates",
+					},
+					{
+						Name:  "CONFIG_DIRECTORY",
+						Value: "/etc/gitaly",
+					},
+					{
+						Name:  "GITALY_CONFIG_FILE",
+						Value: "/etc/gitaly/config.toml",
+					},
+					{
+						Name:  "SSL_CERT_DIR",
+						Value: "/etc/ssl/certs",
+					},
+					{
+						Name:  "GITALY_PROMETHEUS_LISTEN_ADDR",
+						Value: ":9236",
+					},
+					{
+						Name: "POD_NAME",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
+								FieldPath: "metadata.name",
+							},
+						},
+					},
+				},
+				VolumeMounts: mounts,
 				Ports: []corev1.ContainerPort{
 					{
 						ContainerPort: 8075,
@@ -645,30 +676,30 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 						"memory": gitlabutils.ResourceQuantity("200Mi"),
 					},
 				},
-				// LivenessProbe: &corev1.Probe{
-				// 	Handler: corev1.Handler{
-				// 		Exec: &corev1.ExecAction{
-				// 			Command: []string{"/scripts/healthcheck"},
-				// 		},
-				// 	},
-				// 	FailureThreshold:    3,
-				// 	InitialDelaySeconds: 30,
-				// 	PeriodSeconds:       10,
-				// 	SuccessThreshold:    1,
-				// 	TimeoutSeconds:      3,
-				// },
-				// ReadinessProbe: &corev1.Probe{
-				// 	Handler: corev1.Handler{
-				// 		Exec: &corev1.ExecAction{
-				// 			Command: []string{"/scripts/healthcheck"},
-				// 		},
-				// 	},
-				// 	FailureThreshold:    3,
-				// 	InitialDelaySeconds: 10,
-				// 	PeriodSeconds:       10,
-				// 	SuccessThreshold:    1,
-				// 	TimeoutSeconds:      3,
-				// },
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: []string{"/scripts/healthcheck"},
+						},
+					},
+					FailureThreshold:    3,
+					InitialDelaySeconds: 30,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      3,
+				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: []string{"/scripts/healthcheck"},
+						},
+					},
+					FailureThreshold:    3,
+					InitialDelaySeconds: 10,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      3,
+				},
 			},
 		},
 		Volumes: []corev1.Volume{
@@ -752,6 +783,13 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	})
 
 	gitaly.Spec.ServiceName = labels["app.kubernetes.io/instance"]
+
+	gitaly.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &gitalyUserID,
+		FSGroup:   &gitalyUserID,
+	}
+
+	gitaly.Spec.Template.Spec.ServiceAccountName = "gitlab"
 
 	return gitaly
 }

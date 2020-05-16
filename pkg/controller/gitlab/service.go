@@ -205,7 +205,7 @@ func getShellService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 					Protocol: corev1.ProtocolTCP,
 				},
 			},
-			Type: corev1.ServiceTypeClusterIP,
+			Type: corev1.ServiceTypeNodePort,
 		},
 	}
 }

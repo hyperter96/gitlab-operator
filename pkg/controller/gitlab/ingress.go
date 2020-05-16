@@ -1,11 +1,8 @@
 package gitlab
 
 import (
-	"fmt"
-
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
-	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -115,27 +112,7 @@ func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
 		}
 	}
 
-	shell := r.reconcileGitLabShellPort(cr)
-	if err := r.createKubernetesResource(cr, shell); err != nil {
-		return err
-	}
-
 	return nil
-}
-
-func (r *ReconcileGitlab) reconcileGitLabShellPort(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
-	labels := gitlabutils.Label(cr.Name, "ssh-tcp-port", gitlabutils.GitlabType)
-
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-gitlab-shell-tcp-port",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Data: map[string]string{
-			"22": fmt.Sprintf("%s/%s:22", cr.Namespace, cr.Name+"-shell"),
-		},
-	}
 }
 
 func getGitlabIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {

@@ -51,6 +51,11 @@ func getRedisService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 					Port:     6379,
 					Protocol: corev1.ProtocolTCP,
 				},
+				{
+					Name:     "redis-metrics",
+					Port:     9121,
+					Protocol: corev1.ProtocolTCP,
+				},
 			},
 			Type: corev1.ServiceTypeClusterIP,
 		},
@@ -96,6 +101,11 @@ func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 				{
 					Name:     "postgres",
 					Port:     5432,
+					Protocol: corev1.ProtocolTCP,
+				},
+				{
+					Name:     "postgres-metrics",
+					Port:     9187,
 					Protocol: corev1.ProtocolTCP,
 				},
 			},
@@ -212,7 +222,6 @@ func getShellService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 
 func getGitlabExporterService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
-	labels["subsystem"] = "metrics"
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -226,54 +235,6 @@ func getGitlabExporterService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 				{
 					Name:     "gitlab-exporter",
 					Port:     9168,
-					Protocol: corev1.ProtocolTCP,
-				},
-			},
-			Type: corev1.ServiceTypeClusterIP,
-		},
-	}
-}
-
-func getRedisMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
-	labels["subsystem"] = "metrics"
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/instance"] + "-metrics",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: labels,
-			Ports: []corev1.ServicePort{
-				{
-					Name:     "metrics",
-					Port:     9121,
-					Protocol: corev1.ProtocolTCP,
-				},
-			},
-			Type: corev1.ServiceTypeClusterIP,
-		},
-	}
-}
-
-func getPostgresMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
-	labels["subsystem"] = "metrics"
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/instance"] + "-metrics",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: labels,
-			Ports: []corev1.ServicePort{
-				{
-					Name:     "metrics",
-					Port:     9187,
 					Protocol: corev1.ProtocolTCP,
 				},
 			},
@@ -303,17 +264,11 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 
 	exporter := getGitlabExporterService(cr)
 
-	postgresMetrics := getPostgresMetricsService(cr)
-
-	redisMetrics := getRedisMetricsService(cr)
-
 	services = append(services,
 		postgres,
 		postgresHeadless,
-		postgresMetrics,
 		redis,
 		redisHeadless,
-		redisMetrics,
 		gitaly,
 		registry,
 		unicorn,

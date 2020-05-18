@@ -282,29 +282,6 @@ func getPostgresMetricsService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	}
 }
 
-func getMinioService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: labels,
-			Ports: []corev1.ServicePort{
-				{
-					Name:     "minio",
-					Port:     9000,
-					Protocol: corev1.ProtocolTCP,
-				},
-			},
-			Type: corev1.ServiceTypeClusterIP,
-		},
-	}
-}
-
 func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 	var services []*corev1.Service
 
@@ -330,8 +307,6 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 
 	redisMetrics := getRedisMetricsService(cr)
 
-	minio := getMinioService(cr)
-
 	services = append(services,
 		postgres,
 		postgresHeadless,
@@ -344,7 +319,6 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 		unicorn,
 		shell,
 		exporter,
-		minio,
 	)
 
 	for _, svc := range services {

@@ -1,17 +1,14 @@
 package gitlab
 
 import (
-	"context"
-
 	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
@@ -98,6 +95,85 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 	return minio
 }
 
+func getMinioService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
+	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labels["app.kubernetes.io/instance"],
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "minio",
+					Port:     9000,
+					Protocol: corev1.ProtocolTCP,
+				},
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func getMinioIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
+	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+
+	return &extensionsv1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name + "-minio-ingress",
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: IngressAnnotations(cr, RequiresCertManagerCertificate(cr).Minio()),
+		},
+		Spec: extensionsv1beta1.IngressSpec{
+			Rules: []extensionsv1beta1.IngressRule{
+				{
+					// Add Registry rule only when registry is enabled
+					Host: getMinioURL(cr),
+					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
+						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
+							Paths: []extensionsv1beta1.HTTPIngressPath{
+								{
+									Path: "/",
+									Backend: extensionsv1beta1.IngressBackend{
+										ServicePort: intstr.IntOrString{
+											IntVal: 9000,
+										},
+										ServiceName: cr.Name + "-minio",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			TLS: getMinioIngressCert(cr),
+		},
+	}
+}
+
+func getMinioIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
+
+	if RequiresCertManagerCertificate(cr).Minio() {
+		return []extensionsv1beta1.IngressTLS{
+			{
+				Hosts:      []string{getMinioURL(cr)},
+				SecretName: cr.Name + "-minio-tls",
+			},
+		}
+	}
+
+	return []extensionsv1beta1.IngressTLS{
+		{
+			Hosts:      []string{getMinioURL(cr)},
+			SecretName: cr.Spec.Minio.TLS,
+		},
+	}
+}
+
 func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error {
 	minio := getMinioInstance(cr)
 
@@ -105,13 +181,15 @@ func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error
 		return nil
 	}
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: minio.Name}, minio) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, minio, r.scheme); err != nil {
+	if err := r.createKubernetesResource(cr, minio); err != nil {
 		return err
 	}
 
-	return r.client.Create(context.TODO(), minio)
+	svc := getMinioService(cr)
+	if err := r.createKubernetesResource(cr, svc); err != nil {
+		return err
+	}
+
+	ingress := getMinioIngress(cr)
+	return r.createKubernetesResource(cr, ingress)
 }

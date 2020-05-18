@@ -98,55 +98,15 @@ func getRegistryIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 	}
 }
 
-func getMinioIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
-
-	return &extensionsv1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        cr.Name + "-minio-ingress",
-			Namespace:   cr.Namespace,
-			Labels:      labels,
-			Annotations: IngressAnnotations(cr, RequiresCertManagerCertificate(cr).Minio()),
-		},
-		Spec: extensionsv1beta1.IngressSpec{
-			Rules: []extensionsv1beta1.IngressRule{
-				{
-					// Add Registry rule only when registry is enabled
-					Host: getMinioURL(cr),
-					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
-						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
-							Paths: []extensionsv1beta1.HTTPIngressPath{
-								{
-									Path: "/",
-									Backend: extensionsv1beta1.IngressBackend{
-										ServicePort: intstr.IntOrString{
-											IntVal: 9000,
-										},
-										ServiceName: cr.Name + "-minio",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			TLS: getMinioIngressCert(cr),
-		},
-	}
-}
-
 func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
 	var ingresses []*extensionsv1beta1.Ingress
 	gitlab := getGitlabIngress(cr)
 
 	registry := getRegistryIngress(cr)
 
-	minio := getMinioIngress(cr)
-
 	ingresses = append(ingresses,
 		gitlab,
 		registry,
-		minio,
 	)
 
 	for _, ingress := range ingresses {
@@ -211,25 +171,6 @@ func getRegistryIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.Ingres
 		{
 			Hosts:      []string{getRegistryURL(cr)},
 			SecretName: cr.Spec.Registry.TLS,
-		},
-	}
-}
-
-func getMinioIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
-
-	if RequiresCertManagerCertificate(cr).Minio() {
-		return []extensionsv1beta1.IngressTLS{
-			{
-				Hosts:      []string{getMinioURL(cr)},
-				SecretName: cr.Name + "-minio-tls",
-			},
-		}
-	}
-
-	return []extensionsv1beta1.IngressTLS{
-		{
-			Hosts:      []string{getMinioURL(cr)},
-			SecretName: cr.Spec.Minio.TLS,
 		},
 	}
 }

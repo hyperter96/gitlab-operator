@@ -154,10 +154,17 @@ func getGitalyServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMoni
 }
 
 func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
+	var servicemonitors []*monitoringv1.ServiceMonitor
 
 	cluster := createPrometheusCluster(cr)
+	if err := r.createSharedResource(cluster); err != nil {
+		return err
+	}
 
-	var servicemonitors []*monitoringv1.ServiceMonitor
+	service := exposePrometheusCluster(cr)
+	if err := r.createSharedResource(service); err != nil {
+		return err
+	}
 
 	gitaly := getGitalyServiceMonitor(cr)
 

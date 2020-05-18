@@ -30,6 +30,16 @@ func (r *ReconcileGitlab) createKubernetesResource(cr *gitlabv1beta1.Gitlab, obj
 	return r.client.Create(context.TODO(), object.(runtime.Object))
 }
 
+// Create a shared resource which will not have an owner reference
+func (r *ReconcileGitlab) createSharedResource(object interface{}) error {
+
+	if gitlabutils.IsObjectFound(r.client, objectNamespacedName(object), object.(runtime.Object)) {
+		return nil
+	}
+
+	return r.client.Create(context.TODO(), object.(runtime.Object))
+}
+
 func (r *ReconcileGitlab) maskEmailPasword(cr *gitlabv1beta1.Gitlab) error {
 	gitlab := &gitlabv1beta1.Gitlab{}
 	r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, gitlab)

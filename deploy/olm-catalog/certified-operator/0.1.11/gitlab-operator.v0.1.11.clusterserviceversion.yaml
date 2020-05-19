@@ -190,13 +190,6 @@ spec:
           - update
           - watch
         - apiGroups:
-          - monitoring.coreos.com
-          resources:
-          - servicemonitors
-          verbs:
-          - get
-          - create
-        - apiGroups:
           - apps
           resourceNames:
           - gitlab-operator
@@ -254,6 +247,7 @@ spec:
           - monitoring.coreos.com
           resources:
           - servicemonitors
+          - prometheuses
           verbs:
           - list
           - create

@@ -46,16 +46,16 @@ func hasTLS(cr *gitlabv1beta1.Gitlab) bool {
 	return cr.Spec.TLS != ""
 }
 
-// Function watches for database to startup.
+// Function checks if endpoint is ready to accept connections.
 // Watches endpoint for pod IP address
-func isDatabaseReady(cr *gitlabv1beta1.Gitlab) bool {
+func isEndpointReady(service string, cr *gitlabv1beta1.Gitlab) bool {
 	var addresses []corev1.EndpointAddress
 	client, err := gitlabutils.NewKubernetesClient()
 	if err != nil {
 		log.Error(err, "Unable to acquire client")
 	}
 
-	endpoint, err := client.CoreV1().Endpoints(cr.Namespace).Get(cr.Name+"-database", metav1.GetOptions{})
+	endpoint, err := client.CoreV1().Endpoints(cr.Namespace).Get(service, metav1.GetOptions{})
 	if err != nil {
 		// Endpoint was not found so return false
 		return false

@@ -238,7 +238,7 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 	wg.Add(1)
 
 	go func() {
-		for !isDatabaseReady(cr) {
+		for !isEndpointReady(cr.Name+"-database", cr) {
 			time.Sleep(time.Second * 1)
 		}
 		wg.Done()
@@ -265,15 +265,15 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
+	if err := r.reconcileBucketJob(cr); err != nil {
+		return err
+	}
+
 	if gitlabutils.IsPrometheusSupported() {
 		// Deploy a prometheus service monitor
 		if err := r.reconcileServiceMonitor(cr); err != nil {
 			return err
 		}
-	}
-
-	if err := r.reconcileBucketJob(cr); err != nil {
-		return err
 	}
 
 	if err := r.reconcileGitlabStatus(cr); err != nil {

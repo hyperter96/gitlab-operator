@@ -31,8 +31,9 @@ func createPrometheusCluster(cr *gitlabv1beta1.Gitlab) *monitoringv1.Prometheus 
 					},
 				},
 			},
-			ServiceAccountName: "prometheus-k8s",
-			Replicas:           &replicas,
+			ServiceAccountName:     "prometheus-k8s",
+			Replicas:               &replicas,
+			ServiceMonitorSelector: &metav1.LabelSelector{},
 		},
 	}
 }
@@ -47,6 +48,9 @@ func exposePrometheusCluster(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
+			Selector: map[string]string{
+				"app": "prometheus",
+			},
 			Ports: []corev1.ServicePort{
 				{
 					Name:     "web",
@@ -74,6 +78,30 @@ func getGitlabExporterServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.Ser
 				{
 					Path:     "/metrics",
 					Port:     "gitlab-exporter",
+					Interval: "30s",
+				},
+			},
+		},
+	}
+
+}
+
+func getUnicornServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
+	labels := gitlabutils.Label(cr.Name, "unicorn", gitlabutils.GitlabType)
+
+	return &monitoringv1.ServiceMonitor{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labels["app.kubernetes.io/instance"],
+			Namespace: cr.Namespace,
+		},
+		Spec: monitoringv1.ServiceMonitorSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Endpoints: []monitoringv1.Endpoint{
+				{
+					Path:     "/-/metrics",
+					Port:     "http-workhorse",
 					Interval: "30s",
 				},
 			},
@@ -156,16 +184,6 @@ func getGitalyServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMoni
 func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) error {
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
-	cluster := createPrometheusCluster(cr)
-	if err := r.createKubernetesResource(cluster, nil); err != nil {
-		return err
-	}
-
-	service := exposePrometheusCluster(cr)
-	if err := r.createKubernetesResource(service, nil); err != nil {
-		return err
-	}
-
 	gitaly := getGitalyServiceMonitor(cr)
 
 	gitlab := getGitlabExporterServiceMonitor(cr)
@@ -174,11 +192,14 @@ func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) erro
 
 	redis := getRedisServiceMonitor(cr)
 
+	workhorse := getUnicornServiceMonitor(cr)
+
 	servicemonitors = append(servicemonitors,
 		gitlab,
 		gitaly,
 		postgres,
 		redis,
+		workhorse,
 	)
 
 	for _, sm := range servicemonitors {
@@ -187,5 +208,11 @@ func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) erro
 		}
 	}
 
-	return nil
+	service := exposePrometheusCluster(cr)
+	if err := r.createKubernetesResource(service, nil); err != nil {
+		return err
+	}
+
+	prometheus := createPrometheusCluster(cr)
+	return r.createKubernetesResource(prometheus, nil)
 }

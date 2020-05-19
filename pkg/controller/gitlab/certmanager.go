@@ -119,5 +119,5 @@ func (r *ReconcileGitlab) reconcileCertManagerCertificates(cr *gitlabv1beta1.Git
 
 	issuer := CertificateIssuer(cr)
 
-	return r.createKubernetesResource(cr, issuer)
+	return r.createKubernetesResource(issuer, cr)
 }

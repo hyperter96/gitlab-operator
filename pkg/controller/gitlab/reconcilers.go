@@ -17,24 +17,17 @@ func objectNamespacedName(obj interface{}) types.NamespacedName {
 	return types.NamespacedName{Name: object.GetName(), Namespace: object.GetNamespace()}
 }
 
-func (r *ReconcileGitlab) createKubernetesResource(cr *gitlabv1beta1.Gitlab, object interface{}) error {
+func (r *ReconcileGitlab) createKubernetesResource(object interface{}, parent *gitlabv1beta1.Gitlab) error {
 
 	if gitlabutils.IsObjectFound(r.client, objectNamespacedName(object), object.(runtime.Object)) {
 		return nil
 	}
 
-	if err := controllerutil.SetControllerReference(cr, object.(metav1.Object), r.scheme); err != nil {
-		return err
-	}
-
-	return r.client.Create(context.TODO(), object.(runtime.Object))
-}
-
-// Create a shared resource which will not have an owner reference
-func (r *ReconcileGitlab) createSharedResource(object interface{}) error {
-
-	if gitlabutils.IsObjectFound(r.client, objectNamespacedName(object), object.(runtime.Object)) {
-		return nil
+	// If parent resource is nil, not owner reference will be set
+	if parent != nil {
+		if err := controllerutil.SetControllerReference(parent, object.(metav1.Object), r.scheme); err != nil {
+			return err
+		}
 	}
 
 	return r.client.Create(context.TODO(), object.(runtime.Object))

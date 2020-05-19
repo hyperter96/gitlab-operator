@@ -107,7 +107,7 @@ func (r *ReconcileGitlab) reconcileIngress(cr *gitlabv1beta1.Gitlab) error {
 	)
 
 	for _, ingress := range ingresses {
-		if err := r.createKubernetesResource(cr, ingress); err != nil {
+		if err := r.createKubernetesResource(ingress, cr); err != nil {
 			return err
 		}
 	}

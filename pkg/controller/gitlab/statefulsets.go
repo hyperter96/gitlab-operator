@@ -793,7 +793,7 @@ func (r *ReconcileGitlab) reconcileStatefulSets(cr *gitlabv1beta1.Gitlab) error 
 	statefulsets = append(statefulsets, postgres, redis, gitaly)
 
 	for _, statefulset := range statefulsets {
-		if err := r.createKubernetesResource(cr, statefulset); err != nil {
+		if err := r.createKubernetesResource(statefulset, cr); err != nil {
 			return err
 		}
 	}

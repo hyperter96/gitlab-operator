@@ -310,12 +310,12 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 func (r *ReconcileGitlab) reconcileBucketJob(cr *gitlabv1beta1.Gitlab) error {
 	buckets := createMinioBucketsJob(cr)
 
-	return r.createKubernetesResource(cr, buckets)
+	return r.createKubernetesResource(buckets, cr)
 }
 
 func (r *ReconcileGitlab) reconcileJobs(cr *gitlabv1beta1.Gitlab) error {
 
 	migration := getMigrationsJob(cr)
 
-	return r.createKubernetesResource(cr, migration)
+	return r.createKubernetesResource(migration, cr)
 }

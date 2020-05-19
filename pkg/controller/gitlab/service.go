@@ -277,7 +277,7 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 	)
 
 	for _, svc := range services {
-		if err := r.createKubernetesResource(cr, svc); err != nil {
+		if err := r.createKubernetesResource(svc, cr); err != nil {
 			return err
 		}
 	}

@@ -293,7 +293,7 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 	)
 
 	for _, secret := range secrets {
-		if err := r.createKubernetesResource(cr, secret); err != nil {
+		if err := r.createKubernetesResource(secret, cr); err != nil {
 			return err
 		}
 	}

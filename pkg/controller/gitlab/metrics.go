@@ -157,12 +157,12 @@ func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) erro
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
 	cluster := createPrometheusCluster(cr)
-	if err := r.createSharedResource(cluster); err != nil {
+	if err := r.createKubernetesResource(cluster, nil); err != nil {
 		return err
 	}
 
 	service := exposePrometheusCluster(cr)
-	if err := r.createSharedResource(service); err != nil {
+	if err := r.createKubernetesResource(service, nil); err != nil {
 		return err
 	}
 
@@ -182,7 +182,7 @@ func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) erro
 	)
 
 	for _, sm := range servicemonitors {
-		if err := r.createKubernetesResource(cr, sm); err != nil {
+		if err := r.createKubernetesResource(sm, cr); err != nil {
 			return err
 		}
 	}

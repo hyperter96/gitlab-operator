@@ -415,7 +415,7 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 	)
 
 	for _, cm := range configmaps {
-		if err := r.createKubernetesResource(cr, cm); err != nil {
+		if err := r.createKubernetesResource(cm, cr); err != nil {
 			return err
 		}
 	}

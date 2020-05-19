@@ -181,15 +181,15 @@ func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error
 		return nil
 	}
 
-	if err := r.createKubernetesResource(cr, minio); err != nil {
+	if err := r.createKubernetesResource(minio, cr); err != nil {
 		return err
 	}
 
 	svc := getMinioService(cr)
-	if err := r.createKubernetesResource(cr, svc); err != nil {
+	if err := r.createKubernetesResource(svc, cr); err != nil {
 		return err
 	}
 
 	ingress := getMinioIngress(cr)
-	return r.createKubernetesResource(cr, ingress)
+	return r.createKubernetesResource(ingress, cr)
 }

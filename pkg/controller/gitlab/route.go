@@ -85,13 +85,13 @@ func getSecureShellRoute(cr *gitlabv1beta1.Gitlab) *routev1.Route {
 func (r *ReconcileGitlab) reconcileRoute(cr *gitlabv1beta1.Gitlab) error {
 	workhorse := getGitlabRoute(cr)
 
-	if err := r.createKubernetesResource(cr, workhorse); err != nil {
+	if err := r.createKubernetesResource(workhorse, cr); err != nil {
 		return err
 	}
 
 	registry := getRegistryRoute(cr)
 
-	if err := r.createKubernetesResource(cr, registry); err != nil {
+	if err := r.createKubernetesResource(registry, cr); err != nil {
 		return err
 	}
 

@@ -42,7 +42,7 @@ func exposePrometheusCluster(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/instance"],
+			Name:      "gitlab-prometheus",
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},

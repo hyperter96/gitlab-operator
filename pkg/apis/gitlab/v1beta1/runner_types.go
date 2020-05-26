@@ -14,6 +14,31 @@ type RunnerSpec struct {
 	RegistrationToken string `json:"token,omitempty"`
 	// Tags passes the runner tags
 	Tags string `json:"tags,omitempty"`
+
+	// Cache defines an S3 compatible object store
+	Cache *RunnerCacheSpec `json:"cache,omitempty"`
+}
+
+// RunnerCacheSpec allows end user
+// to define an S3 cache for the runner
+type RunnerCacheSpec struct {
+	// S3 cache server URL
+	Server string `json:"server,omitempty"`
+
+	// Region for the cache
+	Region string `json:"region,omitempty"`
+
+	// Credentials is the name of the secret containing the
+	Credentials string `json:"credentials,omitempty"`
+
+	// Insecure enables use of HTTP protocol
+	Insecure bool `json:"insecure,omitempty"`
+
+	// Path defines the Runner Cache path
+	Path string `json:"path,omitempty"`
+
+	// Bucket defines the s3 bucket name
+	Bucket string `json:"bucket,omitempty"`
 }
 
 // GitlabInstanceSpec defines the Gitlab custom

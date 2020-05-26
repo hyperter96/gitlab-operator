@@ -31,6 +31,28 @@ spec:
         spec:
           description: RunnerSpec defines the desired state of Runner
           properties:
+            cache:
+              description: Cache defines an S3 compatible object store
+              properties:
+                bucket:
+                  description: Bucket defines the s3 bucket name
+                  type: string
+                credentials:
+                  description: Credentials is the name of the secret containing the
+                  type: string
+                insecure:
+                  description: Insecure enables use of HTTP protocol
+                  type: boolean
+                path:
+                  description: Path defines the Runner Cache path
+                  type: string
+                region:
+                  description: Region for the cache
+                  type: string
+                server:
+                  description: S3 cache server URL
+                  type: string
+              type: object
             gitlab:
               description: GitlabResource represents a Gitlab custom resource. Should
                 only be used to reference Gitlab instance created by the operator

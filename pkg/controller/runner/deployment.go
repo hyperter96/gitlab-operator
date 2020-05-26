@@ -10,11 +10,7 @@ import (
 func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
 
-	// Add runner tags
-	var tags string
-	if cr.Spec.Tags != "" {
-		tags = cr.Spec.Tags
-	}
+	config := runnerConfig(cr)
 
 	runner := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Labels:    labels,
@@ -55,7 +51,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 					},
 					{
 						Name:  "RUNNER_TAG_LIST",
-						Value: tags,
+						Value: config.Tags,
 					},
 					{
 						Name:  "RUNNER_OUTPUT_LIMIT",
@@ -139,7 +135,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 					},
 					{
 						Name:  "CACHE_PATH",
-						Value: "gitlab-runner",
+						Value: config.Cache,
 					},
 					{
 						Name:  "CACHE_SHARED",
@@ -147,15 +143,15 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 					},
 					{
 						Name:  "CACHE_S3_SERVER_ADDRESS",
-						Value: "minio.example.com",
+						Value: config.Server,
 					},
 					{
 						Name:  "CACHE_S3_BUCKET_NAME",
-						Value: "runner-cache",
+						Value: config.Bucket,
 					},
 					{
 						Name:  "CACHE_S3_BUCKET_LOCATION",
-						Value: "us-east-1",
+						Value: config.Region,
 					},
 				},
 				VolumeMounts: []corev1.VolumeMount{
@@ -240,7 +236,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 					},
 					{
 						Name:  "RUNNER_TAG_LIST",
-						Value: tags,
+						Value: config.Tags,
 					},
 					{
 						Name:  "RUNNER_OUTPUT_LIMIT",
@@ -320,7 +316,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 					},
 					{
 						Name:  "CACHE_PATH",
-						Value: "gitlab-runner",
+						Value: config.Cache,
 					},
 					{
 						Name:  "CACHE_SHARED",
@@ -328,15 +324,15 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 					},
 					{
 						Name:  "CACHE_S3_SERVER_ADDRESS",
-						Value: "minio.example.com",
+						Value: config.Server,
 					},
 					{
 						Name:  "CACHE_S3_BUCKET_NAME",
-						Value: "runner-cache",
+						Value: config.Bucket,
 					},
 					{
 						Name:  "CACHE_S3_BUCKET_LOCATION",
-						Value: "us-east-1",
+						Value: config.Region,
 					},
 				},
 				LivenessProbe: &corev1.Probe{
@@ -389,32 +385,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
 						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
-						Sources: []corev1.VolumeProjection{
-							// {
-							// 	Secret: &corev1.SecretProjection{
-							// 		LocalObjectReference: corev1.LocalObjectReference{
-							// 			Name: cr.Name + "-minio-secret",
-							// 		},
-							// 	},
-							// },
-							{
-								Secret: &corev1.SecretProjection{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-runner-secret",
-									},
-									Items: []corev1.KeyToPath{
-										{
-											Key:  "runner-registration-token",
-											Path: "runner-registration-token",
-										},
-										{
-											Key:  "runner-token",
-											Path: "runner-token",
-										},
-									},
-								},
-							},
-						},
+						Sources:     runnerSecretsVolume(cr),
 					},
 				},
 			},
@@ -462,4 +433,79 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	runner.Spec.Template.Spec.ServiceAccountName = "gitlab-runner"
 
 	return runner
+}
+
+func runnerSecretsVolume(cr *gitlabv1beta1.Runner) []corev1.VolumeProjection {
+	secrets := []corev1.VolumeProjection{
+		{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: cr.Name + "-runner-secret",
+				},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  "runner-registration-token",
+						Path: "runner-registration-token",
+					},
+					{
+						Key:  "runner-token",
+						Path: "runner-token",
+					},
+				},
+			},
+		},
+	}
+
+	if cr.Spec.Cache != nil && cr.Spec.Cache.Credentials != "" {
+		secrets = append(secrets,
+			corev1.VolumeProjection{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Spec.Cache.Credentials,
+					},
+				},
+			},
+		)
+	}
+
+	return secrets
+}
+
+type runnerOptions struct {
+	Tags        string
+	Server      string
+	Region      string
+	Bucket      string
+	Cache       string
+	Credentials string
+}
+
+func runnerConfig(cr *gitlabv1beta1.Runner) (options runnerOptions) {
+
+	if cr.Spec.Tags != "" {
+		options.Tags = cr.Spec.Tags
+	}
+
+	if cr.Spec.Cache != nil {
+		options.Server = cr.Spec.Cache.Server
+		options.Region = cr.Spec.Cache.Region
+
+		if cr.Spec.Cache.Path != "" {
+			options.Cache = cr.Spec.Cache.Path
+		} else {
+			options.Cache = "gitlab-runner"
+		}
+
+		if cr.Spec.Cache.Bucket != "" {
+			options.Bucket = cr.Spec.Cache.Bucket
+		} else {
+			options.Bucket = "runner-cache"
+		}
+
+		if cr.Spec.Cache.Credentials != "" {
+			options.Credentials = cr.Spec.Cache.Credentials
+		}
+	}
+
+	return
 }

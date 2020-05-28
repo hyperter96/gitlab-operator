@@ -6,6 +6,7 @@ require (
 	github.com/coreos/prometheus-operator v0.34.0
 	github.com/jetstack/cert-manager v0.14.3
 	github.com/minio/minio-operator v0.0.0-20200321170334-b6403bdd65fe
+	github.com/nginxinc/nginx-ingress-operator v0.0.4
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/operator-framework/operator-sdk v0.16.0
 	github.com/spf13/pflag v1.0.5

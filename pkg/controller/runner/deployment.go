@@ -453,15 +453,9 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		},
 	})
 
-	// Set security context
-	var (
-		fsGroup int64 = 65533
-		runUser int64 = 100
-	)
-
-	runner.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-		FSGroup:   &fsGroup,
-		RunAsUser: &runUser,
+	// Use certified image if running on Openshift
+	if gitlabutils.IsOpenshift() {
+		runner.Spec.Template.Spec.Containers[0].Image = gitlabutils.CertifiedRunnerImage
 	}
 
 	// Set runner to use specific service account

@@ -140,3 +140,15 @@ rules:
   - watch
   - patch
   - update
+- apiGroups:
+  - k8s.nginx.org
+  resources:
+  - nginxingresscontrollers
+  verbs:
+  - create
+  - update
+  - patch
+  - list
+  - get
+  - delete
+  - watch

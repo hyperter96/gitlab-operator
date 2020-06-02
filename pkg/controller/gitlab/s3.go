@@ -11,6 +11,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+
+	secretKey := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             48,
+	})
+
+	minio := gitlabutils.GenericSecret(cr.Name+"-minio-secret", cr.Namespace, labels)
+	minio.StringData = map[string]string{
+		"accesskey": "gitlab",
+		"secretkey": secretKey,
+	}
+
+	return minio
+}
+
 func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
 
@@ -33,7 +50,7 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 					"memory": gitlabutils.ResourceQuantity("512Mi"),
 				},
 			},
-			Image: gitlabutils.MinioImage,
+			Image: MinioImage,
 			CredsSecret: &corev1.LocalObjectReference{
 				Name: cr.Name + "-minio-secret",
 			},
@@ -182,6 +199,11 @@ func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error
 	}
 
 	if err := r.createKubernetesResource(minio, cr); err != nil {
+		return err
+	}
+
+	secret := getMinioSecret(cr)
+	if err := r.createKubernetesResource(secret, cr); err != nil {
 		return err
 	}
 

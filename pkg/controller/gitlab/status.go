@@ -110,7 +110,7 @@ func parseStatus(status *ReadinessStatus) *gitlabv1beta1.HealthCheck {
 }
 
 func (r *ReconcileGitlab) isPostgresDeployed(cr *gitlabv1beta1.Gitlab) bool {
-	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+	labels := gitlabutils.Label(cr.Name, "postgresql", gitlabutils.GitlabType)
 
 	postgres := &appsv1.StatefulSet{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Namespace: cr.Namespace, Name: labels["app.kubernetes.io/instance"]}, postgres)

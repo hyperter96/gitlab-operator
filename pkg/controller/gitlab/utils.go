@@ -104,7 +104,7 @@ func getDatabaseConfiguration(postgres string) string {
 		Postgres: postgres,
 	}
 
-	postgresTemplate := template.Must(template.ParseFiles("/templates/database.yml.erb"))
+	postgresTemplate := template.Must(template.ParseFiles("/templates/shared/database.yml.erb"))
 	postgresTemplate.Execute(&config, options)
 
 	return config.String()
@@ -115,7 +115,18 @@ func getRedisConfiguration(redis string) string {
 	options := ConfigOptions{
 		RedisMaster: redis,
 	}
-	resqueTemplate := template.Must(template.ParseFiles("/templates/resque.yml.erb"))
+	resqueTemplate := template.Must(template.ParseFiles("/templates/shared/resque.yml.erb"))
+	resqueTemplate.Execute(&config, options)
+
+	return config.String()
+}
+
+func getCableConfiguration(redis string) string {
+	var config bytes.Buffer
+	options := ConfigOptions{
+		RedisMaster: redis,
+	}
+	resqueTemplate := template.Must(template.ParseFiles("/templates/shared/cable.yml.erb"))
 	resqueTemplate.Execute(&config, options)
 
 	return config.String()
@@ -152,7 +163,7 @@ func getSMTPSettings(cr *gitlabv1beta1.Gitlab) string {
 		return ""
 	}
 
-	smtpTemplate := template.Must(template.ParseFiles("/templates/smtp_settings.rb"))
+	smtpTemplate := template.Must(template.ParseFiles("/templates/smtp/smtp_settings.rb"))
 	smtpTemplate.Execute(&settings, cr.Spec.SMTP)
 
 	// Remove whitespaces

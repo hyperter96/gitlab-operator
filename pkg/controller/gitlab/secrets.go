@@ -10,28 +10,37 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func getGilabSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
-	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
-
-	registrationToken := gitlabutils.Password(gitlabutils.PasswordOptions{
-		EnableSpecialChars: false,
-		Length:             32,
-	})
+func getGitlabRootSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "root-password", gitlabutils.GitlabType)
 
 	rootPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
 		EnableSpecialChars: false,
-		Length:             36,
+		Length:             64,
 	})
 
-	secrets := map[string]string{
-		"gitlab_root_password":      rootPassword,
-		"runner_registration_token": registrationToken,
+	gitlab := gitlabutils.GenericSecret(cr.Name+"-initial-root-password", cr.Namespace, labels)
+	gitlab.StringData = map[string]string{
+		"password": rootPassword,
 	}
 
-	gitlab := gitlabutils.GenericSecret(cr.Name+"-gitlab-secrets", cr.Namespace, labels)
-	gitlab.StringData = secrets
-
 	return gitlab
+}
+
+func getRunnerRegistrationSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
+	labels := gitlabutils.Label(cr.Name, "runner-token", gitlabutils.GitlabType)
+
+	registrationToken := gitlabutils.Password(gitlabutils.PasswordOptions{
+		EnableSpecialChars: false,
+		Length:             64,
+	})
+
+	runner := gitlabutils.GenericSecret(cr.Name+"-runner-token-secret", cr.Namespace, labels)
+	runner.StringData = map[string]string{
+		"runner-registration-token": registrationToken,
+		"runner-token":              "",
+	}
+
+	return runner
 }
 
 func getShellSSHKeysSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
@@ -62,7 +71,7 @@ func getShellSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 
 	shellSecret := gitlabutils.Password(gitlabutils.PasswordOptions{
 		EnableSpecialChars: false,
-		Length:             65,
+		Length:             64,
 	})
 
 	shell := gitlabutils.GenericSecret(cr.Name+"-shell-secret", cr.Namespace, labels)
@@ -143,11 +152,15 @@ func getRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	key, _ := gitlabutils.PrivateKeyRSA(2048)
 	privateKey := string(gitlabutils.EncodePrivateKeyToPEM(key))
 
+	signKey, _ := gitlabutils.PrivateKeyRSA(2048)
+	ciSigningKey := string(gitlabutils.EncodePrivateKeyToPEM(signKey))
+
 	options := RailsOptions{
 		SecretKey:     secretkey,
 		OTPKey:        otpkey,
 		DatabaseKey:   dbkey,
 		RSAPrivateKey: strings.Split(privateKey, "\n"),
+		JWTSigningKey: strings.Split(ciSigningKey, "\n"),
 	}
 
 	var secret bytes.Buffer
@@ -162,34 +175,17 @@ func getRailsSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return rails
 }
 
-func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
-
-	secretKey := gitlabutils.Password(gitlabutils.PasswordOptions{
-		EnableSpecialChars: false,
-		Length:             48,
-	})
-
-	registry := gitlabutils.GenericSecret(cr.Name+"-minio-secret", cr.Namespace, labels)
-	registry.StringData = map[string]string{
-		"accesskey": "gitlab",
-		"secretkey": secretKey,
-	}
-
-	return registry
-}
-
 func getPostgresSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "postgres", gitlabutils.GitlabType)
 
 	gitlabPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
 		EnableSpecialChars: false,
-		Length:             36,
+		Length:             64,
 	})
 
 	postgresPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
 		EnableSpecialChars: false,
-		Length:             36,
+		Length:             64,
 	})
 
 	postgres := gitlabutils.GenericSecret(cr.Name+"-postgresql-secret", cr.Namespace, labels)
@@ -206,7 +202,7 @@ func getRedisSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 
 	password := gitlabutils.Password(gitlabutils.PasswordOptions{
 		EnableSpecialChars: false,
-		Length:             36,
+		Length:             64,
 	})
 
 	redis := gitlabutils.GenericSecret(cr.Name+"-redis-secret", cr.Namespace, labels)
@@ -269,7 +265,9 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 
 	redis := getRedisSecret(cr)
 
-	core := getGilabSecret(cr)
+	runner := getRunnerRegistrationSecret(cr)
+
+	root := getGitlabRootSecret(cr)
 
 	smtp := getSMTPSettingsSecret(cr)
 
@@ -286,7 +284,8 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 		minio,
 		postgres,
 		redis,
-		core,
+		root,
+		runner,
 		smtp,
 		shell,
 		keys,

@@ -18,7 +18,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "configure",
-				Image:           gitlabutils.GitlabRunnerImage,
+				Image:           GitlabRunnerImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"sh", "/config/configure"},
 				Env: []corev1.EnvVar{
@@ -175,7 +175,7 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		Containers: []corev1.Container{
 			{
 				Name:    "runner",
-				Image:   gitlabutils.GitlabRunnerImage,
+				Image:   GitlabRunnerImage,
 				Command: []string{"/bin/bash", "/scripts/entrypoint"},
 				Lifecycle: &corev1.Lifecycle{
 					PreStop: &corev1.Handler{
@@ -426,7 +426,8 @@ func getRunnerDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 
 	// Use certified image if running on Openshift
 	if gitlabutils.IsOpenshift() {
-		runner.Spec.Template.Spec.Containers[0].Image = gitlabutils.CertifiedRunnerImage
+		runner.Spec.Template.Spec.InitContainers[0].Image = CertifiedRunnerImage
+		runner.Spec.Template.Spec.Containers[0].Image = CertifiedRunnerImage
 	}
 
 	// Set runner to use specific service account

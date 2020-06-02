@@ -247,7 +247,7 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 	wg.Add(1)
 
 	go func() {
-		for !isEndpointReady(cr.Name+"-database", cr) {
+		for !isEndpointReady(cr.Name+"-postgresql", cr) {
 			time.Sleep(time.Second * 1)
 		}
 		wg.Done()

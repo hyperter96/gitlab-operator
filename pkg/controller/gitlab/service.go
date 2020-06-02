@@ -63,7 +63,7 @@ func getRedisService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 }
 
 func getPostgresHeadlessService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+	labels := gitlabutils.Label(cr.Name, "postgresql", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -87,7 +87,7 @@ func getPostgresHeadlessService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 }
 
 func getPostgresService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+	labels := gitlabutils.Label(cr.Name, "postgresql", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -166,8 +166,8 @@ func getRegistryService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	}
 }
 
-func getUnicornService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "unicorn", gitlabutils.GitlabType)
+func getWebService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
+	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -179,7 +179,7 @@ func getUnicornService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 			Selector: labels,
 			Ports: []corev1.ServicePort{
 				{
-					Name:     "http-unicorn",
+					Name:     "http-webservice",
 					Port:     8080,
 					Protocol: corev1.ProtocolTCP,
 				},
@@ -258,7 +258,7 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 
 	registry := getRegistryService(cr)
 
-	unicorn := getUnicornService(cr)
+	webservice := getWebService(cr)
 
 	shell := getShellService(cr)
 
@@ -271,7 +271,7 @@ func (r *ReconcileGitlab) reconcileServices(cr *gitlabv1beta1.Gitlab) error {
 		redisHeadless,
 		gitaly,
 		registry,
-		unicorn,
+		webservice,
 		shell,
 		exporter,
 	)

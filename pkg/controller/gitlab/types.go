@@ -36,18 +36,18 @@ type ServiceStatus struct {
 }
 
 // GitalyOptions contains service
-// names for Redis and Unicorn
+// names for Redis and Webservice
 type GitalyOptions struct {
 	// Name of redis service
 	RedisMaster string
 
-	// Name of Unicorn service
-	Unicorn string
+	// Name of Webservice service
+	Webservice string
 }
 
-// UnicornOptions passes options
-// to unicorn templates
-type UnicornOptions struct {
+// WebserviceOptions passes options
+// to Webservice templates
+type WebserviceOptions struct {
 	Namespace   string
 	GitlabURL   string
 	PostgreSQL  string
@@ -70,7 +70,7 @@ type WorkhorseOptions struct {
 // ShellOptions passes template
 // options for gitlab shell
 type ShellOptions struct {
-	Unicorn     string
+	Webservice  string
 	RedisMaster string
 }
 
@@ -112,6 +112,7 @@ type RailsOptions struct {
 	DatabaseKey   string
 	OTPKey        string
 	RSAPrivateKey []string
+	JWTSigningKey []string
 }
 
 // TaskRunnerOptions defines options
@@ -144,4 +145,5 @@ type MigrationOptions struct {
 	RedisMaster string
 	PostgreSQL  string
 	Gitaly      string
+	GitlabURL   string
 }

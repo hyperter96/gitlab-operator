@@ -16,7 +16,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "certificates",
-				Image:           gitlabutils.GitLabCertificatesImage,
+				Image:           GitLabCertificatesImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -32,7 +32,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 			},
 			{
 				Name:            "configure",
-				Image:           gitlabutils.BusyboxImage,
+				Image:           BusyboxImage,
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"sh", "/config/configure"},
 				Resources: corev1.ResourceRequirements{
@@ -61,7 +61,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 		Containers: []corev1.Container{
 			{
 				Name:            "migrations",
-				Image:           gitlabutils.GitLabTaskRunnerImage,
+				Image:           GitLabTaskRunnerImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -76,9 +76,9 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-gitlab-secrets",
+									Name: cr.Name + "-runner-token-secret",
 								},
-								Key: "runner_registration_token",
+								Key: "runner-registration-token",
 							},
 						},
 					},
@@ -179,7 +179,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 									Items: []corev1.KeyToPath{
 										{
 											Key:  "secret",
-											Path: "redis/password",
+											Path: "redis/redis-password",
 										},
 									},
 								},
@@ -200,11 +200,11 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-gitlab-secrets",
+										Name: cr.Name + "-initial-root-password",
 									},
 									Items: []corev1.KeyToPath{
 										{
-											Key:  "gitlab_root_password",
+											Key:  "password",
 											Path: "migrations/initial_root_password",
 										},
 									},
@@ -252,7 +252,7 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 		Containers: []corev1.Container{
 			{
 				Name:            "mc",
-				Image:           gitlabutils.MinioClientImage,
+				Image:           MinioClientImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/bin/sh", "/config/initialize"},
 				Env: []corev1.EnvVar{

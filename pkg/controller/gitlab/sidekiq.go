@@ -22,7 +22,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "certificates",
-				Image:           gitlabutils.GitLabCertificatesImage,
+				Image:           GitLabCertificatesImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -38,7 +38,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 			{
 				Name:            "configure",
-				Image:           gitlabutils.BusyboxImage,
+				Image:           BusyboxImage,
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"sh", "/config/configure"},
 				Resources: corev1.ResourceRequirements{
@@ -65,7 +65,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 			{
 				Name:            "dependencies",
-				Image:           gitlabutils.GitLabSidekigImage,
+				Image:           GitLabSidekiqImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Args:            []string{"/scripts/wait-for-deps"},
 				Env: []corev1.EnvVar{
@@ -122,7 +122,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		Containers: []corev1.Container{
 			{
 				Name:            "sidekiq",
-				Image:           gitlabutils.GitLabSidekigImage,
+				Image:           GitLabSidekiqImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -142,12 +142,28 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						Value: "/srv/gitlab/config",
 					},
 					{
+						Name:  "SIDEKIQ_CLUSTER",
+						Value: "true",
+					},
+					{
+						Name:  "SIDEKIQ_EXPERIMENTAL_QUEUE_SELECTOR",
+						Value: "",
+					},
+					{
 						Name:  "SIDEKIQ_CONCURRENCY",
 						Value: "25",
 					},
 					{
 						Name:  "SIDEKIQ_TIMEOUT",
 						Value: "5",
+					},
+					{
+						Name:  "SIDEKIQ_QUEUES",
+						Value: "",
+					},
+					{
+						Name:  "SIDEKIQ_NEGATE_QUEUES",
+						Value: "",
 					},
 					{
 						Name:  "SIDEKIQ_DAEMON_MEMORY_KILLER",
@@ -206,8 +222,9 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 					},
 					InitialDelaySeconds: 20,
 					PeriodSeconds:       60,
-					SuccessThreshold:    1,
 					TimeoutSeconds:      30,
+					SuccessThreshold:    1,
+					FailureThreshold:    3,
 				},
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -219,9 +236,11 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							Scheme: corev1.URISchemeHTTP,
 						},
 					},
-					PeriodSeconds:    10,
-					SuccessThreshold: 1,
-					TimeoutSeconds:   2,
+					InitialDelaySeconds: 0,
+					PeriodSeconds:       10,
+					TimeoutSeconds:      2,
+					SuccessThreshold:    1,
+					FailureThreshold:    3,
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
@@ -334,7 +353,7 @@ func getSidekiqDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 									Items: []corev1.KeyToPath{
 										{
 											Key:  "secret",
-											Path: "redis/password",
+											Path: "redis/redis-password",
 										},
 									},
 								},

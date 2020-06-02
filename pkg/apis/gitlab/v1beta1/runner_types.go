@@ -10,7 +10,7 @@ type RunnerSpec struct {
 	// only be used to reference Gitlab instance created by the operator
 	Gitlab GitlabInstanceSpec `json:"gitlab,omitempty"`
 	// RegistrationToken is name of secret with the
-	// runner_registration_token key used to register the runner
+	// runner-registration-token key used to register the runner
 	RegistrationToken string `json:"token,omitempty"`
 	// Tags passes the runner tags
 	Tags string `json:"tags,omitempty"`

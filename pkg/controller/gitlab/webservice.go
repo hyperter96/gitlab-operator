@@ -12,17 +12,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
-	labels := gitlabutils.Label(cr.Name, "unicorn", gitlabutils.GitlabType)
+func getWebserviceDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
+	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
 
-	unicorn := gitlabutils.GenericDeployment(gitlabutils.Component{
+	webservice := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
 		Replicas:  1,
 		InitContainers: []corev1.Container{
 			{
 				Name:            "certificates",
-				Image:           gitlabutils.GitLabCertificatesImage,
+				Image:           GitLabCertificatesImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -33,17 +33,18 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 					{
 						Name:      "etc-ssl-certs",
 						MountPath: "/etc/ssl/certs",
+						ReadOnly:  false,
 					},
 				},
 			},
 			{
 				Name:            "configure",
-				Image:           gitlabutils.BusyboxImage,
+				Image:           BusyboxImage,
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"sh"},
 				Args: []string{
 					"-c",
-					"sh -x /config-unicorn/configure; sh -x /config-workhorse/configure; mkdir -p -m 3770 /tmp/gitlab",
+					"sh -x /config-webservice/configure; sh -x /config-workhorse/configure; mkdir -p -m 3770 /tmp/gitlab",
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -52,8 +53,8 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      "unicorn-config",
-						MountPath: "/config-unicorn",
+						Name:      "webservice-config",
+						MountPath: "/config-webservice",
 						ReadOnly:  true,
 					},
 					{
@@ -62,12 +63,12 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						ReadOnly:  true,
 					},
 					{
-						Name:      "init-unicorn-secrets",
+						Name:      "init-webservice-secrets",
 						MountPath: "/init-config",
 						ReadOnly:  true,
 					},
 					{
-						Name:      "unicorn-secrets",
+						Name:      "webservice-secrets",
 						MountPath: "/init-secrets",
 					},
 					{
@@ -82,7 +83,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 			{
 				Name:            "dependencies",
-				Image:           gitlabutils.GitLabUnicornImage,
+				Image:           GitLabWebServiceImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Args:            []string{"/scripts/wait-for-deps"},
 				Env: []corev1.EnvVar{
@@ -114,16 +115,16 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      "unicorn-config",
+						Name:      "webservice-config",
 						MountPath: "/var/opt/gitlab/templates",
 					},
 					{
-						Name:      "unicorn-secrets",
+						Name:      "webservice-secrets",
 						MountPath: "/etc/gitlab",
 						ReadOnly:  true,
 					},
 					{
-						Name:      "unicorn-secrets",
+						Name:      "webservice-secrets",
 						MountPath: "/srv/gitlab/config/secrets.yml",
 						SubPath:   "rails-secrets/secrets.yml",
 						ReadOnly:  true,
@@ -133,10 +134,14 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		},
 		Containers: []corev1.Container{
 			{
-				Name:            "unicorn",
-				Image:           gitlabutils.GitLabUnicornImage,
+				Name:            "webservice",
+				Image:           GitLabWebServiceImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
+					{
+						Name:  "GITLAB_WEBSERVER",
+						Value: "puma",
+					},
 					{
 						Name:  "TMPDIR",
 						Value: "/tmp/gitlab",
@@ -161,10 +166,38 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 						Name:  "ENABLE_BOOTSNAP",
 						Value: "1",
 					},
+					{
+						Name:  "WORKER_PROCESSES",
+						Value: "2",
+					},
+					{
+						Name:  "WORKER_TIMEOUT",
+						Value: "60",
+					},
+					{
+						Name:  "INTERNAL_PORT",
+						Value: "8080",
+					},
+					{
+						Name:  "PUMA_THREADS_MIN",
+						Value: "4",
+					},
+					{
+						Name:  "PUMA_THREADS_MAX",
+						Value: "4",
+					},
+					{
+						Name:  "PUMA_WORKER_MAX_MEMORY",
+						Value: "1024",
+					},
+					{
+						Name:  "DISABLE_PUMA_WORKER_KILLER",
+						Value: "false",
+					},
 				},
 				Ports: []corev1.ContainerPort{
 					{
-						Name:          "unicorn",
+						Name:          "webservice",
 						Protocol:      corev1.ProtocolTCP,
 						ContainerPort: 8080,
 					},
@@ -172,14 +205,14 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				Lifecycle: &corev1.Lifecycle{
 					PreStop: &corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: []string{"/bin/bash", "-c", "pkill -SIGQUIT -f 'unicorn master'"},
+							Command: []string{"/bin/bash", "-c", "pkill -SIGINT -o ruby"},
 						},
 					},
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						"cpu":    gitlabutils.ResourceQuantity("300m"),
-						"memory": gitlabutils.ResourceQuantity("1200M"),
+						"memory": gitlabutils.ResourceQuantity("1500M"),
 					},
 				},
 				LivenessProbe: &corev1.Probe{
@@ -208,51 +241,55 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							Scheme: corev1.URISchemeHTTP,
 						},
 					},
-					PeriodSeconds:    10,
-					SuccessThreshold: 1,
-					TimeoutSeconds:   2,
-					FailureThreshold: 3,
+					InitialDelaySeconds: 0,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      2,
+					FailureThreshold:    3,
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      "unicorn-metrics",
+						Name:      "webservice-metrics",
 						MountPath: "/metrics",
 					},
 					{
-						Name:      "unicorn-config",
+						Name:      "webservice-config",
 						MountPath: "/var/opt/gitlab/templates",
 					},
 					{
-						Name:      "unicorn-secrets",
+						Name:      "webservice-secrets",
 						MountPath: "/etc/gitlab",
 						ReadOnly:  true,
 					},
 					{
-						Name:      "unicorn-secrets",
+						Name:      "webservice-secrets",
 						MountPath: "/srv/gitlab/config/secrets.yml",
 						SubPath:   "rails-secrets/secrets.yml",
 					},
 					{
-						Name:      "unicorn-config",
+						Name:      "webservice-config",
 						MountPath: "/srv/gitlab/config/initializers/smtp_settings.rb",
 						SubPath:   "smtp_settings.rb",
 					},
 					{
-						Name:      "unicorn-config",
+						Name:      "webservice-config",
 						MountPath: "/srv/gitlab/INSTALLATION_TYPE",
 						SubPath:   "installation_type",
 					},
 					{
 						Name:      "shared-upload-directory",
 						MountPath: "/srv/gitlab/public/uploads/tmp",
+						ReadOnly:  false,
 					},
 					{
 						Name:      "shared-artifact-directory",
 						MountPath: "/srv/gitlab/shared",
+						ReadOnly:  false,
 					},
 					{
 						Name:      "shared-tmp",
 						MountPath: "/tmp",
+						ReadOnly:  false,
 					},
 					{
 						Name:      "etc-ssl-certs",
@@ -263,7 +300,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 			{
 				Name:            "workhorse",
-				Image:           gitlabutils.GitLabWorkhorseImage,
+				Image:           GitLabWorkhorseImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -318,10 +355,11 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							Command: []string{"/scripts/healthcheck"},
 						},
 					},
-					FailureThreshold: 3,
-					PeriodSeconds:    10,
-					SuccessThreshold: 1,
-					TimeoutSeconds:   2,
+					InitialDelaySeconds: 0,
+					FailureThreshold:    3,
+					PeriodSeconds:       10,
+					SuccessThreshold:    1,
+					TimeoutSeconds:      2,
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
@@ -336,14 +374,17 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 					{
 						Name:      "shared-upload-directory",
 						MountPath: "/srv/gitlab/public/uploads/tmp",
+						ReadOnly:  false,
 					},
 					{
 						Name:      "shared-artifact-directory",
 						MountPath: "/srv/gitlab/shared",
+						ReadOnly:  false,
 					},
 					{
 						Name:      "shared-tmp",
 						MountPath: "/tmp",
+						ReadOnly:  false,
 					},
 					{
 						Name:      "etc-ssl-certs",
@@ -361,7 +402,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				},
 			},
 			{
-				Name: "unicorn-metrics",
+				Name: "webservice-metrics",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						Medium: corev1.StorageMediumMemory,
@@ -369,7 +410,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				},
 			},
 			{
-				Name: "unicorn-config",
+				Name: "webservice-config",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
 						DefaultMode: &gitlabutils.ProjectedVolumeDefaultMode,
@@ -377,7 +418,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							{
 								ConfigMap: &corev1.ConfigMapProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-unicorn-config",
+										Name: cr.Name + "-webservice-config",
 									},
 								},
 							},
@@ -404,7 +445,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				},
 			},
 			{
-				Name: "init-unicorn-secrets",
+				Name: "init-webservice-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
 						DefaultMode: &gitlabutils.ProjectedVolumeDefaultMode,
@@ -456,7 +497,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 									Items: []corev1.KeyToPath{
 										{
 											Key:  "secret",
-											Path: "redis/password",
+											Path: "redis/redis-password",
 										},
 									},
 								},
@@ -522,7 +563,7 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 				},
 			},
 			{
-				Name: "unicorn-secrets",
+				Name: "webservice-secrets",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{
 						Medium: corev1.StorageMediumMemory,
@@ -560,26 +601,26 @@ func getUnicornDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		},
 	})
 
-	unicorn.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+	webservice.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &localUser,
 		FSGroup:   &localUser,
 	}
 
-	unicorn.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	webservice.Spec.Template.Spec.ServiceAccountName = "gitlab"
 
-	return unicorn
+	return webservice
 }
 
 func (r *ReconcileGitlab) reconcileUnicornDeployment(cr *gitlabv1beta1.Gitlab) error {
-	unicorn := getUnicornDeployment(cr)
+	webservice := getWebserviceDeployment(cr)
 
-	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: unicorn.Name}, unicorn) {
+	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: webservice.Name}, webservice) {
 		return nil
 	}
 
-	if err := controllerutil.SetControllerReference(cr, unicorn, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(cr, webservice, r.scheme); err != nil {
 		return err
 	}
 
-	return r.client.Create(context.TODO(), unicorn)
+	return r.client.Create(context.TODO(), webservice)
 }

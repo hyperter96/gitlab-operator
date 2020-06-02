@@ -1,3 +1,0 @@
-[redis]
-URL = "redis://{{ .RedisMaster }}:6379"
-Password = "<%= File.read("/etc/gitlab/redis/password").strip.dump[1..-2] %>"

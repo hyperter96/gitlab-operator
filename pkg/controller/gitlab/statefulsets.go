@@ -10,7 +10,7 @@ import (
 )
 
 func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
-	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+	labels := gitlabutils.Label(cr.Name, "postgresql", gitlabutils.GitlabType)
 
 	var (
 		adminUser    int64
@@ -72,7 +72,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "init-chmod-data",
-				Image:           gitlabutils.MiniDebImage,
+				Image:           MiniDebImage,
 				ImagePullPolicy: corev1.PullAlways,
 				Command: []string{
 					"sh",
@@ -103,7 +103,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "postgres",
-				Image:           gitlabutils.PostgresImage,
+				Image:           PostgresImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -200,7 +200,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 			{
 				Name:            "metrics",
-				Image:           gitlabutils.PostgresExporterImage,
+				Image:           PostgresExporterImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -310,7 +310,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 
 	var redisUser int64 = 1001
 
-	redisEntrypoint := gitlabutils.ReadConfig("/templates/redis-entrypoint.sh")
+	redisEntrypoint := gitlabutils.ReadConfig("/templates/redis/entrypoint.sh")
 	claims := []corev1.PersistentVolumeClaim{}
 	mounts := []corev1.VolumeMount{
 		// Pre-populating the mounts with the Redis config volume
@@ -368,7 +368,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "redis",
-				Image:           gitlabutils.RedisImage,
+				Image:           RedisImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/bin/bash", "-c", redisEntrypoint},
 				Env: []corev1.EnvVar{
@@ -420,7 +420,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 			{
 				Name:            "metrics",
-				Image:           gitlabutils.RedisExporterImage,
+				Image:           RedisExporterImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -554,7 +554,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "certificates",
-				Image:           gitlabutils.GitLabCertificatesImage,
+				Image:           GitLabCertificatesImage,
 				ImagePullPolicy: corev1.PullAlways,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -570,7 +570,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 			{
 				Name:            "configure",
-				Image:           gitlabutils.BusyboxImage,
+				Image:           BusyboxImage,
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"sh", "/config/configure"},
 				VolumeMounts: []corev1.VolumeMount{
@@ -599,7 +599,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "gitaly",
-				Image:           gitlabutils.GitalyImage,
+				Image:           GitalyImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{

@@ -13,11 +13,11 @@ func getRunnerConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 
 	var gitlabURL string
 
-	configToml := gitlabutils.ReadConfig("/templates/runner-config.toml")
-	entrypointScript := gitlabutils.ReadConfig("/templates/runner-entrypoint.sh")
-	configureScript := gitlabutils.ReadConfig("/templates/runner-configure.sh")
-	registrationScript := gitlabutils.ReadConfig("/templates/runner-registration.sh")
-	aliveScript := gitlabutils.ReadConfig("/templates/runner-check-live.sh")
+	configToml := gitlabutils.ReadConfig("/templates/gitlab-runner/config.toml")
+	entrypointScript := gitlabutils.ReadConfig("/templates/gitlab-runner/entrypoint.sh")
+	configureScript := gitlabutils.ReadConfig("/templates/gitlab-runner/configure.sh")
+	registrationScript := gitlabutils.ReadConfig("/templates/gitlab-runner/registration.sh")
+	aliveScript := gitlabutils.ReadConfig("/templates/gitlab-runner/check-live.sh")
 
 	// Gitlab URL should be used for Gitlab instances
 	// outside k8s or the current namespace

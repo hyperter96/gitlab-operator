@@ -68,7 +68,7 @@ spec:
               description: Tags passes the runner tags
               type: string
             token:
-              description: RegistrationToken is name of secret with the runner_registration_token
+              description: RegistrationToken is name of secret with the runner-registration-token
                 key used to register the runner
               type: string
           type: object

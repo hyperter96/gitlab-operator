@@ -74,7 +74,16 @@ func getGitlabIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
 										ServicePort: intstr.IntOrString{
 											IntVal: 8181,
 										},
-										ServiceName: cr.Name + "-unicorn",
+										ServiceName: cr.Name + "-webservice",
+									},
+								},
+								{
+									Path: "/admin/sidekiq",
+									Backend: extensionsv1beta1.IngressBackend{
+										ServicePort: intstr.IntOrString{
+											IntVal: 8080,
+										},
+										ServiceName: cr.Name + "-webservice",
 									},
 								},
 							},

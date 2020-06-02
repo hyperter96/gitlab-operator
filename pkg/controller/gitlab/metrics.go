@@ -111,7 +111,7 @@ func getUnicornServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMon
 }
 
 func getPostgresMetricsServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
-	labels := gitlabutils.Label(cr.Name, "database", gitlabutils.GitlabType)
+	labels := gitlabutils.Label(cr.Name, "postgresql", gitlabutils.GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{

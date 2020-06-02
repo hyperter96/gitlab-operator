@@ -13,7 +13,7 @@ func getRunnerSecret(client client.Client, cr *gitlabv1beta1.Runner) *corev1.Sec
 	var err error
 
 	if cr.Spec.Gitlab.Name != "" {
-		gitlabSecret = cr.Spec.Gitlab.Name + "-gitlab-secrets"
+		gitlabSecret = cr.Spec.Gitlab.Name + "-runner-token-secret"
 	}
 
 	if cr.Spec.RegistrationToken != "" {
@@ -23,7 +23,7 @@ func getRunnerSecret(client client.Client, cr *gitlabv1beta1.Runner) *corev1.Sec
 	}
 
 	for token == "" {
-		token, err = gitlabutils.GetSecretValue(client, cr.Namespace, gitlabSecret, "runner_registration_token")
+		token, err = gitlabutils.GetSecretValue(client, cr.Namespace, gitlabSecret, "runner-registration-token")
 		if err != nil {
 			log.Error(err, "Secret not found!")
 		}

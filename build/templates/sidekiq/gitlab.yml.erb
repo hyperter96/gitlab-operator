@@ -110,6 +110,22 @@ production: &base
         host: {{ .MinioURL }}
         endpoint: http://{{ .Minio }}:9000
         path_style: true
+  terraform_state:
+    enabled: false
+    object_store:
+      enabled: false
+      remote_directory: gitlab-terraform-state
+      direct_upload: true
+      background_upload: false
+      proxy_download: true
+      connection:
+        provider: AWS
+        region: us-east-1
+        aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
+        aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
+        host: {{ .Minio }}
+        endpoint: http://{{ .Minio }}:9000
+        path_style: true
   pseudonymizer:
     manifest: config/pseudonymizer.yml
     upload:

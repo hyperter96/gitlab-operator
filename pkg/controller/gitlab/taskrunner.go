@@ -21,7 +21,7 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "certificates",
-				Image:           gitlabutils.GitLabCertificatesImage,
+				Image:           GitLabCertificatesImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -37,7 +37,7 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 			{
 				Name:            "configure",
-				Image:           gitlabutils.BusyboxImage,
+				Image:           BusyboxImage,
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"sh", "/config/configure"},
 				Resources: corev1.ResourceRequirements{
@@ -66,7 +66,7 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		Containers: []corev1.Container{
 			{
 				Name:            "task-runner",
-				Image:           gitlabutils.GitLabTaskRunnerImage,
+				Image:           GitLabTaskRunnerImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Args: []string{
 					"/bin/bash",
@@ -245,7 +245,7 @@ func getTaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 									Items: []corev1.KeyToPath{
 										{
 											Key:  "secret",
-											Path: "redis/password",
+											Path: "redis/redis-password",
 										},
 									},
 								},

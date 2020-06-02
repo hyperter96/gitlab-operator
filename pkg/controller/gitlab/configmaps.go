@@ -21,7 +21,7 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	gitlab.Data = map[string]string{
 		"gitlab_external_url":   parseURL(getGitlabURL(cr), hasTLS(cr)),
 		"postgres_db":           "gitlabhq_production",
-		"postgres_host":         cr.Name + "-database",
+		"postgres_host":         cr.Name + "-postgresql",
 		"postgres_user":         "gitlab",
 		"redis_host":            cr.Name + "-redis",
 		"registry_external_url": registryURL,
@@ -34,9 +34,9 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getRedisConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
-	masterConf := gitlabutils.ReadConfig("/templates/redis-master.conf")
-	replicaConf := gitlabutils.ReadConfig("/templates/redis-replica.conf")
-	redisConf := gitlabutils.ReadConfig("/templates/redis.conf")
+	masterConf := gitlabutils.ReadConfig("/templates/redis/master.conf")
+	replicaConf := gitlabutils.ReadConfig("/templates/redis/replica.conf")
+	redisConf := gitlabutils.ReadConfig("/templates/redis/redis.conf")
 
 	redis := gitlabutils.GenericConfigMap(cr.Name+"-redis-config", cr.Namespace, labels)
 	redis.Data = map[string]string{
@@ -51,12 +51,12 @@ func getRedisConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getRedisSciptsConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
-	localLiveness := gitlabutils.ReadConfig("/templates/redis-liveness_local.sh")
-	masterAndLocalLiveness := gitlabutils.ReadConfig("/templates/redis-liveness_local_and_master.sh")
-	masterLiveness := gitlabutils.ReadConfig("/templates/redis-liveness_master.sh")
-	localReadiness := gitlabutils.ReadConfig("/templates/redis-readiness_local.sh")
-	masterAndLocalReadiness := gitlabutils.ReadConfig("/templates/redis-readiness_local_and_master.sh")
-	masterReadiness := gitlabutils.ReadConfig("/templates/redis-readiness_master.sh")
+	localLiveness := gitlabutils.ReadConfig("/templates/redis/liveness_local.sh")
+	masterAndLocalLiveness := gitlabutils.ReadConfig("/templates/redis/liveness_local_and_master.sh")
+	masterLiveness := gitlabutils.ReadConfig("/templates/redis/liveness_master.sh")
+	localReadiness := gitlabutils.ReadConfig("/templates/redis/readiness_local.sh")
+	masterAndLocalReadiness := gitlabutils.ReadConfig("/templates/redis/readiness_local_and_master.sh")
+	masterReadiness := gitlabutils.ReadConfig("/templates/redis/readiness_master.sh")
 
 	scripts := gitlabutils.GenericConfigMap(cr.Name+"-redis-health-config", cr.Namespace, labels)
 	scripts.Data = map[string]string{
@@ -78,15 +78,15 @@ func getGitalyConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	options := GitalyOptions{
 		RedisMaster: getName(cr.Name, "redis"),
-		Unicorn:     getName(cr.Name, "unicorn"),
+		Webservice:  getName(cr.Name, "webservice"),
 	}
 
 	var shell bytes.Buffer
-	shellTemplate := template.Must(template.ParseFiles("/templates/gitaly-shell-config.yml.erb"))
+	shellTemplate := template.Must(template.ParseFiles("/templates/gitaly/shell-config.yml.erb"))
 	shellTemplate.Execute(&shell, options)
 
-	gitalyConf := gitlabutils.ReadConfig("/templates/gitaly-config.toml.erb")
-	configureScript := gitlabutils.ReadConfig("/templates/gitaly-configure.sh")
+	gitalyConf := gitlabutils.ReadConfig("/templates/gitaly/config.toml.erb")
+	configureScript := gitlabutils.ReadConfig("/templates/gitaly/configure.sh")
 
 	gitaly.Data = map[string]string{
 		"config.toml.erb":      gitalyConf,
@@ -99,15 +99,14 @@ func getGitalyConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 // TODO: Get Minio/Object storage
 // TODO 2: Expose .MinioURL
-func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
-	labels := gitlabutils.Label(cr.Name, "unicorn", gitlabutils.GitlabType)
+func getWebserviceConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
 
-	unicorn := gitlabutils.GenericConfigMap(cr.Name+"-unicorn-config", cr.Namespace, labels)
+	webservice := gitlabutils.GenericConfigMap(cr.Name+"-webservice-config", cr.Namespace, labels)
 
-	configure := gitlabutils.ReadConfig("/templates/unicorn-configure.sh")
-	unicornRB := gitlabutils.ReadConfig("/templates/unicorn.rb")
+	configure := gitlabutils.ReadConfig("/templates/webservice/configure.sh")
 
-	options := UnicornOptions{
+	options := WebserviceOptions{
 		Namespace:   cr.Namespace,
 		GitlabURL:   cr.Spec.URL,
 		Minio:       getName(cr.Name, "minio"),
@@ -116,7 +115,7 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		RegistryURL: getRegistryURL(cr),
 		Gitaly:      getName(cr.Name, "gitaly"),
 		RedisMaster: getName(cr.Name, "redis"),
-		PostgreSQL:  getName(cr.Name, "database"),
+		PostgreSQL:  getName(cr.Name, "postgresql"),
 	}
 
 	if IsEmailConfigured(cr) {
@@ -124,19 +123,19 @@ func getUnicornConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	}
 
 	var gitlab bytes.Buffer
-	gitlabTemplate := template.Must(template.ParseFiles("/templates/unicorn-gitlab.yml.erb"))
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/webservice/gitlab.yml.erb"))
 	gitlabTemplate.Execute(&gitlab, options)
 
-	unicorn.Data = map[string]string{
+	webservice.Data = map[string]string{
 		"configure":         configure,
 		"gitlab.yml.erb":    gitlab.String(),
 		"database.yml.erb":  getDatabaseConfiguration(options.PostgreSQL),
 		"resque.yml.erb":    getRedisConfiguration(options.RedisMaster),
+		"cable.yml.erb":     getCableConfiguration(options.RedisMaster),
 		"installation_type": labels["app.kubernetes.io/managed-by"],
-		"unicorn.rb":        unicornRB,
 	}
 
-	return unicorn
+	return webservice
 }
 
 func getWorkhorseConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
@@ -145,13 +144,13 @@ func getWorkhorseConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	workhorse := gitlabutils.GenericConfigMap(cr.Name+"-workhorse-config", cr.Namespace, labels)
 
-	configureSh := gitlabutils.ReadConfig("/templates/workhorse-configure.sh")
+	configureSh := gitlabutils.ReadConfig("/templates/workhorse/configure.sh")
 
 	options := WorkhorseOptions{
 		RedisMaster: getName(cr.Name, "redis"),
 	}
 
-	configTemplate := template.Must(template.ParseFiles("/templates/workhorse-config.toml.erb"))
+	configTemplate := template.Must(template.ParseFiles("/templates/workhorse/workhorse-config.toml.erb"))
 	configTemplate.Execute(&config, options)
 
 	workhorse.Data = map[string]string{
@@ -167,15 +166,15 @@ func getShellConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
 	var script bytes.Buffer
 
-	configureScript := gitlabutils.ReadConfig("/templates/shell-configure.sh")
-	sshdConfig := gitlabutils.ReadConfig("/templates/shell-sshd-config")
+	configureScript := gitlabutils.ReadConfig("/templates/shell/configure.sh")
+	sshdConfig := gitlabutils.ReadConfig("/templates/shell/sshd-config")
 
 	options := ShellOptions{
-		Unicorn:     getName(cr.Name, "unicorn"),
+		Webservice:  getName(cr.Name, "webservice"),
 		RedisMaster: getName(cr.Name, "redis"),
 	}
 
-	configureTemplate := template.Must(template.ParseFiles("/templates/shell-config.yml.erb"))
+	configureTemplate := template.Must(template.ParseFiles("/templates/shell/config.yml.erb"))
 	configureTemplate.Execute(&script, options)
 
 	shell := gitlabutils.GenericConfigMap(cr.Name+"-shell-config", cr.Namespace, labels)
@@ -191,12 +190,12 @@ func getShellConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "sidekiq", gitlabutils.GitlabType)
 
-	configureScript := gitlabutils.ReadConfig("/templates/sidekiq-configure.sh")
-	queuesYML := gitlabutils.ReadConfig("/templates/sidekiq_queues.yml.erb")
+	configureScript := gitlabutils.ReadConfig("/templates/sidekiq/configure.sh")
+	queuesYML := gitlabutils.ReadConfig("/templates/sidekiq/sidekiq_queues.yml.erb")
 
 	options := SidekiqOptions{
 		RedisMaster:    getName(cr.Name, "redis"),
-		PostgreSQL:     getName(cr.Name, "database"),
+		PostgreSQL:     getName(cr.Name, "postgresql"),
 		GitlabURL:      getGitlabURL(cr),
 		EnableRegistry: true,
 		Registry:       getName(cr.Name, "registry"),
@@ -212,7 +211,7 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	}
 
 	var gitlab bytes.Buffer
-	gitlabTemplate := template.Must(template.ParseFiles("/templates/sidekiq-gitlab.yml.erb"))
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/sidekiq/gitlab.yml.erb"))
 	gitlabTemplate.Execute(&gitlab, options)
 
 	sidekiq := gitlabutils.GenericConfigMap(cr.Name+"-sidekiq-config", cr.Namespace, labels)
@@ -220,6 +219,7 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		"configure":              configureScript,
 		"database.yml.erb":       getDatabaseConfiguration(options.PostgreSQL),
 		"resque.yml.erb":         getRedisConfiguration(options.RedisMaster),
+		"cable.yml.erb":          getCableConfiguration(options.RedisMaster),
 		"gitlab.yml.erb":         gitlab.String(),
 		"installation_type":      "gitlab-operator",
 		"sidekiq_queues.yml.erb": queuesYML,
@@ -231,14 +231,14 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getGitlabExporterConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
 
-	configure := gitlabutils.ReadConfig("/templates/gitlab-exporter-configure.sh")
+	configure := gitlabutils.ReadConfig("/templates/gitlab-exporter/configure.sh")
 
 	options := ExporterOptions{
 		RedisMaster: getName(cr.Name, "redis"),
-		Postgres:    getName(cr.Name, "database"),
+		Postgres:    getName(cr.Name, "postgresql"),
 	}
 	var exporterYML bytes.Buffer
-	exporterTemplate := template.Must(template.ParseFiles("/templates/gitlab-exporter.yml.erb"))
+	exporterTemplate := template.Must(template.ParseFiles("/templates/gitlab-exporter/gitlab-exporter.yml.erb"))
 	exporterTemplate.Execute(&exporterYML, options)
 
 	exporter := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-exporter-config", cr.Namespace, labels)
@@ -253,14 +253,14 @@ func getGitlabExporterConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getRegistryConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
 
-	configure := gitlabutils.ReadConfig("/templates/registry-configure.sh")
+	configure := gitlabutils.ReadConfig("/templates/registry/configure.sh")
 
 	options := RegistryOptions{
 		GitlabURL: getGitlabURL(cr),
 		Minio:     getName(cr.Name, "minio"),
 	}
 	var configYML bytes.Buffer
-	registryTemplate := template.Must(template.ParseFiles("/templates/registry-config.yml"))
+	registryTemplate := template.Must(template.ParseFiles("/templates/registry/config.yml"))
 	registryTemplate.Execute(&configYML, options)
 
 	registry := gitlabutils.GenericConfigMap(cr.Name+"-registry-config", cr.Namespace, labels)
@@ -280,7 +280,7 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		GitlabURL:   getGitlabURL(cr),
 		Minio:       getName(cr.Name, "minio"),
 		RedisMaster: getName(cr.Name, "redis"),
-		PostgreSQL:  getName(cr.Name, "database"),
+		PostgreSQL:  getName(cr.Name, "postgresql"),
 		MinioURL:    getMinioURL(cr),
 		Registry:    getName(cr.Name, "registry"),
 		RegistryURL: getRegistryURL(cr),
@@ -291,13 +291,13 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
 	}
 
-	gsutilconf := gitlabutils.ReadConfig("/templates/task-runner-configure-gsutil.sh")
+	gsutilconf := gitlabutils.ReadConfig("/templates/task-runner/configure-gsutil.sh")
 
 	var configure, gitlab bytes.Buffer
-	configureTemplate := template.Must(template.ParseFiles("/templates/task-runner-configure.sh"))
+	configureTemplate := template.Must(template.ParseFiles("/templates/task-runner/configure.sh"))
 	configureTemplate.Execute(&configure, options)
 
-	gitlabTemplate := template.Must(template.ParseFiles("/templates/task-runner-gitlab.yml.erb"))
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/task-runner/gitlab.yml.erb"))
 	gitlabTemplate.Execute(&gitlab, options)
 
 	tasker := gitlabutils.GenericConfigMap(cr.Name+"-task-runner-config", cr.Namespace, labels)
@@ -307,6 +307,7 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		"gitlab.yml.erb":   gitlab.String(),
 		"database.yml.erb": getDatabaseConfiguration(options.PostgreSQL),
 		"resque.yml.erb":   getRedisConfiguration(options.RedisMaster),
+		"cable.yml.erb":    getCableConfiguration(options.RedisMaster),
 	}
 
 	return tasker
@@ -315,34 +316,36 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getMigrationsConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "migrations", gitlabutils.GitlabType)
 
-	configure := gitlabutils.ReadConfig("/templates/migration-configure.sh")
+	configure := gitlabutils.ReadConfig("/templates/migration/configure.sh")
 
 	options := MigrationOptions{
 		Namespace:   cr.Namespace,
 		RedisMaster: getName(cr.Name, "redis"),
-		PostgreSQL:  getName(cr.Name, "database"),
+		PostgreSQL:  getName(cr.Name, "postgresql"),
 		Gitaly:      getName(cr.Name, "gitaly"),
+		GitlabURL:   getGitlabURL(cr),
 	}
 
 	var gitlab bytes.Buffer
-	gitlabTemplate := template.Must(template.ParseFiles("/templates/migration-gitlab.yml.erb"))
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/migration/gitlab.yml.erb"))
 	gitlabTemplate.Execute(&gitlab, options)
 
-	tasker := gitlabutils.GenericConfigMap(cr.Name+"-migrations-config", cr.Namespace, labels)
-	tasker.Data = map[string]string{
+	migrations := gitlabutils.GenericConfigMap(cr.Name+"-migrations-config", cr.Namespace, labels)
+	migrations.Data = map[string]string{
 		"configure":        configure,
 		"gitlab.yml.erb":   gitlab.String(),
 		"database.yml.erb": getDatabaseConfiguration(options.PostgreSQL),
 		"resque.yml.erb":   getRedisConfiguration(options.RedisMaster),
+		"cable.yml.erb":    getCableConfiguration(options.RedisMaster),
 	}
 
-	return tasker
+	return migrations
 }
 
 func getPostgresInitDBConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "postgres", gitlabutils.GitlabType)
 
-	script := gitlabutils.ReadConfig("/templates/postgresql-pgtrm.sh")
+	script := gitlabutils.ReadConfig("/templates/postgresql/postgresql-pgtrm.sh")
 
 	postgres := gitlabutils.GenericConfigMap(cr.Name+"-postgresql-initdb-config", cr.Namespace, labels)
 	postgres.Data = map[string]string{
@@ -355,7 +358,7 @@ func getPostgresInitDBConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getMinioScriptConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
 
-	script := gitlabutils.ReadConfig("/templates/initialize-buckets.sh")
+	script := gitlabutils.ReadConfig("/templates/jobs/initialize-buckets.sh")
 
 	init := gitlabutils.GenericConfigMap(cr.Name+"-minio-script", cr.Namespace, labels)
 	init.Data = map[string]string{
@@ -377,7 +380,7 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 
 	redisScripts := getRedisSciptsConfig(cr)
 
-	unicorn := getUnicornConfig(cr)
+	webservice := getWebserviceConfig(cr)
 
 	workhorse := getWorkhorseConfig(cr)
 
@@ -402,7 +405,7 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 		gitaly,
 		redis,
 		redisScripts,
-		unicorn,
+		webservice,
 		workhorse,
 		initdb,
 		gitlab,

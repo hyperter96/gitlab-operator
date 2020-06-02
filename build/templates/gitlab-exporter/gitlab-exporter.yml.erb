@@ -27,7 +27,7 @@ probes:
       - probe_retries
       - probe_stats
     opts:
-      redis_url: redis://:<%= URI.escape(File.read("/etc/gitlab/redis/password").strip) %>@{{ .RedisMaster }}:6379
+      redis_url: redis://:<%= URI.escape(File.read("/etc/gitlab/redis/redis-password").strip) %>@{{ .RedisMaster }}:6379
       redis_enable_client: false
 
   metrics:

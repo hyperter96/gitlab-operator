@@ -28,15 +28,15 @@ func (r *ReconcileGitlab) reconcileGitlabStatus(cr *gitlabv1beta1.Gitlab) error 
 	}
 
 	// Check if the postgres statefulset exists
-	if r.isPostgresDeployed(cr) && !r.isUnicornDeployed(cr) {
+	if r.isPostgresDeployed(cr) && !r.isWebserviceDeployed(cr) {
 		gitlab.Status.Phase = "Initializing"
 		gitlab.Status.Stage = "Waiting for database"
 	}
 
-	// Check if the unicorn deployment exists
-	if r.isUnicornDeployed(cr) {
-		// Find unicorn pod(s)
-		pods := r.getEndpointMembers(cr, cr.Name+"-unicorn")
+	// Check if the webservice deployment exists
+	if r.isWebserviceDeployed(cr) {
+		// Find webservice pod(s)
+		pods := r.getEndpointMembers(cr, cr.Name+"-webservice")
 		if len(pods) == 0 {
 			gitlab.Status.Phase = "Initializing"
 			gitlab.Status.Stage = "Gitlab is initializing"
@@ -65,7 +65,7 @@ func getReadinessStatus(cr *gitlabv1beta1.Gitlab) *gitlabv1beta1.HealthCheck {
 	var err error
 	status := &ReadinessStatus{}
 
-	resp, err := http.Get(fmt.Sprintf("http://%s:8181/-/readiness?all=1", cr.Name+"-unicorn"))
+	resp, err := http.Get(fmt.Sprintf("http://%s:8181/-/readiness?all=1", cr.Name+"-webservice"))
 	if err != nil {
 		log.Error(err, "Unable to retrieve status")
 		return nil
@@ -117,10 +117,10 @@ func (r *ReconcileGitlab) isPostgresDeployed(cr *gitlabv1beta1.Gitlab) bool {
 	return !reflect.DeepEqual(*postgres, appsv1.Deployment{}) || !errors.IsNotFound(err)
 }
 
-func (r *ReconcileGitlab) isUnicornDeployed(cr *gitlabv1beta1.Gitlab) bool {
-	unicorn := &appsv1.Deployment{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-unicorn", Namespace: cr.Namespace}, unicorn)
-	return !reflect.DeepEqual(*unicorn, appsv1.Deployment{}) || !errors.IsNotFound(err)
+func (r *ReconcileGitlab) isWebserviceDeployed(cr *gitlabv1beta1.Gitlab) bool {
+	webservice := &appsv1.Deployment{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-webservice", Namespace: cr.Namespace}, webservice)
+	return !reflect.DeepEqual(*webservice, appsv1.Deployment{}) || !errors.IsNotFound(err)
 }
 
 func (r *ReconcileGitlab) retrieveUpdatedGitlabResource(cr *gitlabv1beta1.Gitlab) (*gitlabv1beta1.Gitlab, error) {

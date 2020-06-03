@@ -86,8 +86,8 @@ func getGitlabExporterServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.Ser
 
 }
 
-func getUnicornServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
-	labels := gitlabutils.Label(cr.Name, "unicorn", gitlabutils.GitlabType)
+func getWebserviceServiceMonitor(cr *gitlabv1beta1.Gitlab) *monitoringv1.ServiceMonitor {
+	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -192,7 +192,7 @@ func (r *ReconcileGitlab) reconcileServiceMonitor(cr *gitlabv1beta1.Gitlab) erro
 
 	redis := getRedisServiceMonitor(cr)
 
-	workhorse := getUnicornServiceMonitor(cr)
+	workhorse := getWebserviceServiceMonitor(cr)
 
 	servicemonitors = append(servicemonitors,
 		gitlab,

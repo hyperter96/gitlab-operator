@@ -10,7 +10,7 @@ const (
 	// GitLabShellImage handless git SSH sessions for GitLab
 	GitLabShellImage = "registry.gitlab.com/gitlab-org/build/cng/gitlab-shell:v13.2.0"
 
-	// GitLabWorkhorseImage deploys workhorse which helps alleviate workload from unicorn
+	// GitLabWorkhorseImage deploys workhorse which helps alleviate workload from webservice
 	GitLabWorkhorseImage = "registry.gitlab.com/gitlab-org/build/cng/gitlab-workhorse-ee:v13.0.3"
 
 	// GitLabWebServiceImage used for pre-forking the Ruby web server to handle requests

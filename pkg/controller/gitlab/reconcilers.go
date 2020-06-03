@@ -59,7 +59,7 @@ func (r *ReconcileGitlab) maskEmailPasword(cr *gitlabv1beta1.Gitlab) error {
 
 func (r *ReconcileGitlab) reconcileDeployments(cr *gitlabv1beta1.Gitlab) error {
 
-	if err := r.reconcileUnicornDeployment(cr); err != nil {
+	if err := r.reconcileWebserviceDeployment(cr); err != nil {
 		return err
 	}
 

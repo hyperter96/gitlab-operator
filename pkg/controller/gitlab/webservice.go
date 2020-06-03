@@ -611,7 +611,7 @@ func getWebserviceDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	return webservice
 }
 
-func (r *ReconcileGitlab) reconcileUnicornDeployment(cr *gitlabv1beta1.Gitlab) error {
+func (r *ReconcileGitlab) reconcileWebserviceDeployment(cr *gitlabv1beta1.Gitlab) error {
 	webservice := getWebserviceDeployment(cr)
 
 	if gitlabutils.IsObjectFound(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: webservice.Name}, webservice) {

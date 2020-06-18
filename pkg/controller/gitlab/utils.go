@@ -194,20 +194,23 @@ func getRedisOverrides(redis *gitlabv1beta1.RedisSpec) gitlabv1beta1.RedisSpec {
 	}
 }
 
-func getMinioOverrides(minio *gitlabv1beta1.MinioSpec) gitlabv1beta1.MinioSpec {
-	if minio != nil {
-		if minio.Volume.Capacity == "" {
-			minio.Volume.Capacity = "5Gi"
+func getObjectStoreOverrides(cr *gitlabv1beta1.Gitlab) ObjectStoreOptions {
+	objectStoreSpec := cr.Spec.ObjectStore
+	if objectStoreSpec.Development {
+		return ObjectStoreOptions{
+			Replicas:    1,
+			URL:         getName(cr.Name, "minio"),
+			Credentials: strings.Join([]string{cr.Name, "minio-secret"}, "-"),
+			VolumeSpec: gitlabv1beta1.VolumeSpec{
+				Capacity:     "5Gi",
+				StorageClass: objectStoreSpec.StorageClass,
+			},
 		}
-		return *minio
 	}
 
-	var replicas int32 = 4
-	return gitlabv1beta1.MinioSpec{
-		Replicas: replicas,
-		Volume: gitlabv1beta1.VolumeSpec{
-			Capacity: "5Gi",
-		},
+	return ObjectStoreOptions{
+		URL:         objectStoreSpec.URL,
+		Credentials: objectStoreSpec.Credentials,
 	}
 }
 
@@ -228,10 +231,6 @@ func getRegistryURL(cr *gitlabv1beta1.Gitlab) string {
 }
 
 func getMinioURL(cr *gitlabv1beta1.Gitlab) string {
-	minio := getMinioOverrides(cr.Spec.Minio)
-	if cr.Spec.Minio != nil {
-		return DomainNameOnly(minio.URL)
-	}
-
-	return "minio.example.com"
+	minio := getObjectStoreOverrides(cr)
+	return DomainNameOnly(minio.URL)
 }

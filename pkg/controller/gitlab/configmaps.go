@@ -355,19 +355,6 @@ func getPostgresInitDBConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	return postgres
 }
 
-func getMinioScriptConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
-
-	script := gitlabutils.ReadConfig("/templates/jobs/initialize-buckets.sh")
-
-	init := gitlabutils.GenericConfigMap(cr.Name+"-minio-script", cr.Namespace, labels)
-	init.Data = map[string]string{
-		"initialize": script,
-	}
-
-	return init
-}
-
 //	Reconciler for all ConfigMaps come below
 func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 	var configmaps []*corev1.ConfigMap
@@ -398,8 +385,6 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 
 	initdb := getPostgresInitDBConfig(cr)
 
-	minio := getMinioScriptConfig(cr)
-
 	configmaps = append(configmaps,
 		shell,
 		gitaly,
@@ -414,7 +399,6 @@ func (r *ReconcileGitlab) reconcileConfigMaps(cr *gitlabv1beta1.Gitlab) error {
 		registry,
 		taskRunner,
 		migration,
-		minio,
 	)
 
 	for _, cm := range configmaps {

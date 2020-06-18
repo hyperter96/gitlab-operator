@@ -86,7 +86,6 @@ func RequiresCertManagerCertificate(cr *gitlabv1beta1.Gitlab) EndpointTLS {
 	return EndpointTLS{
 		gitlab:   cr.Spec.TLS == "",
 		registry: cr.Spec.Registry.TLS == "",
-		minio:    cr.Spec.Minio.TLS == "",
 	}
 }
 

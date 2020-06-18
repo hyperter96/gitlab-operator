@@ -1,12 +1,10 @@
 package gitlab
 
 import (
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -28,68 +26,138 @@ func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	return minio
 }
 
-func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
+func getMinioSatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
 
-	minioOptions := getMinioOverrides(cr.Spec.Minio)
+	var replicas int32 = 1
 
-	minio := &miniov1beta1.MinIOInstance{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-minio",
-			Labels:    labels,
-			Namespace: cr.Namespace,
+	minio := gitlabutils.GenericStatefulSet(gitlabutils.Component{
+		Namespace: cr.Namespace,
+		Labels:    labels,
+		Replicas:  replicas,
+		InitContainers: []corev1.Container{
+			{
+				Name:            "configure",
+				Image:           BusyboxImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Command:         []string{"sh", "/config/configure"},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu": gitlabutils.ResourceQuantity("50m"),
+					},
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "minio-configuration",
+						MountPath: "/config",
+					},
+					{
+						Name:      "minio-server-config",
+						MountPath: "/minio",
+					},
+				},
+			},
 		},
-		Spec: miniov1beta1.MinIOInstanceSpec{
-			Metadata: &metav1.ObjectMeta{
-				Labels: labels,
-			},
-			Replicas: minioOptions.Replicas,
-			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{
-					"cpu":    gitlabutils.ResourceQuantity("250m"),
-					"memory": gitlabutils.ResourceQuantity("512Mi"),
+		Containers: []corev1.Container{
+			{
+				Name:            "minio",
+				Image:           MinioImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Args:            []string{"-C", "/tmp/.minio", "--quiet", "server", "/export"},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu":    gitlabutils.ResourceQuantity("100m"),
+						"memory": gitlabutils.ResourceQuantity("128Mi"),
+					},
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "export",
+						MountPath: "/export",
+					},
+					{
+						Name:      "minio-server-config",
+						MountPath: "/tmp/.minio",
+					},
+					{
+						Name:      "podinfo",
+						MountPath: "/podinfo",
+						ReadOnly:  false,
+					},
+				},
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "service",
+						Protocol:      corev1.ProtocolTCP,
+						ContainerPort: 9000,
+					},
+				},
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						TCPSocket: &corev1.TCPSocketAction{
+							Port: intstr.IntOrString{
+								IntVal: 9000,
+							},
+						},
+					},
+					TimeoutSeconds: 1,
 				},
 			},
-			Image: MinioImage,
-			CredsSecret: &corev1.LocalObjectReference{
-				Name: cr.Name + "-minio-secret",
-			},
-			RequestAutoCert: false,
-			Env: []corev1.EnvVar{
-				{
-					Name:  "MINIO_BROWSER",
-					Value: "on",
-				},
-			},
-			Mountpath: "/export",
-			Liveness: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/minio/health/live",
-						Port: intstr.IntOrString{
-							IntVal: 9000,
+		},
+		Volumes: []corev1.Volume{
+			{
+				Name: "podinfo",
+				VolumeSource: corev1.VolumeSource{
+					DownwardAPI: &corev1.DownwardAPIVolumeSource{
+						Items: []corev1.DownwardAPIVolumeFile{
+							{
+								Path: "labels",
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.labels",
+								},
+							},
 						},
 					},
 				},
-				InitialDelaySeconds: 120,
-				PeriodSeconds:       20,
 			},
-			Readiness: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/minio/health/ready",
-						Port: intstr.IntOrString{
-							IntVal: 9000,
+			{
+				Name: "minio-server-config",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium: corev1.StorageMediumMemory,
+					},
+				},
+			},
+			{
+				Name: "minio-configuration",
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{
+							{
+								ConfigMap: &corev1.ConfigMapProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-minio-script",
+									},
+								},
+							},
+							{
+								Secret: &corev1.SecretProjection{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: cr.Name + "-minio-secret",
+									},
+								},
+							},
 						},
 					},
 				},
-				InitialDelaySeconds: 120,
-				PeriodSeconds:       20,
 			},
-			PodManagementPolicy: appsv1.ParallelPodManagement,
-			VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
+		},
+		VolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+			{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "data",
+					Name:      "export",
+					Namespace: cr.Namespace,
+					Labels:    labels,
 				},
 				Spec: corev1.PersistentVolumeClaimSpec{
 					AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -97,19 +165,39 @@ func getMinioInstance(cr *gitlabv1beta1.Gitlab) *miniov1beta1.MinIOInstance {
 					},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							"storage": gitlabutils.ResourceQuantity(minioOptions.Volume.Capacity),
+							"storage": gitlabutils.ResourceQuantity("10Gi"),
 						},
 					},
 				},
 			},
 		},
+	})
+
+	minio.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &localUser,
+		FSGroup:   &localUser,
 	}
 
-	if minioOptions.Volume.StorageClass != "" {
-		minio.Spec.VolumeClaimTemplate.Spec.StorageClassName = &minioOptions.Volume.StorageClass
-	}
+	minio.Spec.Template.Spec.ServiceAccountName = "gitlab"
 
 	return minio
+}
+
+func getMinioScriptConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+
+	initScript := gitlabutils.ReadConfig("/templates/minio/initialize-buckets.sh")
+	configureScript := gitlabutils.ReadConfig("/templates/minio/configure.sh")
+	configJSON := gitlabutils.ReadConfig("/templates/minio/config.json")
+
+	init := gitlabutils.GenericConfigMap(cr.Name+"-minio-script", cr.Namespace, labels)
+	init.Data = map[string]string{
+		"initialize":  initScript,
+		"configure":   configureScript,
+		"config.json": configJSON,
+	}
+
+	return init
 }
 
 func getMinioService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
@@ -135,70 +223,9 @@ func getMinioService(cr *gitlabv1beta1.Gitlab) *corev1.Service {
 	}
 }
 
-func getMinioIngress(cr *gitlabv1beta1.Gitlab) *extensionsv1beta1.Ingress {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
-
-	return &extensionsv1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        cr.Name + "-minio-ingress",
-			Namespace:   cr.Namespace,
-			Labels:      labels,
-			Annotations: IngressAnnotations(cr, RequiresCertManagerCertificate(cr).Minio()),
-		},
-		Spec: extensionsv1beta1.IngressSpec{
-			Rules: []extensionsv1beta1.IngressRule{
-				{
-					// Add Registry rule only when registry is enabled
-					Host: getMinioURL(cr),
-					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
-						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
-							Paths: []extensionsv1beta1.HTTPIngressPath{
-								{
-									Path: "/",
-									Backend: extensionsv1beta1.IngressBackend{
-										ServicePort: intstr.IntOrString{
-											IntVal: 9000,
-										},
-										ServiceName: cr.Name + "-minio",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			TLS: getMinioIngressCert(cr),
-		},
-	}
-}
-
-func getMinioIngressCert(cr *gitlabv1beta1.Gitlab) []extensionsv1beta1.IngressTLS {
-
-	if RequiresCertManagerCertificate(cr).Minio() {
-		return []extensionsv1beta1.IngressTLS{
-			{
-				Hosts:      []string{getMinioURL(cr)},
-				SecretName: cr.Name + "-minio-tls",
-			},
-		}
-	}
-
-	return []extensionsv1beta1.IngressTLS{
-		{
-			Hosts:      []string{getMinioURL(cr)},
-			SecretName: cr.Spec.Minio.TLS,
-		},
-	}
-}
-
 func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error {
-	minio := getMinioInstance(cr)
-
-	if !gitlabutils.IsMinioAvailable() {
-		return nil
-	}
-
-	if err := r.createKubernetesResource(minio, cr); err != nil {
+	cm := getMinioScriptConfig(cr)
+	if err := r.createKubernetesResource(cm, cr); err != nil {
 		return err
 	}
 
@@ -212,6 +239,8 @@ func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error
 		return err
 	}
 
-	ingress := getMinioIngress(cr)
-	return r.createKubernetesResource(ingress, cr)
+	// deploy minio
+	minio := getMinioSatefulSet(cr)
+	return r.createKubernetesResource(minio, cr)
+
 }

@@ -7,16 +7,16 @@ import (
 
 // GitlabSpec defines the desired state of Gitlab
 type GitlabSpec struct {
-	Replicas   int32               `json:"replicas"`
-	URL        string              `json:"url,omitempty"`
-	TLS        string              `json:"tls,omitempty"`
-	SMTP       SMTPConfiguration   `json:"email,omitempty"`
-	Registry   RegistrySpec        `json:"registry,omitempty"`
-	Minio      *MinioSpec          `json:"minio,omitempty"`
-	Redis      *RedisSpec          `json:"redis,omitempty"`
-	Database   *DatabaseSpec       `json:"postgresql,omitempty"`
-	CertIssuer *ACMEOptions        `json:"acme,omitempty"`
-	Volumes    ComponentVolumeSpec `json:"volumes,omitempty"`
+	Replicas    int32               `json:"replicas"`
+	URL         string              `json:"url,omitempty"`
+	TLS         string              `json:"tls,omitempty"`
+	SMTP        SMTPConfiguration   `json:"email,omitempty"`
+	Registry    RegistrySpec        `json:"registry,omitempty"`
+	ObjectStore ObjectStoreSpec     `json:"objectStore,omitempty"`
+	Redis       *RedisSpec          `json:"redis,omitempty"`
+	Database    *DatabaseSpec       `json:"postgresql,omitempty"`
+	CertIssuer  *ACMEOptions        `json:"acme,omitempty"`
+	Volumes     ComponentVolumeSpec `json:"volumes,omitempty"`
 }
 
 // RedisSpec defines Redis options
@@ -36,26 +36,23 @@ type RegistrySpec struct {
 	TLS      string `json:"tls,omitempty"`
 }
 
-// MinioSpec defines options for Gitlab registry
-type MinioSpec struct {
-	Disabled bool `json:"disable,omitempty"`
+// ObjectStoreSpec defines options for Gitlab registry
+type ObjectStoreSpec struct {
+	// Development will result in a minio deployment being
+	// created for testing /development purposes
+	Development bool `json:"development,omitempty"`
 	// URL provides a domain / DNS name that can be used
 	// to reach the minio deployment
 	URL string `json:"url,omitempty"`
-	// Replicas dictates the number of minio nodes to deploy
-	Replicas int32 `json:"replicas,omitempty"`
-	// TLS is the name of the secret containing the tls certificate
-	// used to secure the minio endpoint
-	TLS string `json:"tls,omitempty"`
 	// Credentials contains the name of the secret that contains
 	// the `accesskey` and `secretkey` values required to access
 	// an existing minio instance. Should be an even number equal
 	// to or larger than four
 	Credentials string `json:"credentials,omitempty"`
-	// Capacity defines the storage volume capacity used by each
-	// minio node. E.g. if the size is set to 10Gi and you have 4
-	// replicas, a total of 40Gi will be required by minio
-	Volume VolumeSpec `json:"volume,omitempty"`
+	// StorageClass defines the storage class for the persistent
+	// volume that will hold the s3 objects
+	// +optional
+	StorageClass string `json:"storageClass,omitempty"`
 }
 
 // SMTPConfiguration defines options for Gitlab registry

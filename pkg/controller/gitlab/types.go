@@ -1,5 +1,7 @@
 package gitlab
 
+import gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+
 const (
 	// StrongPassword defines password length
 	StrongPassword = 21
@@ -146,4 +148,19 @@ type MigrationOptions struct {
 	PostgreSQL  string
 	Gitaly      string
 	GitlabURL   string
+}
+
+// ObjectStoreOptions defines the
+// options for a development object store
+type ObjectStoreOptions struct {
+	// URL defines address for development
+	// S3 storage service
+	URL string
+	// Credentials is the name of the secret
+	// with the 'accesskey' and 'secretkey'
+	Credentials string
+	// Replicas for the development minio instance
+	Replicas int32
+	// VolumeSpec for the Minio instance
+	gitlabv1beta1.VolumeSpec
 }

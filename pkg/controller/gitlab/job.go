@@ -246,7 +246,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 	labels := gitlabutils.Label(cr.Name, "bucket", gitlabutils.GitlabType)
 
-	return gitlabutils.GenericJob(gitlabutils.Component{
+	buckets := gitlabutils.GenericJob(gitlabutils.Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
 		Containers: []corev1.Container{
@@ -305,17 +305,25 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 			},
 		},
 	})
-}
 
-func (r *ReconcileGitlab) reconcileBucketJob(cr *gitlabv1beta1.Gitlab) error {
-	buckets := createMinioBucketsJob(cr)
+	var mcUser int64 = 0
+	buckets.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	buckets.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+		RunAsUser: &mcUser,
+		FSGroup:   &mcUser,
+	}
 
-	return r.createKubernetesResource(buckets, cr)
+	return buckets
 }
 
 func (r *ReconcileGitlab) reconcileJobs(cr *gitlabv1beta1.Gitlab) error {
 
-	migration := getMigrationsJob(cr)
+	// initialize buckets once Minio is up
+	buckets := createMinioBucketsJob(cr)
+	if err := r.createKubernetesResource(buckets, cr); err != nil {
+		return err
+	}
 
+	migration := getMigrationsJob(cr)
 	return r.createKubernetesResource(migration, cr)
 }

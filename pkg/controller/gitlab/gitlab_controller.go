@@ -239,8 +239,11 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
-	if err := r.reconcileMinioInstance(cr); err != nil {
-		return err
+	// Deploy minio for development or testing purposes
+	if cr.Spec.ObjectStore.Development {
+		if err := r.reconcileMinioInstance(cr); err != nil {
+			return err
+		}
 	}
 
 	wg := sync.WaitGroup{}
@@ -271,10 +274,6 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 
 	// Deploy ingress to expose GitLab
 	if err := r.reconcileIngress(cr); err != nil {
-		return err
-	}
-
-	if err := r.reconcileBucketJob(cr); err != nil {
 		return err
 	}
 

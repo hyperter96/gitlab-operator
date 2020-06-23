@@ -50,7 +50,7 @@ func hasTLS(cr *gitlabv1beta1.Gitlab) bool {
 // Watches endpoint for pod IP address
 func isEndpointReady(service string, cr *gitlabv1beta1.Gitlab) bool {
 	var addresses []corev1.EndpointAddress
-	client, err := gitlabutils.NewKubernetesClient()
+	client, err := gitlabutils.KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		log.Error(err, "Unable to acquire client")
 	}
@@ -74,7 +74,7 @@ func isEndpointReady(service string, cr *gitlabv1beta1.Gitlab) bool {
 // Function is used by other functions e.g. isDatabaseReady
 func getOperatorMetricsEndpoints(cr *gitlabv1beta1.Gitlab) (*corev1.Endpoints, error) {
 	operatorMetricsSVC := "gitlab-operator-metrics"
-	client, err := gitlabutils.NewKubernetesClient()
+	client, err := gitlabutils.KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		log.Error(err, "Unable to acquire client")
 	}

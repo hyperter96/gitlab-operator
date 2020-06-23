@@ -11,9 +11,12 @@ import (
 
 	"encoding/base64"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,6 +37,14 @@ func Label(resource, component, resourceType string) map[string]string {
 	}
 }
 
+// ResourceLabels type encapsulates map[string]string
+type ResourceLabels map[string]string
+
+// GetName returns the name of resource based on instance label
+func (l ResourceLabels) GetName() string {
+	return l["app.kubernetes.io/instance"]
+}
+
 // ResourceQuantity returns quantity requested for resource
 func ResourceQuantity(request string) resource.Quantity {
 	return resource.MustParse(request)
@@ -41,7 +52,7 @@ func ResourceQuantity(request string) resource.Quantity {
 
 // IsPrometheusSupported checks for Prometheus API endpoint
 func IsPrometheusSupported() bool {
-	client, err := NewKubernetesClient()
+	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		fmt.Printf("Unable to acquire k8s client: %v", err)
 	}
@@ -61,7 +72,7 @@ func IsPrometheusSupported() bool {
 // IsOpenshift check if API has the API route.openshift.io/v1,
 // then it is considered an openshift environment
 func IsOpenshift() bool {
-	client, err := NewKubernetesClient()
+	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		fmt.Printf("Unable to get kubernetes client: %v", err)
 	}
@@ -87,12 +98,35 @@ func IsObjectFound(client client.Client, key types.NamespacedName, object runtim
 	return true
 }
 
-// NewKubernetesClient returns a client that can be used to interact
-// with the kubernetes api
-func NewKubernetesClient() (clientset *kubernetes.Clientset, err error) {
-	conf, err := rest.InClusterConfig()
+// KubeConfig returns kubernetes client configuration
+type KubeConfig struct {
+	Config *rest.Config
+	Error  error
+}
+
+// KubernetesConfig returns kubernetes client config
+func KubernetesConfig() KubeConfig {
+	config, err := rest.InClusterConfig()
 	if err != nil {
-		fmt.Printf("Unable getting cluster config: %v", err)
+		return KubeConfig{
+			Config: nil,
+			Error:  err,
+		}
+	}
+
+	return KubeConfig{
+		Config: config,
+		Error:  nil,
+	}
+}
+
+// NewKubernetesClient returns a client that can be
+// used to interact with the kubernetes api
+func (k KubeConfig) NewKubernetesClient() (clientset *kubernetes.Clientset, err error) {
+	conf := k.Config
+	err = k.Error
+	if err != nil {
+		fmt.Printf("Error getting cluster config: %v", err)
 	}
 
 	clientset, err = kubernetes.NewForConfig(conf)
@@ -171,7 +205,7 @@ func IsPodRunning(pod *corev1.Pod) bool {
 
 // SecretData gets a secret by name and returns its data
 func SecretData(name, namespace string) map[string][]byte {
-	client, err := NewKubernetesClient()
+	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		return map[string][]byte{}
 	}
@@ -187,7 +221,7 @@ func SecretData(name, namespace string) map[string][]byte {
 // IsMinioAvailable checks if Minio API provided
 // by minio operator is present
 func IsMinioAvailable() bool {
-	client, err := NewKubernetesClient()
+	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		fmt.Printf("Unable to get kubernetes client: %v", err)
 	}
@@ -202,4 +236,32 @@ func IsMinioAvailable() bool {
 	}
 
 	return true
+}
+
+// GetDeploymentPods returns the pods that belong to a given deployment
+func GetDeploymentPods(kclient client.Client, name, namespace string) (result []corev1.Pod, err error) {
+	deployment := &appsv1.Deployment{}
+	err = kclient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, deployment)
+	if err != nil && errors.IsNotFound(err) {
+		return result, err
+	}
+
+	deployLabels := deployment.Spec.Template.ObjectMeta.Labels
+
+	pods := &corev1.PodList{}
+	options := &client.ListOptions{
+		Namespace:     namespace,
+		LabelSelector: labels.SelectorFromSet(deployLabels),
+	}
+
+	err = kclient.List(context.TODO(), pods, options)
+	if err != nil {
+		return []corev1.Pod{}, err
+	}
+
+	for _, pod := range pods.Items {
+		result = append(result, pod)
+	}
+
+	return result, err
 }

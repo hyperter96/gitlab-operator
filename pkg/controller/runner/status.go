@@ -75,7 +75,7 @@ func (r *ReconcileRunner) updateRunnerStatus(cr *gitlabv1beta1.Runner, consoleLo
 
 func (r *ReconcileRunner) reconcileRunnerStatus(cr *gitlabv1beta1.Runner) error {
 
-	client, err := gitlabutils.NewKubernetesClient()
+	client, err := gitlabutils.KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		return err
 	}

@@ -21,8 +21,8 @@ cat <<EOF > "/${secret_dir}/.s3cfg"
 access_key = $(cat /init-secrets/minio/accesskey)
 secret_key = $(cat /init-secrets/minio/secretkey)
 bucket_location = us-east-1
-host_base = {{ .Minio }}:9000
-host_bucket = {{ .Minio }}/%(bucket)
+host_base = {{ .ObjectStore.Endpoint }}
+host_bucket = {{ .ObjectStore.Endpoint }}/%(bucket)
 default_mime_type = binary/octet-stream
 enable_multipart = True
 multipart_max_chunks = 10000
@@ -36,7 +36,7 @@ socket_timeout = 300
 use_mime_magic = True
 verbosity = WARNING
 use_https = False
-website_endpoint = http://{{ .Minio }}:9000
+website_endpoint = {{ .ObjectStore.Endpoint }}
 EOF
 else
   mv "/${secret_dir}/objectstorage/.s3cfg" "/${secret_dir}/.s3cfg"

@@ -41,7 +41,7 @@ storage:
     accesskey: "ACCESS_KEY"
     secretkey: "SECRET_KEY"
     region: us-east-1
-    regionendpoint: http://{{ .Minio }}:9000
+    regionendpoint: {{ .ObjectStore.Endpoint }}
     bucket: registry
     secure: true
     v4auth: true

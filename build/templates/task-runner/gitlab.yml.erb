@@ -35,8 +35,8 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioURL }}
-        endpoint: http://{{ .Minio }}:9000
+        host: {{ .ObjectStore.URL }}
+        endpoint: {{ .ObjectStore.Endpoint }}
         path_style: true
   lfs:
     enabled: true
@@ -51,8 +51,8 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioURL }}
-        endpoint: http://{{ .Minio }}:9000
+        host: {{ .ObjectStore.URL }}
+        endpoint: {{ .ObjectStore.Endpoint }}
         path_style: true
   uploads:
     enabled: true
@@ -67,8 +67,8 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioURL }}
-        endpoint: http://{{ .Minio }}:9000
+        host: {{ .ObjectStore.URL }}
+        endpoint: {{ .ObjectStore.Endpoint }}
         path_style: true
   packages:
     enabled: true
@@ -83,8 +83,8 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioURL }}
-        endpoint: http://{{ .Minio }}:9000
+        host: {{ .ObjectStore.URL }}
+        endpoint: {{ .ObjectStore.Endpoint }}
         path_style: true
   external_diffs:
     enabled: 
@@ -100,8 +100,8 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioURL }}
-        endpoint: http://{{ .Minio }}:9000
+        host: {{ .ObjectStore.URL }}
+        endpoint: {{ .ObjectStore.Endpoint }}
         path_style: true
   pseudonymizer:
     manifest: config/pseudonymizer.yml
@@ -112,8 +112,8 @@ production: &base
         region: us-east-1
         aws_access_key_id: "<%= File.read('/etc/gitlab/minio/accesskey').strip.dump[1..-2] %>"
         aws_secret_access_key: "<%= File.read('/etc/gitlab/minio/secretkey').strip.dump[1..-2] %>"
-        host: {{ .MinioURL }}
-        endpoint: http://{{ .Minio }}:9000
+        host: {{ .ObjectStore.URL }}
+        endpoint: {{ .ObjectStore.Endpoint }}
         path_style: true
   
   pages:

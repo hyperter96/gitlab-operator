@@ -318,7 +318,7 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 
 func (r *ReconcileGitlab) reconcileJobs(cr *gitlabv1beta1.Gitlab) error {
 
-	// initialize buckets once Minio is up
+	// initialize buckets once s3 storage is up
 	buckets := createMinioBucketsJob(cr)
 	if err := r.createKubernetesResource(buckets, cr); err != nil {
 		return err

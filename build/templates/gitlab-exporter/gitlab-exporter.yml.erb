@@ -7,7 +7,7 @@ probes:
     methods:
       - probe_db
     opts:
-      connection_string: dbname=gitlabhq_production user=gitlab host={{ .Postgres }} port=5432 password='<%= File.read("/etc/gitlab/postgres/psql-password").strip.gsub(/[\'\\]/) { |esc| '\\' + esc } %>'
+      connection_string: dbname=gitlabhq_production user=gitlab host={{ .PostgreSQL }} port=5432 password='<%= File.read("/etc/gitlab/postgres/psql-password").strip.gsub(/[\'\\]/) { |esc| '\\' + esc } %>'
   database:
     multiple: true
     ci_builds:

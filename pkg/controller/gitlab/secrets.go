@@ -259,8 +259,6 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 
 	rails := getRailsSecret(cr)
 
-	minio := getMinioSecret(cr)
-
 	postgres := getPostgresSecret(cr)
 
 	redis := getRedisSecret(cr)
@@ -281,7 +279,6 @@ func (r *ReconcileGitlab) reconcileSecrets(cr *gitlabv1beta1.Gitlab) error {
 		registryCert,
 		workhorse,
 		rails,
-		minio,
 		postgres,
 		redis,
 		root,

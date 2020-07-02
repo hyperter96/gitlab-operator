@@ -18,12 +18,13 @@ func getGitlabConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	}
 
 	gitlab := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-config", cr.Namespace, labels)
+	options := SystemBuildOptions(cr)
 	gitlab.Data = map[string]string{
 		"gitlab_external_url":   parseURL(getGitlabURL(cr), hasTLS(cr)),
 		"postgres_db":           "gitlabhq_production",
-		"postgres_host":         cr.Name + "-postgresql",
+		"postgres_host":         options.PostgreSQL,
 		"postgres_user":         "gitlab",
-		"redis_host":            cr.Name + "-redis",
+		"redis_host":            options.RedisMaster,
 		"registry_external_url": registryURL,
 		"installation_type":     labels["app.kubernetes.io/managed-by"],
 	}
@@ -76,10 +77,7 @@ func getGitalyConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	gitaly := gitlabutils.GenericConfigMap(cr.Name+"-gitaly-config", cr.Namespace, labels)
 
-	options := GitalyOptions{
-		RedisMaster: getName(cr.Name, "redis"),
-		Webservice:  getName(cr.Name, "webservice"),
-	}
+	options := SystemBuildOptions(cr)
 
 	var shell bytes.Buffer
 	shellTemplate := template.Must(template.ParseFiles("/templates/gitaly/shell-config.yml.erb"))
@@ -97,8 +95,6 @@ func getGitalyConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	return gitaly
 }
 
-// TODO: Get Minio/Object storage
-// TODO 2: Expose .MinioURL
 func getWebserviceConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
 
@@ -106,21 +102,7 @@ func getWebserviceConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	configure := gitlabutils.ReadConfig("/templates/webservice/configure.sh")
 
-	options := WebserviceOptions{
-		Namespace:   cr.Namespace,
-		GitlabURL:   cr.Spec.URL,
-		Minio:       getName(cr.Name, "minio"),
-		MinioURL:    getMinioURL(cr),
-		Registry:    getName(cr.Name, "registry"),
-		RegistryURL: getRegistryURL(cr),
-		Gitaly:      getName(cr.Name, "gitaly"),
-		RedisMaster: getName(cr.Name, "redis"),
-		PostgreSQL:  getName(cr.Name, "postgresql"),
-	}
-
-	if IsEmailConfigured(cr) {
-		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
-	}
+	options := SystemBuildOptions(cr)
 
 	var gitlab bytes.Buffer
 	gitlabTemplate := template.Must(template.ParseFiles("/templates/webservice/gitlab.yml.erb"))
@@ -129,9 +111,9 @@ func getWebserviceConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	webservice.Data = map[string]string{
 		"configure":         configure,
 		"gitlab.yml.erb":    gitlab.String(),
-		"database.yml.erb":  getDatabaseConfiguration(options.PostgreSQL),
-		"resque.yml.erb":    getRedisConfiguration(options.RedisMaster),
-		"cable.yml.erb":     getCableConfiguration(options.RedisMaster),
+		"database.yml.erb":  getDatabaseConfiguration(cr),
+		"resque.yml.erb":    getRedisConfiguration(cr),
+		"cable.yml.erb":     getCableConfiguration(cr),
 		"installation_type": labels["app.kubernetes.io/managed-by"],
 	}
 
@@ -146,9 +128,7 @@ func getWorkhorseConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	configureSh := gitlabutils.ReadConfig("/templates/workhorse/configure.sh")
 
-	options := WorkhorseOptions{
-		RedisMaster: getName(cr.Name, "redis"),
-	}
+	options := SystemBuildOptions(cr)
 
 	configTemplate := template.Must(template.ParseFiles("/templates/workhorse/workhorse-config.toml.erb"))
 	configTemplate.Execute(&config, options)
@@ -169,10 +149,7 @@ func getShellConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	configureScript := gitlabutils.ReadConfig("/templates/shell/configure.sh")
 	sshdConfig := gitlabutils.ReadConfig("/templates/shell/sshd-config")
 
-	options := ShellOptions{
-		Webservice:  getName(cr.Name, "webservice"),
-		RedisMaster: getName(cr.Name, "redis"),
-	}
+	options := SystemBuildOptions(cr)
 
 	configureTemplate := template.Must(template.ParseFiles("/templates/shell/config.yml.erb"))
 	configureTemplate.Execute(&script, options)
@@ -193,22 +170,7 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	configureScript := gitlabutils.ReadConfig("/templates/sidekiq/configure.sh")
 	queuesYML := gitlabutils.ReadConfig("/templates/sidekiq/sidekiq_queues.yml.erb")
 
-	options := SidekiqOptions{
-		RedisMaster:    getName(cr.Name, "redis"),
-		PostgreSQL:     getName(cr.Name, "postgresql"),
-		GitlabURL:      getGitlabURL(cr),
-		EnableRegistry: true,
-		Registry:       getName(cr.Name, "registry"),
-		RegistryURL:    getRegistryURL(cr),
-		Gitaly:         getName(cr.Name, "gitaly"),
-		Namespace:      cr.Namespace,
-		MinioURL:       getMinioURL(cr),
-		Minio:          getName(cr.Name, "minio"),
-	}
-
-	if IsEmailConfigured(cr) {
-		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
-	}
+	options := SystemBuildOptions(cr)
 
 	var gitlab bytes.Buffer
 	gitlabTemplate := template.Must(template.ParseFiles("/templates/sidekiq/gitlab.yml.erb"))
@@ -217,9 +179,9 @@ func getSidekiqConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	sidekiq := gitlabutils.GenericConfigMap(cr.Name+"-sidekiq-config", cr.Namespace, labels)
 	sidekiq.Data = map[string]string{
 		"configure":              configureScript,
-		"database.yml.erb":       getDatabaseConfiguration(options.PostgreSQL),
-		"resque.yml.erb":         getRedisConfiguration(options.RedisMaster),
-		"cable.yml.erb":          getCableConfiguration(options.RedisMaster),
+		"database.yml.erb":       getDatabaseConfiguration(cr),
+		"resque.yml.erb":         getRedisConfiguration(cr),
+		"cable.yml.erb":          getCableConfiguration(cr),
 		"gitlab.yml.erb":         gitlab.String(),
 		"installation_type":      "gitlab-operator",
 		"sidekiq_queues.yml.erb": queuesYML,
@@ -233,10 +195,7 @@ func getGitlabExporterConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 
 	configure := gitlabutils.ReadConfig("/templates/gitlab-exporter/configure.sh")
 
-	options := ExporterOptions{
-		RedisMaster: getName(cr.Name, "redis"),
-		Postgres:    getName(cr.Name, "postgresql"),
-	}
+	options := SystemBuildOptions(cr)
 	var exporterYML bytes.Buffer
 	exporterTemplate := template.Must(template.ParseFiles("/templates/gitlab-exporter/gitlab-exporter.yml.erb"))
 	exporterTemplate.Execute(&exporterYML, options)
@@ -253,12 +212,9 @@ func getGitlabExporterConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getRegistryConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
 
+	options := SystemBuildOptions(cr)
 	configure := gitlabutils.ReadConfig("/templates/registry/configure.sh")
 
-	options := RegistryOptions{
-		GitlabURL: getGitlabURL(cr),
-		Minio:     getName(cr.Name, "minio"),
-	}
 	var configYML bytes.Buffer
 	registryTemplate := template.Must(template.ParseFiles("/templates/registry/config.yml"))
 	registryTemplate.Execute(&configYML, options)
@@ -275,22 +231,7 @@ func getRegistryConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
 
-	options := TaskRunnerOptions{
-		Namespace:   cr.Namespace,
-		GitlabURL:   getGitlabURL(cr),
-		Minio:       getName(cr.Name, "minio"),
-		RedisMaster: getName(cr.Name, "redis"),
-		PostgreSQL:  getName(cr.Name, "postgresql"),
-		MinioURL:    getMinioURL(cr),
-		Registry:    getName(cr.Name, "registry"),
-		RegistryURL: getRegistryURL(cr),
-		Gitaly:      getName(cr.Name, "gitaly"),
-	}
-
-	if IsEmailConfigured(cr) {
-		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
-	}
-
+	options := SystemBuildOptions(cr)
 	gsutilconf := gitlabutils.ReadConfig("/templates/task-runner/configure-gsutil.sh")
 
 	var configure, gitlab bytes.Buffer
@@ -305,9 +246,9 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 		"configure":        configure.String(),
 		"configure-gsutil": gsutilconf,
 		"gitlab.yml.erb":   gitlab.String(),
-		"database.yml.erb": getDatabaseConfiguration(options.PostgreSQL),
-		"resque.yml.erb":   getRedisConfiguration(options.RedisMaster),
-		"cable.yml.erb":    getCableConfiguration(options.RedisMaster),
+		"database.yml.erb": getDatabaseConfiguration(cr),
+		"resque.yml.erb":   getRedisConfiguration(cr),
+		"cable.yml.erb":    getCableConfiguration(cr),
 	}
 
 	return tasker
@@ -316,15 +257,8 @@ func getTaskRunnerConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 func getMigrationsConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "migrations", gitlabutils.GitlabType)
 
+	options := SystemBuildOptions(cr)
 	configure := gitlabutils.ReadConfig("/templates/migration/configure.sh")
-
-	options := MigrationOptions{
-		Namespace:   cr.Namespace,
-		RedisMaster: getName(cr.Name, "redis"),
-		PostgreSQL:  getName(cr.Name, "postgresql"),
-		Gitaly:      getName(cr.Name, "gitaly"),
-		GitlabURL:   getGitlabURL(cr),
-	}
 
 	var gitlab bytes.Buffer
 	gitlabTemplate := template.Must(template.ParseFiles("/templates/migration/gitlab.yml.erb"))
@@ -334,9 +268,9 @@ func getMigrationsConfig(cr *gitlabv1beta1.Gitlab) *corev1.ConfigMap {
 	migrations.Data = map[string]string{
 		"configure":        configure,
 		"gitlab.yml.erb":   gitlab.String(),
-		"database.yml.erb": getDatabaseConfiguration(options.PostgreSQL),
-		"resque.yml.erb":   getRedisConfiguration(options.RedisMaster),
-		"cable.yml.erb":    getCableConfiguration(options.RedisMaster),
+		"database.yml.erb": getDatabaseConfiguration(cr),
+		"resque.yml.erb":   getRedisConfiguration(cr),
+		"cable.yml.erb":    getCableConfiguration(cr),
 	}
 
 	return migrations

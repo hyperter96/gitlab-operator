@@ -98,34 +98,30 @@ func getName(cr, component string) string {
 	return strings.Join([]string{cr, component}, "-")
 }
 
-func getDatabaseConfiguration(postgres string) string {
+func getDatabaseConfiguration(cr *gitlabv1beta1.Gitlab) string {
 	var config bytes.Buffer
-	options := ConfigOptions{
-		Postgres: postgres,
-	}
 
+	options := SystemBuildOptions(cr)
 	postgresTemplate := template.Must(template.ParseFiles("/templates/shared/database.yml.erb"))
 	postgresTemplate.Execute(&config, options)
 
 	return config.String()
 }
 
-func getRedisConfiguration(redis string) string {
+func getRedisConfiguration(cr *gitlabv1beta1.Gitlab) string {
 	var config bytes.Buffer
-	options := ConfigOptions{
-		RedisMaster: redis,
-	}
+
+	options := SystemBuildOptions(cr)
 	resqueTemplate := template.Must(template.ParseFiles("/templates/shared/resque.yml.erb"))
 	resqueTemplate.Execute(&config, options)
 
 	return config.String()
 }
 
-func getCableConfiguration(redis string) string {
+func getCableConfiguration(cr *gitlabv1beta1.Gitlab) string {
 	var config bytes.Buffer
-	options := ConfigOptions{
-		RedisMaster: redis,
-	}
+
+	options := SystemBuildOptions(cr)
 	resqueTemplate := template.Must(template.ParseFiles("/templates/shared/cable.yml.erb"))
 	resqueTemplate.Execute(&config, options)
 
@@ -194,26 +190,6 @@ func getRedisOverrides(redis *gitlabv1beta1.RedisSpec) gitlabv1beta1.RedisSpec {
 	}
 }
 
-func getObjectStoreOverrides(cr *gitlabv1beta1.Gitlab) ObjectStoreOptions {
-	objectStoreSpec := cr.Spec.ObjectStore
-	if objectStoreSpec.Development {
-		return ObjectStoreOptions{
-			Replicas:    1,
-			URL:         getName(cr.Name, "minio"),
-			Credentials: strings.Join([]string{cr.Name, "minio-secret"}, "-"),
-			VolumeSpec: gitlabv1beta1.VolumeSpec{
-				Capacity:     "5Gi",
-				StorageClass: objectStoreSpec.StorageClass,
-			},
-		}
-	}
-
-	return ObjectStoreOptions{
-		URL:         objectStoreSpec.URL,
-		Credentials: objectStoreSpec.Credentials,
-	}
-}
-
 func getGitlabURL(cr *gitlabv1beta1.Gitlab) string {
 	if cr.Spec.URL != "" {
 		return DomainNameOnly(cr.Spec.URL)
@@ -228,9 +204,4 @@ func getRegistryURL(cr *gitlabv1beta1.Gitlab) string {
 	}
 
 	return "registry.example.com"
-}
-
-func getMinioURL(cr *gitlabv1beta1.Gitlab) string {
-	minio := getObjectStoreOverrides(cr)
-	return DomainNameOnly(minio.URL)
 }

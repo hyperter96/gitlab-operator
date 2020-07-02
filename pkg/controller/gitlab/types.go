@@ -1,6 +1,13 @@
 package gitlab
 
-import gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+import (
+	"fmt"
+	"strings"
+
+	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
+	"k8s.io/apimachinery/pkg/api/errors"
+)
 
 const (
 	// StrongPassword defines password length
@@ -37,74 +44,143 @@ type ServiceStatus struct {
 	Status string `json:"status,omitempty"`
 }
 
-// GitalyOptions contains service
-// names for Redis and Webservice
-type GitalyOptions struct {
-	// Name of redis service
-	RedisMaster string
+// ConfigurationOptions  holds
+// options used to configure the different
+// GitLab components
+type ConfigurationOptions struct {
+	// Namespace where the objects should live
+	Namespace string
 
-	// Name of Webservice service
-	Webservice string
-}
-
-// WebserviceOptions passes options
-// to Webservice templates
-type WebserviceOptions struct {
-	Namespace   string
-	GitlabURL   string
-	PostgreSQL  string
-	Registry    string
-	RegistryURL string
-	Minio       string
-	MinioURL    string
-	Gitaly      string
-	RedisMaster string
-	EmailFrom   string
-	ReplyTo     string
-}
-
-// WorkhorseOptions has
-// options for workhorse
-type WorkhorseOptions struct {
-	RedisMaster string
-}
-
-// ShellOptions passes template
-// options for gitlab shell
-type ShellOptions struct {
-	Webservice  string
-	RedisMaster string
-}
-
-// SidekiqOptions defines parameters
-// for sidekiq configmap
-type SidekiqOptions struct {
-	RedisMaster    string
-	PostgreSQL     string
-	GitlabURL      string // URL without protocol. e.g: gitlab.example.com
-	EnableRegistry bool
-	Registry       string
-	RegistryURL    string
-	Gitaly         string
-	Namespace      string
-	EmailFrom      string
-	ReplyTo        string
-	MinioURL       string // hostname e.g. minio.example.com
-	Minio          string // Minio service
-}
-
-// ExporterOptions defines parameters
-// for metrics exporter configmap
-type ExporterOptions struct {
-	RedisMaster string
-	Postgres    string
-}
-
-// RegistryOptions defines parameters
-// for registry configmap
-type RegistryOptions struct {
+	// GitlabURL defines address reach deployed
+	// Gitlab instance
 	GitlabURL string
-	Minio     string
+
+	// RegistryURL defines web address to access
+	// GitLab registry
+	RegistryURL string
+
+	// PostgreSQL defines name of
+	// database instance
+	PostgreSQL string
+
+	// EnableRegistry allows the user to disable the
+	// GitLab container registry
+	EnableRegistry bool
+
+	// Registry defines name of gitlab registry
+	Registry string
+
+	// ObjectStore defines object that describes values
+	// for the S3 compatible storage service
+	ObjectStore ObjectStoreOptions
+
+	// Gitaly defines name of Gitaly server(s)
+	Gitaly string
+
+	// RedisMaster defines name of Redis instance
+	RedisMaster string
+
+	// Webservice defines name of the puma service which
+	// listens on port 8181
+	Webservice string
+
+	// EmailFrom defines From address of outgoing email
+	EmailFrom string
+
+	// ReplyTo defines alternate email address to send admin emails
+	ReplyTo string
+}
+
+// ObjectStoreOptions defines properties for
+// the S3 storage used by GitLab
+type ObjectStoreOptions struct {
+	// URL defines address for development
+	// S3 storage service
+	URL string
+
+	// Endpoint defines the URL the API endpoint
+	// including the protocol
+	Endpoint string
+
+	// Credentials is the name of the secret
+	// that contains the 'accesskey' and 'secretkey'
+	// Credentials string
+
+	// AccessKey used to authenticate against s3 storage
+	AccessKey string
+
+	// SecretKey used to authenticate against s3 storage
+	SecretKey string
+
+	// Replicas for the development minio instance
+	Replicas int32
+
+	// VolumeSpec for the Minio instance
+	gitlabv1beta1.VolumeSpec
+}
+
+// SystemBuildOptions retrieves options from the Gitlab custom resource
+// and uses them to build configuration options used to deploy
+// the Gitlab instance
+func SystemBuildOptions(cr *gitlabv1beta1.Gitlab) ConfigurationOptions {
+	options := ConfigurationOptions{
+		Namespace:      cr.Namespace,
+		GitlabURL:      DomainNameOnly(cr.Spec.URL),
+		EnableRegistry: !cr.Spec.Registry.Disabled,
+		RegistryURL:    DomainNameOnly(cr.Spec.Registry.URL),
+		PostgreSQL:     getName(cr.Name, "postgresql"),
+		RedisMaster:    getName(cr.Name, "redis"),
+		Gitaly:         getName(cr.Name, "gitaly"),
+		Registry:       getName(cr.Name, "registry"),
+		Webservice:     getName(cr.Name, "webservice"),
+		ObjectStore: ObjectStoreOptions{
+			URL: DomainNameOnly(cr.Spec.ObjectStore.URL),
+			VolumeSpec: gitlabv1beta1.VolumeSpec{
+				StorageClass: cr.Spec.ObjectStore.StorageClass,
+			},
+		},
+	}
+
+	if IsEmailConfigured(cr) {
+		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
+	}
+
+	if cr.Spec.ObjectStore.Development {
+		options.ObjectStore.URL = getName(cr.Name, "minio")
+		options.ObjectStore.Capacity = "5Gi"
+	}
+
+	setObjectStoreEndpoint(cr, &options)
+
+	if cr.Spec.ObjectStore.Credentials != "" {
+		getObjectStoreKeys(cr, &options)
+	}
+
+	return options
+}
+
+// ObjectStoreEndpointURL sets up the enpoint to be used to
+// interact with S3 object store service
+func setObjectStoreEndpoint(cr *gitlabv1beta1.Gitlab, options *ConfigurationOptions) {
+	var port, endpointURL string
+	protocol := "https"
+
+	if cr.Spec.ObjectStore.Development {
+		protocol = "http"
+		port = ":9000"
+		endpointURL = strings.Join([]string{fmt.Sprintf("%s://", protocol), options.ObjectStore.URL, port}, "")
+	}
+
+	if cr.Spec.ObjectStore.URL == "" {
+		endpointURL = ""
+	}
+
+	if strings.Contains(cr.Spec.ObjectStore.URL, "://") {
+		endpointURL = cr.Spec.ObjectStore.URL
+	}
+
+	endpointURL = strings.Join([]string{fmt.Sprintf("%s://", protocol), cr.Spec.ObjectStore.URL}, "")
+	options.ObjectStore.Endpoint = endpointURL
 }
 
 // RailsOptions defines parameters
@@ -117,50 +193,12 @@ type RailsOptions struct {
 	JWTSigningKey []string
 }
 
-// TaskRunnerOptions defines options
-// for Task Runner configurations
-type TaskRunnerOptions struct {
-	RedisMaster string
-	Namespace   string
-	GitlabURL   string
-	Minio       string
-	MinioURL    string
-	Registry    string
-	RegistryURL string
-	Gitaly      string
-	EmailFrom   string
-	ReplyTo     string
-	PostgreSQL  string
-}
+func getObjectStoreKeys(cr *gitlabv1beta1.Gitlab, options *ConfigurationOptions) {
+	keys, err := gitlabutils.SecretData(cr.Spec.ObjectStore.Credentials, cr.Namespace)
+	if err != nil && errors.IsNotFound(err) {
+		log.Error(err, "Invalid object store credentials")
+	}
 
-// ConfigOptions has options for
-// Redis and Postgres configs
-type ConfigOptions struct {
-	RedisMaster string
-	Postgres    string
-}
-
-// MigrationOptions provides options
-// required by the migrations job
-type MigrationOptions struct {
-	Namespace   string
-	RedisMaster string
-	PostgreSQL  string
-	Gitaly      string
-	GitlabURL   string
-}
-
-// ObjectStoreOptions defines the
-// options for a development object store
-type ObjectStoreOptions struct {
-	// URL defines address for development
-	// S3 storage service
-	URL string
-	// Credentials is the name of the secret
-	// with the 'accesskey' and 'secretkey'
-	Credentials string
-	// Replicas for the development minio instance
-	Replicas int32
-	// VolumeSpec for the Minio instance
-	gitlabv1beta1.VolumeSpec
+	options.ObjectStore.AccessKey = keys["accesskey"]
+	options.ObjectStore.AccessKey = keys["secretkey"]
 }

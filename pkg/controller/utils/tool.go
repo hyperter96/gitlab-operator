@@ -204,18 +204,18 @@ func IsPodRunning(pod *corev1.Pod) bool {
 }
 
 // SecretData gets a secret by name and returns its data
-func SecretData(name, namespace string) map[string][]byte {
+func SecretData(name, namespace string) (map[string]string, error) {
 	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
-		return map[string][]byte{}
+		return map[string]string{}, err
 	}
 
 	secret, err := client.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		return map[string][]byte{}
+		return map[string]string{}, err
 	}
 
-	return secret.Data
+	return secret.StringData, nil
 }
 
 // IsMinioAvailable checks if Minio API provided

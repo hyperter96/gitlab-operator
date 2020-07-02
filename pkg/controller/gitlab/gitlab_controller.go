@@ -239,11 +239,8 @@ func (r *ReconcileGitlab) reconcileChildResources(cr *gitlabv1beta1.Gitlab) erro
 		return err
 	}
 
-	// Deploy minio for development or testing purposes
-	if cr.Spec.ObjectStore.Development {
-		if err := r.reconcileMinioInstance(cr); err != nil {
-			return err
-		}
+	if err := r.reconcileMinioInstance(cr); err != nil {
+		return err
 	}
 
 	wg := sync.WaitGroup{}

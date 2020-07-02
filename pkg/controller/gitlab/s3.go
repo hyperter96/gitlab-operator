@@ -23,11 +23,18 @@ func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 		"secretkey": secretKey,
 	}
 
+	options := SystemBuildOptions(cr)
+	if cr.Spec.ObjectStore.Credentials != "" {
+		minio.StringData["accesskey"] = options.ObjectStore.AccessKey
+		minio.StringData["secretkey"] = options.ObjectStore.SecretKey
+	}
+
 	return minio
 }
 
 func getMinioSatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+	options := SystemBuildOptions(cr)
 
 	var replicas int32 = 1
 
@@ -165,7 +172,7 @@ func getMinioSatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 					},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							"storage": gitlabutils.ResourceQuantity("10Gi"),
+							"storage": gitlabutils.ResourceQuantity(options.ObjectStore.Capacity),
 						},
 					},
 				},
@@ -234,13 +241,17 @@ func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error
 		return err
 	}
 
-	svc := getMinioService(cr)
-	if err := r.createKubernetesResource(svc, cr); err != nil {
-		return err
+	// Only deploy the minio service and statefulset for development builds
+	if cr.Spec.ObjectStore.Development {
+		svc := getMinioService(cr)
+		if err := r.createKubernetesResource(svc, cr); err != nil {
+			return err
+		}
+
+		// deploy minio
+		minio := getMinioSatefulSet(cr)
+		return r.createKubernetesResource(minio, cr)
 	}
 
-	// deploy minio
-	minio := getMinioSatefulSet(cr)
-	return r.createKubernetesResource(minio, cr)
-
+	return nil
 }

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: gitlab-operator
+  template:
+    metadata:
+      labels:
+        name: gitlab-operator
+    spec:
+      serviceAccountName: gitlab-operator
+      containers:
+        - name: gitlab-operator
+          # Replace this with the built image name
+          image: quay.io/eochieng/gitlab-operator:latest
+          command:
+          - gitlab-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "gitlab-operator"

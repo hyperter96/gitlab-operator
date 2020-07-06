@@ -1,0 +1,7 @@
+apiVersion: gitlab.com/v1beta1
+kind: Runner
+metadata:
+  name: example
+spec:
+  gitlab:
+    name: example

@@ -1,0 +1,4 @@
+concurrent = 10
+check_interval = 30
+log_level = "info"
+listen_address = '[::]:9252'

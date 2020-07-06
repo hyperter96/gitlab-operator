@@ -1,0 +1,5 @@
+channels:
+- currentCSV: gitlab-operator.v0.1.12
+  name: beta
+defaultChannel: beta
+packageName: gitlab-operator

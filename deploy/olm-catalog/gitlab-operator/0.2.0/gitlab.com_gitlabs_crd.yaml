@@ -1,0 +1,201 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: gitlabs.gitlab.com
+spec:
+  group: gitlab.com
+  names:
+    kind: Gitlab
+    listKind: GitlabList
+    plural: gitlabs
+    singular: gitlab
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Gitlab is the Schema for the gitlabs API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: GitlabSpec defines the desired state of Gitlab
+          properties:
+            email:
+              description: 'SMTPConfiguration defines options for Gitlab registry
+                More on configuration options available below: https://docs.gitlab.com/omnibus/settings/smtp.html'
+              properties:
+                authentication:
+                  description: 'Authentication represents authentication mechanism
+                    Options include: login, plain, cram_md5'
+                  type: string
+                displayName:
+                  description: DisplayName represents the name of the email
+                  type: string
+                domain:
+                  description: Domain represents the email domain
+                  type: string
+                enableSSL:
+                  description: EnableSSL enables/disables SSL/TLS
+                  type: boolean
+                enableStartTLS:
+                  description: EnableStartTLS enables starttls
+                  type: boolean
+                from:
+                  description: EmailFrom represents the from address of outgoing email
+                  type: string
+                host:
+                  description: Host is the SMTP host
+                  type: string
+                opensslVerifyMode:
+                  description: 'OpenSSLVerifyMode sets how OpenSSL checks the certificate
+                    whenever TLS is used OpenSSLVerifyMode can be: ''none'', ''peer'''
+                  type: string
+                password:
+                  description: Password represents the password for SMTP user
+                  type: string
+                port:
+                  description: Port represents SMTP port
+                  format: int32
+                  type: integer
+                replyTo:
+                  description: ReplyTO specifies a reply to email address
+                  type: string
+                username:
+                  description: Username represents the SMTP username for sending email
+                  type: string
+              type: object
+            minio:
+              description: MinioSpec defines options for Gitlab registry
+              properties:
+                capacity:
+                  description: Capacity defines the storage volume capacity used by
+                    each minio node. E.g. if the size is set to 10Gi and you have
+                    4 replicas, a total of 40Gi will be required by minio
+                  type: string
+                credentials:
+                  description: Credentials contains the name of the secret that contains
+                    the `accesskey` and `secretkey` values required to access an existing
+                    minio instance. Should be an even number equal to or larger than
+                    four
+                  type: string
+                disable:
+                  type: boolean
+                replicas:
+                  description: Replicas dictates the number of minio nodes to deploy
+                  format: int32
+                  type: integer
+                tlsSecret:
+                  description: TLS is the name of the secret containing the tls certificate
+                    used to secure the minio endpoint
+                  type: string
+                url:
+                  description: URL provides a domain / DNS name that can be used to
+                    reach the minio deployment
+                  type: string
+              type: object
+            postgresql:
+              description: DatabaseSpec defines database options
+              properties:
+                replicas:
+                  format: int32
+                  type: integer
+              type: object
+            redis:
+              description: RedisSpec defines Redis options
+              properties:
+                replicas:
+                  format: int32
+                  type: integer
+              type: object
+            registry:
+              description: RegistrySpec defines options for Gitlab registry
+              properties:
+                disable:
+                  type: boolean
+                tlsSecret:
+                  type: string
+                url:
+                  type: string
+              type: object
+            replicas:
+              format: int32
+              type: integer
+            tlsSecret:
+              type: string
+            url:
+              type: string
+            volumes:
+              description: ComponentVolumeSpec defines volumes for the different Gitlab
+                peieces
+              properties:
+                database:
+                  description: Postgres database volume for PGDATA
+                  properties:
+                    capacity:
+                      description: Capacity of the volume
+                      type: string
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
+                  type: object
+                redis:
+                  description: Redis key value store volume
+                  properties:
+                    capacity:
+                      description: Capacity of the volume
+                      type: string
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
+                  type: object
+                repositories:
+                  description: Gitlab registry volume
+                  properties:
+                    capacity:
+                      description: Capacity of the volume
+                      type: string
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
+                  type: object
+              type: object
+          required:
+          - replicas
+          type: object
+        status:
+          description: GitlabStatus defines the observed state of Gitlab
+          properties:
+            health:
+              description: HealthCheck represents the status  of services that make
+                up Gitlab
+              properties:
+                database:
+                  type: string
+                redis:
+                  type: string
+                workhorse:
+                  type: string
+              type: object
+            phase:
+              description: Phase represents status of the Gitlab resource
+              type: string
+            stage:
+              type: string
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true

@@ -1,0 +1,14 @@
+scorecard:
+  # Setting a global scorecard option
+  output: json
+  bundle: "deploy/olm-catalog/gitlab-operator"
+  plugins:
+    - basic:
+        cr-manifest:
+          - "deploy/crds/gitlab.com_v1beta1_runner_gitlab.com_cr.yaml"
+          - "deploy/crds/gitlab.com_v1beta1_gitlab_cr.yaml"
+    - olm:
+        cr-manifest:
+          - "deploy/crds/gitlab.com_v1beta1_runner_gitlab.com_cr.yaml"
+          - "deploy/crds/gitlab.com_v1beta1_gitlab_cr.yaml"
+        csv-path: "deploy/olm-catalog/gitlab-operator/0.1.1/gitlab-operator.v0.1.1.clusterserviceversion.yaml"

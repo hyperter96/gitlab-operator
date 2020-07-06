@@ -1,8 +1,8 @@
 package gitlab
 
 import (
-	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
+	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/utils"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -245,6 +245,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 
 func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 	labels := gitlabutils.Label(cr.Name, "bucket", gitlabutils.GitlabType)
+	options := SystemBuildOptions(cr)
 
 	buckets := gitlabutils.GenericJob(gitlabutils.Component{
 		Namespace: cr.Namespace,
@@ -288,7 +289,7 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-minio-secret",
+										Name: options.ObjectStore.Credentials,
 									},
 								},
 							},

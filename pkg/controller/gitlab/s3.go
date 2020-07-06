@@ -1,8 +1,8 @@
 package gitlab
 
 import (
-	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
+	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,22 +11,17 @@ import (
 
 func getMinioSecret(cr *gitlabv1beta1.Gitlab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+	options := SystemBuildOptions(cr)
 
 	secretKey := gitlabutils.Password(gitlabutils.PasswordOptions{
 		EnableSpecialChars: false,
 		Length:             48,
 	})
 
-	minio := gitlabutils.GenericSecret(cr.Name+"-minio-secret", cr.Namespace, labels)
+	minio := gitlabutils.GenericSecret(options.ObjectStore.Credentials, cr.Namespace, labels)
 	minio.StringData = map[string]string{
 		"accesskey": "gitlab",
 		"secretkey": secretKey,
-	}
-
-	options := SystemBuildOptions(cr)
-	if cr.Spec.ObjectStore.Credentials != "" {
-		minio.StringData["accesskey"] = options.ObjectStore.AccessKey
-		minio.StringData["secretkey"] = options.ObjectStore.SecretKey
 	}
 
 	return minio
@@ -150,7 +145,7 @@ func getMinioSatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-minio-secret",
+										Name: options.ObjectStore.Credentials,
 									},
 								},
 							},
@@ -236,9 +231,12 @@ func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error
 		return err
 	}
 
-	secret := getMinioSecret(cr)
-	if err := r.createKubernetesResource(secret, cr); err != nil {
-		return err
+	// Do not create secret if user provides credentials secret
+	if cr.Spec.ObjectStore.Credentials != "" {
+		secret := getMinioSecret(cr)
+		if err := r.createKubernetesResource(secret, cr); err != nil {
+			return err
+		}
 	}
 
 	// Only deploy the minio service and statefulset for development builds

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
+	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -104,7 +104,11 @@ type ObjectStoreOptions struct {
 
 	// Credentials is the name of the secret
 	// that contains the 'accesskey' and 'secretkey'
-	// Credentials string
+	Credentials string
+
+	// Capacity of the volume to be used by the development
+	// minio instance
+	Capacity string
 
 	// AccessKey used to authenticate against s3 storage
 	AccessKey string
@@ -134,7 +138,8 @@ func SystemBuildOptions(cr *gitlabv1beta1.Gitlab) ConfigurationOptions {
 		Registry:       getName(cr.Name, "registry"),
 		Webservice:     getName(cr.Name, "webservice"),
 		ObjectStore: ObjectStoreOptions{
-			URL: DomainNameOnly(cr.Spec.ObjectStore.URL),
+			URL:         DomainNameOnly(cr.Spec.ObjectStore.URL),
+			Credentials: strings.Join([]string{cr.Name, "minio-secret"}, "-"),
 			VolumeSpec: gitlabv1beta1.VolumeSpec{
 				StorageClass: cr.Spec.ObjectStore.StorageClass,
 			},
@@ -159,8 +164,8 @@ func SystemBuildOptions(cr *gitlabv1beta1.Gitlab) ConfigurationOptions {
 	return options
 }
 
-// ObjectStoreEndpointURL sets up the enpoint to be used to
-// interact with S3 object store service
+// set up the enpoint and othe options for the
+// S3 object store service
 func setObjectStoreEndpoint(cr *gitlabv1beta1.Gitlab, options *ConfigurationOptions) {
 	var port, endpointURL string
 	protocol := "https"
@@ -177,6 +182,11 @@ func setObjectStoreEndpoint(cr *gitlabv1beta1.Gitlab, options *ConfigurationOpti
 
 	if strings.Contains(cr.Spec.ObjectStore.URL, "://") {
 		endpointURL = cr.Spec.ObjectStore.URL
+	}
+
+	// Set the
+	if credentials := cr.Spec.ObjectStore.Credentials; credentials != "" {
+		options.ObjectStore.Credentials = credentials
 	}
 
 	endpointURL = strings.Join([]string{fmt.Sprintf("%s://", protocol), cr.Spec.ObjectStore.URL}, "")
@@ -200,5 +210,5 @@ func getObjectStoreKeys(cr *gitlabv1beta1.Gitlab, options *ConfigurationOptions)
 	}
 
 	options.ObjectStore.AccessKey = keys["accesskey"]
-	options.ObjectStore.AccessKey = keys["secretkey"]
+	options.ObjectStore.SecretKey = keys["secretkey"]
 }

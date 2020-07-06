@@ -3,8 +3,8 @@ package gitlab
 import (
 	"context"
 
-	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
+	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,6 +14,7 @@ import (
 
 func getRegistryDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
+	options := SystemBuildOptions(cr)
 
 	return gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,
@@ -169,7 +170,7 @@ func getRegistryDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-minio-secret",
+										Name: options.ObjectStore.Credentials,
 									},
 								},
 							},

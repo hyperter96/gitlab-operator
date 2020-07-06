@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"gitlab.com/ochienged/gitlab-operator/pkg/controller/runner"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/runner"
 )
 
 func init() {

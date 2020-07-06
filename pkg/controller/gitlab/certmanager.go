@@ -4,8 +4,8 @@ import (
 	acmev1alpha2 "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	certmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	gitlabv1beta1 "gitlab.com/ochienged/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	gitlabutils "gitlab.com/ochienged/gitlab-operator/pkg/controller/utils"
+	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

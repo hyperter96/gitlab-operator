@@ -1,4 +1,4 @@
-module gitlab.com/ochienged/gitlab-operator
+module gitlab.com/gitlab-org/gl-openshift/gitlab-operator
 
 go 1.13
 

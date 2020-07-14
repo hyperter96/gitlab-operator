@@ -307,7 +307,7 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 		},
 	})
 
-	var mcUser int64 = 0
+	var mcUser int64
 	buckets.Spec.Template.Spec.ServiceAccountName = "gitlab"
 	buckets.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &mcUser,

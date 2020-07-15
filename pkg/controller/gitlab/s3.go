@@ -5,6 +5,7 @@ import (
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -231,12 +232,9 @@ func (r *ReconcileGitlab) reconcileMinioInstance(cr *gitlabv1beta1.Gitlab) error
 		return err
 	}
 
-	// Do not create secret if user provides credentials secret
-	if cr.Spec.ObjectStore.Credentials != "" {
-		secret := getMinioSecret(cr)
-		if err := r.createKubernetesResource(secret, cr); err != nil {
-			return err
-		}
+	secret := getMinioSecret(cr)
+	if err := r.createKubernetesResource(secret, cr); err != nil && errors.IsAlreadyExists(err) {
+		return err
 	}
 
 	// Only deploy the minio service and statefulset for development builds

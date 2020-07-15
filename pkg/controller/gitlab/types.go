@@ -157,9 +157,7 @@ func SystemBuildOptions(cr *gitlabv1beta1.Gitlab) ConfigurationOptions {
 
 	setObjectStoreEndpoint(cr, &options)
 
-	if cr.Spec.ObjectStore.Credentials != "" {
-		getObjectStoreKeys(cr, &options)
-	}
+	setObjectStoreCredentials(cr, &options)
 
 	return options
 }
@@ -184,11 +182,6 @@ func setObjectStoreEndpoint(cr *gitlabv1beta1.Gitlab, options *ConfigurationOpti
 		options.ObjectStore.Endpoint = cr.Spec.ObjectStore.URL
 	}
 
-	// Sets the name of secret with 'accesskey' and 'secretkey'
-	if credentials := cr.Spec.ObjectStore.Credentials; credentials != "" {
-		options.ObjectStore.Credentials = credentials
-	}
-
 	options.ObjectStore.Endpoint = strings.Join([]string{fmt.Sprintf("%s://", protocol), cr.Spec.ObjectStore.URL}, "")
 }
 
@@ -202,10 +195,16 @@ type RailsOptions struct {
 	JWTSigningKey []string
 }
 
-func getObjectStoreKeys(cr *gitlabv1beta1.Gitlab, options *ConfigurationOptions) {
-	keys, err := gitlabutils.SecretData(cr.Spec.ObjectStore.Credentials, cr.Namespace)
+func setObjectStoreCredentials(cr *gitlabv1beta1.Gitlab, options *ConfigurationOptions) {
+	// Sets the name of secret with 'accesskey' and 'secretkey'
+	if !cr.Spec.ObjectStore.Development &&
+		options.ObjectStore.Credentials != "" {
+		options.ObjectStore.Credentials = cr.Spec.ObjectStore.Credentials
+	}
+
+	keys, err := gitlabutils.SecretData(options.ObjectStore.Credentials, cr.Namespace)
 	if err != nil && errors.IsNotFound(err) {
-		log.Error(err, "Invalid object store credentials")
+		log.Error(err, "Object store credentials not found")
 	}
 
 	options.ObjectStore.AccessKey = keys["accesskey"]

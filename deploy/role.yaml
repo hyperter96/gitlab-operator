@@ -8,7 +8,6 @@ rules:
   - ""
   resources:
   - pods
-  - pods/exec
   - pods/log
   - services
   - services/finalizers
@@ -117,6 +116,18 @@ rules:
   - get
   - delete
   - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  - cronjobs
+  verbs:
+  - create
+  - get
+  - update
+  - delete
+  - watch
+  - list
 - apiGroups:
   - miniocontroller.min.io
   resources:

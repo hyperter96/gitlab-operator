@@ -2,14 +2,14 @@ package backup
 
 import (
 	"context"
-	"fmt"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -55,6 +55,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// TODO(user): Modify this to be the types you create that are owned by the primary resource
 	// Watch for changes to secondary resource Pods and requeue the owner Backup
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Backup{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &batchv1.Job{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Backup{},
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.Watch(&source.Kind{Type: &batchv1beta1.CronJob{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &gitlabv1beta1.Backup{},
 	})
@@ -108,19 +124,7 @@ func (r *ReconcileBackup) Reconcile(request reconcile.Request) (reconcile.Result
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileBackup) reconcileBackupResources(cr *gitlabv1beta1.Backup) error {
-
-	output, err := r.ExecRemoteCommand(cr, []string{"bash", "-c", "backup-utility"})
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(output)
-
-	return nil
-}
-
-func (r *ReconcileBackup) createKubernetesResource(object interface{}, parent *gitlabv1beta1.Gitlab) error {
+func (r *ReconcileBackup) createKubernetesResource(object interface{}, parent *gitlabv1beta1.Backup) error {
 
 	// If parent resource is nil, not owner reference will be set
 	if parent != nil {
@@ -132,18 +136,18 @@ func (r *ReconcileBackup) createKubernetesResource(object interface{}, parent *g
 	return r.client.Create(context.TODO(), object.(runtime.Object))
 }
 
-// IfExists checks if a kubernetes resource exists
-func (r *ReconcileBackup) IfExists(name, namespace string, object runtime.Object) bool {
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, object)
-	if err != nil && errors.IsNotFound(err) {
-		return false
+func (r *ReconcileBackup) reconcileBackupResources(cr *gitlabv1beta1.Backup) error {
+	var backup interface{}
+
+	if IsOnDemandBackup(cr) {
+		backup = NewBackup(cr)
+	} else {
+		backup = NewBackupSchedule(cr)
 	}
 
-	return true
-}
+	if err := r.createKubernetesResource(backup, cr); err != nil {
+		return err
+	}
 
-// IsUpdated checks if a kubernetes resources has been updated
-// Compares newly generated object to the stored object
-func (r *ReconcileBackup) IsUpdated(object runtime.Object, stored runtime.Object) bool {
-	return false
+	return nil
 }

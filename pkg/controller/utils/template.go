@@ -5,6 +5,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -125,6 +126,37 @@ func GenericJob(component Component) *batchv1.Job {
 					Containers:     component.Containers,
 					Volumes:        component.Volumes,
 					RestartPolicy:  corev1.RestartPolicyOnFailure,
+				},
+			},
+		},
+	}
+}
+
+// GenericCronJob returns a kubernetes CronJob
+func GenericCronJob(component Component) *batchv1beta1.CronJob {
+	labels := component.Labels
+	var (
+		replicas     int32 = 1
+		backoffLimit int32 = 3
+	)
+
+	return &batchv1beta1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labels["app.kubernetes.io/instance"],
+			Namespace: component.Namespace,
+			Labels:    labels,
+		},
+		Spec: batchv1beta1.CronJobSpec{
+			ConcurrencyPolicy: batchv1beta1.ForbidConcurrent,
+			JobTemplate: batchv1beta1.JobTemplateSpec{
+				Spec: batchv1.JobSpec{
+					Parallelism:  &replicas,
+					BackoffLimit: &backoffLimit,
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: component.Containers,
+						},
+					},
 				},
 			},
 		},

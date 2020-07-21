@@ -2,6 +2,8 @@ package backup
 
 import (
 	"context"
+	"reflect"
+	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -10,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -78,6 +81,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &gitlabv1beta1.Backup{},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -137,17 +148,94 @@ func (r *ReconcileBackup) createKubernetesResource(object interface{}, parent *g
 }
 
 func (r *ReconcileBackup) reconcileBackupResources(cr *gitlabv1beta1.Backup) error {
-	var backup interface{}
 
-	if IsOnDemandBackup(cr) {
-		backup = NewBackup(cr)
-	} else {
-		backup = NewBackupSchedule(cr)
+	if err := r.reconcileBackup(cr); err != nil {
+		return err
 	}
 
-	if err := r.createKubernetesResource(backup, cr); err != nil {
+	if err := r.reconcileBackupConfigMap(cr); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (r *ReconcileBackup) reconcileBackup(cr *gitlabv1beta1.Backup) error {
+
+	if cr.Spec.Schedule != "" &&
+		len(strings.Split(cr.Spec.Schedule, " ")) == 5 {
+		return r.reconcileBackupSchedule(cr)
+	}
+
+	return r.reconcileBackupJob(cr)
+}
+
+func (r *ReconcileBackup) reconcileBackupJob(cr *gitlabv1beta1.Backup) error {
+	backup := NewBackup(cr)
+
+	if r.IfObjectExists(types.NamespacedName{Name: backup.Name, Namespace: cr.Namespace}, backup) {
+		return r.updateBackupJob(backup)
+	}
+
+	return r.createKubernetesResource(backup, cr)
+}
+
+func (r *ReconcileBackup) reconcileBackupSchedule(cr *gitlabv1beta1.Backup) error {
+	backup := NewBackupSchedule(cr)
+
+	if r.IfObjectExists(types.NamespacedName{Name: backup.Name, Namespace: cr.Namespace}, backup) {
+		return r.updateBackupSchedule(backup)
+	}
+
+	return r.createKubernetesResource(backup, cr)
+}
+
+// UpdateBackupJob updates existing the kubernetes job
+func (r *ReconcileBackup) updateBackupJob(backup *batchv1.Job) error {
+	found := &batchv1.Job{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		return err
+	}
+
+	if !reflect.DeepEqual(backup.Spec, found.Spec) {
+		log.Info("The specs do not match")
+	}
+
+	return nil
+}
+
+func (r *ReconcileBackup) updateBackupSchedule(backup *batchv1beta1.CronJob) error {
+	found := &batchv1beta1.CronJob{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		return err
+	}
+
+	if found.Spec.Schedule != backup.Spec.Schedule {
+		found.Spec.Schedule = backup.Spec.Schedule
+	}
+
+	return r.client.Update(context.TODO(), backup)
+}
+
+// IfObjectExists returns true if a given kubernetes object exists
+func (r *ReconcileBackup) IfObjectExists(key types.NamespacedName, result runtime.Object) bool {
+	err := r.client.Get(context.TODO(), key, result)
+	if err != nil && errors.IsNotFound(err) {
+		return false
+	}
+
+	return true
+}
+
+func (r *ReconcileBackup) reconcileBackupConfigMap(cr *gitlabv1beta1.Backup) error {
+	backupLock := backupConfigMap(cr)
+
+	if r.IfObjectExists(types.NamespacedName{Name: backupLock.Name, Namespace: cr.Namespace}, backupLock) {
+		// read data in configmap
+		return nil
+	}
+
+	return r.createKubernetesResource(backupLock, cr)
 }

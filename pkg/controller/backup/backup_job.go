@@ -10,14 +10,20 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// IsOnDemandBackup returns true if backup is
-// supposed to run immediately
+// IsOnDemandBackup returns true if no backup schedule is
+// provided. This implies backup should run immediately
 func IsOnDemandBackup(cr *gitlabv1beta1.Backup) bool {
 	if len(strings.Split(cr.Spec.Schedule, " ")) == 5 {
 		return false
 	}
 
-	return len(strings.Split(cr.Spec.Schedule, " ")) == 1 && cr.Spec.Schedule == "now"
+	return cr.Spec.Schedule == ""
+}
+
+func backupConfigMap(cr *gitlabv1beta1.Backup) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "backup-lock", gitlabutils.BackupType)
+
+	return gitlabutils.GenericConfigMap(labels["app.kubernetes.io/instance"], cr.Namespace, labels)
 }
 
 // NewBackupSchedule returns a CronJob with schedule for backups
@@ -40,6 +46,10 @@ func NewBackupSchedule(cr *gitlabv1beta1.Backup) *batchv1beta1.CronJob {
 					{
 						Name:  "NAMESPACE",
 						Value: cr.Namespace,
+					},
+					{
+						Name:  "BACKUP_LOCK",
+						Value: strings.Join([]string{cr.Name, "backup", "lock"}, "-"),
 					},
 				},
 			},
@@ -73,6 +83,10 @@ func NewBackup(cr *gitlabv1beta1.Backup) *batchv1.Job {
 					{
 						Name:  "NAMESPACE",
 						Value: cr.Namespace,
+					},
+					{
+						Name:  "BACKUP_LOCK",
+						Value: strings.Join([]string{cr.Name, "backup", "lock"}, "-"),
 					},
 				},
 			},

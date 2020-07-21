@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/utils"
-	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
@@ -110,12 +108,6 @@ type ObjectStoreOptions struct {
 	// minio instance
 	Capacity string
 
-	// AccessKey used to authenticate against s3 storage
-	AccessKey string
-
-	// SecretKey used to authenticate against s3 storage
-	SecretKey string
-
 	// Replicas for the development minio instance
 	Replicas int32
 
@@ -202,11 +194,4 @@ func setObjectStoreCredentials(cr *gitlabv1beta1.Gitlab, options *ConfigurationO
 		options.ObjectStore.Credentials = cr.Spec.ObjectStore.Credentials
 	}
 
-	keys, err := gitlabutils.SecretData(options.ObjectStore.Credentials, cr.Namespace)
-	if err != nil && errors.IsNotFound(err) {
-		log.Error(err, "Object store credentials not found")
-	}
-
-	options.ObjectStore.AccessKey = keys["accesskey"]
-	options.ObjectStore.SecretKey = keys["secretkey"]
 }

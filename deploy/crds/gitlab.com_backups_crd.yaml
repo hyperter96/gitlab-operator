@@ -37,6 +37,8 @@ spec:
             schedule:
               description: Schedule defines the time and day to run backup
               type: string
+          required:
+          - instance
           type: object
         status:
           description: BackupStatus defines the observed state of Backup

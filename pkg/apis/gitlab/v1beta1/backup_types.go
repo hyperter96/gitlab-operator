@@ -10,7 +10,7 @@ import (
 // BackupSpec defines the desired state of Backup
 type BackupSpec struct {
 	// Instance represents the GitLab instance to backup
-	Instance string `json:"instance,omitempty"`
+	Instance string `json:"instance"`
 
 	// Schedule defines the time and day to run backup
 	Schedule string `json:"schedule,omitempty"`

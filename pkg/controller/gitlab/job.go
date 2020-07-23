@@ -261,10 +261,6 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 						Name:  "MINIO_ENDPOINT",
 						Value: options.ObjectStore.Endpoint,
 					},
-					{
-						Name:  "MINIO_PORT",
-						Value: "9000",
-					},
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{

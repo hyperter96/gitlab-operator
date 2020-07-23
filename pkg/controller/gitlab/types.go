@@ -157,14 +157,7 @@ func SystemBuildOptions(cr *gitlabv1beta1.Gitlab) ConfigurationOptions {
 // set up the enpoint and othe options for the
 // S3 object store service
 func setObjectStoreEndpoint(cr *gitlabv1beta1.Gitlab, options *ConfigurationOptions) {
-	var port string
 	protocol := "https"
-
-	if cr.Spec.ObjectStore.Development {
-		protocol = "http"
-		port = ":9000"
-		options.ObjectStore.Endpoint = strings.Join([]string{fmt.Sprintf("%s://", protocol), options.ObjectStore.URL, port}, "")
-	}
 
 	if cr.Spec.ObjectStore.URL == "" {
 		options.ObjectStore.Endpoint = ""
@@ -174,7 +167,12 @@ func setObjectStoreEndpoint(cr *gitlabv1beta1.Gitlab, options *ConfigurationOpti
 		options.ObjectStore.Endpoint = cr.Spec.ObjectStore.URL
 	}
 
-	options.ObjectStore.Endpoint = strings.Join([]string{fmt.Sprintf("%s://", protocol), cr.Spec.ObjectStore.URL}, "")
+	if cr.Spec.ObjectStore.Development {
+		minioSocket := []string{"http://", fmt.Sprintf("%s-minio", cr.Name), ":9000"}
+		options.ObjectStore.Endpoint = strings.Join(minioSocket, "")
+	} else {
+		options.ObjectStore.Endpoint = fmt.Sprintf("%s://%s", protocol, cr.Spec.ObjectStore.URL)
+	}
 }
 
 // RailsOptions defines parameters

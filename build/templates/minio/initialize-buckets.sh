@@ -8,8 +8,8 @@ connectToMinio() {
   set -e ; # fail if we can't read the keys.
   ACCESS=$(cat /config/accesskey) ; SECRET=$(cat /config/secretkey) ;
   set +e ; # The connections to minio are allowed to fail.
-  echo "Connecting to Minio server: http://$MINIO_ENDPOINT:$MINIO_PORT" ;
-  MC_COMMAND="mc config host add myminio http://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+  echo "Connecting to Minio server: $MINIO_ENDPOINT" ;
+  MC_COMMAND="mc config host add myminio $MINIO_ENDPOINT $ACCESS $SECRET" ;
   $MC_COMMAND ;
   STATUS=$? ;
   until [ $STATUS -eq 0 ] ;

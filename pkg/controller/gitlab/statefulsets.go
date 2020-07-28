@@ -72,7 +72,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "init-chmod-data",
-				Image:           MiniDebImage,
+				Image:           BuildRelease(cr).MiniDebian(),
 				ImagePullPolicy: corev1.PullAlways,
 				Command: []string{
 					"sh",
@@ -103,7 +103,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "postgres",
-				Image:           PostgresImage,
+				Image:           BuildRelease(cr).Postgresql(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -200,7 +200,7 @@ func getPostgresStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 			{
 				Name:            "metrics",
-				Image:           PostgresExporterImage,
+				Image:           BuildRelease(cr).PostgresqlExporter(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -368,7 +368,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "redis",
-				Image:           RedisImage,
+				Image:           BuildRelease(cr).Redis(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/bin/bash", "-c", redisEntrypoint},
 				Env: []corev1.EnvVar{
@@ -420,7 +420,7 @@ func getRedisStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 			{
 				Name:            "metrics",
-				Image:           RedisExporterImage,
+				Image:           BuildRelease(cr).RedisExporter(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{
@@ -554,7 +554,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "certificates",
-				Image:           GitLabCertificatesImage,
+				Image:           BuildRelease(cr).Certificates(),
 				ImagePullPolicy: corev1.PullAlways,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -570,7 +570,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 			},
 			{
 				Name:            "configure",
-				Image:           BusyboxImage,
+				Image:           BuildRelease(cr).Busybox(),
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"sh", "/config/configure"},
 				VolumeMounts: []corev1.VolumeMount{
@@ -599,7 +599,7 @@ func getGitalyStatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "gitaly",
-				Image:           GitalyImage,
+				Image:           BuildRelease(cr).Gitaly(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{

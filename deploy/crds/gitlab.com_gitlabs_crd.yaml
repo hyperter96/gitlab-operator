@@ -1556,6 +1556,8 @@ spec:
                 url:
                   type: string
               type: object
+            release:
+              type: string
             replicas:
               format: int32
               type: integer
@@ -1617,6 +1619,8 @@ spec:
               type: object
             phase:
               description: Phase represents status of the Gitlab resource
+              type: string
+            release:
               type: string
             stage:
               type: string

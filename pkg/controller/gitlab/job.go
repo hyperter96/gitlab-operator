@@ -16,7 +16,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "certificates",
-				Image:           GitLabCertificatesImage,
+				Image:           BuildRelease(cr).Certificates(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -32,7 +32,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 			},
 			{
 				Name:            "configure",
-				Image:           BusyboxImage,
+				Image:           BuildRelease(cr).Busybox(),
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"sh", "/config/configure"},
 				Resources: corev1.ResourceRequirements{
@@ -61,7 +61,7 @@ func getMigrationsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 		Containers: []corev1.Container{
 			{
 				Name:            "migrations",
-				Image:           GitLabTaskRunnerImage,
+				Image:           BuildRelease(cr).TaskRunner(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -253,7 +253,7 @@ func createMinioBucketsJob(cr *gitlabv1beta1.Gitlab) *batchv1.Job {
 		Containers: []corev1.Container{
 			{
 				Name:            "mc",
-				Image:           MinioClientImage,
+				Image:           BuildRelease(cr).MinioClient(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/bin/sh", "/config/initialize"},
 				Env: []corev1.EnvVar{

@@ -8,6 +8,7 @@ import (
 // GitlabSpec defines the desired state of Gitlab
 type GitlabSpec struct {
 	Replicas    int32               `json:"replicas"`
+	Release     string              `json:"release,omitempty"`
 	URL         string              `json:"url,omitempty"`
 	TLS         string              `json:"tls,omitempty"`
 	SMTP        SMTPConfiguration   `json:"email,omitempty"`
@@ -138,6 +139,7 @@ type ComponentVolumeSpec struct {
 type GitlabStatus struct {
 	// Phase represents status of the Gitlab resource
 	Phase       string       `json:"phase,omitempty"`
+	Release     string       `json:"release,omitempty"`
 	Stage       string       `json:"stage,omitempty"`
 	HealthCheck *HealthCheck `json:"health,omitempty"`
 }

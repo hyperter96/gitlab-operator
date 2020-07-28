@@ -23,7 +23,7 @@ func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "certificates",
-				Image:           GitLabCertificatesImage,
+				Image:           BuildRelease(cr).Certificates(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -39,7 +39,7 @@ func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 			},
 			{
 				Name:            "configure",
-				Image:           BusyboxImage,
+				Image:           BuildRelease(cr).Busybox(),
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"sh", "/config/configure"},
 				Resources: corev1.ResourceRequirements{
@@ -68,7 +68,7 @@ func getShellDeployment(cr *gitlabv1beta1.Gitlab) *appsv1.Deployment {
 		Containers: []corev1.Container{
 			{
 				Name:            "gitlab-shell",
-				Image:           GitLabShellImage,
+				Image:           BuildRelease(cr).Shell(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{

@@ -41,7 +41,7 @@ func getMinioSatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		InitContainers: []corev1.Container{
 			{
 				Name:            "configure",
-				Image:           BusyboxImage,
+				Image:           BuildRelease(cr).Busybox(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"sh", "/config/configure"},
 				Resources: corev1.ResourceRequirements{
@@ -64,7 +64,7 @@ func getMinioSatefulSet(cr *gitlabv1beta1.Gitlab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "minio",
-				Image:           MinioImage,
+				Image:           BuildRelease(cr).Minio(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Args:            []string{"-C", "/tmp/.minio", "--quiet", "server", "/export"},
 				Resources: corev1.ResourceRequirements{

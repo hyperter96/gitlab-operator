@@ -13,7 +13,7 @@ ENV OPERATOR=/usr/local/bin/gitlab-operator \
 COPY LICENSE /licenses/GITLAB
 
 # Copy config templates
-COPY build/templates /templates
+COPY build/assets /
 
 # install operator binary
 COPY build/_output/bin/gitlab-operator ${OPERATOR}

@@ -1,21 +1,27 @@
 module gitlab.com/gitlab-org/gl-openshift/gitlab-operator
 
-go 1.13
+go 1.14
 
 require (
 	github.com/coreos/prometheus-operator v0.34.0
 	github.com/jetstack/cert-manager v0.14.3
 	github.com/minio/minio-operator v0.0.0-20200321170334-b6403bdd65fe
 	github.com/nginxinc/nginx-ingress-operator v0.0.4
+	github.com/onsi/ginkgo v1.14.0
+	github.com/onsi/gomega v1.10.1
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/operator-framework/operator-sdk v0.16.0
+	github.com/pkg/errors v0.8.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
-	gopkg.in/yaml.v2 v2.2.8
+	golang.org/x/sys v0.0.0-20200803210538-64077c9b5642 // indirect
+	gopkg.in/yaml.v2 v2.3.0
+	helm.sh/helm/v3 v3.0.2
 	k8s.io/api v0.17.3
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v12.0.0+incompatible
 	sigs.k8s.io/controller-runtime v0.5.1-0.20200307095134-d0de78d9f1c1
+	sigs.k8s.io/yaml v1.1.0
 
 )
 

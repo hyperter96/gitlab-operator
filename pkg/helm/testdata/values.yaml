@@ -1,0 +1,6 @@
+foo:
+  bar: FOOBAR
+  baz:
+    - FOOBAZ-0
+bar: BAR
+baz: BAZ

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/apis/gitlab/v1beta1"
+	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/pkg/controller/utils"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -105,11 +106,6 @@ type ReconcileBackup struct {
 
 // Reconcile reads that state of the cluster for a Backup object and makes changes based on the state read
 // and what is in the Backup.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileBackup) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling Backup")
@@ -233,9 +229,98 @@ func (r *ReconcileBackup) reconcileBackupConfigMap(cr *gitlabv1beta1.Backup) err
 	backupLock := backupConfigMap(cr)
 
 	if r.IfObjectExists(types.NamespacedName{Name: backupLock.Name, Namespace: cr.Namespace}, backupLock) {
-		// read data in configmap
-		return nil
+		if err := r.reconcileBackupStatus(cr); err != nil {
+			return err
+		}
+
+		lock := &corev1.ConfigMap{}
+		if err := r.client.Get(context.TODO(), types.NamespacedName{Name: backupLock.Name, Namespace: cr.Namespace}, lock); err != nil {
+			return err
+		}
+		lock.Data = map[string]string{}
+
+		return r.client.Patch(context.TODO(), lock, client.MergeFrom(backupLock))
 	}
 
 	return r.createKubernetesResource(backupLock, cr)
+}
+
+func (r *ReconcileBackup) reconcileBackupStatus(cr *gitlabv1beta1.Backup) error {
+	lockName := strings.Join([]string{cr.Name, "backup", "lock"}, "-")
+	backupData, err := gitlabutils.ConfigMapData(lockName, cr.Namespace)
+	if err != nil {
+		log.Error(err, "Error getting configmap data")
+	}
+
+	backup := &gitlabv1beta1.Backup{}
+	if err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, backup); err != nil {
+	}
+
+	if start, ok := backupData["startTime"]; ok {
+		backup.Status.StartedAt = start
+	}
+
+	if completed, ok := backupData["stopTime"]; ok {
+		backup.Status.CompletedAt = completed
+	}
+
+	if r.isBackupRunning(cr, backupData) && backup.Status.CompletedAt == "" {
+		backup.Status.Phase = gitlabv1beta1.BackupRunning
+	}
+
+	if bkOut, ok := backupData["output"]; ok {
+		if r.isBackupComplete(backup, bkOut) {
+			backup.Status.Phase = gitlabv1beta1.BackupCompleted
+		}
+	}
+
+	if bkErr, ok := backupData["error"]; ok {
+		if r.isBackupFailed(cr, bkErr) {
+			backup.Status.Phase = gitlabv1beta1.BackupFailed
+		}
+	}
+
+	if backup.Spec.Schedule != "" {
+		backup.Status.Phase = gitlabv1beta1.BackupScheduled
+	}
+
+	if !reflect.DeepEqual(cr.Status, backup.Status) {
+		return r.client.Status().Update(context.TODO(), backup)
+	}
+
+	return nil
+}
+
+func (r *ReconcileBackup) getBackupJobResource(cr *gitlabv1beta1.Backup) *batchv1.Job {
+	job := &batchv1.Job{}
+	jobName := strings.Join([]string{cr.Name, "backup"}, "-")
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: jobName, Namespace: cr.Namespace}, job)
+	if err != nil && errors.IsNotFound(err) {
+		return nil
+	}
+
+	return job
+}
+
+func (r *ReconcileBackup) isBackupFailed(cr *gitlabv1beta1.Backup, backupError string) bool {
+	job := r.getBackupJobResource(cr)
+	if job == nil {
+		return false
+	}
+
+	return job.Status.Succeeded < 1 && !strings.Contains(backupError, "Module python-magic is not available")
+}
+
+func (r *ReconcileBackup) isBackupRunning(cr *gitlabv1beta1.Backup, data map[string]string) bool {
+
+	job := r.getBackupJobResource(cr)
+	if job == nil {
+		return false
+	}
+
+	return job.Status.CompletionTime == nil && cr.Spec.Schedule == "" && len(data) == 0
+}
+
+func (r *ReconcileBackup) isBackupComplete(cr *gitlabv1beta1.Backup, backupOutput string) bool {
+	return cr.Status.CompletedAt != "" // && backupOutput != ""
 }

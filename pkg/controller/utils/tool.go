@@ -218,6 +218,21 @@ func SecretData(name, namespace string) (map[string]string, error) {
 	return secret.StringData, nil
 }
 
+// ConfigMapData returns data contained in a configmap
+func ConfigMapData(name, namespace string) (map[string]string, error) {
+	client, err := KubernetesConfig().NewKubernetesClient()
+	if err != nil {
+		return map[string]string{}, err
+	}
+
+	cm, err := client.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return map[string]string{}, err
+	}
+
+	return cm.Data, nil
+}
+
 // IsMinioAvailable checks if Minio API provided
 // by minio operator is present
 func IsMinioAvailable() bool {

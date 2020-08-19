@@ -1,7 +1,7 @@
 apiVersion: gitlab.com/v1beta1
 kind: Backup
 metadata:
-  name: example-backup
+  name: example
 spec:
-  # Add fields here
   instance: example
+  skip: repository,registry

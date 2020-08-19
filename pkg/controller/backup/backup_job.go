@@ -26,6 +26,50 @@ func backupConfigMap(cr *gitlabv1beta1.Backup) *corev1.ConfigMap {
 	return gitlabutils.GenericConfigMap(labels["app.kubernetes.io/instance"], cr.Namespace, labels)
 }
 
+func backupEnvBuilder(cr *gitlabv1beta1.Backup) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name:  "GITLAB_NAME",
+			Value: cr.Spec.Instance,
+		},
+		{
+			Name:  "NAMESPACE",
+			Value: cr.Namespace,
+		},
+		{
+			Name:  "JOB_NAME",
+			Value: strings.Join([]string{cr.Name, "backup", "lock"}, "-"),
+		},
+		{
+			Name:  "REMOTE_COMMAND",
+			Value: backupCommand(cr),
+		},
+	}
+}
+
+func backupCommand(cr *gitlabv1beta1.Backup) string {
+	command := []string{"backup-utility"}
+
+	if cr.Spec.Restore &&
+		(cr.Spec.Timestamp != "" || cr.Spec.URL != "") {
+		command = append(command, "--restore")
+	}
+
+	if cr.Spec.Timestamp != "" {
+		command = append(command, "-t", cr.Spec.Timestamp)
+	}
+
+	if cr.Spec.URL != "" {
+		command = append(command, "-f", cr.Spec.URL)
+	}
+
+	if cr.Spec.Exclusions != "" {
+		command = append(command, "--skip", cr.Spec.Exclusions)
+	}
+
+	return strings.Join(command, " ")
+}
+
 // NewBackupSchedule returns a CronJob with schedule for backups
 func NewBackupSchedule(cr *gitlabv1beta1.Backup) *batchv1beta1.CronJob {
 	labels := gitlabutils.Label(cr.Name, "backup", gitlabutils.BackupType)
@@ -37,21 +81,8 @@ func NewBackupSchedule(cr *gitlabv1beta1.Backup) *batchv1beta1.CronJob {
 			{
 				Name:            "control",
 				Image:           "registry.gitlab.com/ochienged/backup-control:latest",
-				ImagePullPolicy: corev1.PullIfNotPresent,
-				Env: []corev1.EnvVar{
-					{
-						Name:  "GITLAB_NAME",
-						Value: cr.Spec.Instance,
-					},
-					{
-						Name:  "NAMESPACE",
-						Value: cr.Namespace,
-					},
-					{
-						Name:  "BACKUP_LOCK",
-						Value: strings.Join([]string{cr.Name, "backup", "lock"}, "-"),
-					},
-				},
+				ImagePullPolicy: corev1.PullAlways,
+				Env:             backupEnvBuilder(cr),
 			},
 		},
 	})
@@ -74,21 +105,8 @@ func NewBackup(cr *gitlabv1beta1.Backup) *batchv1.Job {
 			{
 				Name:            "control",
 				Image:           "registry.gitlab.com/ochienged/backup-control:latest",
-				ImagePullPolicy: corev1.PullIfNotPresent,
-				Env: []corev1.EnvVar{
-					{
-						Name:  "GITLAB_NAME",
-						Value: cr.Spec.Instance,
-					},
-					{
-						Name:  "NAMESPACE",
-						Value: cr.Namespace,
-					},
-					{
-						Name:  "BACKUP_LOCK",
-						Value: strings.Join([]string{cr.Name, "backup", "lock"}, "-"),
-					},
-				},
+				ImagePullPolicy: corev1.PullAlways,
+				Env:             backupEnvBuilder(cr),
 			},
 		},
 	})

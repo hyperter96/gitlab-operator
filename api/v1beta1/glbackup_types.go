@@ -73,6 +73,7 @@ type GLBackupStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=gbk
 // +kubebuilder:subresource:status
 
 // GLBackup is the Schema for the glbackups API

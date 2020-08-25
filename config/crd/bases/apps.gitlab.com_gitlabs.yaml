@@ -13,6 +13,8 @@ spec:
     kind: GitLab
     listKind: GitLabList
     plural: gitlabs
+    shortNames:
+    - gl
     singular: gitlab
   scope: Namespaced
   subresources:
@@ -1567,7 +1569,8 @@ spec:
                     whenever TLS is used OpenSSLVerifyMode can be: ''none'', ''peer'''
                   type: string
                 password:
-                  description: Password represents the password for SMTP user
+                  description: Password contains name of secret containing the password
+                    for SMTP user
                   type: string
                 port:
                   description: Port represents SMTP port

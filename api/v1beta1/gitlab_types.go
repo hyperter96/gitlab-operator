@@ -84,7 +84,8 @@ type SMTPConfiguration struct {
 	Domain string `json:"domain,omitempty"`
 	// Username represents the SMTP username for sending email
 	Username string `json:"username,omitempty"`
-	// Password represents the password for SMTP user
+	// Password contains name of secret containing
+	// the password for SMTP user
 	Password string `json:"password,omitempty"`
 	// Authentication represents authentication mechanism
 	// Options include: login, plain, cram_md5
@@ -168,6 +169,7 @@ type GitLabStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=gl
 // +kubebuilder:subresource:status
 
 // GitLab is the Schema for the gitlabs API

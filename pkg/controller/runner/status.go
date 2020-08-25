@@ -16,7 +16,7 @@ import (
 )
 
 func runnerPod(cr *gitlabv1beta1.Runner, client *kubernetes.Clientset) (*corev1.Pod, error) {
-	pods, err := client.CoreV1().Pods(cr.Namespace).List(metav1.ListOptions{
+	pods, err := client.CoreV1().Pods(cr.Namespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app.kubernetes.io/part-of",
 	})
 	if err != nil {
@@ -37,7 +37,7 @@ func runnerPod(cr *gitlabv1beta1.Runner, client *kubernetes.Clientset) (*corev1.
 func openLogStream(pod *corev1.Pod, client *kubernetes.Clientset) (string, error) {
 	logReader, err := client.CoreV1().RESTClient().Get().
 		Resource("pods").SubResource("log").Namespace(pod.Namespace).Name(pod.Name).
-		VersionedParams(&corev1.PodLogOptions{}, scheme.ParameterCodec).Stream()
+		VersionedParams(&corev1.PodLogOptions{}, scheme.ParameterCodec).Stream(context.TODO())
 	if err != nil {
 		return "", err
 	}

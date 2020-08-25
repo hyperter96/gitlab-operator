@@ -210,7 +210,7 @@ func SecretData(name, namespace string) (map[string]string, error) {
 		return map[string]string{}, err
 	}
 
-	secret, err := client.CoreV1().Secrets(namespace).Get(name, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return map[string]string{}, err
 	}
@@ -225,7 +225,7 @@ func ConfigMapData(name, namespace string) (map[string]string, error) {
 		return map[string]string{}, err
 	}
 
-	cm, err := client.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
+	cm, err := client.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return map[string]string{}, err
 	}

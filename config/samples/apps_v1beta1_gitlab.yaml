@@ -1,0 +1,17 @@
+apiVersion: apps.gitlab.com/v1beta1
+kind: GitLab
+metadata:
+  name: example
+spec:
+  url: gitlab.example.com
+  registry:
+    url: registry.example.com
+  objectStore:
+    development: true
+  volumes:
+    database:
+      capacity: 8Gi
+    redis:
+      capacity: 4Gi
+    repositories:
+      capacity: 10Gi

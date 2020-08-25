@@ -1,0 +1,91 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: glbackups.apps.gitlab.com
+spec:
+  group: apps.gitlab.com
+  names:
+    kind: GLBackup
+    listKind: GLBackupList
+    plural: glbackups
+    singular: glbackup
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: GLBackup is the Schema for the glbackups API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: GLBackupSpec defines the desired state of GLBackup
+          properties:
+            instance:
+              description: Instance represents the GitLab instance to backup
+              type: string
+            restore:
+              description: 'Restore when set to true the backup defined by ID: will
+                be restored to the gitlab instance'
+              type: boolean
+            schedule:
+              description: Schedule defines the time and day to run backup It takes
+                cron time format
+              type: string
+            skip:
+              description: Exclusions allows user to exclude components to backup
+              type: string
+            timestamp:
+              description: Timestamp defines the prefix of the backup job
+              type: string
+            url:
+              description: URL defines the address of the backup job
+              type: string
+          required:
+          - instance
+          type: object
+        status:
+          description: GLBackupStatus defines the observed state of GLBackup
+          properties:
+            completedAt:
+              description: Completed returns time backup terminated or completed
+              type: string
+            phase:
+              description: BackupState informs of current backup state
+              enum:
+              - Running
+              - Completed
+              - Scheduled
+              - Failed
+              type: string
+            startedAt:
+              description: StartedAt returns time when backup was initiated
+              type: string
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

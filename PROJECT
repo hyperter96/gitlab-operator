@@ -1,0 +1,17 @@
+domain: gitlab.com
+layout: go.kubebuilder.io/v2
+projectName: gitlab-operator
+repo: gitlab.com/gitlab-org/gl-openshift/gitlab-operator
+resources:
+- group: apps
+  kind: GitLab
+  version: v1beta1
+- group: apps
+  kind: Runner
+  version: v1beta1
+- group: apps
+  kind: GLBackup
+  version: v1beta1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}

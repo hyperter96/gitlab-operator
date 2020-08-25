@@ -118,3 +118,7 @@ bundle: manifests
 .PHONY: bundle-build
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+# Generate install manifests
+deploy-manifests:
+	kustomize build --output config/manifests config/default

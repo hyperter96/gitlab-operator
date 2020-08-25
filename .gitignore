@@ -1,5 +1,6 @@
 # Generated manager Golang binary
 bin/manager
+config/manifests/*.yaml
 # Created by https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 ### Emacs ###
 # -*- mode: gitignore; -*-

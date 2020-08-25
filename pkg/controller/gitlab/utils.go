@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"reflect"
@@ -55,7 +56,7 @@ func isEndpointReady(service string, cr *gitlabv1beta1.Gitlab) bool {
 		log.Error(err, "Unable to acquire client")
 	}
 
-	endpoint, err := client.CoreV1().Endpoints(cr.Namespace).Get(service, metav1.GetOptions{})
+	endpoint, err := client.CoreV1().Endpoints(cr.Namespace).Get(context.TODO(), service, metav1.GetOptions{})
 	if err != nil {
 		// Endpoint was not found so return false
 		return false
@@ -79,7 +80,7 @@ func getOperatorMetricsEndpoints(cr *gitlabv1beta1.Gitlab) (*corev1.Endpoints, e
 		log.Error(err, "Unable to acquire client")
 	}
 
-	return client.CoreV1().Endpoints(cr.Namespace).Get(operatorMetricsSVC, metav1.GetOptions{})
+	return client.CoreV1().Endpoints(cr.Namespace).Get(context.TODO(), operatorMetricsSVC, metav1.GetOptions{})
 }
 
 func getNetworkAddress(address string) string {

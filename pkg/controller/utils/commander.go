@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,7 +73,7 @@ func NewCommandClient() (CommandClient, error) {
 // TaskRunnerDeployment returns the deployment resource associated with the GitLab instance
 func (c CommandClient) TaskRunnerDeployment(cr *gitlabv1beta1.Gitlab) (*appsv1.Deployment, error) {
 	deployment := strings.Join([]string{cr.Name, "task-runner"}, "-")
-	target, err := c.client.AppsV1().Deployments(cr.Namespace).Get(deployment, metav1.GetOptions{})
+	target, err := c.client.AppsV1().Deployments(cr.Namespace).Get(context.TODO(), deployment, metav1.GetOptions{})
 	if err != nil {
 		return &appsv1.Deployment{}, err
 	}
@@ -85,7 +86,7 @@ func (c CommandClient) DeploymentPods(cr *gitlabv1beta1.Gitlab, obj *appsv1.Depl
 
 	podLabels := labels.Set(obj.Spec.Template.Labels)
 
-	pods, err := c.client.CoreV1().Pods(cr.Namespace).List(
+	pods, err := c.client.CoreV1().Pods(cr.Namespace).List(context.TODO(),
 		metav1.ListOptions{LabelSelector: podLabels.AsSelector().String()},
 	)
 	if err != nil {

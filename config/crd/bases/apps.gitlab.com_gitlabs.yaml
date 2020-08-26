@@ -1631,9 +1631,6 @@ spec:
               type: object
             release:
               type: string
-            replicas:
-              format: int32
-              type: integer
             tls:
               type: string
             url:
@@ -1673,8 +1670,6 @@ spec:
                       type: string
                   type: object
               type: object
-          required:
-          - replicas
           type: object
         status:
           description: GitLabStatus defines the observed state of GitLab

@@ -23,7 +23,6 @@ import (
 
 // GitLabSpec defines the desired state of GitLab
 type GitLabSpec struct {
-	Replicas    int32               `json:"replicas"`
 	Release     string              `json:"release,omitempty"`
 	URL         string              `json:"url,omitempty"`
 	TLS         string              `json:"tls,omitempty"`

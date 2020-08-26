@@ -22,7 +22,8 @@ func IngressAnnotations(cr *gitlabv1beta1.GitLab, annotate bool) map[string]stri
 	return annotation
 }
 
-func getIngressController(cr *gitlabv1beta1.GitLab) *nginxv1alpha1.NginxIngressController {
+// IngressController returns nginx ingress controller
+func IngressController(cr *gitlabv1beta1.GitLab) *nginxv1alpha1.NginxIngressController {
 	labels := gitlabutils.Label(cr.Name, "ingress-controller", gitlabutils.GitlabType)
 
 	var replicas int32 = 1
@@ -50,7 +51,8 @@ func getIngressController(cr *gitlabv1beta1.GitLab) *nginxv1alpha1.NginxIngressC
 	}
 }
 
-func getGitlabIngress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
+// Ingress returns Ingress object used for GitLab
+func Ingress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 	labels := gitlabutils.Label(cr.Name, "ingress", gitlabutils.GitlabType)
 
 	return &extensionsv1beta1.Ingress{
@@ -96,7 +98,8 @@ func getGitlabIngress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 	}
 }
 
-func getRegistryIngress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
+// RegistryIngress returns ingress object for GitLab registry
+func RegistryIngress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 	labels := gitlabutils.Label(cr.Name, "ingress", gitlabutils.GitlabType)
 
 	return &extensionsv1beta1.Ingress{

@@ -43,9 +43,8 @@ func DefaultRelease() *Release {
 // BuildRelease returns user specified release
 // returns default release if custom release is not found
 func BuildRelease(cr *gitlabv1beta1.GitLab) *Release {
-	release := getRelease(fmt.Sprintf("release_%s.yaml", cr.Spec.Release))
-	if release != nil {
-		return release
+	if cr.Spec.Release != "" {
+		return getRelease(fmt.Sprintf("release_%s.yaml", cr.Spec.Release))
 	}
 
 	return DefaultRelease()
@@ -63,7 +62,7 @@ func getImage(release *Release, target string) string {
 // getRelease gets the release filename
 // and returns a release object
 func getRelease(filename string) *Release {
-	releaseFile, err := ioutil.ReadFile(filepath.Join("releases", filename))
+	releaseFile, err := ioutil.ReadFile(filepath.Join("/", "releases", filename))
 	if err != nil {
 		return nil
 	}

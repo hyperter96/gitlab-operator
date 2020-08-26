@@ -35,7 +35,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 
-	// nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	certmanagerv1beta1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1beta1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
@@ -67,7 +66,7 @@ type GitLabReconciler struct {
 // Reconcile triggers when an event occurs on the watched resource
 func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	_ = r.Log.WithValues("gitlab", req.NamespacedName)
+	log := r.Log.WithValues("gitlab", req.NamespacedName)
 
 	gitlab := &gitlabv1beta1.GitLab{}
 	if err := r.Get(ctx, req.NamespacedName, gitlab); err != nil {
@@ -91,11 +90,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.maskEmailPasword(gitlab); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if err := r.reconcileStatefulSets(gitlab); err != nil {
+	if err := r.reconcileStatefulSets(ctx, gitlab, log); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -113,11 +108,11 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		wg.Done()
 	}()
 
-	// if RequiresCertManagerCertificate(gitlab).All() {
-	// 	if err := r.reconcileCertManagerCertificates(gitlab); err != nil {
-	// 		return err
-	// 	}
-	// }
+	if gitlabctl.RequiresCertManagerCertificate(gitlab).All() {
+		if err := r.reconcileCertManagerCertificates(gitlab); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 
 	wg.Wait()
 
@@ -125,14 +120,14 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileDeployments(gitlab); err != nil {
+	if err := r.reconcileDeployments(ctx, gitlab); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	// Deploy ingress to expose GitLab
-	// if err := r.reconcileIngress(gitlab); err != nil {
-	// 	return err
-	// }
+	if err := r.reconcileIngress(gitlab); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	if gitlabutils.IsPrometheusSupported() {
 		// Deploy a prometheus service monitor
@@ -222,7 +217,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitlabExporterDeployment(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	exporter := gitlabctl.ExporterDeployment(cr)
 
 	if r.isObjectFound(exporter) {
@@ -233,7 +228,7 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(cr *gitlabv1beta1.G
 		return err
 	}
 
-	return r.Create(context.TODO(), exporter)
+	return r.Create(ctx, exporter)
 }
 
 func (r *GitLabReconciler) reconcileJobs(cr *gitlabv1beta1.GitLab) error {
@@ -284,7 +279,7 @@ func (r *GitLabReconciler) reconcileServiceMonitor(cr *gitlabv1beta1.GitLab) err
 	return r.createKubernetesResource(prometheus, nil)
 }
 
-func (r *GitLabReconciler) reconcileDeployments(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 
 	if err := r.reconcileWebserviceDeployment(cr); err != nil {
 		return err
@@ -306,14 +301,14 @@ func (r *GitLabReconciler) reconcileDeployments(cr *gitlabv1beta1.GitLab) error 
 		return err
 	}
 
-	if err := r.reconcileGitlabExporterDeployment(cr); err != nil {
+	if err := r.reconcileGitlabExporterDeployment(ctx, cr); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileStatefulSets(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, cr *gitlabv1beta1.GitLab, log logr.Logger) error {
 
 	var statefulsets []*appsv1.StatefulSet
 
@@ -579,35 +574,35 @@ func (r *GitLabReconciler) reconcileTaskRunnerDeployment(cr *gitlabv1beta1.GitLa
 // 	return nil
 // }
 
-// func (r *GitLabReconciler) reconcileIngress(cr *gitlabv1beta1.GitLab) error {
-// 	controller := getIngressController(cr)
-// 	if err := r.createKubernetesResource(controller, nil); err != nil {
-// 		return err
-// 	}
+func (r *GitLabReconciler) reconcileIngress(cr *gitlabv1beta1.GitLab) error {
+	controller := gitlabctl.IngressController(cr)
+	if err := r.createKubernetesResource(controller, nil); err != nil {
+		return err
+	}
 
-// 	var ingresses []*extensionsv1beta1.Ingress
-// 	gitlab := getGitlabIngress(cr)
+	var ingresses []*extensionsv1beta1.Ingress
+	gitlab := gitlabctl.Ingress(cr)
 
-// 	registry := getRegistryIngress(cr)
+	registry := gitlabctl.RegistryIngress(cr)
 
-// 	ingresses = append(ingresses,
-// 		gitlab,
-// 		registry,
-// 	)
+	ingresses = append(ingresses,
+		gitlab,
+		registry,
+	)
 
-// 	for _, ingress := range ingresses {
-// 		if err := r.createKubernetesResource(ingress, cr); err != nil {
-// 			return err
-// 		}
-// 	}
+	for _, ingress := range ingresses {
+		if err := r.createKubernetesResource(ingress, cr); err != nil {
+			return err
+		}
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
-// func (r *GitLabReconciler) reconcileCertManagerCertificates(cr *gitlabv1beta1.GitLab) error {
-// 	// certificates := RequiresCertificate(cr)
+func (r *GitLabReconciler) reconcileCertManagerCertificates(cr *gitlabv1beta1.GitLab) error {
+	// certificates := RequiresCertificate(cr)
 
-// 	issuer := CertificateIssuer(cr)
+	issuer := gitlabctl.CertificateIssuer(cr)
 
-// 	return r.createKubernetesResource(issuer, cr)
-// }
+	return r.createKubernetesResource(issuer, cr)
+}

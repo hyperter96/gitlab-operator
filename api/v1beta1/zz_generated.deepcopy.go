@@ -21,7 +21,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
+	acmev1beta1 "github.com/jetstack/cert-manager/pkg/apis/acme/v1beta1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -30,12 +30,12 @@ func (in *ACMEOptions) DeepCopyInto(out *ACMEOptions) {
 	*out = *in
 	if in.ExternalAccountBinding != nil {
 		in, out := &in.ExternalAccountBinding, &out.ExternalAccountBinding
-		*out = new(v1alpha2.ACMEExternalAccountBinding)
+		*out = new(acmev1beta1.ACMEExternalAccountBinding)
 		**out = **in
 	}
 	if in.Solvers != nil {
 		in, out := &in.Solvers, &out.Solvers
-		*out = make([]v1alpha2.ACMEChallengeSolver, len(*in))
+		*out = make([]acmev1beta1.ACMEChallengeSolver, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

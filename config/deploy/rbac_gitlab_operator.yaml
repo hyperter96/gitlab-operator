@@ -1,0 +1,185 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: gitlab-operator
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitlab-operator
+subjects:
+- kind: ServiceAccount
+  name: gitlab-operator
+  namespace: gitlab-operator
+roleRef:
+  kind: ClusterRole
+  name: gitlab-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: gitlab-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  - services
+  - services/finalizers
+  - endpoints
+  - persistentvolumeclaims
+  - events
+  - configmaps
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resourceNames:
+  - gitlab-operator
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  - deployments
+  verbs:
+  - get
+- apiGroups:
+  - apps.gitlab.com
+  resources:
+  - '*'
+  - runners
+  - backups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - list
+  - get
+  - watch
+  - delete
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - routes
+  - routes/custom-host
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - delete
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  - prometheuses
+  verbs:
+  - list
+  - create
+  - get
+  - watch
+  - delete
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - list
+  - get
+  - delete
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  - cronjobs
+  verbs:
+  - create
+  - get
+  - update
+  - delete
+  - watch
+  - list
+- apiGroups:
+  - miniocontroller.min.io
+  resources:
+  - minioinstances
+  verbs:
+  - create
+  - list
+  - watch
+  - delete
+  - update
+  - patch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - issuers
+  - certificates
+  verbs:
+  - create
+  - get
+  - list
+  - delete
+  - watch
+  - patch
+  - update
+- apiGroups:
+  - k8s.nginx.org
+  resources:
+  - nginxingresscontrollers
+  verbs:
+  - create
+  - update
+  - patch
+  - list
+  - get
+  - delete
+  - watch

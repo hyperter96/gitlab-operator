@@ -36,10 +36,10 @@ spec:
         name: manager
         resources:
           limits:
-            cpu: 100m
+            cpu: 200m
             memory: 150Mi
           requests:
-            cpu: 100m
+            cpu: 200m
             memory: 128Mi
       serviceAccountName: gitlab-operator
       terminationGracePeriodSeconds: 10

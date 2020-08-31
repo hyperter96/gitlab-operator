@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 // Label function returns uniform labels for resources
@@ -106,7 +107,7 @@ type KubeConfig struct {
 
 // KubernetesConfig returns kubernetes client config
 func KubernetesConfig() KubeConfig {
-	config, err := rest.InClusterConfig()
+	config, err := config.GetConfig()
 	if err != nil {
 		return KubeConfig{
 			Config: nil,
@@ -122,15 +123,13 @@ func KubernetesConfig() KubeConfig {
 
 // NewKubernetesClient returns a client that can be
 // used to interact with the kubernetes api
-func (k KubeConfig) NewKubernetesClient() (clientset *kubernetes.Clientset, err error) {
+func (k KubeConfig) NewKubernetesClient() (*kubernetes.Clientset, error) {
 	conf := k.Config
-	err = k.Error
-	if err != nil {
+	if err := k.Error; err != nil {
 		fmt.Printf("Error getting cluster config: %v", err)
 	}
 
-	clientset, err = kubernetes.NewForConfig(conf)
-	return
+	return kubernetes.NewForConfig(conf)
 }
 
 // GetSecretValue returns the value for a key from an existing secret

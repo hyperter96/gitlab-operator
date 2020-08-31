@@ -36,7 +36,7 @@ import (
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 
 	certmanagerv1beta1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1beta1"
-	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
+	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
@@ -125,8 +125,8 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	// Deploy ingress to expose GitLab
-	if err := r.reconcileIngress(gitlab); err != nil {
+	// Deploy route is on Openshift, Ingress otherwise
+	if err := r.exposeGitLabInstance(gitlab); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -159,7 +159,7 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&monitoringv1.ServiceMonitor{}).
 		Owns(&certmanagerv1beta1.Issuer{}).
 		Owns(&certmanagerv1beta1.Certificate{}).
-		Owns(&nginxv1alpha1.NginxIngressController{}).
+		// Owns(&nginxv1alpha1.NginxIngressController{}).
 		Complete(r)
 }
 
@@ -559,27 +559,38 @@ func (r *GitLabReconciler) reconcileTaskRunnerDeployment(cr *gitlabv1beta1.GitLa
 	return r.Create(context.TODO(), tasker)
 }
 
-// func (r *GitLabReconciler) reconcileRoute(cr *gitlabv1beta1.GitLab) error {
-// 	workhorse := getGitlabRoute(cr)
+func (r *GitLabReconciler) exposeGitLabInstance(cr *gitlabv1beta1.GitLab) error {
+	// if gitlabutils.IsOpenshift() {
+	// 	return r.reconcileRoute(cr)
+	// }
 
-// 	if err := r.createKubernetesResource(workhorse, cr); err != nil {
-// 		return err
-// 	}
+	return r.reconcileIngress(cr)
+}
 
-// 	registry := getRegistryRoute(cr)
+func (r *GitLabReconciler) reconcileRoute(cr *gitlabv1beta1.GitLab) error {
+	app := gitlabctl.MainRoute(cr)
 
-// 	if err := r.createKubernetesResource(registry, cr); err != nil {
-// 		return err
-// 	}
+	admin := gitlabctl.AdminRoute(cr)
 
-// 	return nil
-// }
+	registry := gitlabctl.RegistryRoute(cr)
+
+	var routes []*routev1.Route
+	routes = append(routes,
+		app,
+		admin,
+		registry,
+	)
+
+	for _, route := range routes {
+		if err := r.createKubernetesResource(route, cr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func (r *GitLabReconciler) reconcileIngress(cr *gitlabv1beta1.GitLab) error {
-	controller := gitlabctl.IngressController(cr)
-	if err := r.createKubernetesResource(controller, nil); err != nil {
-		return err
-	}
 
 	var ingresses []*extensionsv1beta1.Ingress
 	gitlab := gitlabctl.Ingress(cr)

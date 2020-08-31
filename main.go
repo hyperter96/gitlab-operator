@@ -31,7 +31,7 @@ import (
 	certmanagerv1beta1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1beta1"
 
 	// miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
-	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
+	// nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	appsv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers"
@@ -56,7 +56,7 @@ func init() {
 
 	// utilruntime.Must(miniov1.AddToScheme(scheme))
 
-	utilruntime.Must(nginxv1alpha1.SchemeBuilder.AddToScheme(scheme))
+	// utilruntime.Must(nginxv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

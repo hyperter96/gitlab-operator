@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -9,8 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// IngressAnnotations generates annotation for ingresses
-func IngressAnnotations(cr *gitlabv1beta1.GitLab, annotate bool) map[string]string {
+// EndpointAnnotations generates annotation for ingresses
+func EndpointAnnotations(cr *gitlabv1beta1.GitLab, annotate bool) map[string]string {
 	annotation := map[string]string{
 		"kubernetes.io/ingress.class": "nginx",
 	}
@@ -22,35 +21,6 @@ func IngressAnnotations(cr *gitlabv1beta1.GitLab, annotate bool) map[string]stri
 	return annotation
 }
 
-// IngressController returns nginx ingress controller
-func IngressController(cr *gitlabv1beta1.GitLab) *nginxv1alpha1.NginxIngressController {
-	labels := gitlabutils.Label(cr.Name, "ingress-controller", gitlabutils.GitlabType)
-
-	var replicas int32 = 1
-
-	return &nginxv1alpha1.NginxIngressController{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "gitlab-ingress-controller",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: nginxv1alpha1.NginxIngressControllerSpec{
-			EnableCRDs: true,
-			Image: nginxv1alpha1.Image{
-				Repository: "docker.io/nginx/nginx-ingress",
-				Tag:        "1.6.3-ubi",
-				PullPolicy: "Always",
-			},
-			// IngressClass: "gitlab",
-			// UseIngressClassOnly: true,
-			NginxPlus:   false,
-			Replicas:    &replicas,
-			ServiceType: "NodePort",
-			Type:        "deployment",
-		},
-	}
-}
-
 // Ingress returns Ingress object used for GitLab
 func Ingress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 	labels := gitlabutils.Label(cr.Name, "ingress", gitlabutils.GitlabType)
@@ -60,7 +30,7 @@ func Ingress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 			Name:        cr.Name + "-gitlab-ingress",
 			Namespace:   cr.Namespace,
 			Labels:      labels,
-			Annotations: IngressAnnotations(cr, RequiresCertManagerCertificate(cr).GitLab()),
+			Annotations: EndpointAnnotations(cr, RequiresCertManagerCertificate(cr).GitLab()),
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
@@ -107,7 +77,7 @@ func RegistryIngress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 			Name:        cr.Name + "-registry-ingress",
 			Namespace:   cr.Namespace,
 			Labels:      labels,
-			Annotations: IngressAnnotations(cr, RequiresCertManagerCertificate(cr).Registry()),
+			Annotations: EndpointAnnotations(cr, RequiresCertManagerCertificate(cr).Registry()),
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{

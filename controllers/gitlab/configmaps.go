@@ -1,0 +1,303 @@
+package gitlab
+
+import (
+	"bytes"
+	"text/template"
+
+	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	corev1 "k8s.io/api/core/v1"
+)
+
+// GetGitLabConfigMap returns the configmap object for GitLab resources
+func GetGitLabConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
+
+	var registryURL string = cr.Spec.Registry.URL
+	if registryURL == "" && !cr.Spec.Registry.Disabled {
+		registryURL = getRegistryURL(cr)
+	}
+
+	gitlab := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-config", cr.Namespace, labels)
+	options := SystemBuildOptions(cr)
+	gitlab.Data = map[string]string{
+		"gitlab_external_url":   parseURL(getGitlabURL(cr), hasTLS(cr)),
+		"postgres_db":           "gitlabhq_production",
+		"postgres_host":         options.PostgreSQL,
+		"postgres_user":         "gitlab",
+		"redis_host":            options.RedisMaster,
+		"registry_external_url": registryURL,
+		"installation_type":     labels["app.kubernetes.io/managed-by"],
+	}
+
+	return gitlab
+}
+
+// RedisConfigMap returns the configmap object containing Redis config
+func RedisConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
+
+	masterConf := gitlabutils.ReadConfig("/templates/redis/master.conf")
+	replicaConf := gitlabutils.ReadConfig("/templates/redis/replica.conf")
+	redisConf := gitlabutils.ReadConfig("/templates/redis/redis.conf")
+
+	redis := gitlabutils.GenericConfigMap(cr.Name+"-redis-config", cr.Namespace, labels)
+	redis.Data = map[string]string{
+		"master.conf":  masterConf,
+		"redis.conf":   redisConf,
+		"replica.conf": replicaConf,
+	}
+
+	return redis
+}
+
+// RedisSciptsConfigMap returns the configmap object containing Redis scripts
+func RedisSciptsConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
+
+	localLiveness := gitlabutils.ReadConfig("/templates/redis/liveness_local.sh")
+	masterAndLocalLiveness := gitlabutils.ReadConfig("/templates/redis/liveness_local_and_master.sh")
+	masterLiveness := gitlabutils.ReadConfig("/templates/redis/liveness_master.sh")
+	localReadiness := gitlabutils.ReadConfig("/templates/redis/readiness_local.sh")
+	masterAndLocalReadiness := gitlabutils.ReadConfig("/templates/redis/readiness_local_and_master.sh")
+	masterReadiness := gitlabutils.ReadConfig("/templates/redis/readiness_master.sh")
+
+	scripts := gitlabutils.GenericConfigMap(cr.Name+"-redis-health-config", cr.Namespace, labels)
+	scripts.Data = map[string]string{
+		"ping_liveness_local.sh":             localLiveness,
+		"ping_liveness_local_and_master.sh":  masterAndLocalLiveness,
+		"ping_liveness_master.sh":            masterLiveness,
+		"ping_readiness_local.sh":            localReadiness,
+		"ping_readiness_local_and_master.sh": masterAndLocalReadiness,
+		"ping_readiness_master.sh":           masterReadiness,
+	}
+
+	return scripts
+}
+
+// GitalyConfigMap returns the configmap object for Gitaly
+func GitalyConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
+
+	gitaly := gitlabutils.GenericConfigMap(cr.Name+"-gitaly-config", cr.Namespace, labels)
+
+	options := SystemBuildOptions(cr)
+
+	var shell bytes.Buffer
+	shellTemplate := template.Must(template.ParseFiles("/templates/gitaly/shell-config.yml.erb"))
+	shellTemplate.Execute(&shell, options)
+
+	gitalyConf := gitlabutils.ReadConfig("/templates/gitaly/config.toml.erb")
+	configureScript := gitlabutils.ReadConfig("/templates/gitaly/configure.sh")
+
+	gitaly.Data = map[string]string{
+		"config.toml.erb":      gitalyConf,
+		"configure":            configureScript,
+		"shell-config.yml.erb": shell.String(),
+	}
+
+	return gitaly
+}
+
+// WebserviceConfigMap returns the configmap object for GitLab webservice
+func WebserviceConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
+
+	webservice := gitlabutils.GenericConfigMap(cr.Name+"-webservice-config", cr.Namespace, labels)
+
+	configure := gitlabutils.ReadConfig("/templates/webservice/configure.sh")
+
+	options := SystemBuildOptions(cr)
+
+	var gitlab bytes.Buffer
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/webservice/gitlab.yml.erb"))
+	gitlabTemplate.Execute(&gitlab, options)
+
+	webservice.Data = map[string]string{
+		"configure":         configure,
+		"gitlab.yml.erb":    gitlab.String(),
+		"database.yml.erb":  getDatabaseConfiguration(cr),
+		"resque.yml.erb":    getRedisConfiguration(cr),
+		"cable.yml.erb":     getCableConfiguration(cr),
+		"installation_type": labels["app.kubernetes.io/managed-by"],
+	}
+
+	return webservice
+}
+
+// WorkhorseConfigMap returns the configmap object for GitLab workhorse
+func WorkhorseConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "workhorse", gitlabutils.GitlabType)
+	var config bytes.Buffer
+
+	workhorse := gitlabutils.GenericConfigMap(cr.Name+"-workhorse-config", cr.Namespace, labels)
+
+	configureSh := gitlabutils.ReadConfig("/templates/workhorse/configure.sh")
+
+	options := SystemBuildOptions(cr)
+
+	configTemplate := template.Must(template.ParseFiles("/templates/workhorse/workhorse-config.toml.erb"))
+	configTemplate.Execute(&config, options)
+
+	workhorse.Data = map[string]string{
+		"configure":                 configureSh,
+		"workhorse-config.toml.erb": config.String(),
+		"installation_type":         labels["app.kubernetes.io/managed-by"],
+	}
+
+	return workhorse
+}
+
+// ShellConfigMap returns the configmap object for GitLab shell
+func ShellConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
+	var script bytes.Buffer
+
+	configureScript := gitlabutils.ReadConfig("/templates/shell/configure.sh")
+	sshdConfig := gitlabutils.ReadConfig("/templates/shell/sshd-config")
+
+	options := SystemBuildOptions(cr)
+
+	configureTemplate := template.Must(template.ParseFiles("/templates/shell/config.yml.erb"))
+	configureTemplate.Execute(&script, options)
+
+	shell := gitlabutils.GenericConfigMap(cr.Name+"-shell-config", cr.Namespace, labels)
+	shell.Data = map[string]string{
+		"configure":      configureScript,
+		"config.yml.erb": script.String(),
+		"sshd_config":    sshdConfig,
+	}
+
+	return shell
+}
+
+// SidekiqConfigMap returns the configmap object for GitLab sidekiq
+func SidekiqConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "sidekiq", gitlabutils.GitlabType)
+
+	configureScript := gitlabutils.ReadConfig("/templates/sidekiq/configure.sh")
+	queuesYML := gitlabutils.ReadConfig("/templates/sidekiq/sidekiq_queues.yml.erb")
+
+	options := SystemBuildOptions(cr)
+
+	var gitlab bytes.Buffer
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/sidekiq/gitlab.yml.erb"))
+	gitlabTemplate.Execute(&gitlab, options)
+
+	sidekiq := gitlabutils.GenericConfigMap(cr.Name+"-sidekiq-config", cr.Namespace, labels)
+	sidekiq.Data = map[string]string{
+		"configure":              configureScript,
+		"database.yml.erb":       getDatabaseConfiguration(cr),
+		"resque.yml.erb":         getRedisConfiguration(cr),
+		"cable.yml.erb":          getCableConfiguration(cr),
+		"gitlab.yml.erb":         gitlab.String(),
+		"installation_type":      "gitlab-operator",
+		"sidekiq_queues.yml.erb": queuesYML,
+	}
+
+	return sidekiq
+}
+
+// ExporterConfigMap returns the configmap object for the GitLab Exporter
+func ExporterConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
+
+	configure := gitlabutils.ReadConfig("/templates/gitlab-exporter/configure.sh")
+
+	options := SystemBuildOptions(cr)
+	var exporterYML bytes.Buffer
+	exporterTemplate := template.Must(template.ParseFiles("/templates/gitlab-exporter/gitlab-exporter.yml.erb"))
+	exporterTemplate.Execute(&exporterYML, options)
+
+	exporter := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-exporter-config", cr.Namespace, labels)
+	exporter.Data = map[string]string{
+		"configure":               configure,
+		"gitlab-exporter.yml.erb": exporterYML.String(),
+	}
+
+	return exporter
+}
+
+// RegistryConfigMap returns configmap object for container Registry
+func RegistryConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
+
+	options := SystemBuildOptions(cr)
+	configure := gitlabutils.ReadConfig("/templates/registry/configure.sh")
+
+	var configYML bytes.Buffer
+	registryTemplate := template.Must(template.ParseFiles("/templates/registry/config.yml"))
+	registryTemplate.Execute(&configYML, options)
+
+	registry := gitlabutils.GenericConfigMap(cr.Name+"-registry-config", cr.Namespace, labels)
+	registry.Data = map[string]string{
+		"configure":  configure,
+		"config.yml": configYML.String(),
+	}
+
+	return registry
+}
+
+// TaskRunnerConfigMap returns configmap object for the TaskRunner deployment
+func TaskRunnerConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
+
+	options := SystemBuildOptions(cr)
+	gsutilconf := gitlabutils.ReadConfig("/templates/task-runner/configure-gsutil.sh")
+
+	var configure, gitlab bytes.Buffer
+	configureTemplate := template.Must(template.ParseFiles("/templates/task-runner/configure.sh"))
+	configureTemplate.Execute(&configure, options)
+
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/task-runner/gitlab.yml.erb"))
+	gitlabTemplate.Execute(&gitlab, options)
+
+	tasker := gitlabutils.GenericConfigMap(cr.Name+"-task-runner-config", cr.Namespace, labels)
+	tasker.Data = map[string]string{
+		"configure":        configure.String(),
+		"configure-gsutil": gsutilconf,
+		"gitlab.yml.erb":   gitlab.String(),
+		"database.yml.erb": getDatabaseConfiguration(cr),
+		"resque.yml.erb":   getRedisConfiguration(cr),
+		"cable.yml.erb":    getCableConfiguration(cr),
+	}
+
+	return tasker
+}
+
+// MigrationsConfigMap returns configmap object for the Migration job
+func MigrationsConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "migrations", gitlabutils.GitlabType)
+
+	options := SystemBuildOptions(cr)
+	configure := gitlabutils.ReadConfig("/templates/migration/configure.sh")
+
+	var gitlab bytes.Buffer
+	gitlabTemplate := template.Must(template.ParseFiles("/templates/migration/gitlab.yml.erb"))
+	gitlabTemplate.Execute(&gitlab, options)
+
+	migrations := gitlabutils.GenericConfigMap(cr.Name+"-migrations-config", cr.Namespace, labels)
+	migrations.Data = map[string]string{
+		"configure":        configure,
+		"gitlab.yml.erb":   gitlab.String(),
+		"database.yml.erb": getDatabaseConfiguration(cr),
+		"resque.yml.erb":   getRedisConfiguration(cr),
+		"cable.yml.erb":    getCableConfiguration(cr),
+	}
+
+	return migrations
+}
+
+// PostgresInitDBConfigMap returns configmap object containing Postgresql init scripts
+func PostgresInitDBConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "postgres", gitlabutils.GitlabType)
+
+	script := gitlabutils.ReadConfig("/templates/postgresql/postgresql-pgtrm.sh")
+
+	postgres := gitlabutils.GenericConfigMap(cr.Name+"-postgresql-initdb-config", cr.Namespace, labels)
+	postgres.Data = map[string]string{
+		"enable_extensions.sh": script,
+	}
+
+	return postgres
+}

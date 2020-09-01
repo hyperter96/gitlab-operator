@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: gitlab-runner
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: gitlab-runner
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  - pods
+  - events
+  - services
+  - services/status
+  - services/proxy
+  - services/finalizers
+  - resourcequotas
+  - pods/attach
+  - pods/exec
+  - pods/log
+  - persistentvolumeclaims
+  - configmaps
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - delete
+  - patch
+  - update
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitlab-runner
+subjects:
+- kind: ServiceAccount
+  name: gitlab-runner
+  namespace: gitlab-operator
+roleRef:
+  kind: ClusterRole
+  name: gitlab-runner
+  apiGroup: rbac.authorization.k8s.io

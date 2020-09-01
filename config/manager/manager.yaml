@@ -36,5 +36,10 @@ spec:
           requests:
             cpu: 200m
             memory: 20Mi
+        env:
+          - name: WATCH_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
       terminationGracePeriodSeconds: 10
       serviceAccountName: gitlab-operator

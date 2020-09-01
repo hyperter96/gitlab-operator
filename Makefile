@@ -67,7 +67,7 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # Build the docker image
-docker-build: #test # Pending https://github.com/kubernetes-sigs/kubebuilder/pull/1626
+docker-build: test # Pending https://github.com/kubernetes-sigs/kubebuilder/pull/1626
 	podman build . -t ${IMG}
 
 # Push the docker image

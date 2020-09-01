@@ -34,6 +34,11 @@ spec:
         - /manager
         image: quay.io/eochieng/gitlab-operator:latest
         name: manager
+        env:
+          - name: WATCH_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
         resources:
           limits:
             cpu: 200m

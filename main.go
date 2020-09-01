@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"errors"
 	"flag"
 	"os"
 
@@ -71,12 +72,18 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
+	watchedNamespace, err := getWatchedNamespace()
+	if err != nil {
+		setupLog.Error(err, "unable to get watched namespace, the manager will watch all namespaces")
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		Port:               9443,
 		LeaderElection:     enableLeaderElection,
 		LeaderElectionID:   "852d23b0.gitlab.com",
+		Namespace:          watchedNamespace,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -114,4 +121,13 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func getWatchedNamespace() (string, error) {
+	ns, ok := os.LookupEnv("WATCH_NAMESPACE")
+	if !ok {
+		return "", errors.New("WATCH_NAMESPACE env required")
+	}
+
+	return ns, nil
 }

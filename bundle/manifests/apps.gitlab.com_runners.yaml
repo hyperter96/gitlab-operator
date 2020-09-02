@@ -1,0 +1,91 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
+  name: runners.apps.gitlab.com
+spec:
+  group: apps.gitlab.com
+  names:
+    kind: Runner
+    listKind: RunnerList
+    plural: runners
+    singular: runner
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: Runner is the Schema for the runners API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: RunnerSpec defines the desired state of Runner
+          properties:
+            cache:
+              description: Cache defines an S3 compatible object store
+              properties:
+                bucket:
+                  description: Bucket defines the s3 bucket name
+                  type: string
+                credentials:
+                  description: Credentials is the name of the secret containing the
+                  type: string
+                insecure:
+                  description: Insecure enables use of HTTP protocol
+                  type: boolean
+                path:
+                  description: Path defines the Runner Cache path
+                  type: string
+                region:
+                  description: Region for the cache
+                  type: string
+                server:
+                  description: S3 cache server URL
+                  type: string
+              type: object
+            gitlab:
+              description: GitlabResource represents a Gitlab custom resource. Should only be used to reference Gitlab instance created by the operator
+              properties:
+                name:
+                  description: Name of gitlab resource in kubernetes / openshift
+                  type: string
+                url:
+                  description: Gitlab or Continuous Integration URL
+                  type: string
+              type: object
+            tags:
+              description: Tags passes the runner tags
+              type: string
+            token:
+              description: RegistrationToken is name of secret with the runner-registration-token key used to register the runner
+              type: string
+          type: object
+        status:
+          description: RunnerStatus defines the observed state of Runner
+          properties:
+            phase:
+              type: string
+            registration:
+              type: string
+          type: object
+      type: object
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

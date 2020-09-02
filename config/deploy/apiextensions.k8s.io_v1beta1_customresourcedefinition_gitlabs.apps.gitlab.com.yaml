@@ -1,5 +1,3 @@
-
----
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -106,7 +104,7 @@ spec:
                         description: Configures cert-manager to attempt to complete
                           authorizations by performing the DNS01 challenge flow.
                         properties:
-                          acmeDNS:
+                          acmedns:
                             description: Use the 'ACME DNS' (https://github.com/joohoi/acme-dns)
                               API to manage DNS01 challenge records.
                             properties:
@@ -200,7 +198,7 @@ spec:
                             - clientTokenSecretRef
                             - serviceConsumerDomain
                             type: object
-                          azureDNS:
+                          azuredns:
                             description: Use the Microsoft Azure DNS API to manage
                               DNS01 challenge records.
                             properties:
@@ -246,7 +244,7 @@ spec:
                             - resourceGroupName
                             - subscriptionID
                             type: object
-                          cloudDNS:
+                          clouddns:
                             description: Use the Google Cloud DNS API to manage DNS01
                               challenge records.
                             properties:
@@ -1538,6 +1536,51 @@ spec:
                     type: object
                   type: array
               type: object
+            email:
+              description: 'SMTPConfiguration defines options for Gitlab registry
+                More on configuration options available below: https://docs.gitlab.com/omnibus/settings/smtp.html'
+              properties:
+                authentication:
+                  description: 'Authentication represents authentication mechanism
+                    Options include: login, plain, cram_md5'
+                  type: string
+                displayName:
+                  description: DisplayName represents the name of the email
+                  type: string
+                domain:
+                  description: Domain represents the email domain
+                  type: string
+                enableSSL:
+                  description: EnableSSL enables/disables SSL/TLS
+                  type: boolean
+                enableStartTLS:
+                  description: EnableStartTLS enables starttls
+                  type: boolean
+                from:
+                  description: EmailFrom represents the from address of outgoing email
+                  type: string
+                host:
+                  description: Host is the SMTP host
+                  type: string
+                opensslVerifyMode:
+                  description: 'OpenSSLVerifyMode sets how OpenSSL checks the certificate
+                    whenever TLS is used OpenSSLVerifyMode can be: ''none'', ''peer'''
+                  type: string
+                password:
+                  description: Password contains name of secret containing the password
+                    for SMTP user
+                  type: string
+                port:
+                  description: Port represents SMTP port
+                  format: int32
+                  type: integer
+                replyTo:
+                  description: ReplyTO specifies a reply to email address
+                  type: string
+                username:
+                  description: Username represents the SMTP username for sending email
+                  type: string
+              type: object
             objectStore:
               description: ObjectStoreSpec defines options for Gitlab registry
               properties:
@@ -1586,51 +1629,6 @@ spec:
               type: object
             release:
               type: string
-            smtp:
-              description: 'SMTPConfiguration defines options for Gitlab registry
-                More on configuration options available below: https://docs.gitlab.com/omnibus/settings/smtp.html'
-              properties:
-                authentication:
-                  description: 'Authentication represents authentication mechanism
-                    Options include: login, plain, cram_md5'
-                  type: string
-                displayName:
-                  description: DisplayName represents the name of the email
-                  type: string
-                domain:
-                  description: Domain represents the email domain
-                  type: string
-                enableSSL:
-                  description: EnableSSL enables/disables SSL/TLS
-                  type: boolean
-                enableStartTLS:
-                  description: EnableStartTLS enables starttls
-                  type: boolean
-                from:
-                  description: EmailFrom represents the from address of outgoing email
-                  type: string
-                host:
-                  description: Host is the SMTP host
-                  type: string
-                opensslVerifyMode:
-                  description: 'OpenSSLVerifyMode sets how OpenSSL checks the certificate
-                    whenever TLS is used OpenSSLVerifyMode can be: ''none'', ''peer'''
-                  type: string
-                password:
-                  description: Password contains name of secret containing the password
-                    for SMTP user
-                  type: string
-                port:
-                  description: Port represents SMTP port
-                  format: int32
-                  type: integer
-                replyTo:
-                  description: ReplyTO specifies a reply to email address
-                  type: string
-                username:
-                  description: Username represents the SMTP username for sending email
-                  type: string
-              type: object
             tls:
               type: string
             url:

@@ -26,7 +26,7 @@ type GitLabSpec struct {
 	Release     string              `json:"release,omitempty"`
 	URL         string              `json:"url,omitempty"`
 	TLS         string              `json:"tls,omitempty"`
-	SMTP        SMTPConfiguration   `json:"email,omitempty"`
+	SMTP        SMTPConfiguration   `json:"smtp,omitempty"`
 	Registry    RegistrySpec        `json:"registry,omitempty"`
 	ObjectStore ObjectStoreSpec     `json:"objectStore,omitempty"`
 	Redis       *RedisSpec          `json:"redis,omitempty"`

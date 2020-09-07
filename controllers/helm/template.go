@@ -199,16 +199,18 @@ func (t *Template) ReplaceObject(selector ObjectSelector, object runtime.Object)
 	return nil, nil
 }
 
-// EditObjects selects all objects that match the selector and pass them to the editor.
-func (t *Template) EditObjects(selector ObjectSelector, editor ObjectEditor) (int, error) {
+// EditObjects edits all objects that the editor can handle.
+func (t *Template) EditObjects(editor ObjectEditor) (int, error) {
 	count := 0
 	for i := 0; i < len(t.objects); i++ {
-		if selector(*t.objects[i]) {
-			if err := editor(t.objects[i]); err != nil {
-				return count, err
+		err := editor(t.objects[i])
+		if err != nil {
+			if IsTypeMistmatchError(err) {
+				continue
 			}
-			count++
+			return count, err
 		}
+		count++
 	}
 	return count, nil
 }

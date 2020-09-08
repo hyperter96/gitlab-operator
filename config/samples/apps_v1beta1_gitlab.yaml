@@ -4,14 +4,15 @@ metadata:
   name: example
 spec:
   url: gitlab.example.com
+  volume:
+    capacity: 10Gi
   registry:
     url: registry.example.com
   objectStore:
     development: true
-  volumes:
-    database:
-      capacity: 8Gi
-    redis:
+  redis:
+    volume:
       capacity: 4Gi
-    repositories:
-      capacity: 10Gi
+  postgres:
+    volume:
+      capacity: 8Gi

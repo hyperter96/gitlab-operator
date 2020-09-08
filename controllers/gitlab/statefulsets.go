@@ -37,8 +37,8 @@ func PostgresStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 	}
 
 	// Mount volume is specified
-	if cr.Spec.Volumes.Postgres.Capacity != "" {
-		volumeSize := cr.Spec.Volumes.Postgres.Capacity
+	if cr.Spec.Database.Volume.Capacity != "" {
+		volumeSize := cr.Spec.Database.Volume.Capacity
 		claims = append(claims, corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "data",
@@ -334,8 +334,8 @@ func RedisStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 		},
 	}
 
-	if cr.Spec.Volumes.Redis.Capacity != "" {
-		volumeSize := cr.Spec.Volumes.Redis.Capacity
+	if cr.Spec.Redis.Volume.Capacity != "" {
+		volumeSize := cr.Spec.Redis.Volume.Capacity
 		claims = append(claims, corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "data",
@@ -522,7 +522,7 @@ func GitalyStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						"storage": gitlabutils.ResourceQuantity(cr.Spec.Volumes.Repositories.Capacity),
+						"storage": gitlabutils.ResourceQuantity(cr.Spec.Volume.Capacity),
 					},
 				},
 			},

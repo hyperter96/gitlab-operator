@@ -23,24 +23,26 @@ metadata:
             "name": "example"
           },
           "spec": {
-            "objectStore": {
-              "development": true
-            },
-            "registry": {
-              "url": "registry.example.com"
-            },
-            "url": "gitlab.example.com",
-            "volumes": {
-              "database": {
-                "capacity": "8Gi"
+              "url": "gitlab.example.com",
+              "volume": {
+                "capacity": "10Gi"
+              },
+              "registry": {
+                "url": "registry.example.com"
+              },
+              "objectStore": {
+                "development": true
               },
               "redis": {
-                "capacity": "4Gi"
+                "volume": {
+                    "capacity": "4Gi"
+                }
               },
-              "repositories": {
-                "capacity": "10Gi"
+              "postgres": {
+                "volume": {
+                    "capacity": "8Gi"
+                }
               }
-            }
           }
         },
         {
@@ -112,11 +114,6 @@ spec:
         path: tls
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Disable Registry defines if the GitLab container registry should be deployed
-        displayName: Disable Registry
-        path: registry.disable
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
       - description: Registry URL defines address at through which the GitLab registry can be reached
         displayName: Registry URL
         path: registry.url
@@ -127,6 +124,21 @@ spec:
         path: registry.tls
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret
+      - description: The volume capacity for the Redis volume e.g. 20Gi
+        displayName: Redis Volume
+        path: redis.volume.capacity
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The volume capacity for the Postgresql volume e.g. 20Gi
+        displayName: Postgresql Volume
+        path: postgres.volume.capacity
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The volume capacity for the repository volume e.g. 20Gi
+        displayName: Repository Volume
+        path: volume.capacity
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       statusDescriptors:
       - description: Phase defines the state of the GitLab instance
         displayName: Status

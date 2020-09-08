@@ -23,29 +23,32 @@ import (
 
 // GitLabSpec defines the desired state of GitLab
 type GitLabSpec struct {
-	Release     string              `json:"release,omitempty"`
-	URL         string              `json:"url,omitempty"`
-	TLS         string              `json:"tls,omitempty"`
-	SMTP        SMTPConfiguration   `json:"smtp,omitempty"`
-	Registry    RegistrySpec        `json:"registry,omitempty"`
-	ObjectStore ObjectStoreSpec     `json:"objectStore,omitempty"`
-	Redis       *RedisSpec          `json:"redis,omitempty"`
-	Database    *DatabaseSpec       `json:"postgresql,omitempty"`
-	CertIssuer  *ACMEOptions        `json:"acme,omitempty"`
-	Volumes     ComponentVolumeSpec `json:"volumes,omitempty"`
+	Release     string            `json:"release,omitempty"`
+	URL         string            `json:"url,omitempty"`
+	TLS         string            `json:"tls,omitempty"`
+	SMTP        SMTPConfiguration `json:"smtp,omitempty"`
+	Registry    RegistrySpec      `json:"registry,omitempty"`
+	ObjectStore ObjectStoreSpec   `json:"objectStore,omitempty"`
+	Redis       *RedisSpec        `json:"redis,omitempty"`
+	Database    *DatabaseSpec     `json:"postgres,omitempty"`
+	CertIssuer  *ACMEOptions      `json:"acme,omitempty"`
+	// Volume for Gitaly statefulset
+	Volume VolumeSpec `json:"volume,omitempty"`
 }
 
 // RedisSpec defines Redis options
 type RedisSpec struct {
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32      `json:"replicas,omitempty"`
+	Volume   VolumeSpec `json:"volume,omitempty"`
 }
 
 // DatabaseSpec defines database options
 type DatabaseSpec struct {
-	Replicas int32 `json:"replicas,omitempty"`
+	Replicas int32      `json:"replicas,omitempty"`
+	Volume   VolumeSpec `json:"volume,omitempty"`
 }
 
-// RegistrySpec defines options for Gitlab registry
+// RegistrySpec defines options for GitLab registry
 type RegistrySpec struct {
 	Disabled bool   `json:"disable,omitempty"`
 	URL      string `json:"url,omitempty"`
@@ -138,17 +141,6 @@ type VolumeSpec struct {
 	Capacity string `json:"capacity,omitempty"`
 	// StorageClass from which volume should originate
 	StorageClass string `json:"storageClass,omitempty"`
-}
-
-// ComponentVolumeSpec defines volumes for
-// the different Gitlab peieces
-type ComponentVolumeSpec struct {
-	// Postgres database volume for PGDATA
-	Postgres VolumeSpec `json:"database,omitempty"`
-	// Redis key value store volume
-	Redis VolumeSpec `json:"redis,omitempty"`
-	// Gitlab registry volume
-	Repositories VolumeSpec `json:"repositories,omitempty"`
 }
 
 // HealthCheck represents the status

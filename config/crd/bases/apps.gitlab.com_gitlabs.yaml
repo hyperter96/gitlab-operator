@@ -1560,12 +1560,22 @@ spec:
                     reach the minio deployment
                   type: string
               type: object
-            postgresql:
+            postgres:
               description: DatabaseSpec defines database options
               properties:
                 replicas:
                   format: int32
                   type: integer
+                volume:
+                  description: VolumeSpec defines volume specifications
+                  properties:
+                    capacity:
+                      description: Capacity of the volume
+                      type: string
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
+                  type: object
               type: object
             redis:
               description: RedisSpec defines Redis options
@@ -1573,9 +1583,19 @@ spec:
                 replicas:
                   format: int32
                   type: integer
+                volume:
+                  description: VolumeSpec defines volume specifications
+                  properties:
+                    capacity:
+                      description: Capacity of the volume
+                      type: string
+                    storageClass:
+                      description: StorageClass from which volume should originate
+                      type: string
+                  type: object
               type: object
             registry:
-              description: RegistrySpec defines options for Gitlab registry
+              description: RegistrySpec defines options for GitLab registry
               properties:
                 disable:
                   type: boolean
@@ -1635,40 +1655,15 @@ spec:
               type: string
             url:
               type: string
-            volumes:
-              description: ComponentVolumeSpec defines volumes for the different Gitlab
-                peieces
+            volume:
+              description: Volume for Gitaly statefulset
               properties:
-                database:
-                  description: Postgres database volume for PGDATA
-                  properties:
-                    capacity:
-                      description: Capacity of the volume
-                      type: string
-                    storageClass:
-                      description: StorageClass from which volume should originate
-                      type: string
-                  type: object
-                redis:
-                  description: Redis key value store volume
-                  properties:
-                    capacity:
-                      description: Capacity of the volume
-                      type: string
-                    storageClass:
-                      description: StorageClass from which volume should originate
-                      type: string
-                  type: object
-                repositories:
-                  description: Gitlab registry volume
-                  properties:
-                    capacity:
-                      description: Capacity of the volume
-                      type: string
-                    storageClass:
-                      description: StorageClass from which volume should originate
-                      type: string
-                  type: object
+                capacity:
+                  description: Capacity of the volume
+                  type: string
+                storageClass:
+                  description: StorageClass from which volume should originate
+                  type: string
               type: object
           type: object
         status:

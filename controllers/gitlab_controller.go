@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -69,6 +68,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("gitlab", req.NamespacedName)
 
+	log.Info("Reconciling GitLab object", "Name", req.NamespacedName.Name)
 	gitlab := &gitlabv1beta1.GitLab{}
 	if err := r.Get(ctx, req.NamespacedName, gitlab); err != nil {
 		if errors.IsNotFound(err) {
@@ -99,23 +99,16 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
-	go func() {
-		for !gitlabctl.IsEndpointReady(gitlab.Name+"-postgresql", gitlab) {
-			time.Sleep(time.Second * 1)
-		}
-		wg.Done()
-	}()
-
 	if gitlabctl.RequiresCertManagerCertificate(gitlab).All() {
 		if err := r.reconcileCertManagerCertificates(gitlab); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	wg.Wait()
+	waitInterval := 5 * time.Second
+	if !r.ifCoreServicesReady(ctx, gitlab) {
+		return ctrl.Result{RequeueAfter: waitInterval}, nil
+	}
 
 	if err := r.reconcileJobs(gitlab); err != nil {
 		return ctrl.Result{}, err

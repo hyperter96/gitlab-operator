@@ -10,7 +10,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/prometheus/common/log"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	corev1 "k8s.io/api/core/v1"
@@ -46,30 +45,6 @@ func parseURL(url string, secured bool) string {
 
 func hasTLS(cr *gitlabv1beta1.GitLab) bool {
 	return cr.Spec.TLS != ""
-}
-
-// IsEndpointReady checks if kubernetes endpoint is ready to accept connections.
-// Watches endpoint for pod IP address
-func IsEndpointReady(service string, cr *gitlabv1beta1.GitLab) bool {
-	var addresses []corev1.EndpointAddress
-	client, err := gitlabutils.KubernetesConfig().NewKubernetesClient()
-	if err != nil {
-		log.Error(err, "Unable to acquire client")
-	}
-
-	endpoint, err := client.CoreV1().Endpoints(cr.Namespace).Get(context.TODO(), service, metav1.GetOptions{})
-	if err != nil {
-		// Endpoint was not found so return false
-		return false
-	}
-
-	for _, subset := range endpoint.Subsets {
-		addresses = append(addresses, subset.Addresses...)
-	}
-
-	// If more than one IP address is returned,
-	// The database is up and listening for connections
-	return len(addresses) > 0
 }
 
 // The database endpoint returns the gitlab database endpoint

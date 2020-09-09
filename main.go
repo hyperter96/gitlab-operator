@@ -74,7 +74,7 @@ func main() {
 
 	watchedNamespace, err := getWatchedNamespace()
 	if err != nil {
-		setupLog.Error(err, "unable to get watched namespace, the manager will watch all namespaces")
+		setupLog.Info("changing operator scope", "scope", "namespaced")
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{

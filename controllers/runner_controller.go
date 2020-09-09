@@ -43,8 +43,8 @@ type RunnerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=apps.gitlab.com,namespace="placeholder",resources=runners,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps.gitlab.com,namespace="placeholder",resources=runners/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=apps.gitlab.com,resources=runners,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.gitlab.com,resources=runners/status,verbs=get;update;patch
 
 // Reconcile triggers when an event occurs on the watched resource
 func (r *RunnerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {

@@ -46,8 +46,8 @@ type GLBackupReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=apps.gitlab.com,namespace="placeholder",resources=glbackups,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps.gitlab.com,namespace="placeholder",resources=glbackups/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=apps.gitlab.com,resources=glbackups,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.gitlab.com,resources=glbackups/status,verbs=get;update;patch
 
 // Reconcile triggers when an event occurs on the watched resource
 func (r *GLBackupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {

@@ -1538,6 +1538,22 @@ spec:
                     type: object
                   type: array
               type: object
+            autoscaling:
+              description: AutoScalingSpec are the parameters to configure autoscaling
+              properties:
+                maxReplicas:
+                  description: MaxReplicas is the upper limit to scale up to
+                  format: int32
+                  type: integer
+                minReplicas:
+                  description: MinReplicas is the lower limit to scale down to
+                  format: int32
+                  type: integer
+                targetCPU:
+                  description: TargetCPU is the CPU utilization threshold percentage
+                  format: int32
+                  type: integer
+              type: object
             objectStore:
               description: ObjectStoreSpec defines options for Gitlab registry
               properties:

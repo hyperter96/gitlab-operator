@@ -33,7 +33,8 @@ type GitLabSpec struct {
 	Database    *DatabaseSpec     `json:"postgres,omitempty"`
 	CertIssuer  *ACMEOptions      `json:"acme,omitempty"`
 	// Volume for Gitaly statefulset
-	Volume VolumeSpec `json:"volume,omitempty"`
+	Volume      VolumeSpec       `json:"volume,omitempty"`
+	AutoScaling *AutoScalingSpec `json:"autoscaling,omitempty"`
 }
 
 // RedisSpec defines Redis options
@@ -106,6 +107,16 @@ type SMTPConfiguration struct {
 	ReplyTo string `json:"replyTo,omitempty"`
 	// DisplayName represents the name of the email
 	DisplayName string `json:"displayName,omitempty"`
+}
+
+// AutoScalingSpec are the parameters to configure autoscaling
+type AutoScalingSpec struct {
+	// MinReplicas is the lower limit to scale down to
+	MinReplicas *int32 `json:"minReplicas,omitempty"`
+	// MaxReplicas is the upper limit to scale up to
+	MaxReplicas int32 `json:"maxReplicas,omitempty"`
+	// TargetCPU is the CPU utilization threshold percentage
+	TargetCPU *int32 `json:"targetCPU,omitempty"`
 }
 
 // ACMEOptions defines the values for the

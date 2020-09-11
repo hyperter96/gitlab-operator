@@ -635,6 +635,10 @@ func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, cr *gitlabv1bet
 		if !strings.Contains(deploy.Name, "gitlab-exporter") {
 			hpa := gitlabctl.HorizontalAutoscaler(&deploy, cr)
 
+			if err := controllerutil.SetControllerReference(cr, hpa, r.Scheme); err != nil {
+				return err
+			}
+
 			found := &autoscalingv1.HorizontalPodAutoscaler{}
 			err := r.Get(ctx, types.NamespacedName{Name: hpa.Name, Namespace: cr.Namespace}, found)
 			if err != nil {

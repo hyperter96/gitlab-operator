@@ -632,27 +632,54 @@ func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, cr *gitlabv1bet
 	}
 
 	for _, deploy := range deployments.Items {
-		if !strings.Contains(deploy.Name, "gitlab-exporter") {
-			hpa := gitlabctl.HorizontalAutoscaler(&deploy, cr)
+		if err := r.reconcileHPA(ctx, &deploy, cr); err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, cr *gitlabv1beta1.GitLab) error {
+
+	if strings.Contains(deployment.Name, "gitlab-exporter") {
+		return nil
+	}
+
+	hpa := gitlabctl.HorizontalAutoscaler(deployment, cr)
+
+	found := &autoscalingv1.HorizontalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: cr.Namespace}, found)
+	if err != nil {
+		if errors.IsNotFound(err) {
 			if err := controllerutil.SetControllerReference(cr, hpa, r.Scheme); err != nil {
 				return err
 			}
 
-			found := &autoscalingv1.HorizontalPodAutoscaler{}
-			err := r.Get(ctx, types.NamespacedName{Name: hpa.Name, Namespace: cr.Namespace}, found)
-			if err != nil {
-				if errors.IsNotFound(err) {
-					return r.Create(ctx, hpa)
-				}
-
-				return err
-			}
-
-			if !reflect.DeepEqual(hpa.Spec, found.Spec) {
-				return r.Patch(ctx, found, client.MergeFrom(hpa))
-			}
+			return r.Create(ctx, hpa)
 		}
+
+		return err
+	}
+
+	if cr.Spec.AutoScaling == nil {
+		return r.Delete(ctx, found)
+	}
+
+	if !reflect.DeepEqual(hpa.Spec, found.Spec) {
+		if *found.Spec.MinReplicas != *hpa.Spec.MinReplicas {
+			found.Spec.MinReplicas = hpa.Spec.MinReplicas
+		}
+
+		if found.Spec.MaxReplicas != hpa.Spec.MaxReplicas {
+			found.Spec.MaxReplicas = hpa.Spec.MaxReplicas
+		}
+
+		if found.Spec.TargetCPUUtilizationPercentage != hpa.Spec.TargetCPUUtilizationPercentage {
+			found.Spec.TargetCPUUtilizationPercentage = hpa.Spec.TargetCPUUtilizationPercentage
+		}
+
+		return r.Update(ctx, found)
 	}
 
 	return nil

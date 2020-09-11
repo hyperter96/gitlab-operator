@@ -17,6 +17,10 @@ func getHPALabels(labels map[string]string) map[string]string {
 func HorizontalAutoscaler(deployment *appsv1.Deployment, cr *gitlabv1beta1.GitLab) *autoscalingv1.HorizontalPodAutoscaler {
 	labels := getHPALabels(deployment.ObjectMeta.Labels)
 
+	if cr.Spec.AutoScaling == nil {
+		return nil
+	}
+
 	return &autoscalingv1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deployment.Name,

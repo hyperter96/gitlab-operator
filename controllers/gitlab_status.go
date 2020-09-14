@@ -23,7 +23,8 @@ var EndpointMembers []string
 
 func (r *GitLabReconciler) reconcileGitlabStatus(cr *gitlabv1beta1.GitLab) error {
 	// get current Gitlab resource
-	gitlab, err := r.retrieveUpdatedGitlabResource(cr)
+	gitlab := &gitlabv1beta1.GitLab{}
+	err := r.Get(context.TODO(), types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name}, gitlab)
 	if err != nil {
 		return err
 	}
@@ -138,12 +139,6 @@ func (r *GitLabReconciler) isWebserviceDeployed(cr *gitlabv1beta1.GitLab) bool {
 	webservice := &appsv1.Deployment{}
 	err := r.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-webservice", Namespace: cr.Namespace}, webservice)
 	return !reflect.DeepEqual(*webservice, appsv1.Deployment{}) || !errors.IsNotFound(err)
-}
-
-func (r *GitLabReconciler) retrieveUpdatedGitlabResource(cr *gitlabv1beta1.GitLab) (*gitlabv1beta1.GitLab, error) {
-	gitlab := &gitlabv1beta1.GitLab{}
-	err := r.Get(context.TODO(), types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name}, gitlab)
-	return gitlab, err
 }
 
 // setGitlabStatus sets status of custom resource

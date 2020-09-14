@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -49,4 +50,15 @@ func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, cr *gitlabv1
 	return r.isEndpointReady(ctx, cr.Name+"-postgresql", cr) &&
 		r.isEndpointReady(ctx, cr.Name+"-gitaly", cr) &&
 		r.isEndpointReady(ctx, cr.Name+"-redis", cr)
+}
+
+func getLabelSet(cr *gitlabv1beta1.GitLab) labels.Set {
+	webLabels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
+
+	unwantedKeys := []string{"app.kubernetes.io/component", "app.kubernetes.io/instance"}
+	for _, key := range unwantedKeys {
+		delete(webLabels, key)
+	}
+
+	return labels.Set(webLabels)
 }

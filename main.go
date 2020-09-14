@@ -72,11 +72,13 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
+	operatorScope := "namespace"
 	watchedNamespace, err := getWatchedNamespace()
 	if err != nil {
-		setupLog.Info("changing operator scope", "scope", "namespaced")
+		operatorScope = "cluster"
 	}
 
+	setupLog.Info("setting operator scope", "scope", operatorScope)
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,

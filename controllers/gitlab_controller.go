@@ -18,6 +18,8 @@ package controllers
 
 import (
 	"context"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -39,6 +41,7 @@ import (
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -62,6 +65,7 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=extensions,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile triggers when an event occurs on the watched resource
 func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -115,6 +119,10 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	if err := r.reconcileDeployments(ctx, gitlab); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.setupAutoscaling(ctx, gitlab); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -275,23 +283,23 @@ func (r *GitLabReconciler) reconcileServiceMonitor(cr *gitlabv1beta1.GitLab) err
 
 func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 
-	if err := r.reconcileWebserviceDeployment(cr); err != nil {
+	if err := r.reconcileWebserviceDeployment(ctx, cr); err != nil {
 		return err
 	}
 
-	if err := r.reconcileShellDeployment(cr); err != nil {
+	if err := r.reconcileShellDeployment(ctx, cr); err != nil {
 		return err
 	}
 
-	if err := r.reconcileSidekiqDeployment(cr); err != nil {
+	if err := r.reconcileSidekiqDeployment(ctx, cr); err != nil {
 		return err
 	}
 
-	if err := r.reconcileRegistryDeployment(cr); err != nil {
+	if err := r.reconcileRegistryDeployment(ctx, cr); err != nil {
 		return err
 	}
 
-	if err := r.reconcileTaskRunnerDeployment(cr); err != nil {
+	if err := r.reconcileTaskRunnerDeployment(ctx, cr); err != nil {
 		return err
 	}
 
@@ -363,20 +371,6 @@ func (r *GitLabReconciler) maskEmailPasword(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceDeployment(cr *gitlabv1beta1.GitLab) error {
-	webservice := gitlabctl.WebserviceDeployment(cr)
-
-	if r.isObjectFound(webservice) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, webservice, r.Scheme); err != nil {
-		return err
-	}
-
-	return r.Create(context.TODO(), webservice)
-}
-
 func (r *GitLabReconciler) reconcileMinioInstance(cr *gitlabv1beta1.GitLab) error {
 	cm := gitlabctl.MinioScriptConfigMap(cr)
 	if err := r.createKubernetesResource(cm, cr); err != nil {
@@ -401,20 +395,6 @@ func (r *GitLabReconciler) reconcileMinioInstance(cr *gitlabv1beta1.GitLab) erro
 	}
 
 	return nil
-}
-
-func (r *GitLabReconciler) reconcileRegistryDeployment(cr *gitlabv1beta1.GitLab) error {
-	registry := gitlabctl.RegistryDeployment(cr)
-
-	if r.isObjectFound(registry) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, registry, r.Scheme); err != nil {
-		return err
-	}
-
-	return r.Create(context.TODO(), registry)
 }
 
 func (r *GitLabReconciler) reconcileSecrets(cr *gitlabv1beta1.GitLab) error {
@@ -510,7 +490,35 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileShellDeployment(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
+	webservice := gitlabctl.WebserviceDeployment(cr)
+
+	if r.isObjectFound(webservice) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, webservice, r.Scheme); err != nil {
+		return err
+	}
+
+	return r.Create(ctx, webservice)
+}
+
+func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
+	registry := gitlabctl.RegistryDeployment(cr)
+
+	if r.isObjectFound(registry) {
+		return nil
+	}
+
+	if err := controllerutil.SetControllerReference(cr, registry, r.Scheme); err != nil {
+		return err
+	}
+
+	return r.Create(ctx, registry)
+}
+
+func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	shell := gitlabctl.ShellDeployment(cr)
 
 	if r.isObjectFound(shell) {
@@ -521,10 +529,10 @@ func (r *GitLabReconciler) reconcileShellDeployment(cr *gitlabv1beta1.GitLab) er
 		return err
 	}
 
-	return r.Create(context.TODO(), shell)
+	return r.Create(ctx, shell)
 }
 
-func (r *GitLabReconciler) reconcileSidekiqDeployment(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	sidekiq := gitlabctl.SidekiqDeployment(cr)
 
 	if r.isObjectFound(sidekiq) {
@@ -535,10 +543,10 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(cr *gitlabv1beta1.GitLab) 
 		return err
 	}
 
-	return r.Create(context.TODO(), sidekiq)
+	return r.Create(ctx, sidekiq)
 }
 
-func (r *GitLabReconciler) reconcileTaskRunnerDeployment(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	tasker := gitlabctl.TaskRunnerDeployment(cr)
 
 	if r.isObjectFound(tasker) {
@@ -549,7 +557,7 @@ func (r *GitLabReconciler) reconcileTaskRunnerDeployment(cr *gitlabv1beta1.GitLa
 		return err
 	}
 
-	return r.Create(context.TODO(), tasker)
+	return r.Create(ctx, tasker)
 }
 
 func (r *GitLabReconciler) exposeGitLabInstance(cr *gitlabv1beta1.GitLab) error {
@@ -610,4 +618,69 @@ func (r *GitLabReconciler) reconcileCertManagerCertificates(cr *gitlabv1beta1.Gi
 	issuer := gitlabctl.CertificateIssuer(cr)
 
 	return r.createKubernetesResource(issuer, cr)
+}
+
+func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
+	selector := client.MatchingLabelsSelector{
+		Selector: getLabelSet(cr).AsSelector(),
+	}
+
+	deployments := &appsv1.DeploymentList{}
+	err := r.List(ctx, deployments, client.InNamespace(cr.Namespace), selector)
+	if err != nil {
+		return err
+	}
+
+	for _, deploy := range deployments.Items {
+		if err := r.reconcileHPA(ctx, &deploy, cr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, cr *gitlabv1beta1.GitLab) error {
+
+	if strings.Contains(deployment.Name, "gitlab-exporter") {
+		return nil
+	}
+
+	hpa := gitlabctl.HorizontalAutoscaler(deployment, cr)
+
+	found := &autoscalingv1.HorizontalPodAutoscaler{}
+	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: cr.Namespace}, found)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			if err := controllerutil.SetControllerReference(cr, hpa, r.Scheme); err != nil {
+				return err
+			}
+
+			return r.Create(ctx, hpa)
+		}
+
+		return err
+	}
+
+	if cr.Spec.AutoScaling == nil {
+		return r.Delete(ctx, found)
+	}
+
+	if !reflect.DeepEqual(hpa.Spec, found.Spec) {
+		if *found.Spec.MinReplicas != *hpa.Spec.MinReplicas {
+			found.Spec.MinReplicas = hpa.Spec.MinReplicas
+		}
+
+		if found.Spec.MaxReplicas != hpa.Spec.MaxReplicas {
+			found.Spec.MaxReplicas = hpa.Spec.MaxReplicas
+		}
+
+		if found.Spec.TargetCPUUtilizationPercentage != hpa.Spec.TargetCPUUtilizationPercentage {
+			found.Spec.TargetCPUUtilizationPercentage = hpa.Spec.TargetCPUUtilizationPercentage
+		}
+
+		return r.Update(ctx, found)
+	}
+
+	return nil
 }

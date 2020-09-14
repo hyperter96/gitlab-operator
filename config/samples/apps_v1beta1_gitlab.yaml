@@ -16,3 +16,7 @@ spec:
   postgres:
     volume:
       capacity: 8Gi
+  autoscaling:
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPU: 60

@@ -56,6 +56,7 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
@@ -80,6 +81,10 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 
 		// could not get GitLab resource
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileNamespaces(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -685,6 +690,41 @@ func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.
 		}
 
 		return r.Update(ctx, found)
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) reconcileNamespaces(ctx context.Context) error {
+	secured := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "gitlab-secured-apps",
+		},
+	}
+
+	if err := r.createNamespace(ctx, secured); err != nil {
+		return err
+	}
+
+	managed := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "gitlab-managed-apps",
+		},
+	}
+
+	return r.createNamespace(ctx, managed)
+}
+
+func (r *GitLabReconciler) createNamespace(ctx context.Context, namespace *corev1.Namespace) error {
+	found := &corev1.Namespace{}
+	err := r.Get(ctx, types.NamespacedName{Name: namespace.Name}, found)
+	if err != nil {
+		// create namespace if doesnt exist
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, namespace)
+		}
+
+		return err
 	}
 
 	return nil

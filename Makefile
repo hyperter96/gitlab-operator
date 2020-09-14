@@ -118,8 +118,3 @@ bundle: manifests
 .PHONY: bundle-build
 bundle-build:
 	podman build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
-
-# Generate install manifests
-deploy-manifests:
-	rm -f config/manifests/*.yaml
-	kustomize build --output config/manifests config/default

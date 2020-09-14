@@ -652,6 +652,11 @@ func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.
 	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: cr.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			// return nil if hpa is nil
+			if hpa == nil {
+				return nil
+			}
+
 			if err := controllerutil.SetControllerReference(cr, hpa, r.Scheme); err != nil {
 				return err
 			}

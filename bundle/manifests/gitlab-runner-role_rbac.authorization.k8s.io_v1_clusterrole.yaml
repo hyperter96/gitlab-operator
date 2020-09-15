@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: backup-role
+  name: gitlab-runner-role
 rules:
 - apiGroups:
   - ""
@@ -28,14 +28,3 @@ rules:
   - delete
   - patch
   - update
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs:
-  - create
-  - get
-  - update
-  - delete
-  - watch
-  - list

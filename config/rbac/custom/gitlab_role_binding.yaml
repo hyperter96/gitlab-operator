@@ -1,12 +1,12 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: gitlab
+  name: app-rolebinding
 subjects:
 - kind: ServiceAccount
-  name: gitlab
-  namespace: gitlab-operator
+  name: gitlab-app
+  namespace: system
 roleRef:
   kind: ClusterRole
-  name: gitlab
+  name: app-role
   apiGroup: rbac.authorization.k8s.io

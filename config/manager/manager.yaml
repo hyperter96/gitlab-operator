@@ -37,4 +37,4 @@ spec:
             cpu: 200m
             memory: 20Mi
       terminationGracePeriodSeconds: 10
-      serviceAccountName: gitlab-operator
+      serviceAccountName: gitlab-manager

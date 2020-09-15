@@ -61,226 +61,34 @@ metadata:
         }
       ]
     capabilities: Basic Install
-    repository: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator
-    createdAt: 2020-03-11T13:29:00Z
-    certified: 'true'
     categories: Integration & Delivery
+    certified: "true"
     containerImage: registry.connect.redhat.com/gitlab/gitlab-operator:v0.0.1
+    createdAt: "2020-03-11T13:29:00Z"
     operators.operatorframework.io/builder: operator-sdk-v1.0.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator
   name: gitlab-operator.v0.0.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: GitLab is the Schema for the GitLabs API
-      displayName: GitLab
+    - description: GitLab is the Schema for the gitlabs API
+      displayName: Git Lab
       kind: GitLab
       name: gitlabs.apps.gitlab.com
       version: v1beta1
-      resources:
-      - kind: ConfigMap
-        version: v1
-      - kind: Secret
-        version: v1
-      - kind: Service
-        version: v1
-      - kind: Pod
-        version: v1
-      - kind: Deployment
-        version: v1
-      - kind: StatefulSet
-        version: v1
-      - kind: PersistentVolumeClaim
-        version: v1
-      - Kind: Runner
-        version: v1beta1
-      - Kind: GLBackup
-        version: v1beta1
-      specDescriptors:
-      - description: Release defines the version of GitLab to deploy
-        displayName: Release
-        path: release
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: GitLab URL defines the address through which the GitLab instance will be accessed
-        displayName: GitLab URL
-        path: url
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: TLS defines the name of the secret that contains certificates for the GitLab instance
-        displayName: TLS
-        path: tls
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Registry URL defines address at through which the GitLab registry can be reached
-        displayName: Registry URL
-        path: registry.url
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Registry TLS defines name of secret containing TLS keypair to secure registry
-        displayName: Registry TLS
-        path: registry.tls
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret
-      - description: The volume capacity for the Redis volume e.g. 20Gi
-        displayName: Redis Volume
-        path: redis.volume.capacity
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The volume capacity for the Postgresql volume e.g. 20Gi
-        displayName: Postgresql Volume
-        path: postgres.volume.capacity
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The volume capacity for the repository volume e.g. 20Gi
-        displayName: Repository Volume
-        path: volume.capacity
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      statusDescriptors:
-      - description: Phase defines the state of the GitLab instance
-        displayName: Status
-        path: phase
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:label
-      - description: Release defines the version of the GitLab instance
-        displayName: Release
-        path: release
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:label
-      - description: Stage defines the description of the task being performed on the GitLab instance
-        displayName: Stage
-        path: stage
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:label
-      - description: Postgresql Health reports the health of the postgresql backend
-        displayName: Postgresql Health
-        path: health.database
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:label
-      - description: Redis Health reports the health of the Redis backend
-        displayName: Redis Health
-        path: health.redis
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:label
-      - description: Console Health reports the health of GitLab web interface
-        displayName: Console Health
-        path: health.workhorse
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:label
-    - description: GLBackup is the Schema for the GitLab Backup API
+    - description: GLBackup is the Schema for the glbackups API
       displayName: GLBackup
       kind: GLBackup
       name: glbackups.apps.gitlab.com
       version: v1beta1
-      resources:
-      - kind: Job
-        version: v1
-      - kind: CronJob
-        version: v1beta1
-      - kind: ConfigMap
-        version: v1
-      specDescriptors:
-      - description: Instance defines the name of the target GitLab instance to backup
-        displayName: Instance
-        path: instance
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Schedule defines the backup interval
-        displayName: Schedule
-        path: schedule
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: List of comma separated components to exclude from backup
-        displayName: Skip
-        path: skip
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Timestamp defines prefix for backup job (part before '_gitlab_backup.tar')
-        displayName: Timestamp
-        path: timestamp
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: URL defines the backup location
-        displayName: URL
-        path: url
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Restore defines if backup restore should be performed
-        displayName: restore
-        path: url
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      statusDescriptors:
-      - description: The phase shows the current status of the GitLab Backup job
-        displayName: Phase
-        path: phase
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: StartedAt reports time the backup job started
-        displayName: StartedAt
-        path: startedAt
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: CompletedAt reports time the backup job completed
-        displayName: CompletedAt
-        path: completedAt
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-    - description: Runner is the Schema for the GitLab Runners API
+    - description: Runner is the Schema for the runners API
       displayName: Runner
       kind: Runner
       name: runners.apps.gitlab.com
       version: v1beta1
-      resources:
-      - kind: Pod
-        version: v1
-      - kind: deployments
-        version: v1
-      - kind: replicasets
-        version: v1
-      - kind: ConfigMap
-        version: v1
-      - kind: Secret
-        version: v1
-      - kind: PersistentVolumeClaim
-        version: v1
-      - kind: services
-        version: v1
-      - kind: runners
-        version: v1beta1
-      specDescriptors:
-      - description: List of comma separated tags to be applied to the runner
-        displayName: Tags
-        path: tags
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The registration token points to a secret with key `runner_registration_token`
-        displayName: Runner registration token
-        path: token
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Represents the GitLab instance to register to
-        displayName: GitLab
-        path: gitlab
-      - description: The GitLab url that the Runner will register to
-        displayName: GitLab URL
-        path: gitlab.url
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      statusDescriptors:
-      - description: The phase shows the current status of the lifecycle state of the GitLab runner
-        displayName: Phase
-        path: phase
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The Registration status reports if the GitLab runner successfully registered
-        displayName: Registration
-        path: registration
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
   description: The GitLab operator allows the user to deploy and manage the lifecycle of both GitLab and GitLab Runner in both Openshift and Kubernetes environments
   displayName: GitLab
   icon:
@@ -290,7 +98,13 @@ spec:
     spec:
       clusterPermissions:
       - rules: null
-        serviceAccountName: gitlab-operator
+        serviceAccountName: gitlab-manager
+      - rules: null
+        serviceAccountName: gitlab-app
+      - rules: null
+        serviceAccountName: gitlab-backup
+      - rules: null
+        serviceAccountName: gitlab-runner
       deployments:
       - name: gitlab-controller-manager
         spec:
@@ -330,11 +144,17 @@ spec:
                   requests:
                     cpu: 200m
                     memory: 20Mi
-              serviceAccountName: gitlab-operator
+              serviceAccountName: gitlab-manager
               terminationGracePeriodSeconds: 10
       permissions:
       - rules: null
-        serviceAccountName: gitlab-operator
+        serviceAccountName: gitlab-manager
+      - rules: null
+        serviceAccountName: gitlab-app
+      - rules: null
+        serviceAccountName: gitlab-backup
+      - rules: null
+        serviceAccountName: gitlab-runner
     strategy: deployment
   installModes:
   - supported: true

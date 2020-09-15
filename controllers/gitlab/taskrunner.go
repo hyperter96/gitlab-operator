@@ -319,7 +319,7 @@ func TaskRunnerDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 		FSGroup:   &localUser,
 	}
 
-	taskRunner.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	taskRunner.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 
 	return taskRunner
 }

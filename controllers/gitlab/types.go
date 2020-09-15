@@ -16,6 +16,9 @@ const (
 
 	// DatabaseUser defines name of user in PostgreSQL
 	DatabaseUser = "gitlab"
+
+	// AppServiceAccount for GitLab app use
+	AppServiceAccount = "gitlab-app"
 )
 
 // RedisConfig struct configures redis password

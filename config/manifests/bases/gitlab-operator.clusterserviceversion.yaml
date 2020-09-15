@@ -75,7 +75,7 @@ spec:
   customresourcedefinitions:
     owned:
     - description: GitLab is the Schema for the gitlabs API
-      displayName: Git Lab
+      displayName: GitLab
       kind: GitLab
       name: gitlabs.apps.gitlab.com
       version: v1beta1

@@ -239,7 +239,7 @@ func MigrationsJob(cr *gitlabv1beta1.GitLab) *batchv1.Job {
 		FSGroup:   &localUser,
 	}
 
-	migration.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	migration.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 
 	return migration
 }
@@ -306,7 +306,7 @@ func BucketCreationJob(cr *gitlabv1beta1.GitLab) *batchv1.Job {
 	})
 
 	var mcUser int64
-	buckets.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	buckets.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 	buckets.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &mcUser,
 		FSGroup:   &mcUser,

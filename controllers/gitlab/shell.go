@@ -230,7 +230,7 @@ func ShellDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 		RunAsUser: &localUser,
 	}
 
-	shell.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	shell.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 
 	return shell
 }

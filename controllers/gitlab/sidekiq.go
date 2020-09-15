@@ -427,7 +427,7 @@ func SidekiqDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 		FSGroup:   &localUser,
 	}
 
-	sidekiq.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	sidekiq.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 
 	return sidekiq
 }

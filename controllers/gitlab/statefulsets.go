@@ -297,7 +297,7 @@ func PostgresStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 		},
 	})
 
-	psql.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	psql.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 	psql.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &postgresUser,
 		FSGroup:   &postgresUser,
@@ -492,7 +492,7 @@ func RedisStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 		},
 	})
 
-	redis.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	redis.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 	redis.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &redisUser,
 		FSGroup:   &redisUser,
@@ -759,7 +759,7 @@ func GitalyStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 
 	gitaly.Spec.ServiceName = labels["app.kubernetes.io/instance"]
 
-	gitaly.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	gitaly.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 	gitaly.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &gitalyUserID,
 		FSGroup:   &gitalyUserID,

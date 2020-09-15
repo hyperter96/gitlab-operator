@@ -604,7 +604,7 @@ func WebserviceDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 		FSGroup:   &localUser,
 	}
 
-	webservice.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	webservice.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 
 	return webservice
 }

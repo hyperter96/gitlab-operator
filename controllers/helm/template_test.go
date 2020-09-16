@@ -35,10 +35,14 @@ var _ = Describe("Template", func() {
 	When("Initialized", func() {
 
 		template := helm.NewTemplate("foo")
+		helmNamespace := os.Getenv("HELM_NAMESPACE")
+		if helmNamespace == "" {
+			helmNamespace = "default"
+		}
 
 		It("Must be empty and use default settings", func() {
 			Expect(template.ChartName()).To(Equal("foo"))
-			// Expect(template.Namespace()).To(Equal("default"))
+			Expect(template.Namespace()).To(Equal(helmNamespace))
 			Expect(template.ReleaseName()).To(Equal(helm.DefaultReleaseName))
 			Expect(template.HooksDisabled()).To(BeFalse())
 			Expect(template.Objects()).To(BeEmpty())

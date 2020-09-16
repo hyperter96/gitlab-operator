@@ -182,7 +182,7 @@ func MinioStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 		FSGroup:   &localUser,
 	}
 
-	minio.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	minio.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 
 	return minio
 }

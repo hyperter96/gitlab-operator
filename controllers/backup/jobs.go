@@ -11,6 +11,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// BackupServiceAccount for GitLab backup use
+const BackupServiceAccount = "gitlab-backup"
+
 // IsOnDemandBackup returns true if no backup schedule is
 // provided. This implies backup should run immediately
 func IsOnDemandBackup(cr *gitlabv1beta1.GLBackup) bool {
@@ -90,7 +93,7 @@ func NewSchedule(cr *gitlabv1beta1.GLBackup) *batchv1beta1.CronJob {
 	})
 
 	backup.Spec.Schedule = cr.Spec.Schedule
-	backup.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = "gitlab-backup"
+	backup.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = BackupServiceAccount
 	backup.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 
 	return backup
@@ -113,7 +116,7 @@ func NewBackup(cr *gitlabv1beta1.GLBackup) *batchv1.Job {
 		},
 	})
 
-	backup.Spec.Template.Spec.ServiceAccountName = "gitlab-backup"
+	backup.Spec.Template.Spec.ServiceAccountName = BackupServiceAccount
 
 	return backup
 }

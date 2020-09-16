@@ -23,31 +23,26 @@ metadata:
             "name": "example"
           },
           "spec": {
-            "autoscaling": {
-              "maxReplicas": 5,
-              "minReplicas": 2,
-              "targetCPU": 60
-            },
-            "objectStore": {
-              "development": true
-            },
-            "postgres": {
+              "url": "gitlab.example.com",
               "volume": {
-                "capacity": "8Gi"
+                "capacity": "10Gi"
+              },
+              "registry": {
+                "url": "registry.example.com"
+              },
+              "objectStore": {
+                "development": true
+              },
+              "redis": {
+                "volume": {
+                    "capacity": "4Gi"
+                }
+              },
+              "postgres": {
+                "volume": {
+                    "capacity": "8Gi"
+                }
               }
-            },
-            "redis": {
-              "volume": {
-                "capacity": "4Gi"
-              }
-            },
-            "registry": {
-              "url": "registry.example.com"
-            },
-            "url": "gitlab.example.com",
-            "volume": {
-              "capacity": "10Gi"
-            }
           }
         },
         {
@@ -74,6 +69,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator
   name: gitlab-operator.v0.0.1
+  namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
@@ -301,236 +297,14 @@ spec:
   install:
     spec:
       clusterPermissions:
-      - rules:
-        - apiGroups:
-          - apps
-          resources:
-          - deployments
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - apps
-          resources:
-          - statefulsets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - apps.gitlab.com
-          resources:
-          - gitlabs
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - apps.gitlab.com
-          resources:
-          - gitlabs/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - apps.gitlab.com
-          resources:
-          - glbackups
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - apps.gitlab.com
-          resources:
-          - glbackups/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - apps.gitlab.com
-          resources:
-          - runners
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - apps.gitlab.com
-          resources:
-          - runners/status
-          verbs:
-          - get
-          - patch
-          - update
-        - apiGroups:
-          - autoscaling
-          resources:
-          - horizontalpodautoscalers
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - batch
-          resources:
-          - jobs
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - configmaps
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - cronjobs
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - namespaces
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - persistentvolumeclaims
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - secrets
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - ""
-          resources:
-          - services
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - extensions
-          resources:
-          - ingresses
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - monitoring.coreos.com
-          resources:
-          - prometheuses
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - monitoring.coreos.com
-          resources:
-          - servicemonitors
-          verbs:
-          - create
-          - delete
-          - get
-          - list
-          - patch
-          - update
-          - watch
-        - apiGroups:
-          - authentication.k8s.io
-          resources:
-          - tokenreviews
-          verbs:
-          - create
-        - apiGroups:
-          - authorization.k8s.io
-          resources:
-          - subjectaccessreviews
-          verbs:
-          - create
+      - rules: null
         serviceAccountName: gitlab-manager
+      - rules: null
+        serviceAccountName: gitlab-app
+      - rules: null
+        serviceAccountName: gitlab-backup
+      - rules: null
+        serviceAccountName: gitlab-runner
       deployments:
       - name: gitlab-controller-manager
         spec:
@@ -573,35 +347,14 @@ spec:
               serviceAccountName: gitlab-manager
               terminationGracePeriodSeconds: 10
       permissions:
-      - rules:
-        - apiGroups:
-          - ""
-          resources:
-          - configmaps
-          verbs:
-          - get
-          - list
-          - watch
-          - create
-          - update
-          - patch
-          - delete
-        - apiGroups:
-          - ""
-          resources:
-          - configmaps/status
-          verbs:
-          - get
-          - update
-          - patch
-        - apiGroups:
-          - ""
-          resources:
-          - events
-          verbs:
-          - create
-          - patch
+      - rules: null
         serviceAccountName: gitlab-manager
+      - rules: null
+        serviceAccountName: gitlab-app
+      - rules: null
+        serviceAccountName: gitlab-backup
+      - rules: null
+        serviceAccountName: gitlab-runner
     strategy: deployment
   installModes:
   - supported: true

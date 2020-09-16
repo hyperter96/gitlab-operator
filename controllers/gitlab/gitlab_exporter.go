@@ -209,7 +209,7 @@ func ExporterDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 		FSGroup:   &localUser,
 	}
 
-	exporter.Spec.Template.Spec.ServiceAccountName = "gitlab"
+	exporter.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 
 	return exporter
 }

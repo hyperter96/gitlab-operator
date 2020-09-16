@@ -15,8 +15,6 @@ spec:
     plural: runners
     singular: runner
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       description: Runner is the Schema for the runners API
@@ -63,17 +61,17 @@ spec:
                 only be used to reference Gitlab instance created by the operator
               properties:
                 name:
-                  description: Name of gitlab resource in kubernetes / openshift
+                  description: Name of GitLab instance created by the operator
                   type: string
                 url:
-                  description: Gitlab or Continuous Integration URL
+                  description: URL of GitLab instance
                   type: string
               type: object
             tags:
-              description: Tags passes the runner tags
+              description: List of comma separated tags to be applied to the runner
               type: string
             token:
-              description: RegistrationToken is name of secret with the runner-registration-token
+              description: Name of secret containing the runner-registration-token
                 key used to register the runner
               type: string
           type: object
@@ -81,8 +79,10 @@ spec:
           description: RunnerStatus defines the observed state of Runner
           properties:
             phase:
+              description: Reports status of the GitLab Runner instance
               type: string
             registration:
+              description: Reports status of GitLab Runner registration
               type: string
           type: object
       type: object

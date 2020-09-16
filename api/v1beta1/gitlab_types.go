@@ -23,8 +23,16 @@ import (
 
 // GitLabSpec defines the desired state of GitLab
 type GitLabSpec struct {
-	Release     string            `json:"release,omitempty"`
-	URL         string            `json:"url,omitempty"`
+	// The GitLab version to deploy
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Release",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	Release string `json:"release,omitempty"`
+
+	// The URL through which to access GitLab instance
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="GitLab URL",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	URL string `json:"url,omitempty"`
+
+	// Name of tls secret used to secure the GitLab instance
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Certificate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret"
 	TLS         string            `json:"tls,omitempty"`
 	SMTP        SMTPConfiguration `json:"smtp,omitempty"`
 	Registry    RegistrySpec      `json:"registry,omitempty"`
@@ -111,11 +119,14 @@ type SMTPConfiguration struct {
 
 // AutoScalingSpec are the parameters to configure autoscaling
 type AutoScalingSpec struct {
-	// MinReplicas is the lower limit to scale down to
+	// Minimum number of replicas to scale to
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Minimum Replicas",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
-	// MaxReplicas is the upper limit to scale up to
+	// Maximum number of replicas to scale to
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maxiumum Replicas",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	MaxReplicas int32 `json:"maxReplicas,omitempty"`
-	// TargetCPU is the CPU utilization threshold percentage
+	// Percentage CPU mark at which autoscaling triggers
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CPU Percentage Threshold",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	TargetCPU *int32 `json:"targetCPU,omitempty"`
 }
 
@@ -149,8 +160,10 @@ type ACMEOptions struct {
 // VolumeSpec defines volume specifications
 type VolumeSpec struct {
 	// Capacity of the volume
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Storage capacity",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Capacity string `json:"capacity,omitempty"`
 	// StorageClass from which volume should originate
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Storage class",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	StorageClass string `json:"storageClass,omitempty"`
 }
 
@@ -173,6 +186,9 @@ type GitLabStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=gl
 // +kubebuilder:subresource:status
+
+// +operator-sdk:csv:customresourcedefinitions:displayName="GitLab"
+// +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Pod,v1,""},{Deployment,v1,""},{StatefulSet,v1,""},{PersistentVolumeClaim,v1,""},{Runner,v1beta1,""},{GLBackup,v1beta1,""}}
 
 // GitLab is the Schema for the gitlabs API
 type GitLab struct {

@@ -112,14 +112,10 @@ bundle: manifests
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	find bundle/manifests/ -type f | xargs -n 1 sed -i '/namespace: .*/d'
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.
 .PHONY: bundle-build
 bundle-build:
 	podman build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
-
-# Generate install manifests
-deploy-manifests:
-	rm -f config/manifests/*.yaml
-	kustomize build --output config/manifests config/default

@@ -7,6 +7,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// RunnerServiceAccount defines the sa for GitLab runner
+const RunnerServiceAccount string = "gitlab-runner"
+
 // GetDeployment returns the runner deployment object
 func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
@@ -432,7 +435,7 @@ func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	}
 
 	// Set runner to use specific service account
-	runner.Spec.Template.Spec.ServiceAccountName = "gitlab-runner"
+	runner.Spec.Template.Spec.ServiceAccountName = RunnerServiceAccount
 
 	return runner
 }

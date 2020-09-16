@@ -1,0 +1,12 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: runner-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: gitlab-runner
+  namespace: system
+roleRef:
+  kind: ClusterRole
+  name: runner-role
+  apiGroup: rbac.authorization.k8s.io

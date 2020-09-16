@@ -186,7 +186,6 @@ type GitLabStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=gl
 // +kubebuilder:subresource:status
-
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab"
 // +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Pod,v1,""},{Deployment,v1,""},{StatefulSet,v1,""},{PersistentVolumeClaim,v1,""},{Runner,v1beta1,""},{GLBackup,v1beta1,""}}
 

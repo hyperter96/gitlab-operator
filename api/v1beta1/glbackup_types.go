@@ -85,7 +85,6 @@ type GLBackupStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=gbk
 // +kubebuilder:subresource:status
-
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab Backup"
 // +operator-sdk:csv:customresourcedefinitions:resources={{Job,v1,""},{CronJob,v1beta1,""},{ConfigMap,v1,""}}
 

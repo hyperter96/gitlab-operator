@@ -83,7 +83,6 @@ type RunnerStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab Runner"
 // +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Replicasets,v1,""},{Pod,v1,""},{Deployment,v1,""},{PersistentVolumeClaim,v1,""}}
 

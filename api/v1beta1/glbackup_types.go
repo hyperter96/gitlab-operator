@@ -22,24 +22,30 @@ import (
 
 // GLBackupSpec defines the desired state of GLBackup
 type GLBackupSpec struct {
-	// Instance represents the GitLab instance to backup
+	// Name of GitLab instance to backup
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="GitLab Name",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Instance string `json:"instance"`
 
-	// Schedule defines the time and day to run backup
-	// It takes cron time format
+	// Backup schedule in cron format.
+	// Leave blank for one time on-demand backup
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup Schedule",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Schedule string `json:"schedule,omitempty"`
 
-	// Exclusions allows user to exclude components to backup
+	// Comma separated list of components to omit from backup
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup Exclusions",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Exclusions string `json:"skip,omitempty"`
 
-	// Timestamp defines the prefix of the backup job
+	// Prefix for the backup job
+	// Can be used when restoring backup
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup Timestamp",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Timestamp string `json:"timestamp,omitempty"`
 
-	// URL defines the address of the backup job
+	// The URL of the backup resource to be restored
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup URL",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	URL string `json:"url,omitempty"`
 
 	// Restore when set to true the backup defined by
-	// ID: will be restored to the gitlab instance
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup Restore",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Restore bool `json:"restore,omitempty"`
 }
 
@@ -62,19 +68,26 @@ const (
 
 // GLBackupStatus defines the observed state of GLBackup
 type GLBackupStatus struct {
+	// Reports status of backup task
 	// +kubebuilder:validation:Enum=Running;Completed;Scheduled;Failed
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Backup Status",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Phase BackupState `json:"phase,omitempty"`
 
-	// StartedAt returns time when backup was initiated
+	// Displays time the backup started
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Start Time",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	StartedAt string `json:"startedAt,omitempty"`
 
-	// Completed returns time backup terminated or completed
+	// Displays time the backup completed
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Completion Time",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	CompletedAt string `json:"completedAt,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=gbk
 // +kubebuilder:subresource:status
+
+// +operator-sdk:csv:customresourcedefinitions:displayName="GitLab Backup"
+// +operator-sdk:csv:customresourcedefinitions:resources={{Job,v1,""},{CronJob,v1beta1,""},{ConfigMap,v1,""}}
 
 // GLBackup is the Schema for the glbackups API
 type GLBackup struct {

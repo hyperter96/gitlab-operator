@@ -11,12 +11,8 @@ spec:
     kind: GLBackup
     listKind: GLBackupList
     plural: glbackups
-    shortNames:
-    - gbk
     singular: glbackup
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       description: GLBackup is the Schema for the glbackups API
@@ -33,22 +29,22 @@ spec:
           description: GLBackupSpec defines the desired state of GLBackup
           properties:
             instance:
-              description: Instance represents the GitLab instance to backup
+              description: Name of GitLab instance to backup
               type: string
             restore:
-              description: 'Restore when set to true the backup defined by ID: will be restored to the gitlab instance'
+              description: Restore when set to true the backup defined by
               type: boolean
             schedule:
-              description: Schedule defines the time and day to run backup It takes cron time format
+              description: Backup schedule in cron format. Leave blank for one time on-demand backup
               type: string
             skip:
-              description: Exclusions allows user to exclude components to backup
+              description: Comma separated list of components to omit from backup
               type: string
             timestamp:
-              description: Timestamp defines the prefix of the backup job
+              description: Prefix for the backup job Can be used when restoring backup
               type: string
             url:
-              description: URL defines the address of the backup job
+              description: The URL of the backup resource to be restored
               type: string
           required:
           - instance
@@ -57,10 +53,10 @@ spec:
           description: GLBackupStatus defines the observed state of GLBackup
           properties:
             completedAt:
-              description: Completed returns time backup terminated or completed
+              description: Displays time the backup completed
               type: string
             phase:
-              description: BackupState informs of current backup state
+              description: Reports status of backup task
               enum:
               - Running
               - Completed
@@ -68,7 +64,7 @@ spec:
               - Failed
               type: string
             startedAt:
-              description: StartedAt returns time when backup was initiated
+              description: Displays time the backup started
               type: string
           type: object
       type: object

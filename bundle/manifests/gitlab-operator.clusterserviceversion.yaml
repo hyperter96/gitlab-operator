@@ -79,19 +79,219 @@ spec:
   customresourcedefinitions:
     owned:
     - description: GitLab is the Schema for the gitlabs API
-      displayName: Git Lab
+      displayName: GitLab
       kind: GitLab
       name: gitlabs.apps.gitlab.com
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: GLBackup
+        name: ""
+        version: v1beta1
+      - kind: PersistentVolumeClaim
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Runner
+        name: ""
+        version: v1beta1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Maximum number of replicas to scale to
+        displayName: Maxiumum Replicas
+        path: autoscaling.maxReplicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Minimum number of replicas to scale to
+        displayName: Minimum Replicas
+        path: autoscaling.minReplicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Percentage CPU mark at which autoscaling triggers
+        displayName: CPU Percentage Threshold
+        path: autoscaling.targetCPU
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Capacity of the volume
+        displayName: Storage capacity
+        path: postgres.volume.capacity
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: StorageClass from which volume should originate
+        displayName: Storage class
+        path: postgres.volume.storageClass
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Capacity of the volume
+        displayName: Storage capacity
+        path: redis.volume.capacity
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: StorageClass from which volume should originate
+        displayName: Storage class
+        path: redis.volume.storageClass
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The GitLab version to deploy
+        displayName: Release
+        path: release
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Name of tls secret used to secure the GitLab instance
+        displayName: TLS Certificate
+        path: tls
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret
+      - description: The URL through which to access GitLab instance
+        displayName: GitLab URL
+        path: url
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Capacity of the volume
+        displayName: Storage capacity
+        path: volume.capacity
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: StorageClass from which volume should originate
+        displayName: Storage class
+        path: volume.storageClass
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
     - description: GLBackup is the Schema for the glbackups API
-      displayName: GLBackup
+      displayName: GitLab Backup
       kind: GLBackup
       name: glbackups.apps.gitlab.com
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: CronJob
+        name: ""
+        version: v1beta1
+      - kind: Job
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Name of GitLab instance to backup
+        displayName: GitLab Name
+        path: instance
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Restore when set to true the backup defined by
+        displayName: Backup Restore
+        path: restore
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Backup schedule in cron format. Leave blank for one time on-demand backup
+        displayName: Backup Schedule
+        path: schedule
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Comma separated list of components to omit from backup
+        displayName: Backup Exclusions
+        path: skip
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Prefix for the backup job Can be used when restoring backup
+        displayName: Backup Timestamp
+        path: timestamp
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: The URL of the backup resource to be restored
+        displayName: Backup URL
+        path: url
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      statusDescriptors:
+      - description: Displays time the backup completed
+        displayName: Completion Time
+        path: completedAt
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Reports status of backup task
+        displayName: Backup Status
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Displays time the backup started
+        displayName: Start Time
+        path: startedAt
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
     - description: Runner is the Schema for the runners API
-      displayName: Runner
+      displayName: GitLab Runner
       kind: Runner
       name: runners.apps.gitlab.com
+      resources:
+      - kind: ConfigMap
+        name: ""
+        version: v1
+      - kind: Deployment
+        name: ""
+        version: v1
+      - kind: PersistentVolumeClaim
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: Replicasets
+        name: ""
+        version: v1
+      - kind: Secret
+        name: ""
+        version: v1
+      - kind: Service
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Name of GitLab instance created by the operator
+        displayName: Instance Name
+        path: gitlab.name
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: URL of GitLab instance
+        displayName: Instance URL
+        path: gitlab.url
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: List of comma separated tags to be applied to the runner
+        displayName: Tags
+        path: tags
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Name of secret containing the runner-registration-token key used to register the runner
+        displayName: Registration Token
+        path: token
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret
+      statusDescriptors:
+      - description: Reports status of the GitLab Runner instance
+        displayName: Phase
+        path: phase
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Reports status of GitLab Runner registration
+        displayName: Registration
+        path: registration
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
   description: The GitLab operator allows the user to deploy and manage the lifecycle of both GitLab and GitLab Runner in both Openshift and Kubernetes environments
   displayName: GitLab

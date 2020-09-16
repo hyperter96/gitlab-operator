@@ -13,12 +13,8 @@ spec:
     kind: GitLab
     listKind: GitLabList
     plural: gitlabs
-    shortNames:
-    - gl
     singular: gitlab
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       description: GitLab is the Schema for the gitlabs API
@@ -1542,15 +1538,15 @@ spec:
               description: AutoScalingSpec are the parameters to configure autoscaling
               properties:
                 maxReplicas:
-                  description: MaxReplicas is the upper limit to scale up to
+                  description: Maximum number of replicas to scale to
                   format: int32
                   type: integer
                 minReplicas:
-                  description: MinReplicas is the lower limit to scale down to
+                  description: Minimum number of replicas to scale to
                   format: int32
                   type: integer
                 targetCPU:
-                  description: TargetCPU is the CPU utilization threshold percentage
+                  description: Percentage CPU mark at which autoscaling triggers
                   format: int32
                   type: integer
               type: object
@@ -1621,6 +1617,7 @@ spec:
                   type: string
               type: object
             release:
+              description: The GitLab version to deploy
               type: string
             smtp:
               description: 'SMTPConfiguration defines options for Gitlab registry
@@ -1668,8 +1665,10 @@ spec:
                   type: string
               type: object
             tls:
+              description: Name of tls secret used to secure the GitLab instance
               type: string
             url:
+              description: The URL through which to access GitLab instance
               type: string
             volume:
               description: Volume for Gitaly statefulset

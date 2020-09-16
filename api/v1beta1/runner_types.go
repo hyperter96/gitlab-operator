@@ -25,10 +25,12 @@ type RunnerSpec struct {
 	// GitlabResource represents a Gitlab custom resource. Should
 	// only be used to reference Gitlab instance created by the operator
 	Gitlab GitlabInstanceSpec `json:"gitlab,omitempty"`
-	// RegistrationToken is name of secret with the
-	// runner-registration-token key used to register the runner
+
+	//Name of secret containing the runner-registration-token key used to register the runner
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Registration Token",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret"
 	RegistrationToken string `json:"token,omitempty"`
-	// Tags passes the runner tags
+	// List of comma separated tags to be applied to the runner
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tags",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Tags string `json:"tags,omitempty"`
 
 	// Cache defines an S3 compatible object store
@@ -38,9 +40,11 @@ type RunnerSpec struct {
 // GitlabInstanceSpec defines the Gitlab custom
 // resource in the kubernetes
 type GitlabInstanceSpec struct {
-	// Name of gitlab resource in kubernetes / openshift
+	// Name of GitLab instance created by the operator
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Instance Name",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Name string `json:"name,omitempty"`
-	// Gitlab or Continuous Integration URL
+	// URL of GitLab instance
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Instance URL",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	URL string `json:"url,omitempty"`
 }
 
@@ -68,12 +72,20 @@ type RunnerCacheSpec struct {
 
 // RunnerStatus defines the observed state of Runner
 type RunnerStatus struct {
-	Phase        string `json:"phase,omitempty"`
+	// Reports status of the GitLab Runner instance
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Phase",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	Phase string `json:"phase,omitempty"`
+
+	// Reports status of GitLab Runner registration
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Registration",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Registration string `json:"registration,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+
+// +operator-sdk:csv:customresourcedefinitions:displayName="GitLab Runner"
+// +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Replicasets,v1,""},{Pod,v1,""},{Deployment,v1,""},{PersistentVolumeClaim,v1,""}}
 
 // Runner is the Schema for the runners API
 type Runner struct {

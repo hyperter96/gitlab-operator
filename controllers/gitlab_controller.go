@@ -598,6 +598,11 @@ func (r *GitLabReconciler) reconcileRoute(cr *gitlabv1beta1.GitLab) error {
 
 func (r *GitLabReconciler) reconcileIngress(cr *gitlabv1beta1.GitLab) error {
 
+	controller := gitlabctl.IngressController(cr)
+	if err := r.createKubernetesResource(controller, cr); err != nil {
+		return err
+	}
+
 	var ingresses []*extensionsv1beta1.Ingress
 	gitlab := gitlabctl.Ingress(cr)
 

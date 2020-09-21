@@ -11,8 +11,12 @@ spec:
     kind: GitLab
     listKind: GitLabList
     plural: gitlabs
+    shortNames:
+    - gl
     singular: gitlab
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: GitLab is the Schema for the gitlabs API

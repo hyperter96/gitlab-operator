@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -139,6 +140,35 @@ func getRegistryIngressCert(cr *gitlabv1beta1.GitLab) []extensionsv1beta1.Ingres
 		{
 			Hosts:      []string{getRegistryURL(cr)},
 			SecretName: cr.Spec.Registry.TLS,
+		},
+	}
+}
+
+// IngressController is a GitLab controller for exposing GitLab instances
+func IngressController(cr *gitlabv1beta1.GitLab) *nginxv1alpha1.NginxIngressController {
+	labels := gitlabutils.Label(cr.Name, "ingress-controller", gitlabutils.GitlabType)
+
+	var replicas int32 = 1
+
+	return &nginxv1alpha1.NginxIngressController{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "gitlab-ingress-controller",
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: nginxv1alpha1.NginxIngressControllerSpec{
+			EnableCRDs: true,
+			Image: nginxv1alpha1.Image{
+				Repository: "docker.io/nginx/nginx-ingress",
+				Tag:        "1.8.0-ubi",
+				PullPolicy: "Always",
+			},
+			// IngressClass: "gitlab",
+			// UseIngressClassOnly: true,
+			NginxPlus:   false,
+			Replicas:    &replicas,
+			ServiceType: "NodePort",
+			Type:        "deployment",
 		},
 	}
 }

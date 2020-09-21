@@ -119,3 +119,10 @@ bundle: manifests
 .PHONY: bundle-build
 bundle-build:
 	podman build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+deployment-files: bundle
+	cp -av bundle/manifests/apps.gitlab.com_*.yaml config/deploy
+	cp -av bundle/manifests/*_serviceaccount.yaml config/deploy
+	cp -av bundle/manifests/*_clusterrole.yaml config/deploy
+	cp -av bundle/manifests/*_clusterrolebinding.yaml config/deploy
+	for rb in `ls config/deploy/*_clusterrolebinding.yaml`; do echo "  namespace: gitlab-operator" >> $$rb; done

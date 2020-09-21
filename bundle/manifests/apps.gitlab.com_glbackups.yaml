@@ -11,8 +11,12 @@ spec:
     kind: GLBackup
     listKind: GLBackupList
     plural: glbackups
+    shortNames:
+    - gbk
     singular: glbackup
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: GLBackup is the Schema for the glbackups API

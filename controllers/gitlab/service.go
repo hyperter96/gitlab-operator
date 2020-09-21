@@ -228,7 +228,7 @@ func ShellService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// ExporterService retuns service that exposes GitLab exporter
+// ExporterService returns service that exposes GitLab exporter
 func ExporterService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
 

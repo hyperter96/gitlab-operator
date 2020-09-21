@@ -34,11 +34,6 @@ spec:
         - /manager
         image: registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator:latest
         name: manager
-        env:
-          - name: WATCH_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
         resources:
           limits:
             cpu: 200m

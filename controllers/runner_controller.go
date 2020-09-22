@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
@@ -109,13 +110,17 @@ func (r *RunnerReconciler) reconcileSecrets(ctx context.Context, cr *gitlabv1bet
 	err = r.Get(ctx, types.NamespacedName{Name: tokens.Name, Namespace: cr.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if err := controllerutil.SetControllerReference(cr, tokens, r.Scheme); err != nil {
+				return err
+			}
+
 			return r.Create(ctx, tokens)
 		}
 
 		return err
 	}
 
-	if reflect.DeepEqual(tokens.Data, found.Data) {
+	if !reflect.DeepEqual(tokens.Data, found.Data) {
 		found.Data = tokens.Data
 		return r.Update(ctx, found)
 	}
@@ -130,13 +135,17 @@ func (r *RunnerReconciler) reconcileConfigMaps(ctx context.Context, cr *gitlabv1
 	err := r.Get(ctx, types.NamespacedName{Name: configs.Name, Namespace: cr.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if err := controllerutil.SetControllerReference(cr, configs, r.Scheme); err != nil {
+				return err
+			}
+
 			return r.Create(ctx, configs)
 		}
 
 		return err
 	}
 
-	if reflect.DeepEqual(configs.Data, found.Data) {
+	if !reflect.DeepEqual(configs.Data, found.Data) {
 		found.Data = configs.Data
 		return r.Update(ctx, found)
 	}
@@ -151,13 +160,17 @@ func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv
 	err := r.Get(ctx, types.NamespacedName{Name: runner.Name, Namespace: cr.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if err := controllerutil.SetControllerReference(cr, runner, r.Scheme); err != nil {
+				return err
+			}
+
 			return r.Create(ctx, runner)
 		}
 
 		return err
 	}
 
-	if reflect.DeepEqual(runner.Spec, found.Spec) {
+	if !reflect.DeepEqual(runner.Spec, found.Spec) {
 		found.Spec = runner.Spec
 		return r.Update(ctx, found)
 	}
@@ -216,15 +229,20 @@ func (r *RunnerReconciler) reconcileMetrics(ctx context.Context, cr *gitlabv1bet
 	err := r.Get(ctx, types.NamespacedName{Name: svc.Name, Namespace: cr.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if err := controllerutil.SetControllerReference(cr, svc, r.Scheme); err != nil {
+				return err
+			}
+
 			return r.Create(ctx, svc)
 		}
 
 		return err
 	}
 
-	if reflect.DeepEqual(svc.Spec, found.Spec) {
-		found.Spec = svc.Spec
-		return r.Update(ctx, found)
+	if !reflect.DeepEqual(svc.Spec, found.Spec) {
+		// besides ClusterIP, not much is expected to change
+		// return r.Update(ctx, found)
+		return nil
 	}
 
 	return nil
@@ -239,17 +257,26 @@ func (r *RunnerReconciler) reconcileServiceMonitor(ctx context.Context, cr *gitl
 		err := r.Get(ctx, types.NamespacedName{Name: sm.Name, Namespace: cr.Namespace}, found)
 		if err != nil {
 			if errors.IsNotFound(err) {
+				if err := controllerutil.SetControllerReference(cr, sm, r.Scheme); err != nil {
+					return err
+				}
+
 				return r.Create(ctx, sm)
 			}
 
 			return err
 		}
 
-		if reflect.DeepEqual(sm.Spec, found.Spec) {
+		if !reflect.DeepEqual(sm.Spec, found.Spec) {
 			found.Spec = sm.Spec
 			return r.Update(ctx, found)
 		}
 	}
+
+	return nil
+}
+
+func (r *RunnerReconciler) validateRegistrationSecret(ctx context.Context, cr *gitlabv1beta1.Runner) error {
 
 	return nil
 }

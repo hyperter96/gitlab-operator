@@ -91,6 +91,14 @@ rules:
 - apiGroups:
   - apps.gitlab.com
   resources:
+  - runners/finalizers
+  verbs:
+  - delete
+  - patch
+  - update
+- apiGroups:
+  - apps.gitlab.com
+  resources:
   - runners/status
   verbs:
   - get

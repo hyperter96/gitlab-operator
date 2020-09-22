@@ -18,19 +18,18 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	runnercontroller "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/runner"
+	runnerctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/runner"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,13 +43,15 @@ type RunnerReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=runners,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.gitlab.com,resources=runners/finalizers,verbs=update;patch;delete
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=runners/status,verbs=get;update;patch
 
 // Reconcile triggers when an event occurs on the watched resource
 func (r *RunnerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	_ = r.Log.WithValues("runner", req.NamespacedName)
+	log := r.Log.WithValues("runner", req.NamespacedName)
 
+	log.Info("Reconciling Runner", "name", req.NamespacedName.Name, "namespace", req.NamespacedName.Namespace)
 	runner := &gitlabv1beta1.Runner{}
 	if err := r.Get(ctx, req.NamespacedName, runner); err != nil {
 		if errors.IsNotFound(err) {
@@ -60,15 +61,15 @@ func (r *RunnerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileConfigMaps(runner); err != nil {
+	if err := r.reconcileConfigMaps(ctx, runner); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileSecrets(runner); err != nil {
+	if err := r.reconcileSecrets(ctx, runner); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileDeployments(runner); err != nil {
+	if err := r.reconcileDeployments(ctx, runner); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -76,7 +77,11 @@ func (r *RunnerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileMetrics(runner); err != nil {
+	if err := r.reconcileMetrics(ctx, runner); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileServiceMonitor(ctx, runner); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -94,50 +99,70 @@ func (r *RunnerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *RunnerReconciler) reconcileSecrets(cr *gitlabv1beta1.Runner) error {
-	tokens := runnercontroller.GetSecret(r, cr)
-
-	if err := r.createKubernetesResource(cr, tokens); err != nil {
+func (r *RunnerReconciler) reconcileSecrets(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+	tokens, err := runnerctl.GetSecret(r, cr)
+	if err != nil {
 		return err
+	}
+
+	found := &corev1.Secret{}
+	err = r.Get(ctx, types.NamespacedName{Name: tokens.Name, Namespace: cr.Namespace}, found)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, tokens)
+		}
+
+		return err
+	}
+
+	if reflect.DeepEqual(tokens.Data, found.Data) {
+		found.Data = tokens.Data
+		return r.Update(ctx, found)
 	}
 
 	return nil
 }
 
-func (r *RunnerReconciler) reconcileConfigMaps(cr *gitlabv1beta1.Runner) error {
-	configs := runnercontroller.GetConfigMap(cr)
+func (r *RunnerReconciler) reconcileConfigMaps(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+	configs := runnerctl.GetConfigMap(cr)
 
-	if err := r.createKubernetesResource(cr, configs); err != nil {
+	found := &corev1.ConfigMap{}
+	err := r.Get(ctx, types.NamespacedName{Name: configs.Name, Namespace: cr.Namespace}, found)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, configs)
+		}
+
 		return err
+	}
+
+	if reflect.DeepEqual(configs.Data, found.Data) {
+		found.Data = configs.Data
+		return r.Update(ctx, found)
 	}
 
 	return nil
 }
 
-func (r *RunnerReconciler) reconcileDeployments(cr *gitlabv1beta1.Runner) error {
-	runner := runnercontroller.GetDeployment(cr)
+func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+	runner := runnerctl.GetDeployment(cr)
 
-	if err := r.createKubernetesResource(cr, runner); err != nil {
+	found := &appsv1.Deployment{}
+	err := r.Get(ctx, types.NamespacedName{Name: runner.Name, Namespace: cr.Namespace}, found)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, runner)
+		}
+
 		return err
+	}
+
+	if reflect.DeepEqual(runner.Spec, found.Spec) {
+		found.Spec = runner.Spec
+		return r.Update(ctx, found)
 	}
 
 	return nil
-}
-
-func (r *RunnerReconciler) createKubernetesResource(cr *gitlabv1beta1.Runner, object interface{}) error {
-
-	obj := object.(metav1.Object)
-	nsName := types.NamespacedName{Name: obj.GetNamespace(), Namespace: obj.GetNamespace()}
-
-	if gitlabutils.IsObjectFound(r, nsName, object.(runtime.Object)) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, object.(metav1.Object), r.Scheme); err != nil {
-		return err
-	}
-
-	return r.Create(context.TODO(), object.(runtime.Object))
 }
 
 func (r *RunnerReconciler) updateRunnerStatus(cr *gitlabv1beta1.Runner, consoleLog string) error {
@@ -149,7 +174,7 @@ func (r *RunnerReconciler) updateRunnerStatus(cr *gitlabv1beta1.Runner, consoleL
 
 	if consoleLog != "" {
 		runner.Status.Phase = "Running"
-		runner.Status.Registration = runnercontroller.RegistrationStatus(consoleLog)
+		runner.Status.Registration = runnerctl.RegistrationStatus(consoleLog)
 	} else {
 		runner.Status.Phase = "Initializing"
 	}
@@ -164,14 +189,14 @@ func (r *RunnerReconciler) reconcileStatus(cr *gitlabv1beta1.Runner) error {
 		return err
 	}
 
-	pod, err := runnercontroller.WorkerPod(cr, client)
+	pod, err := runnerctl.WorkerPod(cr, client)
 	if err != nil {
 		return err
 	}
 
 	var log string
 	if gitlabutils.IsPodRunning(pod) {
-		log, err = runnercontroller.LogStream(pod, client)
+		log, err = runnerctl.LogStream(pod, client)
 		if err != nil {
 			return err
 		}
@@ -184,18 +209,45 @@ func (r *RunnerReconciler) reconcileStatus(cr *gitlabv1beta1.Runner) error {
 	return nil
 }
 
-func (r *RunnerReconciler) reconcileMetrics(cr *gitlabv1beta1.Runner) error {
-	svc := runnercontroller.MetricsService(cr)
+func (r *RunnerReconciler) reconcileMetrics(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+	svc := runnerctl.MetricsService(cr)
 
-	if err := r.createKubernetesResource(cr, svc); err != nil {
+	found := &corev1.Service{}
+	err := r.Get(ctx, types.NamespacedName{Name: svc.Name, Namespace: cr.Namespace}, found)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, svc)
+		}
+
 		return err
 	}
 
-	if gitlabutils.IsPrometheusSupported() {
-		sm := runnercontroller.ServiceMonitorService(cr)
+	if reflect.DeepEqual(svc.Spec, found.Spec) {
+		found.Spec = svc.Spec
+		return r.Update(ctx, found)
+	}
 
-		if err := r.createKubernetesResource(cr, sm); err != nil {
+	return nil
+}
+
+func (r *RunnerReconciler) reconcileServiceMonitor(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+
+	if gitlabutils.IsPrometheusSupported() {
+		sm := runnerctl.ServiceMonitorService(cr)
+
+		found := &monitoringv1.ServiceMonitor{}
+		err := r.Get(ctx, types.NamespacedName{Name: sm.Name, Namespace: cr.Namespace}, found)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				return r.Create(ctx, sm)
+			}
+
 			return err
+		}
+
+		if reflect.DeepEqual(sm.Spec, found.Spec) {
+			found.Spec = sm.Spec
+			return r.Update(ctx, found)
 		}
 	}
 

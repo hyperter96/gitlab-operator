@@ -37,6 +37,7 @@ import (
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 
 	certmanagerv1beta1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1beta1"
+	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
@@ -80,7 +81,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("gitlab", req.NamespacedName)
 
-	log.Info("Reconciling GitLab object", "Name", req.NamespacedName.Name)
+	log.Info("Reconciling GitLab", "name", req.NamespacedName.Name, "namespace", req.NamespacedName.Namespace)
 	gitlab := &gitlabv1beta1.GitLab{}
 	if err := r.Get(ctx, req.NamespacedName, gitlab); err != nil {
 		if errors.IsNotFound(err) {
@@ -172,7 +173,7 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&monitoringv1.ServiceMonitor{}).
 		Owns(&certmanagerv1beta1.Issuer{}).
 		Owns(&certmanagerv1beta1.Certificate{}).
-		// Owns(&nginxv1alpha1.NginxIngressController{}).
+		Owns(&nginxv1alpha1.NginxIngressController{}).
 		Complete(r)
 }
 

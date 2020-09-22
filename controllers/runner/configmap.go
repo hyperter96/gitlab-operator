@@ -29,8 +29,6 @@ func userOptions(cr *gitlabv1beta1.Runner) Config {
 		options.CheckInterval = *cr.Spec.CheckInterval
 	}
 
-	fmt.Printf("%+v", options)
-
 	return options
 }
 

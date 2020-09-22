@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
-mkdir -p /var/tmp/gitlab-runner/.gitlab-runner/
-cp /scripts/config.toml /var/tmp/gitlab-runner/.gitlab-runner/
+mkdir -p ~/.gitlab-runner/
+cp /scripts/config.toml ~/.gitlab-runner/
 
 # Register the runner
 if [[ -f /secrets/accesskey && -f /secrets/secretkey ]]; then
@@ -24,4 +24,4 @@ if ! sh /scripts/register-runner; then
 fi
 
 # Start the runner
-exec /entrypoint run --user=gitlab-runner --working-directory=/var/tmp/gitlab-runner --listen-address=0.0.0.0
+exec /entrypoint run --user=gitlab-runner --listen-address=0.0.0.0

@@ -29,9 +29,18 @@ type RunnerSpec struct {
 	//Name of secret containing the runner-registration-token key used to register the runner
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Registration Token",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret"
 	RegistrationToken string `json:"token,omitempty"`
+
 	// List of comma separated tags to be applied to the runner
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tags",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Tags string `json:"tags,omitempty"`
+
+	// Concurrent limits the number of jobs globally that can run concurrently
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Concurrent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	Concurrent *int32 `json:"concurrent,omitempty"`
+
+	// CheckInterval defines the number of seconds between checks for new jobs
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Check Interval",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	CheckInterval *int32 `json:"interval,omitempty"`
 
 	// Cache defines an S3 compatible object store
 	Cache *RunnerCacheSpec `json:"cache,omitempty"`

@@ -205,7 +205,7 @@ func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-runner-secret",
+									Name: RegistrationTokenSecretName(cr),
 								},
 								Key: "runner-token",
 							},
@@ -216,7 +216,7 @@ func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						ValueFrom: &corev1.EnvVarSource{
 							SecretKeyRef: &corev1.SecretKeySelector{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-runner-secret",
+									Name: RegistrationTokenSecretName(cr),
 								},
 								Key: "runner-registration-token",
 							},
@@ -445,7 +445,7 @@ func runnerSecretsVolume(cr *gitlabv1beta1.Runner) []corev1.VolumeProjection {
 		{
 			Secret: &corev1.SecretProjection{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: cr.Name + "-runner-secret",
+					Name: RegistrationTokenSecretName(cr),
 				},
 				Items: []corev1.KeyToPath{
 					{
@@ -513,4 +513,22 @@ func runnerConfig(cr *gitlabv1beta1.Runner) (options runnerOptions) {
 	}
 
 	return
+}
+
+// RegistrationTokenSecretName returns name of secret containing the
+// runner-registration-token and runner-token keys
+func RegistrationTokenSecretName(cr *gitlabv1beta1.Runner) string {
+	var tokenSecretName string
+
+	if cr.Spec.Gitlab.Name != "" {
+		tokenSecretName = cr.Spec.Gitlab.Name + "-runner-token-secret"
+	}
+
+	if cr.Spec.RegistrationToken != "" {
+		// If user provides a secret with registration token
+		// set it to the gitlab secret
+		tokenSecretName = cr.Spec.RegistrationToken
+	}
+
+	return tokenSecretName
 }

@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/go-logr/logr"
@@ -26,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
@@ -65,7 +67,7 @@ func (r *RunnerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileSecrets(ctx, runner); err != nil {
+	if err := r.validateRegistrationTokenSecret(ctx, runner); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -73,7 +75,7 @@ func (r *RunnerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileStatus(runner); err != nil {
+	if err := r.reconcileStatus(ctx, runner); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -99,30 +101,6 @@ func (r *RunnerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *RunnerReconciler) reconcileSecrets(ctx context.Context, cr *gitlabv1beta1.Runner) error {
-	tokens, err := runnerctl.GetSecret(r, cr)
-	if err != nil {
-		return err
-	}
-
-	found := &corev1.Secret{}
-	err = r.Get(ctx, types.NamespacedName{Name: tokens.Name, Namespace: cr.Namespace}, found)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return r.Create(ctx, tokens)
-		}
-
-		return err
-	}
-
-	if reflect.DeepEqual(tokens.Data, found.Data) {
-		found.Data = tokens.Data
-		return r.Update(ctx, found)
-	}
-
-	return nil
-}
-
 func (r *RunnerReconciler) reconcileConfigMaps(ctx context.Context, cr *gitlabv1beta1.Runner) error {
 	configs := runnerctl.GetConfigMap(cr)
 
@@ -130,13 +108,17 @@ func (r *RunnerReconciler) reconcileConfigMaps(ctx context.Context, cr *gitlabv1
 	err := r.Get(ctx, types.NamespacedName{Name: configs.Name, Namespace: cr.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if err := controllerutil.SetControllerReference(cr, configs, r.Scheme); err != nil {
+				return err
+			}
+
 			return r.Create(ctx, configs)
 		}
 
 		return err
 	}
 
-	if reflect.DeepEqual(configs.Data, found.Data) {
+	if !reflect.DeepEqual(configs.Data, found.Data) {
 		found.Data = configs.Data
 		return r.Update(ctx, found)
 	}
@@ -151,13 +133,17 @@ func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv
 	err := r.Get(ctx, types.NamespacedName{Name: runner.Name, Namespace: cr.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if err := controllerutil.SetControllerReference(cr, runner, r.Scheme); err != nil {
+				return err
+			}
+
 			return r.Create(ctx, runner)
 		}
 
 		return err
 	}
 
-	if reflect.DeepEqual(runner.Spec, found.Spec) {
+	if !reflect.DeepEqual(runner.Spec, found.Spec) {
 		found.Spec = runner.Spec
 		return r.Update(ctx, found)
 	}
@@ -165,9 +151,9 @@ func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv
 	return nil
 }
 
-func (r *RunnerReconciler) updateRunnerStatus(cr *gitlabv1beta1.Runner, consoleLog string) error {
+func (r *RunnerReconciler) updateRunnerStatus(ctx context.Context, cr *gitlabv1beta1.Runner, consoleLog string) error {
 	runner := &gitlabv1beta1.Runner{}
-	err := r.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, runner)
+	err := r.Get(ctx, types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, runner)
 	if err != nil {
 		return err
 	}
@@ -179,10 +165,10 @@ func (r *RunnerReconciler) updateRunnerStatus(cr *gitlabv1beta1.Runner, consoleL
 		runner.Status.Phase = "Initializing"
 	}
 
-	return r.Status().Update(context.TODO(), runner)
+	return r.Status().Update(ctx, runner)
 }
 
-func (r *RunnerReconciler) reconcileStatus(cr *gitlabv1beta1.Runner) error {
+func (r *RunnerReconciler) reconcileStatus(ctx context.Context, cr *gitlabv1beta1.Runner) error {
 
 	client, err := gitlabutils.KubernetesConfig().NewKubernetesClient()
 	if err != nil {
@@ -202,7 +188,7 @@ func (r *RunnerReconciler) reconcileStatus(cr *gitlabv1beta1.Runner) error {
 		}
 	}
 
-	if err := r.updateRunnerStatus(cr, log); err != nil {
+	if err := r.updateRunnerStatus(ctx, cr, log); err != nil {
 		return err
 	}
 
@@ -216,15 +202,20 @@ func (r *RunnerReconciler) reconcileMetrics(ctx context.Context, cr *gitlabv1bet
 	err := r.Get(ctx, types.NamespacedName{Name: svc.Name, Namespace: cr.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if err := controllerutil.SetControllerReference(cr, svc, r.Scheme); err != nil {
+				return err
+			}
+
 			return r.Create(ctx, svc)
 		}
 
 		return err
 	}
 
-	if reflect.DeepEqual(svc.Spec, found.Spec) {
-		found.Spec = svc.Spec
-		return r.Update(ctx, found)
+	if !reflect.DeepEqual(svc.Spec, found.Spec) {
+		// besides ClusterIP, not much is expected to change
+		// return r.Update(ctx, found)
+		return nil
 	}
 
 	return nil
@@ -239,16 +230,47 @@ func (r *RunnerReconciler) reconcileServiceMonitor(ctx context.Context, cr *gitl
 		err := r.Get(ctx, types.NamespacedName{Name: sm.Name, Namespace: cr.Namespace}, found)
 		if err != nil {
 			if errors.IsNotFound(err) {
+				if err := controllerutil.SetControllerReference(cr, sm, r.Scheme); err != nil {
+					return err
+				}
+
 				return r.Create(ctx, sm)
 			}
 
 			return err
 		}
 
-		if reflect.DeepEqual(sm.Spec, found.Spec) {
+		if !reflect.DeepEqual(sm.Spec, found.Spec) {
 			found.Spec = sm.Spec
 			return r.Update(ctx, found)
 		}
+	}
+
+	return nil
+}
+
+func (r *RunnerReconciler) validateRegistrationTokenSecret(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+	tokenSecretName := runnerctl.RegistrationTokenSecretName(cr)
+
+	found := &corev1.Secret{}
+	err := r.Get(ctx, types.NamespacedName{Name: tokenSecretName, Namespace: cr.Namespace}, found)
+	if err != nil {
+		return err
+	}
+
+	registrationToken, ok := found.Data["runner-registration-token"]
+	if !ok {
+		return fmt.Errorf("runner-registration-token key not found in %s secret", tokenSecretName)
+	}
+
+	tokenStr := string(registrationToken)
+	if tokenStr == "" {
+		return fmt.Errorf("runner-registration-token can not be empty")
+	}
+
+	if _, ok := found.StringData["runner-token"]; !ok {
+		found.Data["runner-token"] = []byte("")
+		return r.Update(ctx, found)
 	}
 
 	return nil

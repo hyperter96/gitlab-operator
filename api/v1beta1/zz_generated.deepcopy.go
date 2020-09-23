@@ -454,6 +454,16 @@ func (in *RunnerList) DeepCopyObject() runtime.Object {
 func (in *RunnerSpec) DeepCopyInto(out *RunnerSpec) {
 	*out = *in
 	out.Gitlab = in.Gitlab
+	if in.Concurrent != nil {
+		in, out := &in.Concurrent, &out.Concurrent
+		*out = new(int32)
+		**out = **in
+	}
+	if in.CheckInterval != nil {
+		in, out := &in.CheckInterval, &out.CheckInterval
+		*out = new(int32)
+		**out = **in
+	}
 	if in.Cache != nil {
 		in, out := &in.Cache, &out.Cache
 		*out = new(RunnerCacheSpec)

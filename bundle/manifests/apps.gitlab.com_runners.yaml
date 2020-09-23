@@ -52,6 +52,10 @@ spec:
                   description: S3 cache server URL
                   type: string
               type: object
+            concurrent:
+              description: Concurrent limits the number of jobs globally that can run concurrently
+              format: int32
+              type: integer
             gitlab:
               description: GitlabResource represents a Gitlab custom resource. Should only be used to reference Gitlab instance created by the operator
               properties:
@@ -62,6 +66,10 @@ spec:
                   description: URL of GitLab instance
                   type: string
               type: object
+            interval:
+              description: CheckInterval defines the number of seconds between checks for new jobs
+              format: int32
+              type: integer
             tags:
               description: List of comma separated tags to be applied to the runner
               type: string

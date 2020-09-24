@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -10,6 +11,9 @@ import (
 	"time"
 
 	"encoding/base64"
+
+	"crypto/sha256"
+	"encoding/json"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -278,4 +282,21 @@ func GetDeploymentPods(kclient client.Client, name, namespace string) (result []
 	}
 
 	return result, err
+}
+
+// ConfigMapWithHash returns configmap with
+// annotation containing a SHA256 hash of its data
+func ConfigMapWithHash(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+	jdata, err := json.Marshal(cm.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	hash := sha256.Sum256(jdata)
+
+	cm.Annotations = map[string]string{
+		"checksum": hex.EncodeToString(hash[:]),
+	}
+
+	return cm, nil
 }

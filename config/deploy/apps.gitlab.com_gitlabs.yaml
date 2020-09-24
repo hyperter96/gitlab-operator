@@ -6,6 +6,19 @@ metadata:
   creationTimestamp: null
   name: gitlabs.apps.gitlab.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.phase
+    name: STATUS
+    type: string
+  - JSONPath: .status.health.redis
+    name: REDIS
+    type: string
+  - JSONPath: .status.health.database
+    name: DATABASE
+    type: string
+  - JSONPath: .status.health.workhorse
+    name: CONSOLE
+    type: string
   group: apps.gitlab.com
   names:
     kind: GitLab

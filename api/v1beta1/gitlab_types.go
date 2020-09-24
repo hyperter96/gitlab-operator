@@ -186,6 +186,10 @@ type GitLabStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=gl
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="STATUS",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="REDIS",type=string,JSONPath=`.status.health.redis`
+// +kubebuilder:printcolumn:name="DATABASE",type=string,JSONPath=`.status.health.database`
+// +kubebuilder:printcolumn:name="CONSOLE",type=string,JSONPath=`.status.health.workhorse`
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab"
 // +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Pod,v1,""},{Deployment,v1,""},{StatefulSet,v1,""},{PersistentVolumeClaim,v1,""},{Runner,v1beta1,""},{GLBackup,v1beta1,""}}
 

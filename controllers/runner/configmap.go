@@ -70,5 +70,8 @@ func GetConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 		"configure":       configureScript,
 	}
 
+	// update configmap with checksum in annotation
+	gitlabutils.ConfigMapWithHash(runnerConfigMap)
+
 	return runnerConfigMap
 }

@@ -557,6 +557,18 @@ spec:
           - update
           - watch
         - apiGroups:
+          - k8s.nginx.org
+          resources:
+          - nginxingresscontrollers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
           - monitoring.coreos.com
           resources:
           - prometheuses

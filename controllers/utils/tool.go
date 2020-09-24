@@ -284,12 +284,12 @@ func GetDeploymentPods(kclient client.Client, name, namespace string) (result []
 	return result, err
 }
 
-// ConfigMapWithHash returns configmap with
+// ConfigMapWithHash updates configmap with
 // annotation containing a SHA256 hash of its data
-func ConfigMapWithHash(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+func ConfigMapWithHash(cm *corev1.ConfigMap) {
 	jdata, err := json.Marshal(cm.Data)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	hash := sha256.Sum256(jdata)
@@ -297,6 +297,4 @@ func ConfigMapWithHash(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	cm.Annotations = map[string]string{
 		"checksum": hex.EncodeToString(hash[:]),
 	}
-
-	return cm, nil
 }

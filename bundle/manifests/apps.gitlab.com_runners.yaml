@@ -12,6 +12,7 @@ spec:
     listKind: RunnerList
     plural: runners
     singular: runner
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}

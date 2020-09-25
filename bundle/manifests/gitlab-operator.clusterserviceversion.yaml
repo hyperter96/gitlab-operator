@@ -65,7 +65,7 @@ metadata:
           }
         }
       ]
-    capabilities: Basic Install
+    capabilities: Full Lifecycle
     categories: Integration & Delivery
     certified: "true"
     containerImage: registry.connect.redhat.com/gitlab/gitlab-operator:v0.0.1

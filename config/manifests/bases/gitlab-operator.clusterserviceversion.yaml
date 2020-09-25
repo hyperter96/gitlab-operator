@@ -74,7 +74,7 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: GitLab is the Schema for the gitlabs API
+    - description: GitLab is a complete DevOps platform, delivered in a single application
       displayName: GitLab
       kind: GitLab
       name: gitlabs.apps.gitlab.com
@@ -117,7 +117,7 @@ spec:
         path: autoscaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Percentage CPU mark at which autoscaling triggers
+      - description: Percentage CPU of the requested CPU resources at which autoscaling triggers
         displayName: CPU Percentage Threshold
         path: autoscaling.targetCPU
         x-descriptors:
@@ -147,12 +147,12 @@ spec:
         path: release
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Name of tls secret used to secure the GitLab instance
+      - description: Name of tls secret used to secure the GitLab instance URL
         displayName: TLS Certificate
         path: tls
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret
-      - description: The URL through which to access GitLab instance
+      - description: 'The fully qualified domain name used to access the GitLab instance. For example: gitlab.example.com'
         displayName: GitLab URL
         path: url
         x-descriptors:

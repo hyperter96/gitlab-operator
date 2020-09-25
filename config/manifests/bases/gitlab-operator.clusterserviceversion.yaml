@@ -168,7 +168,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
-    - description: GLBackup is the Schema for the glbackups API
+    - description: GLBackup resource backups and restores a GitLab instance
       displayName: GitLab Backup
       kind: GLBackup
       name: glbackups.apps.gitlab.com
@@ -188,7 +188,7 @@ spec:
         path: instance
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Restore when set to true the backup defined by
+      - description: If set to true, informs GitLab operator to perform a backup restore. Defaults to false or performing a backup.
         displayName: Backup Restore
         path: restore
         x-descriptors:
@@ -198,12 +198,12 @@ spec:
         path: schedule
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Comma separated list of components to omit from backup
+      - description: Comma-separated list of components to omit from backup.
         displayName: Backup Exclusions
         path: skip
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Prefix for the backup job Can be used when restoring backup
+      - description: If specified, overrides the timestamp of a backup. Forms the prefix of the backup e.g. '<timestamp-override-value>_gitlab_backup.tar'. Can also be specified to target a specific backup to be restored
         displayName: Backup Timestamp
         path: timestamp
         x-descriptors:
@@ -219,7 +219,7 @@ spec:
         path: completedAt
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Reports status of backup task
+      - description: Reports status of backup job
         displayName: Backup Status
         path: phase
         x-descriptors:

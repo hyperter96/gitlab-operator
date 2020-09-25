@@ -31,12 +31,13 @@ type GLBackupSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup Schedule",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Schedule string `json:"schedule,omitempty"`
 
-	// Comma separated list of components to omit from backup
+	// Comma-separated list of components to omit from backup.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup Exclusions",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Exclusions string `json:"skip,omitempty"`
 
-	// Prefix for the backup job
-	// Can be used when restoring backup
+	// If specified, overrides the timestamp of a backup.
+	// Forms the prefix of the backup e.g. '<timestamp-override-value>_gitlab_backup.tar'.
+	// Can also be specified to target a specific backup to be restored
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup Timestamp",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Timestamp string `json:"timestamp,omitempty"`
 
@@ -44,7 +45,8 @@ type GLBackupSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup URL",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	URL string `json:"url,omitempty"`
 
-	// Restore when set to true the backup defined by
+	// If set to true, informs GitLab operator to perform a backup restore.
+	// Defaults to false or performing a backup.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Backup Restore",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Restore bool `json:"restore,omitempty"`
 }
@@ -68,7 +70,7 @@ const (
 
 // GLBackupStatus defines the observed state of GLBackup
 type GLBackupStatus struct {
-	// Reports status of backup task
+	// Reports status of backup job
 	// +kubebuilder:validation:Enum=Running;Completed;Scheduled;Failed
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Backup Status",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Phase BackupState `json:"phase,omitempty"`
@@ -88,12 +90,15 @@ type GLBackupStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab Backup"
 // +operator-sdk:csv:customresourcedefinitions:resources={{Job,v1,""},{CronJob,v1beta1,""},{ConfigMap,v1,""}}
 
-// GLBackup is the Schema for the glbackups API
+// GLBackup resource backups and restores a GitLab instance
 type GLBackup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GLBackupSpec   `json:"spec,omitempty"`
+	// Specification of the desired behavior of a GitLab Backup
+	Spec GLBackupSpec `json:"spec,omitempty"`
+	// Most recently observed status of the GitLab Backup.
+	// It is read-only to the user
 	Status GLBackupStatus `json:"status,omitempty"`
 }
 

@@ -234,7 +234,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
-    - description: Runner is the Schema for the runners API
+    - description: Runner is the open source project used to run your jobs and send the results back to GitLab
       displayName: GitLab Runner
       kind: Runner
       name: runners.apps.gitlab.com
@@ -266,17 +266,17 @@ spec:
         path: gitlab.name
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: URL of GitLab instance
+      - description: The fully qualified domain name of the address used to access the GitLab instance. For example, gitlab.example.com
         displayName: Instance URL
         path: gitlab.url
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: List of comma separated tags to be applied to the runner
+      - description: 'List of comma separated tags to be applied to the runner More info: https://docs.gitlab.com/ee/ci/runners/#use-tags-to-limit-the-number-of-jobs-using-the-runner'
         displayName: Tags
         path: tags
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Name of secret containing the runner-registration-token key used to register the runner
+      - description: Name of secret containing the 'runner-registration-token' key used to register the runner
         displayName: Registration Token
         path: token
         x-descriptors:

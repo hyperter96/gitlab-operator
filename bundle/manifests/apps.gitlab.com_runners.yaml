@@ -12,12 +12,13 @@ spec:
     listKind: RunnerList
     plural: runners
     singular: runner
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Runner is the Schema for the runners API
+      description: Runner is the open source project used to run your jobs and send the results back to GitLab
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -28,7 +29,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: RunnerSpec defines the desired state of Runner
+          description: Specification of the desired behavior of a GitLab Runner instance
           properties:
             cache:
               description: Cache defines an S3 compatible object store
@@ -37,7 +38,7 @@ spec:
                   description: Bucket defines the s3 bucket name
                   type: string
                 credentials:
-                  description: Credentials is the name of the secret containing the
+                  description: Credentials is the name of the secret containing the 'accesskey' and 'secretkey' used to access the object storage
                   type: string
                 insecure:
                   description: Insecure enables use of HTTP protocol
@@ -53,32 +54,34 @@ spec:
                   type: string
               type: object
             concurrent:
-              description: Concurrent limits the number of jobs globally that can run concurrently
+              description: Option to limit the number of jobs globally that can run concurrently. The operator sets this to 10, if not specified
               format: int32
               type: integer
             gitlab:
-              description: GitlabResource represents a Gitlab custom resource. Should only be used to reference Gitlab instance created by the operator
+              description: gitlab specifies the GitLab instance the GitLab Runner will register against
               properties:
                 name:
                   description: Name of GitLab instance created by the operator
                   type: string
                 url:
-                  description: URL of GitLab instance
+                  description: The fully qualified domain name of the address used to access the GitLab instance. For example, gitlab.example.com
                   type: string
               type: object
             interval:
-              description: CheckInterval defines the number of seconds between checks for new jobs
+              description: Option to define the number of seconds between checks for new jobs. This is set to a default of 30s by operator if not set
               format: int32
               type: integer
             tags:
-              description: List of comma separated tags to be applied to the runner
+              description: 'List of comma separated tags to be applied to the runner More info: https://docs.gitlab.com/ee/ci/runners/#use-tags-to-limit-the-number-of-jobs-using-the-runner'
               type: string
             token:
-              description: Name of secret containing the runner-registration-token key used to register the runner
+              description: Name of secret containing the 'runner-registration-token' key used to register the runner
               type: string
+          required:
+          - gitlab
           type: object
         status:
-          description: RunnerStatus defines the observed state of Runner
+          description: Most recently observed status of the GitLab Runner. It is read-only to the user
           properties:
             phase:
               description: Reports status of the GitLab Runner instance

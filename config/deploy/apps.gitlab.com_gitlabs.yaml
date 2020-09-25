@@ -27,12 +27,13 @@ spec:
     shortNames:
     - gl
     singular: gitlab
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: GitLab is the Schema for the gitlabs API
+      description: GitLab is a complete DevOps platform, delivered in a single application
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -43,10 +44,10 @@ spec:
         metadata:
           type: object
         spec:
-          description: GitLabSpec defines the desired state of GitLab
+          description: Specification of the desired behavior of a GitLab instance
           properties:
             acme:
-              description: ACMEOptions defines the values for the ACME service that will provide certificates
+              description: 'If specified, the options used by Cert-Manager to generate certificates. More info: https://cert-manager.io/docs/configuration/acme/'
               properties:
                 email:
                   description: Email is the email for this account
@@ -802,7 +803,7 @@ spec:
                   type: array
               type: object
             autoscaling:
-              description: AutoScalingSpec are the parameters to configure autoscaling
+              description: If specified, defines the parameters used when autoscaling GitLab resources
               properties:
                 maxReplicas:
                   description: Maximum number of replicas to scale to
@@ -813,12 +814,12 @@ spec:
                   format: int32
                   type: integer
                 targetCPU:
-                  description: Percentage CPU mark at which autoscaling triggers
+                  description: Percentage CPU of the requested CPU resources at which autoscaling triggers
                   format: int32
                   type: integer
               type: object
             objectStore:
-              description: ObjectStoreSpec defines options for Gitlab registry
+              description: The parameters for the object storage used to store GitLab artifacts
               properties:
                 credentials:
                   description: Credentials contains the name of the secret that contains the `accesskey` and `secretkey` values required to access an existing minio instance. Should be an even number equal to or larger than four
@@ -834,7 +835,7 @@ spec:
                   type: string
               type: object
             postgres:
-              description: DatabaseSpec defines database options
+              description: If specified, overrides the default behavior of the Postgresql database deployed by the operator
               properties:
                 replicas:
                   format: int32
@@ -851,7 +852,7 @@ spec:
                   type: object
               type: object
             redis:
-              description: RedisSpec defines Redis options
+              description: If specified, the Redis options override the default behavior of the Redis key-value store deployed by the operator
               properties:
                 replicas:
                   format: int32
@@ -868,7 +869,7 @@ spec:
                   type: object
               type: object
             registry:
-              description: RegistrySpec defines options for GitLab registry
+              description: Options used to setup the GitLab Registry
               properties:
                 disable:
                   type: boolean
@@ -881,7 +882,7 @@ spec:
               description: The GitLab version to deploy
               type: string
             smtp:
-              description: 'SMTPConfiguration defines options for Gitlab registry More on configuration options available below: https://docs.gitlab.com/omnibus/settings/smtp.html'
+              description: If specified, SMTP provides the details of the email server used by GitLab to send outgoing email
               properties:
                 authentication:
                   description: 'Authentication represents authentication mechanism Options include: login, plain, cram_md5'
@@ -922,10 +923,10 @@ spec:
                   type: string
               type: object
             tls:
-              description: Name of tls secret used to secure the GitLab instance
+              description: Name of tls secret used to secure the GitLab instance URL
               type: string
             url:
-              description: The URL through which to access GitLab instance
+              description: 'The fully qualified domain name used to access the GitLab instance. For example: gitlab.example.com'
               type: string
             volume:
               description: Volume for Gitaly statefulset
@@ -939,7 +940,7 @@ spec:
               type: object
           type: object
         status:
-          description: GitLabStatus defines the observed state of GitLab
+          description: Most recently observed status of the GitLab instance. It is read-only to the user
           properties:
             health:
               description: HealthCheck represents the status  of services that make up Gitlab

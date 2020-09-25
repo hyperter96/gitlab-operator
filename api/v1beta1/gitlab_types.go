@@ -27,21 +27,32 @@ type GitLabSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Release",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Release string `json:"release,omitempty"`
 
-	// The URL through which to access GitLab instance
+	// The fully qualified domain name used to access the GitLab instance.
+	// For example: gitlab.example.com
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="GitLab URL",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	URL string `json:"url,omitempty"`
-
-	// Name of tls secret used to secure the GitLab instance
+	// Name of tls secret used to secure the GitLab instance URL
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Certificate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret"
-	TLS         string            `json:"tls,omitempty"`
-	SMTP        SMTPConfiguration `json:"smtp,omitempty"`
-	Registry    RegistrySpec      `json:"registry,omitempty"`
-	ObjectStore ObjectStoreSpec   `json:"objectStore,omitempty"`
-	Redis       *RedisSpec        `json:"redis,omitempty"`
-	Database    *DatabaseSpec     `json:"postgres,omitempty"`
-	CertIssuer  *ACMEOptions      `json:"acme,omitempty"`
+	TLS string `json:"tls,omitempty"`
+	// If specified, SMTP provides the details of the email server
+	// used by GitLab to send outgoing email
+	SMTP SMTPConfiguration `json:"smtp,omitempty"`
+	// Options used to setup the GitLab Registry
+	Registry RegistrySpec `json:"registry,omitempty"`
+	// The parameters for the object storage used to store GitLab artifacts
+	ObjectStore ObjectStoreSpec `json:"objectStore,omitempty"`
+	// If specified, the Redis options override the default behavior of the
+	// Redis key-value store deployed by the operator
+	Redis *RedisSpec `json:"redis,omitempty"`
+	// If specified, overrides the default behavior of the Postgresql
+	// database deployed by the operator
+	Database *DatabaseSpec `json:"postgres,omitempty"`
+	// If specified, the options used by Cert-Manager to generate certificates.
+	// More info: https://cert-manager.io/docs/configuration/acme/
+	CertIssuer *ACMEOptions `json:"acme,omitempty"`
 	// Volume for Gitaly statefulset
-	Volume      VolumeSpec       `json:"volume,omitempty"`
+	Volume VolumeSpec `json:"volume,omitempty"`
+	// If specified, defines the parameters used when autoscaling GitLab resources
 	AutoScaling *AutoScalingSpec `json:"autoscaling,omitempty"`
 }
 
@@ -64,7 +75,7 @@ type RegistrySpec struct {
 	TLS      string `json:"tls,omitempty"`
 }
 
-// ObjectStoreSpec defines options for Gitlab registry
+// ObjectStoreSpec defines options for GitLab registry
 type ObjectStoreSpec struct {
 	// Development will result in a minio deployment being
 	// created for testing /development purposes
@@ -125,7 +136,7 @@ type AutoScalingSpec struct {
 	// Maximum number of replicas to scale to
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maxiumum Replicas",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	MaxReplicas int32 `json:"maxReplicas,omitempty"`
-	// Percentage CPU mark at which autoscaling triggers
+	// Percentage CPU of the requested CPU resources at which autoscaling triggers
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CPU Percentage Threshold",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	TargetCPU *int32 `json:"targetCPU,omitempty"`
 }
@@ -193,12 +204,15 @@ type GitLabStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab"
 // +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Pod,v1,""},{Deployment,v1,""},{StatefulSet,v1,""},{PersistentVolumeClaim,v1,""},{Runner,v1beta1,""},{GLBackup,v1beta1,""}}
 
-// GitLab is the Schema for the gitlabs API
+// GitLab is a complete DevOps platform, delivered in a single application
 type GitLab struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GitLabSpec   `json:"spec,omitempty"`
+	// Specification of the desired behavior of a GitLab instance
+	Spec GitLabSpec `json:"spec,omitempty"`
+	// Most recently observed status of the GitLab instance.
+	// It is read-only to the user
 	Status GitLabStatus `json:"status,omitempty"`
 }
 

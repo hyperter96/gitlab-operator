@@ -14,12 +14,13 @@ spec:
     shortNames:
     - gbk
     singular: glbackup
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: GLBackup is the Schema for the glbackups API
+      description: GLBackup resource backups and restores a GitLab instance
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -30,22 +31,22 @@ spec:
         metadata:
           type: object
         spec:
-          description: GLBackupSpec defines the desired state of GLBackup
+          description: Specification of the desired behavior of a GitLab Backup
           properties:
             instance:
               description: Name of GitLab instance to backup
               type: string
             restore:
-              description: Restore when set to true the backup defined by
+              description: If set to true, informs GitLab operator to perform a backup restore. Defaults to false or performing a backup.
               type: boolean
             schedule:
               description: Backup schedule in cron format. Leave blank for one time on-demand backup
               type: string
             skip:
-              description: Comma separated list of components to omit from backup
+              description: Comma-separated list of components to omit from backup.
               type: string
             timestamp:
-              description: Prefix for the backup job Can be used when restoring backup
+              description: If specified, overrides the timestamp of a backup. Forms the prefix of the backup e.g. '<timestamp-override-value>_gitlab_backup.tar'. Can also be specified to target a specific backup to be restored
               type: string
             url:
               description: The URL of the backup resource to be restored
@@ -54,13 +55,13 @@ spec:
           - instance
           type: object
         status:
-          description: GLBackupStatus defines the observed state of GLBackup
+          description: Most recently observed status of the GitLab Backup. It is read-only to the user
           properties:
             completedAt:
               description: Displays time the backup completed
               type: string
             phase:
-              description: Reports status of backup task
+              description: Reports status of backup job
               enum:
               - Running
               - Completed

@@ -22,23 +22,26 @@ import (
 
 // RunnerSpec defines the desired state of Runner
 type RunnerSpec struct {
-	// GitlabResource represents a Gitlab custom resource. Should
-	// only be used to reference Gitlab instance created by the operator
-	Gitlab GitlabInstanceSpec `json:"gitlab,omitempty"`
+	// gitlab specifies the GitLab instance the GitLab Runner
+	// will register against
+	Gitlab GitlabInstanceSpec `json:"gitlab"`
 
-	//Name of secret containing the runner-registration-token key used to register the runner
+	//Name of secret containing the 'runner-registration-token' key used to register the runner
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Registration Token",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret"
 	RegistrationToken string `json:"token,omitempty"`
 
 	// List of comma separated tags to be applied to the runner
+	// More info: https://docs.gitlab.com/ee/ci/runners/#use-tags-to-limit-the-number-of-jobs-using-the-runner
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tags",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Tags string `json:"tags,omitempty"`
 
-	// Concurrent limits the number of jobs globally that can run concurrently
+	// Option to limit the number of jobs globally that can run concurrently.
+	// The operator sets this to 10, if not specified
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Concurrent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Concurrent *int32 `json:"concurrent,omitempty"`
 
-	// CheckInterval defines the number of seconds between checks for new jobs
+	// Option to define the number of seconds between checks for new jobs.
+	// This is set to a default of 30s by operator if not set
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Check Interval",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	CheckInterval *int32 `json:"interval,omitempty"`
 
@@ -52,7 +55,8 @@ type GitlabInstanceSpec struct {
 	// Name of GitLab instance created by the operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Instance Name",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Name string `json:"name,omitempty"`
-	// URL of GitLab instance
+	// The fully qualified domain name of the address used to access the GitLab instance.
+	// For example, gitlab.example.com
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Instance URL",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	URL string `json:"url,omitempty"`
 }
@@ -67,6 +71,7 @@ type RunnerCacheSpec struct {
 	Region string `json:"region,omitempty"`
 
 	// Credentials is the name of the secret containing the
+	// 'accesskey' and 'secretkey' used to access the object storage
 	Credentials string `json:"credentials,omitempty"`
 
 	// Insecure enables use of HTTP protocol
@@ -95,12 +100,15 @@ type RunnerStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab Runner"
 // +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Replicasets,v1,""},{Pod,v1,""},{Deployment,v1,""},{PersistentVolumeClaim,v1,""}}
 
-// Runner is the Schema for the runners API
+// Runner is the open source project used to run your jobs and send the results back to GitLab
 type Runner struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   RunnerSpec   `json:"spec,omitempty"`
+	// Specification of the desired behavior of a GitLab Runner instance
+	Spec RunnerSpec `json:"spec,omitempty"`
+	// Most recently observed status of the GitLab Runner.
+	// It is read-only to the user
 	Status RunnerStatus `json:"status,omitempty"`
 }
 

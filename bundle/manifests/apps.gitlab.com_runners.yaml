@@ -31,6 +31,9 @@ spec:
         spec:
           description: Specification of the desired behavior of a GitLab Runner instance
           properties:
+            buildImage:
+              description: The name of the default image to use to run build jobs, when none is specified
+              type: string
             cache:
               description: Cache defines an S3 compatible object store
               properties:
@@ -52,7 +55,18 @@ spec:
                 server:
                   description: S3 cache server URL
                   type: string
+                shared:
+                  description: Enable sharing of cache between Runners
+                  type: boolean
+                type:
+                  description: Type of cache used for Runner artifacts
+                  type: string
+              required:
+              - type
               type: object
+            cloneURL:
+              description: If specified, overrides the default URL used to clone or fetch the Git ref
+              type: string
             concurrent:
               description: Option to limit the number of jobs globally that can run concurrently. The operator sets this to 10, if not specified
               format: int32

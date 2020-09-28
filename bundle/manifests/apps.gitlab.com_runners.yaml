@@ -67,6 +67,9 @@ spec:
                   description: The fully qualified domain name of the address used to access the GitLab instance. For example, gitlab.example.com
                   type: string
               type: object
+            helperImage:
+              description: If specified, overrides the default GitLab Runner helper image
+              type: string
             interval:
               description: Option to define the number of seconds between checks for new jobs. This is set to a default of 30s by operator if not set
               format: int32

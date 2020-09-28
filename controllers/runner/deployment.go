@@ -10,11 +10,107 @@ import (
 // RunnerServiceAccount defines the sa for GitLab runner
 const RunnerServiceAccount string = "gitlab-runner"
 
+func getEnvironmentVars(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
+	config := runnerConfig(cr)
+
+	envs := []corev1.EnvVar{
+		{
+			Name: "CI_SERVER_URL",
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cr.Name + "-runner-config",
+					},
+					Key: "ci_server_url",
+				},
+			},
+		},
+		{
+			Name: "CI_SERVER_TOKEN",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: RegistrationTokenSecretName(cr),
+					},
+					Key: "runner-token",
+				},
+			},
+		},
+		{
+			Name: "REGISTRATION_TOKEN",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: RegistrationTokenSecretName(cr),
+					},
+					Key: "runner-registration-token",
+				},
+			},
+		},
+		{
+			Name:  "RUNNER_REQUEST_CONCURRENCY",
+			Value: "1",
+		},
+		{
+			Name:  "RUNNER_EXECUTOR",
+			Value: "kubernetes",
+		},
+		{
+			Name:  "REGISTER_LOCKED",
+			Value: "false",
+		},
+		{
+			Name:  "RUNNER_OUTPUT_LIMIT",
+			Value: "4096",
+		},
+		{
+			Name:  "KUBERNETES_NAMESPACE",
+			Value: cr.Namespace,
+		},
+		{
+			Name:  "KUBERNETES_POLL_TIMEOUT",
+			Value: "180",
+		},
+		{
+			Name:  "CACHE_SHARED",
+			Value: "false",
+		},
+	}
+
+	if cr.Spec.Tags != "" {
+		envs = append(envs, corev1.EnvVar{
+			Name:  "RUNNER_TAG_LIST",
+			Value: config.Tags,
+		})
+	}
+
+	if cr.Spec.HelperImage != "" {
+		envs = append(envs, corev1.EnvVar{
+			Name:  "KUBERNETES_HELPER_IMAGE",
+			Value: cr.Spec.HelperImage,
+		})
+	}
+
+	if cr.Spec.BuildImage != "" {
+		envs = append(envs, corev1.EnvVar{
+			Name:  "KUBERNETES_IMAGE",
+			Value: cr.Spec.BuildImage,
+		})
+	}
+
+	if cr.Spec.CloneURL != "" {
+		envs = append(envs, corev1.EnvVar{
+			Name:  "CLONE_URL",
+			Value: cr.Spec.CloneURL,
+		})
+	}
+
+	return envs
+}
+
 // GetDeployment returns the runner deployment object
 func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
-
-	config := runnerConfig(cr)
 
 	runner := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Labels:    labels,
@@ -25,139 +121,7 @@ func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 				Image:           GitlabRunnerImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"sh", "/config/configure"},
-				Env: []corev1.EnvVar{
-					{
-						Name: "CI_SERVER_URL",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-runner-config",
-								},
-								Key: "ci_server_url",
-							},
-						},
-					},
-					{
-						Name:  "CLONE_URL",
-						Value: "",
-					},
-					{
-						Name:  "RUNNER_REQUEST_CONCURRENCY",
-						Value: "1",
-					},
-					{
-						Name:  "RUNNER_EXECUTOR",
-						Value: "kubernetes",
-					},
-					{
-						Name:  "REGISTER_LOCKED",
-						Value: "false",
-					},
-					{
-						Name:  "RUNNER_TAG_LIST",
-						Value: config.Tags,
-					},
-					{
-						Name:  "RUNNER_OUTPUT_LIMIT",
-						Value: "4096",
-					},
-					{
-						Name:  "KUBERNETES_IMAGE",
-						Value: "ubuntu:16.04",
-					},
-					{
-						Name:  "KUBERNETES_NAMESPACE",
-						Value: "default",
-					},
-					{
-						Name:  "KUBERNETES_POLL_TIMEOUT",
-						Value: "180",
-					},
-					{
-						Name:  "KUBERNETES_CPU_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_MEMORY_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_CPU_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_MEMORY_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_ACCOUNT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_CPU_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_MEMORY_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_CPU_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_MEMORY_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_CPU_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_MEMORY_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_CPU_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_MEMORY_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_IMAGE",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_PULL_POLICY",
-						Value: "",
-					},
-					{
-						Name:  "CACHE_TYPE",
-						Value: "s3",
-					},
-					{
-						Name:  "CACHE_PATH",
-						Value: config.Cache,
-					},
-					{
-						Name:  "CACHE_SHARED",
-						Value: "true",
-					},
-					{
-						Name:  "CACHE_S3_SERVER_ADDRESS",
-						Value: config.Server,
-					},
-					{
-						Name:  "CACHE_S3_BUCKET_NAME",
-						Value: config.Bucket,
-					},
-					{
-						Name:  "CACHE_S3_BUCKET_LOCATION",
-						Value: config.Region,
-					},
-				},
+				Env:             getEnvironmentVars(cr),
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "runner-secrets",
@@ -188,157 +152,7 @@ func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						},
 					},
 				},
-				Env: []corev1.EnvVar{
-					{
-						Name: "CI_SERVER_URL",
-						ValueFrom: &corev1.EnvVarSource{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cr.Name + "-runner-config",
-								},
-								Key: "ci_server_url",
-							},
-						},
-					},
-					{
-						Name: "CI_SERVER_TOKEN",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: RegistrationTokenSecretName(cr),
-								},
-								Key: "runner-token",
-							},
-						},
-					},
-					{
-						Name: "REGISTRATION_TOKEN",
-						ValueFrom: &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: RegistrationTokenSecretName(cr),
-								},
-								Key: "runner-registration-token",
-							},
-						},
-					},
-					{
-						Name:  "CLONE_URL",
-						Value: "",
-					},
-					{
-						Name:  "RUNNER_REQUEST_CONCURRENCY",
-						Value: "1",
-					},
-					{
-						Name:  "RUNNER_EXECUTOR",
-						Value: "kubernetes",
-					},
-					{
-						Name:  "REGISTER_LOCKED",
-						Value: "false",
-					},
-					{
-						Name:  "RUNNER_TAG_LIST",
-						Value: config.Tags,
-					},
-					{
-						Name:  "RUNNER_OUTPUT_LIMIT",
-						Value: "4096",
-					},
-					{
-						Name:  "KUBERNETES_NAMESPACE",
-						Value: cr.Namespace,
-					},
-					{
-						Name:  "KUBERNETES_POLL_TIMEOUT",
-						Value: "180",
-					},
-					{
-						Name:  "KUBERNETES_CPU_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_MEMORY_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_CPU_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_MEMORY_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_ACCOUNT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_CPU_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_MEMORY_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_CPU_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_SERVICE_MEMORY_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_CPU_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_MEMORY_LIMIT",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_CPU_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_MEMORY_REQUEST",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_HELPER_IMAGE",
-						Value: "",
-					},
-					{
-						Name:  "KUBERNETES_PULL_POLICY",
-						Value: "",
-					},
-					{
-						Name:  "CACHE_TYPE",
-						Value: "s3",
-					},
-					{
-						Name:  "CACHE_PATH",
-						Value: config.Cache,
-					},
-					{
-						Name:  "CACHE_SHARED",
-						Value: "true",
-					},
-					{
-						Name:  "CACHE_S3_SERVER_ADDRESS",
-						Value: config.Server,
-					},
-					{
-						Name:  "CACHE_S3_BUCKET_NAME",
-						Value: config.Bucket,
-					},
-					{
-						Name:  "CACHE_S3_BUCKET_LOCATION",
-						Value: config.Region,
-					},
-				},
+				Env: getEnvironmentVars(cr),
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{

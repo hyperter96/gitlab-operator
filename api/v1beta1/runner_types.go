@@ -47,6 +47,16 @@ type RunnerSpec struct {
 
 	// Cache defines an S3 compatible object store
 	Cache *RunnerCacheSpec `json:"cache,omitempty"`
+
+	// If specified, overrides the default URL used to clone or fetch the Git ref
+	CloneURL string `json:"cloneURL,omitempty"`
+
+	// If specified, overrides the default GitLab Runner helper image
+	HelperImage string `json:"helperImage,omitempty"`
+
+	// The name of the default image to use to run
+	// build jobs, when none is specified
+	BuildImage string `json:"buildImage,omitempty"`
 }
 
 // GitlabInstanceSpec defines the Gitlab custom
@@ -62,8 +72,18 @@ type GitlabInstanceSpec struct {
 }
 
 // RunnerCacheSpec allows end user
-// to define an S3 cache for the runner
+// to define the cache for GitLab Runner
 type RunnerCacheSpec struct {
+	// Type of cache used for Runner artifacts
+	// +kubebuilder:validations:Enum=s3;gcs;azure
+	Type string `json:"type,string"`
+
+	// Path defines the Runner Cache path
+	Path string `json:"path,omitempty"`
+
+	// Enable sharing of cache between Runners
+	Shared bool `json:"shared,omitempty"`
+
 	// S3 cache server URL
 	Server string `json:"server,omitempty"`
 
@@ -76,9 +96,6 @@ type RunnerCacheSpec struct {
 
 	// Insecure enables use of HTTP protocol
 	Insecure bool `json:"insecure,omitempty"`
-
-	// Path defines the Runner Cache path
-	Path string `json:"path,omitempty"`
 
 	// Bucket defines the s3 bucket name
 	Bucket string `json:"bucket,omitempty"`

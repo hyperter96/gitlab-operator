@@ -57,8 +57,17 @@ metadata:
             "name": "example"
           },
           "spec": {
+            "cachePath": "random",
+            "cacheShared": false,
+            "cacheType": "s3",
             "gitlab": {
               "url": "https://gitlab.com"
+            },
+            "s3": {
+              "bucket": "runner-bucket",
+              "credentials": "somesecret",
+              "location": "us-east1",
+              "server": "s3.aws.com"
             },
             "tags": "openshift, test",
             "token": "runner-token-secret"
@@ -70,10 +79,11 @@ metadata:
     certified: "true"
     containerImage: registry.connect.redhat.com/gitlab/gitlab-operator:v0.0.1
     createdAt: "2020-03-11T13:29:00Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.0.0
+    operators.operatorframework.io/builder: operator-sdk-v1.0.1
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator
   name: gitlab-operator.v0.0.1
+  namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
@@ -560,6 +570,24 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods/log
+          verbs:
+          - get
         - apiGroups:
           - ""
           resources:

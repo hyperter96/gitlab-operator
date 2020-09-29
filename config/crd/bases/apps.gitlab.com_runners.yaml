@@ -43,12 +43,15 @@ spec:
                 Cache
               properties:
                 container:
+                  description: Name of the Azure container in which the cache will
+                    be stored
                   type: string
                 credentials:
                   description: Credentials secret contains 'accountName' and 'privateKey'
                     used to authenticate against Azure blob storage
                   type: string
                 storageDomain:
+                  description: The domain name of the Azure blob storage e.g. blob.core.windows.net
                   type: string
               type: object
             buildImage:
@@ -79,6 +82,7 @@ spec:
                 GitLab Runner Cache
               properties:
                 bucket:
+                  description: Name of the bucket in which the cache will be stored
                   type: string
                 credentials:
                   description: contains the GCS accessID and privateKey
@@ -115,14 +119,17 @@ spec:
                 Cache
               properties:
                 bucket:
+                  description: Name of the bucket in which the cache will be stored
                   type: string
                 credentials:
                   description: Credentials is the name of the secret containing the
                     'accesskey' and 'secretkey' used to access the object storage
                   type: string
                 insecure:
+                  description: Use insecure connections or HTTP
                   type: boolean
                 location:
+                  description: Name of the S3 region in use
                   type: string
                 server:
                   type: string

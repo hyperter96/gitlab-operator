@@ -94,10 +94,13 @@ type CacheS3Config struct {
 	Server string `json:"server,omitempty"`
 	// Credentials is the name of the secret containing the
 	// 'accesskey' and 'secretkey' used to access the object storage
-	Credentials    string `json:"credentials,omitempty"`
-	BucketName     string `json:"bucket,omitempty"`
+	Credentials string `json:"credentials,omitempty"`
+	// Name of the bucket in which the cache will be stored
+	BucketName string `json:"bucket,omitempty"`
+	// Name of the S3 region in use
 	BucketLocation string `json:"location,omitempty"`
-	Insecure       bool   `json:"insecure,omitempty"`
+	// Use insecure connections or HTTP
+	Insecure bool `json:"insecure,omitempty"`
 }
 
 // CacheGCSConfig defines options for GCS object store
@@ -106,15 +109,19 @@ type CacheGCSConfig struct {
 	Credentials string `json:"credentials,omitempty"`
 	// Takes GCS credentials file, 'keys.json'
 	CredentialsFile string `json:"credentialsFile"`
-	BucketName      string `json:"bucket,omitempty"`
+	// Name of the bucket in which the cache will be stored
+	BucketName string `json:"bucket,omitempty"`
 }
 
 // CacheAzureConfig defines options for Azure object store
 type CacheAzureConfig struct {
 	// Credentials secret contains 'accountName' and 'privateKey'
 	// used to authenticate against Azure blob storage
-	Credentials   string `json:"credentials,omitempty"`
+	Credentials string `json:"credentials,omitempty"`
+	// Name of the Azure container in which the cache will be stored
 	ContainerName string `json:"container,omitempty"`
+	// The domain name of the Azure blob storage
+	// e.g. blob.core.windows.net
 	StorageDomain string `json:"storageDomain,omitempty"`
 }
 

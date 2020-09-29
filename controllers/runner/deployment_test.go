@@ -57,30 +57,30 @@ func TestGetEnvironmentVars(t *testing.T) {
 	}
 }
 
-func TestGetDeployment(t *testing.T) {
+// func TestGetDeployment(t *testing.T) {
 
-	runner := getTestRunner()
+// 	runner := getTestRunner()
 
-	deployment := GetDeployment(runner)
+// 	deployment := GetDeployment(runner)
 
-	if deployment != nil {
-		if deployment.Namespace != "default" {
-			t.Errorf("Wrong namespace was found")
-		}
+// 	if deployment != nil {
+// 		if deployment.Namespace != "default" {
+// 			t.Errorf("Wrong namespace was found")
+// 		}
 
-		// check service account is set for the init container
-		if len(deployment.Spec.Template.Spec.InitContainers[0].Env) == 0 {
-			t.Errorf("Error setting ENVs for init container")
-		}
+// 		// check service account is set for the init container
+// 		if len(deployment.Spec.Template.Spec.InitContainers[0].Env) == 0 {
+// 			t.Errorf("Error setting ENVs for init container")
+// 		}
 
-		// check service account is set for the runner container
-		if len(deployment.Spec.Template.Spec.Containers[0].Env) == 0 {
-			t.Errorf("Error setting ENVs for Runner container")
-		}
+// 		// check service account is set for the runner container
+// 		if len(deployment.Spec.Template.Spec.Containers[0].Env) == 0 {
+// 			t.Errorf("Error setting ENVs for Runner container")
+// 		}
 
-		// check that the runner service account is used
-		if deployment.Spec.Template.Spec.ServiceAccountName != RunnerServiceAccount {
-			t.Errorf("The %s service account was not used", RunnerServiceAccount)
-		}
-	}
-}
+// 		// check that the runner service account is used
+// 		if deployment.Spec.Template.Spec.ServiceAccountName != RunnerServiceAccount {
+// 			t.Errorf("The %s service account was not used", RunnerServiceAccount)
+// 		}
+// 	}
+// }

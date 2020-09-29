@@ -57,8 +57,17 @@ metadata:
             "name": "example"
           },
           "spec": {
+            "cachePath": "random",
+            "cacheShared": false,
+            "cacheType": "s3",
             "gitlab": {
               "url": "https://gitlab.com"
+            },
+            "s3": {
+              "bucket": "runner-bucket",
+              "credentials": "somesecret",
+              "location": "us-east1",
+              "server": "s3.aws.com"
             },
             "tags": "openshift, test",
             "token": "runner-token-secret"
@@ -560,6 +569,24 @@ spec:
           - patch
           - update
           - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods/log
+          verbs:
+          - get
         - apiGroups:
           - ""
           resources:

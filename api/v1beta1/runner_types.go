@@ -45,9 +45,6 @@ type RunnerSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Check Interval",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	CheckInterval *int32 `json:"interval,omitempty"`
 
-	// Cache defines an S3 compatible object store
-	Cache *RunnerCacheSpec `json:"cache,omitempty"`
-
 	// If specified, overrides the default URL used to clone or fetch the Git ref
 	CloneURL string `json:"cloneURL,omitempty"`
 
@@ -57,6 +54,27 @@ type RunnerSpec struct {
 	// The name of the default image to use to run
 	// build jobs, when none is specified
 	BuildImage string `json:"buildImage,omitempty"`
+
+	// Type of cache used for Runner artifacts
+	// Options are: gcs, s3, azure
+	// +kubebuilder:validations:Enum=s3;gcs;azure
+	CacheType string `json:"cacheType,omitempty"`
+
+	// Path defines the Runner Cache path
+	CachePath string `json:"cachePath,omitempty"`
+
+	// Enable sharing of cache between Runners
+	CacheShared bool `json:"cacheShared,omitempty"`
+
+	// options used to setup S3
+	// object store as GitLab Runner Cache
+	S3 *CacheS3Config `json:"s3,omitempty"`
+	// options used to setup GCS (Google
+	// Container Storage) as GitLab Runner Cache
+	GCS *CacheGCSConfig `json:"gcs,omitempty"`
+	// options used to setup Azure blob
+	// storage as GitLab Runner Cache
+	Azure *CacheAzureConfig `json:"azure,omitempty"`
 }
 
 // GitlabInstanceSpec defines the Gitlab custom
@@ -71,34 +89,33 @@ type GitlabInstanceSpec struct {
 	URL string `json:"url,omitempty"`
 }
 
-// RunnerCacheSpec allows end user
-// to define the cache for GitLab Runner
-type RunnerCacheSpec struct {
-	// Type of cache used for Runner artifacts
-	// +kubebuilder:validations:Enum=s3;gcs;azure
-	Type string `json:"type,string"`
-
-	// Path defines the Runner Cache path
-	Path string `json:"path,omitempty"`
-
-	// Enable sharing of cache between Runners
-	Shared bool `json:"shared,omitempty"`
-
-	// S3 cache server URL
+// CacheS3Config defines options for an S3 compatible cache
+type CacheS3Config struct {
 	Server string `json:"server,omitempty"`
-
-	// Region for the cache
-	Region string `json:"region,omitempty"`
-
 	// Credentials is the name of the secret containing the
 	// 'accesskey' and 'secretkey' used to access the object storage
+	Credentials    string `json:"credentials,omitempty"`
+	BucketName     string `json:"bucket,omitempty"`
+	BucketLocation string `json:"location,omitempty"`
+	Insecure       bool   `json:"insecure,omitempty"`
+}
+
+// CacheGCSConfig defines options for GCS object store
+type CacheGCSConfig struct {
+	// contains the GCS accessID and privateKey
 	Credentials string `json:"credentials,omitempty"`
+	// Takes GCS credentials file, 'keys.json'
+	CredentialsFile string `json:"credentialsFile"`
+	BucketName      string `json:"bucket,omitempty"`
+}
 
-	// Insecure enables use of HTTP protocol
-	Insecure bool `json:"insecure,omitempty"`
-
-	// Bucket defines the s3 bucket name
-	Bucket string `json:"bucket,omitempty"`
+// CacheAzureConfig defines options for Azure object store
+type CacheAzureConfig struct {
+	// Credentials secret contains 'accountName' and 'privateKey'
+	// used to authenticate against Azure blob storage
+	Credentials   string `json:"credentials,omitempty"`
+	ContainerName string `json:"container,omitempty"`
+	StorageDomain string `json:"storageDomain,omitempty"`
 }
 
 // RunnerStatus defines the observed state of Runner

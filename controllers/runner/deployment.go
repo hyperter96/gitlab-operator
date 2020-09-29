@@ -1,6 +1,9 @@
 package runner
 
 import (
+	"reflect"
+	"strconv"
+
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -11,7 +14,6 @@ import (
 const RunnerServiceAccount string = "gitlab-runner"
 
 func getEnvironmentVars(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
-	config := runnerConfig(cr)
 
 	envs := []corev1.EnvVar{
 		{
@@ -73,14 +75,14 @@ func getEnvironmentVars(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
 		},
 		{
 			Name:  "CACHE_SHARED",
-			Value: "false",
+			Value: strconv.FormatBool(cr.Spec.CacheShared),
 		},
 	}
 
 	if cr.Spec.Tags != "" {
 		envs = append(envs, corev1.EnvVar{
 			Name:  "RUNNER_TAG_LIST",
-			Value: config.Tags,
+			Value: cr.Spec.Tags,
 		})
 	}
 
@@ -103,6 +105,25 @@ func getEnvironmentVars(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
 			Name:  "CLONE_URL",
 			Value: cr.Spec.CloneURL,
 		})
+	}
+
+	if cr.Spec.CacheType != "" {
+		envs = append(envs, corev1.EnvVar{
+			Name:  "CACHE_TYPE",
+			Value: cr.Spec.CacheType,
+		})
+	}
+
+	if cr.Spec.CachePath != "" {
+		envs = append(envs, corev1.EnvVar{
+			Name:  "CACHE_PATH",
+			Value: cr.Spec.CachePath,
+		})
+	}
+
+	cache := getRunnerCache(cr)
+	if !reflect.DeepEqual(cache, []corev1.EnvVar{}) {
+		envs = append(envs, cache...)
 	}
 
 	return envs
@@ -275,12 +296,12 @@ func runnerSecretsVolume(cr *gitlabv1beta1.Runner) []corev1.VolumeProjection {
 		},
 	}
 
-	if cr.Spec.Cache != nil && cr.Spec.Cache.Credentials != "" {
+	if IsCacheS3(cr) {
 		secrets = append(secrets,
 			corev1.VolumeProjection{
 				Secret: &corev1.SecretProjection{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Spec.Cache.Credentials,
+						Name: cr.Spec.S3.Credentials,
 					},
 				},
 			},
@@ -288,45 +309,6 @@ func runnerSecretsVolume(cr *gitlabv1beta1.Runner) []corev1.VolumeProjection {
 	}
 
 	return secrets
-}
-
-type runnerOptions struct {
-	Tags        string
-	Server      string
-	Region      string
-	Bucket      string
-	Cache       string
-	Credentials string
-}
-
-func runnerConfig(cr *gitlabv1beta1.Runner) (options runnerOptions) {
-
-	if cr.Spec.Tags != "" {
-		options.Tags = cr.Spec.Tags
-	}
-
-	if cr.Spec.Cache != nil {
-		options.Server = cr.Spec.Cache.Server
-		options.Region = cr.Spec.Cache.Region
-
-		if cr.Spec.Cache.Path != "" {
-			options.Cache = cr.Spec.Cache.Path
-		} else {
-			options.Cache = "gitlab-runner"
-		}
-
-		if cr.Spec.Cache.Bucket != "" {
-			options.Bucket = cr.Spec.Cache.Bucket
-		} else {
-			options.Bucket = "runner-cache"
-		}
-
-		if cr.Spec.Cache.Credentials != "" {
-			options.Credentials = cr.Spec.Cache.Credentials
-		}
-	}
-
-	return
 }
 
 // RegistrationTokenSecretName returns name of secret containing the

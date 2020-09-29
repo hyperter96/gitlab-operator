@@ -29,6 +29,7 @@ spec:
     shortNames:
     - gl
     singular: gitlab
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}

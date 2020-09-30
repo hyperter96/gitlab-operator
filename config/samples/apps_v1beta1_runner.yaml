@@ -7,11 +7,3 @@ spec:
     url: https://gitlab.com
   token: runner-token-secret # Name of the secret containing the Runner token
   tags: openshift, test
-  cacheType: s3
-  cachePath: random
-  cacheShared: false
-  s3:
-    server: s3.aws.com
-    credentials: somesecret
-    bucket: runner-bucket
-    location: us-east1

@@ -298,3 +298,38 @@ func ConfigMapWithHash(cm *corev1.ConfigMap) {
 		"checksum": hex.EncodeToString(hash[:]),
 	}
 }
+
+// DeploymentConfigMaps returns a
+// list of configmaps used in a deployment
+func DeploymentConfigMaps(deploy *appsv1.Deployment) []string {
+	cms := []string{}
+
+	for _, container := range deploy.Spec.Template.Spec.Containers {
+		if len(container.Env) != 0 {
+			for _, env := range container.Env {
+				if env.ValueFrom != nil {
+					if env.ValueFrom.ConfigMapKeyRef != nil {
+						cms = append(cms, env.ValueFrom.ConfigMapKeyRef.LocalObjectReference.Name)
+					}
+				}
+			}
+		}
+	}
+
+	for _, vol := range deploy.Spec.Template.Spec.Volumes {
+
+		if vol.VolumeSource.ConfigMap != nil {
+			cms = append(cms, vol.VolumeSource.ConfigMap.LocalObjectReference.Name)
+		}
+
+		if vol.VolumeSource.Projected != nil {
+			for _, source := range vol.VolumeSource.Projected.Sources {
+				if source.ConfigMap != nil {
+					cms = append(cms, source.ConfigMap.LocalObjectReference.Name)
+				}
+			}
+		}
+	}
+
+	return cms
+}

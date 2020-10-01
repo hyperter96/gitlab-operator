@@ -149,9 +149,9 @@ func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv
 		return err
 	}
 
-	if !reflect.DeepEqual(found.Spec, runner.Spec) {
-		found.ObjectMeta = runner.ObjectMeta
-		found.Spec.Template.ObjectMeta = runner.Spec.Template.ObjectMeta
+	if gitlabutils.IsDeploymentChanged(found, runner) {
+		found.Annotations = runner.Annotations
+		found.Spec.Template.Annotations = runner.Spec.Template.Annotations
 		found.Spec.Template.Spec.InitContainers = runner.Spec.Template.Spec.InitContainers
 		found.Spec.Template.Spec.Containers = runner.Spec.Template.Spec.Containers
 		found.Spec.Template.Spec.Volumes = runner.Spec.Template.Spec.Volumes

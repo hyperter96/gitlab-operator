@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -332,4 +333,13 @@ func DeploymentConfigMaps(deploy *appsv1.Deployment) []string {
 	}
 
 	return cms
+}
+
+// IsDeploymentChanged compares two deployments
+// and returns true if they are different
+func IsDeploymentChanged(old, new *appsv1.Deployment) bool {
+	return !reflect.DeepEqual(old.Spec.Template.Annotations, new.Spec.Template.Annotations) ||
+		!reflect.DeepEqual(old.Spec.Template.Spec.Containers, new.Spec.Template.Spec.Containers) ||
+		!reflect.DeepEqual(old.Spec.Template.Spec.InitContainers, new.Spec.Template.Spec.InitContainers) ||
+		!reflect.DeepEqual(old.Spec.Template.Spec.Volumes, new.Spec.Template.Spec.Volumes)
 }

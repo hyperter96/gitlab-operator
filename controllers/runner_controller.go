@@ -73,7 +73,7 @@ func (r *RunnerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileDeployments(ctx, runner); err != nil {
+	if err := r.reconcileDeployments(ctx, runner, log); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -128,8 +128,12 @@ func (r *RunnerReconciler) reconcileConfigMaps(ctx context.Context, cr *gitlabv1
 	return nil
 }
 
-func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.Runner, log logr.Logger) error {
 	runner := runnerctl.GetDeployment(cr)
+
+	if err := r.appendConfigMapChecksum(ctx, runner); err != nil {
+		log.Error(err, "Error appending configmap checksums")
+	}
 
 	found := &appsv1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: runner.Name, Namespace: cr.Namespace}, found)
@@ -145,8 +149,12 @@ func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv
 		return err
 	}
 
-	if !reflect.DeepEqual(runner.Spec, found.Spec) {
-		found.Spec = runner.Spec
+	if !reflect.DeepEqual(found.Spec, runner.Spec) {
+		found.ObjectMeta = runner.ObjectMeta
+		found.Spec.Template.ObjectMeta = runner.Spec.Template.ObjectMeta
+		found.Spec.Template.Spec.InitContainers = runner.Spec.Template.Spec.InitContainers
+		found.Spec.Template.Spec.Containers = runner.Spec.Template.Spec.Containers
+		found.Spec.Template.Spec.Volumes = runner.Spec.Template.Spec.Volumes
 		return r.Update(ctx, found)
 	}
 
@@ -273,6 +281,39 @@ func (r *RunnerReconciler) validateRegistrationTokenSecret(ctx context.Context, 
 	if _, ok := found.StringData["runner-token"]; !ok {
 		found.Data["runner-token"] = []byte("")
 		return r.Update(ctx, found)
+	}
+
+	return nil
+}
+
+func (r *RunnerReconciler) appendConfigMapChecksum(ctx context.Context, deployment *appsv1.Deployment) error {
+	configmaps := gitlabutils.DeploymentConfigMaps(deployment)
+
+	for _, cmName := range configmaps {
+		found := &corev1.ConfigMap{}
+		err := r.Get(ctx, types.NamespacedName{Name: cmName, Namespace: deployment.Namespace}, found)
+		if err != nil {
+			return err
+		}
+
+		// get checksum from the configmap annotation
+		if checksum, ok := found.Annotations["checksum"]; ok {
+			// compare the checksum with cm checksum in deployment template annotation
+			if val, ok := deployment.Spec.Template.Annotations[cmName]; ok {
+				if val != checksum {
+					deployment.Spec.Template.Annotations[cmName] = checksum
+				}
+			} else {
+				// account for nil map exception
+				if deployment.Spec.Template.Annotations != nil {
+					deployment.Spec.Template.Annotations[cmName] = checksum
+				} else {
+					deployment.Spec.Template.Annotations = map[string]string{
+						cmName: checksum,
+					}
+				}
+			}
+		}
 	}
 
 	return nil

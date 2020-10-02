@@ -338,8 +338,25 @@ func DeploymentConfigMaps(deploy *appsv1.Deployment) []string {
 // IsDeploymentChanged compares two deployments
 // and returns true if they are different
 func IsDeploymentChanged(old, new *appsv1.Deployment) bool {
+
+	for id, container := range new.Spec.Template.Spec.Containers {
+		if container.Image != new.Spec.Template.Spec.Containers[id].Image {
+			return true
+		}
+
+		if len(container.Env) > 0 {
+			if !reflect.DeepEqual(container.Env, new.Spec.Template.Spec.Containers[id].Env) {
+				return true
+			}
+		}
+	}
+
+	for id, container := range new.Spec.Template.Spec.InitContainers {
+		if container.Image != new.Spec.Template.Spec.InitContainers[id].Image {
+			return true
+		}
+	}
+
 	return !reflect.DeepEqual(old.Spec.Template.Annotations, new.Spec.Template.Annotations) ||
-		!reflect.DeepEqual(old.Spec.Template.Spec.Containers, new.Spec.Template.Spec.Containers) ||
-		!reflect.DeepEqual(old.Spec.Template.Spec.InitContainers, new.Spec.Template.Spec.InitContainers) ||
-		!reflect.DeepEqual(old.Spec.Template.Spec.Volumes, new.Spec.Template.Spec.Volumes)
+		!reflect.DeepEqual(old.ObjectMeta.Labels, new.ObjectMeta.Labels)
 }

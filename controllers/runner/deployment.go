@@ -163,9 +163,10 @@ func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		},
 		Containers: []corev1.Container{
 			{
-				Name:    "runner",
-				Image:   GitlabRunnerImage,
-				Command: []string{"/bin/bash", "/scripts/entrypoint"},
+				Name:            "runner",
+				Image:           GitlabRunnerImage,
+				ImagePullPolicy: corev1.PullIfNotPresent,
+				Command:         []string{"/bin/bash", "/scripts/entrypoint"},
 				Lifecycle: &corev1.Lifecycle{
 					PreStop: &corev1.Handler{
 						Exec: &corev1.ExecAction{

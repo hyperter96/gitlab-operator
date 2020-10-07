@@ -34,6 +34,7 @@ import (
 	// miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
+
 	appsv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers"
 	// +kubebuilder:scaffold:imports
@@ -114,6 +115,18 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "GLBackup")
+		os.Exit(1)
+	}
+	if err = (&appsv1beta1.GitLab{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "GitLab")
+		os.Exit(1)
+	}
+	if err = (&appsv1beta1.Runner{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Runner")
+		os.Exit(1)
+	}
+	if err = (&appsv1beta1.GLBackup{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "GLBackup")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

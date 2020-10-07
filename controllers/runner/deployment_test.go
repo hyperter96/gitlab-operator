@@ -17,7 +17,7 @@ func getTestRunner() *gitlabv1beta1.Runner {
 			},
 		},
 		Spec: gitlabv1beta1.RunnerSpec{
-			Gitlab: gitlabv1beta1.GitlabInstanceSpec{
+			GitLab: gitlabv1beta1.GitLabInstanceSpec{
 				URL: "https://gitlab.com",
 			},
 			RegistrationToken: "runner-token-secret",

@@ -317,8 +317,8 @@ func runnerSecretsVolume(cr *gitlabv1beta1.Runner) []corev1.VolumeProjection {
 func RegistrationTokenSecretName(cr *gitlabv1beta1.Runner) string {
 	var tokenSecretName string
 
-	if cr.Spec.Gitlab.Name != "" {
-		tokenSecretName = cr.Spec.Gitlab.Name + "-runner-token-secret"
+	if cr.Spec.GitLab.Name != "" {
+		tokenSecretName = cr.Spec.GitLab.Name + "-runner-token-secret"
 	}
 
 	if cr.Spec.RegistrationToken != "" {

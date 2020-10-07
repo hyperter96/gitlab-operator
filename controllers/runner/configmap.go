@@ -49,14 +49,14 @@ func GetConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 
 	// Gitlab URL should be used for Gitlab instances
 	// outside k8s or the current namespace
-	if cr.Spec.Gitlab.URL != "" {
-		gitlabURL = cr.Spec.Gitlab.URL
+	if cr.Spec.GitLab.URL != "" {
+		gitlabURL = cr.Spec.GitLab.URL
 	}
 
 	// Access via k8s service is preferred if
 	// name is provides
-	if cr.Spec.Gitlab.Name != "" {
-		service := cr.Spec.Gitlab.Name + "-gitlab"
+	if cr.Spec.GitLab.Name != "" {
+		service := cr.Spec.GitLab.Name + "-gitlab"
 		gitlabURL = fmt.Sprintf("http://%s:8005", service)
 	}
 

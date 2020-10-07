@@ -24,7 +24,7 @@ import (
 type RunnerSpec struct {
 	// gitlab specifies the GitLab instance the GitLab Runner
 	// will register against
-	Gitlab GitlabInstanceSpec `json:"gitlab"`
+	GitLab GitLabInstanceSpec `json:"gitlab"`
 
 	//Name of secret containing the 'runner-registration-token' key used to register the runner
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Registration Token",xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Secret"
@@ -77,9 +77,9 @@ type RunnerSpec struct {
 	Azure *CacheAzureConfig `json:"azure,omitempty"`
 }
 
-// GitlabInstanceSpec defines the Gitlab custom
+// GitLabInstanceSpec defines the Gitlab custom
 // resource in the kubernetes
-type GitlabInstanceSpec struct {
+type GitLabInstanceSpec struct {
 	// Name of GitLab instance created by the operator
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Instance Name",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Name string `json:"name,omitempty"`

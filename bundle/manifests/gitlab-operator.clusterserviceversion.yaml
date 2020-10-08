@@ -730,6 +730,10 @@ spec:
                 - /manager
                 image: registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator:latest
                 name: manager
+                ports:
+                - containerPort: 9443
+                  name: webhook-server
+                  protocol: TCP
                 resources:
                   limits:
                     cpu: 200m
@@ -737,6 +741,10 @@ spec:
                   requests:
                     cpu: 200m
                     memory: 20Mi
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
               - args:
                 - --secure-listen-address=0.0.0.0:8443
                 - --upstream=http://127.0.0.1:8080/
@@ -750,6 +758,11 @@ spec:
                 resources: {}
               serviceAccountName: gitlab-manager
               terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: webhook-server-cert
       permissions:
       - rules:
         - apiGroups:
@@ -813,3 +826,72 @@ spec:
     name: GitLab Inc
     url: https://about.gitlab.com/
   version: 0.0.1
+  webhookdefinitions:
+  - admissionReviewVersions: null
+    deploymentName: gitlab-controller-manager
+    failurePolicy: Fail
+    generateName: vgitlab.kb.io
+    rules:
+    - apiGroups:
+      - apps.gitlab.com
+      apiVersions:
+      - v1beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - gitlabs
+    sideEffects: null
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-apps-gitlab-com-v1beta1-gitlab
+  - admissionReviewVersions: null
+    deploymentName: gitlab-controller-manager
+    failurePolicy: Fail
+    generateName: vglbackup.kb.io
+    rules:
+    - apiGroups:
+      - apps.gitlab.com
+      apiVersions:
+      - v1beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - glbackups
+    sideEffects: null
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-apps-gitlab-com-v1beta1-glbackup
+  - admissionReviewVersions: null
+    deploymentName: gitlab-controller-manager
+    failurePolicy: Fail
+    generateName: vrunner.kb.io
+    rules:
+    - apiGroups:
+      - apps.gitlab.com
+      apiVersions:
+      - v1beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - runners
+    sideEffects: null
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-apps-gitlab-com-v1beta1-runner
+  - admissionReviewVersions: null
+    deploymentName: gitlab-controller-manager
+    failurePolicy: Fail
+    generateName: mglbackup.kb.io
+    rules:
+    - apiGroups:
+      - apps.gitlab.com
+      apiVersions:
+      - v1beta1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - glbackups
+    sideEffects: null
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-apps-gitlab-com-v1beta1-glbackup

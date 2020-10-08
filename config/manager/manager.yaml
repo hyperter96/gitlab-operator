@@ -32,9 +32,9 @@ spec:
         resources:
           limits:
             cpu: 200m
-            memory: 30Mi
+            memory: 125Mi
           requests:
             cpu: 200m
-            memory: 20Mi
+            memory: 100Mi
       terminationGracePeriodSeconds: 10
       serviceAccountName: gitlab-manager

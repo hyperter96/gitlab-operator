@@ -9,7 +9,7 @@ webhooks:
     caBundle: Cg==
     service:
       name: gitlab-webhook-service
-      namespace: gitlab-system
+      namespace: gitlab-operator
       path: /mutate-apps-gitlab-com-v1beta1-glbackup
   failurePolicy: Fail
   name: mglbackup.kb.io
@@ -28,14 +28,14 @@ apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: gitlab-system/gitlab-serving-cert
+    cert-manager.io/inject-ca-from: gitlab-operator/gitlab-serving-cert
   name: gitlab-validating-webhook-configuration
 webhooks:
 - clientConfig:
     caBundle: Cg==
     service:
       name: gitlab-webhook-service
-      namespace: gitlab-system
+      namespace: gitlab-operator
       path: /validate-apps-gitlab-com-v1beta1-gitlab
   failurePolicy: Fail
   name: vgitlab.kb.io
@@ -53,7 +53,7 @@ webhooks:
     caBundle: Cg==
     service:
       name: gitlab-webhook-service
-      namespace: gitlab-system
+      namespace: gitlab-operator
       path: /validate-apps-gitlab-com-v1beta1-glbackup
   failurePolicy: Fail
   name: vglbackup.kb.io
@@ -71,7 +71,7 @@ webhooks:
     caBundle: Cg==
     service:
       name: gitlab-webhook-service
-      namespace: gitlab-system
+      namespace: gitlab-operator
       path: /validate-apps-gitlab-com-v1beta1-runner
   failurePolicy: Fail
   name: vrunner.kb.io
@@ -100,10 +100,20 @@ metadata:
   name: gitlab-serving-cert
 spec:
   dnsNames:
-  - gitlab-webhook-service.gitlab-system.svc
-  - gitlab-webhook-service.gitlab-system.svc.cluster.local
+  - gitlab-webhook-service.gitlab-operator.svc
+  - gitlab-webhook-service.gitlab-operator.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: gitlab-selfsigned-issuer
   secretName: webhook-server-cert
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-webhook-service
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager

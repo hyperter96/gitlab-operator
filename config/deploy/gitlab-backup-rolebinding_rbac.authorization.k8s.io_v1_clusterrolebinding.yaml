@@ -10,4 +10,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: gitlab-backup
-  namespace: gitlab-operator
+  namespace: gitlab-system

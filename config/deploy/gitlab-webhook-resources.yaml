@@ -1,0 +1,124 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: gitlab-system/gitlab-serving-cert
+  name: gitlab-mutating-webhook-configuration
+  namespace: gitlab-system
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: gitlab-webhook-service
+      namespace: gitlab-system
+      path: /mutate-apps-gitlab-com-v1beta1-glbackup
+  failurePolicy: Fail
+  name: mglbackup.kb.io
+  rules:
+  - apiGroups:
+    - apps.gitlab.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - glbackups
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: gitlab-system/gitlab-serving-cert
+  name: gitlab-validating-webhook-configuration
+  namespace: gitlab-system
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: gitlab-webhook-service
+      namespace: gitlab-system
+      path: /validate-apps-gitlab-com-v1beta1-gitlab
+  failurePolicy: Fail
+  name: vgitlab.kb.io
+  rules:
+  - apiGroups:
+    - apps.gitlab.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - gitlabs
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: gitlab-webhook-service
+      namespace: gitlab-system
+      path: /validate-apps-gitlab-com-v1beta1-glbackup
+  failurePolicy: Fail
+  name: vglbackup.kb.io
+  rules:
+  - apiGroups:
+    - apps.gitlab.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - glbackups
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: gitlab-webhook-service
+      namespace: gitlab-system
+      path: /validate-apps-gitlab-com-v1beta1-runner
+  failurePolicy: Fail
+  name: vrunner.kb.io
+  rules:
+  - apiGroups:
+    - apps.gitlab.com
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - runners
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: gitlab-selfsigned-issuer
+  namespace: gitlab-system
+spec:
+  selfSigned: {}
+
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: gitlab-serving-cert
+  namespace: gitlab-system
+spec:
+  dnsNames:
+  - gitlab-webhook-service.gitlab-system.svc
+  - gitlab-webhook-service.gitlab-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: gitlab-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-webhook-service
+  namespace: gitlab-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager

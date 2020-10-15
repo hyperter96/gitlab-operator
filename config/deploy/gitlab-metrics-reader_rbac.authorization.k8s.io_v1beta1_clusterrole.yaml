@@ -3,6 +3,7 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: gitlab-metrics-reader
+  namespace: gitlab-system
 rules:
 - nonResourceURLs:
   - /metrics

@@ -737,10 +737,10 @@ spec:
                 resources:
                   limits:
                     cpu: 200m
-                    memory: 30Mi
+                    memory: 125Mi
                   requests:
                     cpu: 200m
-                    memory: 20Mi
+                    memory: 100Mi
                 volumeMounts:
                 - mountPath: /tmp/k8s-webhook-server/serving-certs
                   name: cert

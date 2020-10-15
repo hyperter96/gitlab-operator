@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -16,7 +15,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 
-	"github.com/imdario/mergo"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -334,31 +332,4 @@ func DeploymentConfigMaps(deploy *appsv1.Deployment) []string {
 	}
 
 	return cms
-}
-
-// IsDeploymentChanged compares two deployments
-// and returns a merged deployment object and true if they are different
-func IsDeploymentChanged(old, new *appsv1.Deployment) (*appsv1.Deployment, bool) {
-
-	if err := mergo.Merge(new, *old); err != nil {
-		return old, false
-	}
-
-	if !reflect.DeepEqual(new.Spec.Template.Spec.InitContainers,
-		old.Spec.Template.Spec.InitContainers) {
-		return new, true
-	}
-
-	if !reflect.DeepEqual(new.Spec.Template.Spec.Containers,
-		old.Spec.Template.Spec.Containers) {
-		return new, true
-	}
-
-	if !reflect.DeepEqual(new.Spec.Template.Spec.Volumes,
-		old.Spec.Template.Spec.Volumes) {
-		return new, true
-	}
-
-	return new, !reflect.DeepEqual(old.Spec.Template.Annotations, new.Spec.Template.Annotations) ||
-		!reflect.DeepEqual(old.ObjectMeta.Labels, new.ObjectMeta.Labels)
 }

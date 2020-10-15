@@ -3,6 +3,7 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: gitlab-app-role
+  namespace: gitlab-system
 rules:
 - apiGroups:
   - security.openshift.io

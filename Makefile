@@ -125,5 +125,5 @@ deployment-files: bundle
 	cp -av bundle/manifests/*_serviceaccount.yaml config/deploy
 	cp -av bundle/manifests/*_clusterrole.yaml config/deploy
 	cp -av bundle/manifests/*_clusterrolebinding.yaml config/deploy
-	for rb in `ls config/deploy/*_clusterrolebinding.yaml`; do egrep "  namespace:"  $$rb || echo "  namespace: gitlab-operator" >> $$rb; done
+	for rb in `ls config/deploy/*_clusterrolebinding.yaml`; do egrep "  namespace:"  $$rb || echo "  namespace: gitlab-system" >> $$rb; done
 	sed -n -e 's/manager-role/gitlab-manager-role/g;w config/deploy/gitlab-manager-role_rbac.authorization.k8s.io_v1_clusterrole.yaml' config/rbac/role.yaml

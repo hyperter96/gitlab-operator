@@ -3,6 +3,7 @@ kind: ClusterRoleBinding
 metadata:
   creationTimestamp: null
   name: gitlab-manager-rolebinding
+  namespace: gitlab-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

@@ -4,6 +4,7 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: gitlab-system/gitlab-serving-cert
   name: gitlab-mutating-webhook-configuration
+  namespace: gitlab-system
 webhooks:
 - clientConfig:
     caBundle: Cg==
@@ -30,6 +31,7 @@ metadata:
   annotations:
     cert-manager.io/inject-ca-from: gitlab-system/gitlab-serving-cert
   name: gitlab-validating-webhook-configuration
+  namespace: gitlab-system
 webhooks:
 - clientConfig:
     caBundle: Cg==
@@ -90,6 +92,7 @@ apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: gitlab-selfsigned-issuer
+  namespace: gitlab-system
 spec:
   selfSigned: {}
 
@@ -98,6 +101,7 @@ apiVersion: cert-manager.io/v1alpha2
 kind: Certificate
 metadata:
   name: gitlab-serving-cert
+  namespace: gitlab-system
 spec:
   dnsNames:
   - gitlab-webhook-service.gitlab-system.svc
@@ -111,6 +115,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: gitlab-webhook-service
+  namespace: gitlab-system
 spec:
   ports:
   - port: 443

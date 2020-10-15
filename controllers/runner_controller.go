@@ -149,18 +149,9 @@ func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv
 		return err
 	}
 
-	if gitlabutils.IsDeploymentChanged(found, runner) {
-		log.Info("deployments changed", "name", found.Name)
-		fmt.Printf("old: %+v\nnew: %+v\n",
-			found.Spec.Template.Spec.Containers[0].Env,
-			runner.Spec.Template.Spec.Containers[0].Env,
-		)
-		found.Annotations = runner.Annotations
-		found.Spec.Template.Annotations = runner.Spec.Template.Annotations
-		found.Spec.Template.Spec.InitContainers = runner.Spec.Template.Spec.InitContainers
-		found.Spec.Template.Spec.Containers = runner.Spec.Template.Spec.Containers
-		found.Spec.Template.Spec.Volumes = runner.Spec.Template.Spec.Volumes
-		return r.Update(ctx, found)
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, runner)
+	if changed {
+		return r.Update(ctx, deployment)
 	}
 
 	return nil

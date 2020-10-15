@@ -224,8 +224,7 @@ func Deployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 				Name: "init-runner-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
-						Sources:     runnerSecretsVolume(cr),
+						Sources: runnerSecretsVolume(cr),
 					},
 				},
 			},

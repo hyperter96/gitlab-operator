@@ -129,7 +129,7 @@ func (r *RunnerReconciler) reconcileConfigMaps(ctx context.Context, cr *gitlabv1
 }
 
 func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.Runner, log logr.Logger) error {
-	runner := runnerctl.GetDeployment(cr)
+	runner := runnerctl.Deployment(cr)
 
 	if err := r.appendConfigMapChecksum(ctx, runner); err != nil {
 		log.Error(err, "Error appending configmap checksums")
@@ -150,6 +150,11 @@ func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv
 	}
 
 	if gitlabutils.IsDeploymentChanged(found, runner) {
+		log.Info("deployments changed", "name", found.Name)
+		fmt.Printf("old: %+v\nnew: %+v\n",
+			found.Spec.Template.Spec.Containers[0].Env,
+			runner.Spec.Template.Spec.Containers[0].Env,
+		)
 		found.Annotations = runner.Annotations
 		found.Spec.Template.Annotations = runner.Spec.Template.Annotations
 		found.Spec.Template.Spec.InitContainers = runner.Spec.Template.Spec.InitContainers

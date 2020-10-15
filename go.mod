@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/coreos/prometheus-operator v0.41.1
 	github.com/go-logr/logr v0.1.0
+	github.com/imdario/mergo v0.3.9
 	github.com/jetstack/cert-manager v0.16.1
 	github.com/nginxinc/nginx-ingress-operator v0.0.6
 	github.com/onsi/ginkgo v1.12.1
@@ -21,6 +22,5 @@ require (
 	sigs.k8s.io/controller-runtime v0.6.2
 	sigs.k8s.io/yaml v1.2.0
 )
-
 
 replace k8s.io/client-go => k8s.io/client-go v0.18.6

@@ -129,8 +129,8 @@ func getEnvironmentVars(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
 	return envs
 }
 
-// GetDeployment returns the runner deployment object
-func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
+// Deployment returns the runner deployment object
+func Deployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
 
 	runner := gitlabutils.GenericDeployment(gitlabutils.Component{
@@ -224,8 +224,7 @@ func GetDeployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 				Name: "init-runner-secrets",
 				VolumeSource: corev1.VolumeSource{
 					Projected: &corev1.ProjectedVolumeSource{
-						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
-						Sources:     runnerSecretsVolume(cr),
+						Sources: runnerSecretsVolume(cr),
 					},
 				},
 			},

@@ -233,20 +233,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	exporter := gitlabctl.ExporterDeployment(cr)
-
-	if r.isObjectFound(exporter) {
-		return nil
-	}
-
-	if err := controllerutil.SetControllerReference(cr, exporter, r.Scheme); err != nil {
-		return err
-	}
-
-	return r.Create(ctx, exporter)
-}
-
 func (r *GitLabReconciler) reconcileJobs(cr *gitlabv1beta1.GitLab) error {
 
 	// initialize buckets once s3 storage is up
@@ -504,74 +490,172 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
+func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
+	exporter := gitlabctl.ExporterDeployment(cr)
+
+	if err := controllerutil.SetControllerReference(cr, exporter, r.Scheme); err != nil {
+		return err
+	}
+
+	found := &appsv1.Deployment{}
+	lookupKey := types.NamespacedName{
+		Name:      exporter.Name,
+		Namespace: exporter.Namespace,
+	}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, exporter)
+		}
+
+		return err
+	}
+
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, exporter)
+	if changed {
+		return r.Update(ctx, deployment)
+	}
+
+	return nil
+}
+
 func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	webservice := gitlabctl.WebserviceDeployment(cr)
-
-	if r.isObjectFound(webservice) {
-		return nil
-	}
 
 	if err := controllerutil.SetControllerReference(cr, webservice, r.Scheme); err != nil {
 		return err
 	}
 
-	return r.Create(ctx, webservice)
+	found := &appsv1.Deployment{}
+	lookupKey := types.NamespacedName{
+		Name:      webservice.Name,
+		Namespace: webservice.Namespace,
+	}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, webservice)
+		}
+
+		return err
+	}
+
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, webservice)
+	if changed {
+		return r.Update(ctx, deployment)
+	}
+
+	return nil
 }
 
 func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	registry := gitlabctl.RegistryDeployment(cr)
 
-	if r.isObjectFound(registry) {
-		return nil
-	}
-
 	if err := controllerutil.SetControllerReference(cr, registry, r.Scheme); err != nil {
 		return err
 	}
 
-	return r.Create(ctx, registry)
+	found := &appsv1.Deployment{}
+	lookupKey := types.NamespacedName{
+		Name:      registry.Name,
+		Namespace: registry.Namespace,
+	}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, registry)
+		}
+
+		return err
+	}
+
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, registry)
+	if changed {
+		return r.Update(ctx, deployment)
+	}
+
+	return nil
 }
 
 func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	shell := gitlabctl.ShellDeployment(cr)
 
-	if r.isObjectFound(shell) {
-		return nil
-	}
-
 	if err := controllerutil.SetControllerReference(cr, shell, r.Scheme); err != nil {
 		return err
 	}
 
-	return r.Create(ctx, shell)
+	found := &appsv1.Deployment{}
+	lookupKey := types.NamespacedName{
+		Name:      shell.Name,
+		Namespace: shell.Namespace,
+	}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, shell)
+		}
+
+		return err
+	}
+
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, shell)
+	if changed {
+		return r.Update(ctx, deployment)
+	}
+
+	return nil
 }
 
 func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	sidekiq := gitlabctl.SidekiqDeployment(cr)
 
-	if r.isObjectFound(sidekiq) {
-		return nil
-	}
-
 	if err := controllerutil.SetControllerReference(cr, sidekiq, r.Scheme); err != nil {
 		return err
 	}
 
-	return r.Create(ctx, sidekiq)
+	found := &appsv1.Deployment{}
+	lookupKey := types.NamespacedName{
+		Name:      sidekiq.Name,
+		Namespace: sidekiq.Namespace,
+	}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, sidekiq)
+		}
+
+		return err
+	}
+
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, sidekiq)
+	if changed {
+		return r.Update(ctx, deployment)
+	}
+
+	return nil
 }
 
 func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
 	tasker := gitlabctl.TaskRunnerDeployment(cr)
 
-	if r.isObjectFound(tasker) {
-		return nil
-	}
-
 	if err := controllerutil.SetControllerReference(cr, tasker, r.Scheme); err != nil {
 		return err
 	}
 
-	return r.Create(ctx, tasker)
+	found := &appsv1.Deployment{}
+	lookupKey := types.NamespacedName{
+		Name:      tasker.Name,
+		Namespace: tasker.Namespace,
+	}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			return r.Create(ctx, tasker)
+		}
+
+		return err
+	}
+
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, tasker)
+	if changed {
+		return r.Update(ctx, deployment)
+	}
+
+	return nil
 }
 
 func (r *GitLabReconciler) exposeGitLabInstance(cr *gitlabv1beta1.GitLab) error {

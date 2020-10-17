@@ -1,35 +1,31 @@
-image: golang:1.14
+image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
 
 stages:
   - prepare
   - test
   - build
 
-variables:
-  GOPATH: ${CI_PROJECT_DIR}/.go
-
-before_script:
-  - mkdir -p .go
-  - go get -u github.com/onsi/ginkgo/ginkgo
-  - go get -u golang.org/x/lint/golint
-
 .cache:
+  variables:
+    GOPATH: "${CI_PROJECT_DIR}/.go"
+  before_script:
+    - mkdir -p .go
   cache:
     key: ${CI_COMMIT_REF_SLUG}
-    paths: 
-      - .go/
+    paths:
+      - .go/pkg/mod/
 
 lint_code:
   stage: prepare
   script:
-    - .go/bin/golint -set_exit_status $(go list ./... | grep -v /vendor/)
+    - /go/bin/golint -set_exit_status $(go list ./... | grep -v /vendor/)
   extends: .cache
 
 unit_tests:
   stage: test
   script:
     - mkdir coverage
-    - .go/bin/ginkgo -cover -outputdir=coverage ./...
+    - /go/bin/ginkgo -cover -outputdir=coverage ./...
   extends: .cache
 
 build_all:

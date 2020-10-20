@@ -93,6 +93,10 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	if err := r.reconcileServiceAccount(ctx, gitlab); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if err := r.reconcileNamespaces(ctx); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -820,6 +824,26 @@ func (r *GitLabReconciler) createNamespace(ctx context.Context, namespace *corev
 		// create namespace if doesnt exist
 		if errors.IsNotFound(err) {
 			return r.Create(ctx, namespace)
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
+	sa := gitlabutils.ServiceAccount("gitlab-app", cr.Namespace)
+
+	found := &corev1.ServiceAccount{}
+	lookupKey := types.NamespacedName{Name: sa.Name, Namespace: cr.Namespace}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Create(ctx, sa); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		return err

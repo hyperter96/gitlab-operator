@@ -65,6 +65,10 @@ func (r *RunnerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	if err := r.reconcileServiceAccount(ctx, runner); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if err := r.reconcileConfigMaps(ctx, runner); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -310,6 +314,29 @@ func (r *RunnerReconciler) appendConfigMapChecksum(ctx context.Context, deployme
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+func (r *RunnerReconciler) reconcileServiceAccount(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+	sa := gitlabutils.ServiceAccount("gitlab-runner", cr.Namespace)
+	lookupKey := types.NamespacedName{
+		Name:      sa.Name,
+		Namespace: cr.Namespace,
+	}
+
+	found := &corev1.ServiceAccount{}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Create(ctx, sa); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		return err
 	}
 
 	return nil

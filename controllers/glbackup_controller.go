@@ -63,6 +63,10 @@ func (r *GLBackupReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	if err := r.reconcileServiceAcccount(ctx, backup); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if err := r.reconcileBackup(ctx, backup); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -115,15 +119,15 @@ func (r *GLBackupReconciler) reconcileBackupJob(ctx context.Context, cr *gitlabv
 	backup := backup.NewBackup(cr)
 
 	if r.IfObjectExists(types.NamespacedName{Name: backup.Name, Namespace: cr.Namespace}, backup) {
-		return r.updateBackupJob(backup)
+		return r.updateBackupJob(ctx, backup)
 	}
 
 	return r.createKubernetesResource(backup, cr)
 }
 
-func (r *GLBackupReconciler) updateBackupJob(backup *batchv1.Job) error {
+func (r *GLBackupReconciler) updateBackupJob(ctx context.Context, backup *batchv1.Job) error {
 	found := &batchv1.Job{}
-	err := r.Get(context.TODO(), types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, found)
+	err := r.Get(ctx, types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		return err
 	}
@@ -135,19 +139,19 @@ func (r *GLBackupReconciler) updateBackupJob(backup *batchv1.Job) error {
 	return nil
 }
 
-func (r *GLBackupReconciler) reconcileBackupSchedule(cr *gitlabv1beta1.GLBackup) error {
+func (r *GLBackupReconciler) reconcileBackupSchedule(ctx context.Context, cr *gitlabv1beta1.GLBackup) error {
 	backup := backup.NewSchedule(cr)
 
 	if r.IfObjectExists(types.NamespacedName{Name: backup.Name, Namespace: cr.Namespace}, backup) {
-		return r.updateBackupSchedule(backup)
+		return r.updateBackupSchedule(ctx, backup)
 	}
 
 	return r.createKubernetesResource(backup, cr)
 }
 
-func (r *GLBackupReconciler) updateBackupSchedule(backup *batchv1beta1.CronJob) error {
+func (r *GLBackupReconciler) updateBackupSchedule(ctx context.Context, backup *batchv1beta1.CronJob) error {
 	found := &batchv1beta1.CronJob{}
-	err := r.Get(context.TODO(), types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, found)
+	err := r.Get(ctx, types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		return err
 	}
@@ -156,19 +160,19 @@ func (r *GLBackupReconciler) updateBackupSchedule(backup *batchv1beta1.CronJob) 
 		found.Spec.Schedule = backup.Spec.Schedule
 	}
 
-	return r.Update(context.TODO(), backup)
+	return r.Update(ctx, backup)
 }
 
 func (r *GLBackupReconciler) reconcileBackupConfigMap(ctx context.Context, cr *gitlabv1beta1.GLBackup) error {
 	backupLock := backup.LockConfigMap(cr)
 
 	if r.IfObjectExists(types.NamespacedName{Name: backupLock.Name, Namespace: cr.Namespace}, backupLock) {
-		if err := r.reconcileBackupStatus(cr); err != nil {
+		if err := r.reconcileBackupStatus(ctx, cr); err != nil {
 			return err
 		}
 
 		lock := &corev1.ConfigMap{}
-		if err := r.Get(context.TODO(), types.NamespacedName{Name: backupLock.Name, Namespace: cr.Namespace}, lock); err != nil {
+		if err := r.Get(ctx, types.NamespacedName{Name: backupLock.Name, Namespace: cr.Namespace}, lock); err != nil {
 			return err
 		}
 		lock.Data = map[string]string{}
@@ -201,8 +205,7 @@ func (r *GLBackupReconciler) IfObjectExists(key types.NamespacedName, result run
 	return true
 }
 
-// TODO: update backup status implementation
-func (r *GLBackupReconciler) reconcileBackupStatus(cr *gitlabv1beta1.GLBackup) error {
+func (r *GLBackupReconciler) reconcileBackupStatus(ctx context.Context, cr *gitlabv1beta1.GLBackup) error {
 	lockName := strings.Join([]string{cr.Name, "backup", "lock"}, "-")
 	backupData, err := gitlabutils.ConfigMapData(lockName, cr.Namespace)
 	if err != nil {
@@ -210,7 +213,13 @@ func (r *GLBackupReconciler) reconcileBackupStatus(cr *gitlabv1beta1.GLBackup) e
 	}
 
 	backup := &gitlabv1beta1.GLBackup{}
-	if err := r.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, backup); err != nil {
+	lookupKey := types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}
+	if err := r.Get(ctx, lookupKey, backup); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+
+		return err
 	}
 
 	if start, ok := backupData["startTime"]; ok {
@@ -221,7 +230,7 @@ func (r *GLBackupReconciler) reconcileBackupStatus(cr *gitlabv1beta1.GLBackup) e
 		backup.Status.CompletedAt = completed
 	}
 
-	if r.isBackupRunning(cr, backupData) && backup.Status.CompletedAt == "" {
+	if r.isBackupRunning(ctx, cr, backupData) && backup.Status.CompletedAt == "" {
 		backup.Status.Phase = gitlabv1beta1.BackupRunning
 	}
 
@@ -232,7 +241,7 @@ func (r *GLBackupReconciler) reconcileBackupStatus(cr *gitlabv1beta1.GLBackup) e
 	}
 
 	if bkErr, ok := backupData["error"]; ok {
-		if r.isBackupFailed(cr, bkErr) {
+		if r.isBackupFailed(ctx, cr, bkErr) {
 			backup.Status.Phase = gitlabv1beta1.BackupFailed
 		}
 	}
@@ -242,16 +251,16 @@ func (r *GLBackupReconciler) reconcileBackupStatus(cr *gitlabv1beta1.GLBackup) e
 	}
 
 	if !reflect.DeepEqual(cr.Status, backup.Status) {
-		return r.Status().Update(context.TODO(), backup)
+		return r.Status().Update(ctx, backup)
 	}
 
 	return nil
 }
 
-func (r *GLBackupReconciler) getBackupJobResource(cr *gitlabv1beta1.GLBackup) *batchv1.Job {
+func (r *GLBackupReconciler) getBackupJobResource(ctx context.Context, cr *gitlabv1beta1.GLBackup) *batchv1.Job {
 	job := &batchv1.Job{}
 	jobName := strings.Join([]string{cr.Name, "backup"}, "-")
-	err := r.Get(context.TODO(), types.NamespacedName{Name: jobName, Namespace: cr.Namespace}, job)
+	err := r.Get(ctx, types.NamespacedName{Name: jobName, Namespace: cr.Namespace}, job)
 	if err != nil && errors.IsNotFound(err) {
 		return nil
 	}
@@ -259,8 +268,8 @@ func (r *GLBackupReconciler) getBackupJobResource(cr *gitlabv1beta1.GLBackup) *b
 	return job
 }
 
-func (r *GLBackupReconciler) isBackupFailed(cr *gitlabv1beta1.GLBackup, backupError string) bool {
-	job := r.getBackupJobResource(cr)
+func (r *GLBackupReconciler) isBackupFailed(ctx context.Context, cr *gitlabv1beta1.GLBackup, backupError string) bool {
+	job := r.getBackupJobResource(ctx, cr)
 	if job == nil {
 		return false
 	}
@@ -268,9 +277,9 @@ func (r *GLBackupReconciler) isBackupFailed(cr *gitlabv1beta1.GLBackup, backupEr
 	return job.Status.Succeeded < 1 && !strings.Contains(backupError, "Module python-magic is not available")
 }
 
-func (r *GLBackupReconciler) isBackupRunning(cr *gitlabv1beta1.GLBackup, data map[string]string) bool {
+func (r *GLBackupReconciler) isBackupRunning(ctx context.Context, cr *gitlabv1beta1.GLBackup, data map[string]string) bool {
 
-	job := r.getBackupJobResource(cr)
+	job := r.getBackupJobResource(ctx, cr)
 	if job == nil {
 		return false
 	}
@@ -280,4 +289,24 @@ func (r *GLBackupReconciler) isBackupRunning(cr *gitlabv1beta1.GLBackup, data ma
 
 func (r *GLBackupReconciler) isBackupComplete(cr *gitlabv1beta1.GLBackup, backupOutput string) bool {
 	return cr.Status.CompletedAt != "" // && backupOutput != ""
+}
+
+func (r *GLBackupReconciler) reconcileServiceAcccount(ctx context.Context, cr *gitlabv1beta1.GLBackup) error {
+	sa := gitlabutils.ServiceAccount("gitlab-backup", cr.Namespace)
+
+	found := &corev1.ServiceAccount{}
+	lookupKey := types.NamespacedName{Name: "gitlab-backup", Namespace: cr.Namespace}
+	if err := r.Get(ctx, lookupKey, found); err != nil {
+		if errors.IsNotFound(err) {
+			if err := r.Create(ctx, sa); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		return err
+	}
+
+	return nil
 }

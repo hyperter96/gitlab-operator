@@ -164,12 +164,15 @@ func GenericCronJob(component Component) *batchv1beta1.CronJob {
 }
 
 // ServiceAccount returns service account to be used by pods
-func ServiceAccount(namespace string, labels map[string]string) *corev1.ServiceAccount {
+func ServiceAccount(name, namespace string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      labels["app.kubernetes.io/instance"],
+			Name:      name,
 			Namespace: namespace,
-			Labels:    labels,
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       name,
+				"app.kubernetes.io/created-by": "gitlab-operator",
+			},
 		},
 	}
 }

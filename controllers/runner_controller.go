@@ -179,6 +179,15 @@ func (r *RunnerReconciler) updateRunnerStatus(ctx context.Context, cr *gitlabv1b
 }
 
 func (r *RunnerReconciler) reconcileStatus(ctx context.Context, cr *gitlabv1beta1.Runner) error {
+	// set := labels.Set(map[string]string{})
+	// selector := client.MatchingLabelsSelector{
+	// 	Selector: labels.SelectorFromSet(set),
+	// }
+
+	// podlist := &corev1.PodList{}
+	// err := r.List(ctx, podlist, client.InNamespace(cr.Namespace), selector)
+	// if err != nil {
+	// }
 
 	client, err := gitlabutils.KubernetesConfig().NewKubernetesClient()
 	if err != nil {

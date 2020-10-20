@@ -30,6 +30,8 @@ func GetGitLabConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"installation_type":     labels["app.kubernetes.io/managed-by"],
 	}
 
+	gitlabutils.ConfigMapWithHash(gitlab)
+
 	return gitlab
 }
 
@@ -47,6 +49,8 @@ func RedisConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"redis.conf":   redisConf,
 		"replica.conf": replicaConf,
 	}
+
+	gitlabutils.ConfigMapWithHash(redis)
 
 	return redis
 }
@@ -72,6 +76,8 @@ func RedisSciptsConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"ping_readiness_master.sh":           masterReadiness,
 	}
 
+	gitlabutils.ConfigMapWithHash(scripts)
+
 	return scripts
 }
 
@@ -95,6 +101,8 @@ func GitalyConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"configure":            configureScript,
 		"shell-config.yml.erb": shell.String(),
 	}
+
+	gitlabutils.ConfigMapWithHash(gitaly)
 
 	return gitaly
 }
@@ -122,6 +130,8 @@ func WebserviceConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"installation_type": labels["app.kubernetes.io/managed-by"],
 	}
 
+	gitlabutils.ConfigMapWithHash(webservice)
+
 	return webservice
 }
 
@@ -145,6 +155,8 @@ func WorkhorseConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"installation_type":         labels["app.kubernetes.io/managed-by"],
 	}
 
+	gitlabutils.ConfigMapWithHash(workhorse)
+
 	return workhorse
 }
 
@@ -167,6 +179,8 @@ func ShellConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"config.yml.erb": script.String(),
 		"sshd_config":    sshdConfig,
 	}
+
+	gitlabutils.ConfigMapWithHash(shell)
 
 	return shell
 }
@@ -195,6 +209,8 @@ func SidekiqConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"sidekiq_queues.yml.erb": queuesYML,
 	}
 
+	gitlabutils.ConfigMapWithHash(sidekiq)
+
 	return sidekiq
 }
 
@@ -215,6 +231,8 @@ func ExporterConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"gitlab-exporter.yml.erb": exporterYML.String(),
 	}
 
+	gitlabutils.ConfigMapWithHash(exporter)
+
 	return exporter
 }
 
@@ -234,6 +252,8 @@ func RegistryConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"configure":  configure,
 		"config.yml": configYML.String(),
 	}
+
+	gitlabutils.ConfigMapWithHash(registry)
 
 	return registry
 }
@@ -262,6 +282,8 @@ func TaskRunnerConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"cable.yml.erb":    getCableConfiguration(cr),
 	}
 
+	gitlabutils.ConfigMapWithHash(tasker)
+
 	return tasker
 }
 
@@ -285,6 +307,8 @@ func MigrationsConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 		"cable.yml.erb":    getCableConfiguration(cr),
 	}
 
+	gitlabutils.ConfigMapWithHash(migrations)
+
 	return migrations
 }
 
@@ -298,6 +322,8 @@ func PostgresInitDBConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	postgres.Data = map[string]string{
 		"enable_extensions.sh": script,
 	}
+
+	gitlabutils.ConfigMapWithHash(postgres)
 
 	return postgres
 }

@@ -1,9 +1,6 @@
 package runner
 
 import (
-	"reflect"
-	"strconv"
-
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,122 +9,6 @@ import (
 
 // RunnerServiceAccount defines the sa for GitLab runner
 const RunnerServiceAccount string = "gitlab-runner"
-
-func getEnvironmentVars(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
-
-	envs := []corev1.EnvVar{
-		{
-			Name: "CI_SERVER_URL",
-			ValueFrom: &corev1.EnvVarSource{
-				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Name + "-runner-config",
-					},
-					Key: "ci_server_url",
-				},
-			},
-		},
-		{
-			Name: "CI_SERVER_TOKEN",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: RegistrationTokenSecretName(cr),
-					},
-					Key: "runner-token",
-				},
-			},
-		},
-		{
-			Name: "REGISTRATION_TOKEN",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: RegistrationTokenSecretName(cr),
-					},
-					Key: "runner-registration-token",
-				},
-			},
-		},
-		{
-			Name:  "RUNNER_REQUEST_CONCURRENCY",
-			Value: "1",
-		},
-		{
-			Name:  "RUNNER_EXECUTOR",
-			Value: "kubernetes",
-		},
-		{
-			Name:  "REGISTER_LOCKED",
-			Value: "false",
-		},
-		{
-			Name:  "RUNNER_OUTPUT_LIMIT",
-			Value: "4096",
-		},
-		{
-			Name:  "KUBERNETES_NAMESPACE",
-			Value: cr.Namespace,
-		},
-		{
-			Name:  "KUBERNETES_POLL_TIMEOUT",
-			Value: "180",
-		},
-		{
-			Name:  "CACHE_SHARED",
-			Value: strconv.FormatBool(cr.Spec.CacheShared),
-		},
-	}
-
-	if cr.Spec.Tags != "" {
-		envs = append(envs, corev1.EnvVar{
-			Name:  "RUNNER_TAG_LIST",
-			Value: cr.Spec.Tags,
-		})
-	}
-
-	if cr.Spec.HelperImage != "" {
-		envs = append(envs, corev1.EnvVar{
-			Name:  "KUBERNETES_HELPER_IMAGE",
-			Value: cr.Spec.HelperImage,
-		})
-	}
-
-	if cr.Spec.BuildImage != "" {
-		envs = append(envs, corev1.EnvVar{
-			Name:  "KUBERNETES_IMAGE",
-			Value: cr.Spec.BuildImage,
-		})
-	}
-
-	if cr.Spec.CloneURL != "" {
-		envs = append(envs, corev1.EnvVar{
-			Name:  "CLONE_URL",
-			Value: cr.Spec.CloneURL,
-		})
-	}
-
-	if cr.Spec.CacheType != "" {
-		envs = append(envs, corev1.EnvVar{
-			Name:  "CACHE_TYPE",
-			Value: cr.Spec.CacheType,
-		})
-	}
-
-	if cr.Spec.CachePath != "" {
-		envs = append(envs, corev1.EnvVar{
-			Name:  "CACHE_PATH",
-			Value: cr.Spec.CachePath,
-		})
-	}
-
-	cache := getRunnerCache(cr)
-	if !reflect.DeepEqual(cache, []corev1.EnvVar{}) {
-		envs = append(envs, cache...)
-	}
-
-	return envs
-}
 
 // Deployment returns the runner deployment object
 func Deployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
@@ -142,7 +23,7 @@ func Deployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 				Image:           GitlabRunnerImage,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"sh", "/config/configure"},
-				Env:             getEnvironmentVars(cr),
+				Env:             getEnvironmentVariables(cr),
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "runner-secrets",
@@ -174,7 +55,7 @@ func Deployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 						},
 					},
 				},
-				Env: getEnvironmentVars(cr),
+				Env: getEnvironmentVariables(cr),
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -332,4 +213,45 @@ func RegistrationTokenSecretName(cr *gitlabv1beta1.Runner) string {
 	}
 
 	return tokenSecretName
+}
+
+func gcsCredentialsSecretProjection(cr *gitlabv1beta1.Runner) corev1.VolumeProjection {
+	if cr.Spec.GCS.Credentials != "" {
+		return corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: cr.Spec.GCS.Credentials,
+				},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  "access-id",
+						Path: "gcs-access-id",
+					},
+					{
+						Key:  "private-key",
+						Path: "gcs-private-key",
+					},
+				},
+			},
+		}
+	}
+
+	return corev1.VolumeProjection{
+		Secret: &corev1.SecretProjection{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: cr.Spec.GCS.CredentialsFile,
+			},
+			Items: []corev1.KeyToPath{
+				{
+					Key:  "keys.json",
+					Path: "gcs-application-credentials-file",
+				},
+			},
+		},
+	}
+}
+
+// isCacheS3 checks if the GitLab Runner Cache is of type S3
+func isCacheS3(cr *gitlabv1beta1.Runner) bool {
+	return cr.Spec.S3 != nil && cr.Spec.S3.Credentials != ""
 }

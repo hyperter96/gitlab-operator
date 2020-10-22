@@ -31,7 +31,7 @@ func TestGetEnvironmentVars(t *testing.T) {
 	runner := getTestRunner()
 	var tags, helperImg string
 
-	vars := getEnvironmentVars(runner)
+	vars := getEnvironmentVariables(runner)
 
 	if len(vars) == 0 {
 		t.Errorf("Error generating GitLab Runner environment variables")

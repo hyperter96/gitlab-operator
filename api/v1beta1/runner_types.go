@@ -92,7 +92,7 @@ type GitLabInstanceSpec struct {
 // CacheS3Config defines options for an S3 compatible cache
 type CacheS3Config struct {
 	Server string `json:"server,omitempty"`
-	// Credentials is the name of the secret containing the
+	// Name of the secret containing the
 	// 'accesskey' and 'secretkey' used to access the object storage
 	Credentials string `json:"credentials,omitempty"`
 	// Name of the bucket in which the cache will be stored
@@ -105,10 +105,10 @@ type CacheS3Config struct {
 
 // CacheGCSConfig defines options for GCS object store
 type CacheGCSConfig struct {
-	// contains the GCS accessID and privateKey
+	// contains the GCS 'access-id' and 'private-key'
 	Credentials string `json:"credentials,omitempty"`
 	// Takes GCS credentials file, 'keys.json'
-	CredentialsFile string `json:"credentialsFile"`
+	CredentialsFile string `json:"credentialsFile,omitempty"`
 	// Name of the bucket in which the cache will be stored
 	BucketName string `json:"bucket,omitempty"`
 }

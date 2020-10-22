@@ -1,7 +1,13 @@
 #!/bin/bash
 set -e
-mkdir -p ~/.gitlab-runner/
+mkdir -p ~/.gitlab-runner/certs
 cp /scripts/config.toml ~/.gitlab-runner/
+
+# Add custom CA certificate if available
+if [[ -f /secrets/custom-ca.crt ]]
+then 
+  cp /secrets/hostname.crt ~/.gitlab-runner/certs/
+fi
 
 # Register the runner
 if [[ -f /secrets/accesskey && -f /secrets/secretkey ]]; then

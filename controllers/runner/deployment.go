@@ -194,6 +194,10 @@ func runnerSecretsVolume(cr *gitlabv1beta1.Runner) []corev1.VolumeProjection {
 		secrets = append(secrets, gcsCredentialsSecretProjection(cr))
 	}
 
+	if cr.Spec.CertificateAuthority != "" {
+		secrets = append(secrets, getCertificateAuthoritySecretProjection(cr))
+	}
+
 	return secrets
 }
 
@@ -245,6 +249,22 @@ func gcsCredentialsSecretProjection(cr *gitlabv1beta1.Runner) corev1.VolumeProje
 				{
 					Key:  "keys.json",
 					Path: "gcs-application-credentials-file",
+				},
+			},
+		},
+	}
+}
+
+func getCertificateAuthoritySecretProjection(cr *gitlabv1beta1.Runner) corev1.VolumeProjection {
+	return corev1.VolumeProjection{
+		Secret: &corev1.SecretProjection{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: cr.Spec.CertificateAuthority,
+			},
+			Items: []corev1.KeyToPath{
+				{
+					Key:  "tls.crt",
+					Path: "hostname.crt",
 				},
 			},
 		},

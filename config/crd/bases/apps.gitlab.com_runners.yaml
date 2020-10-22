@@ -58,6 +58,10 @@ spec:
               description: The name of the default image to use to run build jobs,
                 when none is specified
               type: string
+            ca:
+              description: Name of tls secret containing the custom certificate authority
+                (CA) certificates
+              type: string
             cachePath:
               description: Path defines the Runner Cache path
               type: string

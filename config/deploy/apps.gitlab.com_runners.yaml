@@ -47,6 +47,9 @@ spec:
             buildImage:
               description: The name of the default image to use to run build jobs, when none is specified
               type: string
+            ca:
+              description: Name of tls secret containing the custom certificate authority (CA) certificates
+              type: string
             cachePath:
               description: Path defines the Runner Cache path
               type: string
@@ -70,13 +73,11 @@ spec:
                   description: Name of the bucket in which the cache will be stored
                   type: string
                 credentials:
-                  description: contains the GCS accessID and privateKey
+                  description: contains the GCS 'access-id' and 'private-key'
                   type: string
                 credentialsFile:
                   description: Takes GCS credentials file, 'keys.json'
                   type: string
-              required:
-              - credentialsFile
               type: object
             gitlab:
               description: gitlab specifies the GitLab instance the GitLab Runner will register against
@@ -102,7 +103,7 @@ spec:
                   description: Name of the bucket in which the cache will be stored
                   type: string
                 credentials:
-                  description: Credentials is the name of the secret containing the 'accesskey' and 'secretkey' used to access the object storage
+                  description: Name of the secret containing the 'accesskey' and 'secretkey' used to access the object storage
                   type: string
                 insecure:
                   description: Use insecure connections or HTTP

@@ -63,6 +63,10 @@ type RunnerSpec struct {
 	// Path defines the Runner Cache path
 	CachePath string `json:"cachePath,omitempty"`
 
+	// Name of tls secret containing the custom certificate
+	// authority (CA) certificates
+	CertificateAuthority string `json:"ca,omitempty"`
+
 	// Enable sharing of cache between Runners
 	CacheShared bool `json:"cacheShared,omitempty"`
 

@@ -66,46 +66,6 @@ func setupGCSCache(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
 		return env
 	}
 
-	if cr.Spec.GCS.Credentials != "" {
-		env = append(env, corev1.EnvVar{
-			Name: "CACHE_GCS_ACCESS_ID",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Spec.GCS.Credentials,
-					},
-					Key: "accessID",
-				},
-			},
-		})
-
-		env = append(env, corev1.EnvVar{
-			Name: "CACHE_GCS_PRIVATE_KEY",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Spec.GCS.Credentials,
-					},
-					Key: "privateKey",
-				},
-			},
-		})
-	}
-
-	if cr.Spec.GCS.CredentialsFile != "" {
-		env = append(env, corev1.EnvVar{
-			Name: "GOOGLE_APPLICATION_CREDENTIALS",
-			ValueFrom: &corev1.EnvVarSource{
-				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Spec.GCS.CredentialsFile,
-					},
-					Key: "keys.json",
-				},
-			},
-		})
-	}
-
 	if cr.Spec.GCS.BucketName != "" {
 		env = append(env, corev1.EnvVar{
 			Name:  "CACHE_GCS_BUCKET_NAME",
@@ -114,6 +74,42 @@ func setupGCSCache(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
 	}
 
 	return env
+}
+
+func gcsCredentialsSecretProjection(cr *gitlabv1beta1.Runner) corev1.VolumeProjection {
+	if cr.Spec.GCS.Credentials != "" {
+		return corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: cr.Spec.GCS.Credentials,
+				},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  "access-id",
+						Path: "gcs-access-id",
+					},
+					{
+						Key:  "private-key",
+						Path: "gcs-private-key",
+					},
+				},
+			},
+		}
+	}
+
+	return corev1.VolumeProjection{
+		Secret: &corev1.SecretProjection{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: cr.Spec.GCS.CredentialsFile,
+			},
+			Items: []corev1.KeyToPath{
+				{
+					Key:  "keys.json",
+					Path: "gcs-application-credentials-file",
+				},
+			},
+		},
+	}
 }
 
 func setupAzureCache(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
@@ -163,6 +159,6 @@ func setupAzureCache(cr *gitlabv1beta1.Runner) []corev1.EnvVar {
 }
 
 // IsCacheS3 checks if the GitLab Runner Cache is of type S3
-func IsCacheS3(cr *gitlabv1beta1.Runner) bool {
+func isCacheS3(cr *gitlabv1beta1.Runner) bool {
 	return cr.Spec.S3 != nil && cr.Spec.S3.Credentials != ""
 }

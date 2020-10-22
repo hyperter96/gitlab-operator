@@ -296,7 +296,7 @@ func runnerSecretsVolume(cr *gitlabv1beta1.Runner) []corev1.VolumeProjection {
 		},
 	}
 
-	if IsCacheS3(cr) {
+	if isCacheS3(cr) {
 		secrets = append(secrets,
 			corev1.VolumeProjection{
 				Secret: &corev1.SecretProjection{
@@ -306,6 +306,11 @@ func runnerSecretsVolume(cr *gitlabv1beta1.Runner) []corev1.VolumeProjection {
 				},
 			},
 		)
+	}
+
+	// append GCS cache if enabled
+	if cr.Spec.GCS != nil {
+		secrets = append(secrets, gcsCredentialsSecretProjection(cr))
 	}
 
 	return secrets

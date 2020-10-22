@@ -85,13 +85,11 @@ spec:
                   description: Name of the bucket in which the cache will be stored
                   type: string
                 credentials:
-                  description: contains the GCS accessID and privateKey
+                  description: contains the GCS 'access-id' and 'private-key'
                   type: string
                 credentialsFile:
                   description: Takes GCS credentials file, 'keys.json'
                   type: string
-              required:
-              - credentialsFile
               type: object
             gitlab:
               description: gitlab specifies the GitLab instance the GitLab Runner
@@ -122,8 +120,8 @@ spec:
                   description: Name of the bucket in which the cache will be stored
                   type: string
                 credentials:
-                  description: Credentials is the name of the secret containing the
-                    'accesskey' and 'secretkey' used to access the object storage
+                  description: Name of the secret containing the 'accesskey' and 'secretkey'
+                    used to access the object storage
                   type: string
                 insecure:
                   description: Use insecure connections or HTTP

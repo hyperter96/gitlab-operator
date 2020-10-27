@@ -70,7 +70,7 @@ metadata:
     certified: "true"
     containerImage: registry.connect.redhat.com/gitlab/gitlab-operator:v0.0.1
     createdAt: "2020-03-11T13:29:00Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.0.1
+    operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator
   name: gitlab-operator.v0.0.1
@@ -839,7 +839,8 @@ spec:
     url: https://about.gitlab.com/
   version: 0.0.1
   webhookdefinitions:
-  - admissionReviewVersions: null
+  - admissionReviewVersions:
+    - v1beta1
     deploymentName: gitlab-controller-manager
     failurePolicy: Fail
     generateName: vgitlab.kb.io
@@ -853,10 +854,11 @@ spec:
       - UPDATE
       resources:
       - gitlabs
-    sideEffects: null
+    sideEffects: None
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-apps-gitlab-com-v1beta1-gitlab
-  - admissionReviewVersions: null
+  - admissionReviewVersions:
+    - v1beta1
     deploymentName: gitlab-controller-manager
     failurePolicy: Fail
     generateName: vglbackup.kb.io
@@ -870,10 +872,11 @@ spec:
       - UPDATE
       resources:
       - glbackups
-    sideEffects: null
+    sideEffects: None
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-apps-gitlab-com-v1beta1-glbackup
-  - admissionReviewVersions: null
+  - admissionReviewVersions:
+    - v1beta1
     deploymentName: gitlab-controller-manager
     failurePolicy: Fail
     generateName: vrunner.kb.io
@@ -887,10 +890,11 @@ spec:
       - UPDATE
       resources:
       - runners
-    sideEffects: null
+    sideEffects: None
     type: ValidatingAdmissionWebhook
     webhookPath: /validate-apps-gitlab-com-v1beta1-runner
-  - admissionReviewVersions: null
+  - admissionReviewVersions:
+    - v1beta1
     deploymentName: gitlab-controller-manager
     failurePolicy: Fail
     generateName: mglbackup.kb.io
@@ -904,6 +908,6 @@ spec:
       - UPDATE
       resources:
       - glbackups
-    sideEffects: null
+    sideEffects: None
     type: MutatingAdmissionWebhook
     webhookPath: /mutate-apps-gitlab-com-v1beta1-glbackup

@@ -6,6 +6,15 @@ metadata:
   creationTimestamp: null
   name: runners.apps.gitlab.com
 spec:
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: gitlab-webhook-service
+        namespace: gitlab-system
+        path: /convert
+        port: 443
   group: apps.gitlab.com
   names:
     kind: Runner

@@ -19,6 +19,15 @@ spec:
   - JSONPath: .status.health.workhorse
     name: CONSOLE
     type: string
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: gitlab-webhook-service
+        namespace: gitlab-system
+        path: /convert
+        port: 443
   group: apps.gitlab.com
   names:
     kind: GitLab

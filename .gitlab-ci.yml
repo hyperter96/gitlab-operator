@@ -59,3 +59,18 @@ image-build:
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
   except:
     - master
+
+bundle-image:
+  variables:
+    OPERATOR_BUNDLE_IMG: "${CI_REGISTRY_IMAGE}-bundle"
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker build --pull -t  "$OPERATOR_BUNDLE_IMG"  . -f bundle.Dockerfile
+    - docker push "$OPERATOR_BUNDLE_IMG"
+  only:
+    - master

@@ -62,7 +62,7 @@ image-build:
 
 bundle-image:
   variables:
-    OPERATOR_BUNDLE_IMG: "${CI_REGISTRY_IMAGE}-bundle"
+    OPERATOR_BUNDLE_IMG: "${CI_REGISTRY_IMAGE}/gitlab-operator-bundle"
   image: docker:latest
   stage: build
   services:

@@ -4,8 +4,8 @@ metadata:
   name: runner-rolebinding
 subjects:
 - kind: ServiceAccount
-  name: gitlab-runner
-  namespace: gitlab-system
+  name: runner
+  namespace: system
 roleRef:
   kind: ClusterRole
   name: runner-role

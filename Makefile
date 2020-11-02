@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 0.0.1
+VERSION ?= 0.2.0
 # Default bundle image tag
 BUNDLE_IMG ?= registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator-bundle:$(VERSION)
 # Options for 'bundle-build'
@@ -112,7 +112,6 @@ bundle: manifests
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	find bundle/manifests/ -type f -name '*_clusterrolebinding.yaml' | xargs -n 1 sed -i '/namespace: .*/d'
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.

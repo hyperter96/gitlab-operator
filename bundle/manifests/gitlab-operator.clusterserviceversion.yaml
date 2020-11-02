@@ -73,7 +73,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator
-  name: gitlab-operator.v0.0.1
+  name: gitlab-operator.v0.2.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -295,21 +295,6 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
     required:
-    - description: Cert-Manager Certificate
-      displayName: Certificate
-      kind: Certificate
-      name: certificates.cert-manager.io
-      version: v1
-    - description: Cert-Manager Certificate Issuer
-      displayName: Certificate Issuer
-      kind: Issuer
-      name: issuers.cert-manager.io
-      version: v1
-    - description: Nginx Ingress Controller provides Nginx or Nginx Plus as an Ingress controller
-      displayName: Nginx Ingress Controller
-      kind: NginxIngressController
-      name: nginxingresscontrollers.k8s.nginx.org
-      version: v1alpha1
     - description: Prometheus is used for event monitoring and alerting
       displayName: Prometheus
       kind: Prometheus
@@ -837,7 +822,8 @@ spec:
   provider:
     name: GitLab Inc
     url: https://about.gitlab.com/
-  version: 0.0.1
+  replaces: gitlab-operator.v0.1.12
+  version: 0.2.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1beta1

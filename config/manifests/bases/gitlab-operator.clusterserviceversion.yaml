@@ -290,26 +290,11 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:text
       version: v1beta1
     required:
-    - description: Cert-Manager Certificate
-      displayName: Certificate
-      kind: Certificate
-      name: certificates.cert-manager.io
-      version: v1
-    - description: Cert-Manager Certificate Issuer
-      displayName: Certificate Issuer
-      kind: Issuer
-      name: issuers.cert-manager.io
-      version: v1
     - description: Prometheus is used for event monitoring and alerting
       displayName: Prometheus
       kind: Prometheus
       name: prometheuses.monitoring.coreos.com
       version: v1
-    - description: Nginx Ingress Controller provides Nginx or Nginx Plus as an Ingress controller
-      displayName: Nginx Ingress Controller
-      kind: NginxIngressController
-      name: nginxingresscontrollers.k8s.nginx.org
-      version: v1alpha1
   description: |
     # Overview
 
@@ -448,4 +433,5 @@ spec:
   provider:
     name: GitLab Inc
     url: https://about.gitlab.com/
+  replaces: gitlab-operator.v0.1.12
   version: 0.0.1

@@ -4,8 +4,8 @@ metadata:
   name: backup-rolebinding
 subjects:
 - kind: ServiceAccount
-  name: gitlab-backup
-  namespace: gitlab-system
+  name: backup
+  namespace: system
 roleRef:
   kind: ClusterRole
   name: backup-role

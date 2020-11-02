@@ -4,8 +4,8 @@ metadata:
   name: app-rolebinding
 subjects:
 - kind: ServiceAccount
-  name: gitlab-app
-  namespace: gitlab-system
+  name: app
+  namespace: system
 roleRef:
   kind: ClusterRole
   name: app-role

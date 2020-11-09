@@ -85,6 +85,10 @@ spec:
   skip: repository,registry
 ```
 
+## OpenShift Cluster Setup
+
+See [doc/openshift-cluster-setup.md](doc/openshift-cluster-setup.md) for instructions on how to create an OpenShift cluster for development or CI.
+
 ## More Information
 
 More information on the operator can be found in the [Operator Documentation](https://gitlab.com/gitlab-org/gl-openshift/documentation) repo.

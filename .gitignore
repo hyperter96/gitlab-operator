@@ -80,3 +80,7 @@ controllers/runner_controller_test.go
 controllers/gitlab_controller_test.go
 config/local
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
+install/
+gcloud.json
+pull_secret
+must-gather.*

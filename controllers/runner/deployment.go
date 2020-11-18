@@ -150,8 +150,11 @@ func Deployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 		runner.Spec.Template.Spec.Containers[0].Image = CertifiedRunnerImage
 	}
 
-	// Set runner to use specific service account
+	// Set service account to be used by GitLab Runner
 	runner.Spec.Template.Spec.ServiceAccountName = RunnerServiceAccount
+	if cr.Spec.ServiceAccount != "" {
+		runner.Spec.Template.Spec.ServiceAccountName = cr.Spec.ServiceAccount
+	}
 
 	return runner
 }

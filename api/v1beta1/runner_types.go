@@ -79,6 +79,9 @@ type RunnerSpec struct {
 	// options used to setup Azure blob
 	// storage as GitLab Runner Cache
 	Azure *CacheAzureConfig `json:"azure,omitempty"`
+	// allow user to override service account
+	// used by GitLab Runner
+	ServiceAccount string `json:"serviceaccount,omitempty"`
 }
 
 // GitLabInstanceSpec defines the Gitlab custom

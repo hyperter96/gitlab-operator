@@ -19,6 +19,12 @@ The GitLab operator uses native Kubernetes resources to deploy and manage GitLab
 
 The operator depends on the Prometheus, Nginx Ingress Controller and Cert Manager operators to achieve some of the tasks it provides to its end users.
 
+## Design Decisions
+
+Decisions made during the design of the operator have been compiled into a
+[document](doc/design-decisions.md) with background information to provide
+reasoning for reaching the decision.
+
 ## Owned Resources
 
 The operator is responsible for owns, watches and reconciles three different primary resources at this time.

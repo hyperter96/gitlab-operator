@@ -109,7 +109,17 @@ func (r *RunnerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *RunnerReconciler) reconcileConfigMaps(ctx context.Context, cr *gitlabv1beta1.Runner) error {
-	configs := runnerctl.GetConfigMap(cr)
+	configs := runnerctl.ConfigMap(cr)
+
+	// load user provided config.toml
+	if cr.Spec.Configuration != "" {
+		userToml, err := r.getUserConfigToml(ctx, cr)
+		if err != nil {
+			return err
+		}
+
+		configs.Data["config.toml"] = userToml
+	}
 
 	found := &corev1.ConfigMap{}
 	err := r.Get(ctx, types.NamespacedName{Name: configs.Name, Namespace: cr.Namespace}, found)
@@ -131,6 +141,25 @@ func (r *RunnerReconciler) reconcileConfigMaps(ctx context.Context, cr *gitlabv1
 	}
 
 	return nil
+}
+
+func (r *RunnerReconciler) getUserConfigToml(ctx context.Context, cr *gitlabv1beta1.Runner) (string, error) {
+	userCM := &corev1.ConfigMap{}
+	userCMKey := types.NamespacedName{
+		Name:      cr.Spec.Configuration,
+		Namespace: cr.Namespace,
+	}
+
+	if err := r.Get(ctx, userCMKey, userCM); err != nil {
+		return "", err
+	}
+
+	userToml, ok := userCM.Data["config.toml"]
+	if ok {
+		return userToml, nil
+	}
+
+	return "", fmt.Errorf("config.toml key not found")
 }
 
 func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.Runner, log logr.Logger) error {

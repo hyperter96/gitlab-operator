@@ -32,8 +32,8 @@ func userOptions(cr *gitlabv1beta1.Runner) Config {
 	return options
 }
 
-// GetConfigMap returns the runner configmap object
-func GetConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
+// ConfigMap returns the runner configmap object
+func ConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
 
 	var gitlabURL string

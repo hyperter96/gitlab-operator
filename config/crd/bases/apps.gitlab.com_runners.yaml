@@ -136,6 +136,9 @@ spec:
                 server:
                   type: string
               type: object
+            serviceaccount:
+              description: allow user to override service account used by GitLab Runner
+              type: string
             tags:
               description: 'List of comma separated tags to be applied to the runner
                 More info: https://docs.gitlab.com/ee/ci/runners/#use-tags-to-limit-the-number-of-jobs-using-the-runner'

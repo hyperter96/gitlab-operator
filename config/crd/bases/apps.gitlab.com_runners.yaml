@@ -81,6 +81,10 @@ spec:
                 concurrently. The operator sets this to 10, if not specified
               format: int32
               type: integer
+            config:
+              description: allow user to provide configmap name containing the user
+                provided config.toml
+              type: string
             gcs:
               description: options used to setup GCS (Google Container Storage) as
                 GitLab Runner Cache

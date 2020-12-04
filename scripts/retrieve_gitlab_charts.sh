@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/sh -e
 
 # This script executes during the image_build job of the pipeline
 # and is responsible for retrieving the correct versions of the
@@ -36,7 +36,7 @@ install_helm() {
             esac
     esac
     HELM_RELEASE_URL="https://get.helm.sh/helm-${HELM_VERSION}-${platform}.tar.gz"
-    curl -o - "${HELM_RELEASE_URL}" | tar xzf - ${platform}/helm
+    wget -O - "${HELM_RELEASE_URL}" | tar xzf - ${platform}/helm
     mv ${platform}/helm .
     rm -rf ${platform}
 }
@@ -66,32 +66,34 @@ target_versions=""
 next_version=""
 for version_pair in $(chart_versions); do
     # Unpack the versions in to variables
-    IFS=':' read -a versions <<< "$version_pair"
-    gitlab_version=${versions[0]}
-    chart_version=${versions[1]}
+    IFS=':' read -r gitlab_version chart_version <<EOF
+$version_pair
+EOF
 
     # Pick the first chart version if nothing selected yet
-    if [[ -z "$target_versions" ]]; then
+    if [ -z "$target_versions" ]; then
         target_versions=$chart_version
         next_version=$(previous_minor $gitlab_version)
         continue
     fi
 
-    if [[ -n "$(expr "$gitlab_version" : "\($next_version\)")" ]]; then
+    if [ -n "$(expr "$gitlab_version" : "\($next_version\)")" ]; then
         target_versions="${target_versions}:$chart_version"
         next_version=$(previous_minor $gitlab_version)
     fi
 
     # Only need to target 3 versions
-    if [[ $(echo ${target_versions} | awk -F: '{print NF - 1}') -eq 2 ]]; then
+    if [ $(echo ${target_versions} | awk -F: '{print NF - 1}') -eq 2 ]; then
         break
     fi
 done
 
 # download the target_versions charts to the charts directory
 rm -rf charts && mkdir charts && cd charts
-IFS=: read -a versions <<< "$target_versions"
-for version in "${versions[@]}"; do
+#IFS=: read -r versions <<EOF
+#$target_versions
+#EOF
+for version in $(echo ${target_versions} | tr ':' ' '); do
     echo "Fetching ${GITLAB_CHART}-${version}"
     ../helm fetch ${GITLAB_CHART} --version ${version} 2>/dev/null
 done

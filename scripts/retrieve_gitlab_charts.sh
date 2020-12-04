@@ -12,7 +12,8 @@ HELM_VERSION="v3.4.1"
 
 chart_versions() {
     # escape the slash in the chart name
-    awk_chart_filter=$(echo ${GITLAB_CHART//\//\\/})
+    # shellcheck disable=SC3060
+    awk_chart_filter=${GITLAB_CHART//\//\\/}
     ./helm search repo ${GITLAB_CHART} -l 2>/dev/null | sed 1d | awk "
     /${awk_chart_filter}\s/ { print \$3 \":\" \$2 }"
 }
@@ -49,10 +50,10 @@ add_gitlab_repo() {
 previous_minor() {
     # this will subtract 1 from the minor version.
     # if minor-1 is -1 return previous major-1 with now minor
-    echo $(echo $1 | awk -F'.' '{ if (($2 - 1) == "-1")
-                                    print ($1 - 1) ".";
-                                  else
-                                    print $1 "." ($2 - 1)}')
+    echo "$1" | awk -F'.' '{if (($2 - 1) == "-1")
+                              print ($1 - 1) ".";
+                            else
+                              print $1 "." ($2 - 1)}'
 }
 
 
@@ -73,24 +74,25 @@ EOF
     # Pick the first chart version if nothing selected yet
     if [ -z "$target_versions" ]; then
         target_versions=$chart_version
-        next_version=$(previous_minor $gitlab_version)
+        next_version=$(previous_minor "$gitlab_version")
         continue
     fi
 
     if [ -n "$(expr "$gitlab_version" : "\($next_version\)")" ]; then
         target_versions="${target_versions}:$chart_version"
-        next_version=$(previous_minor $gitlab_version)
+        next_version=$(previous_minor "$gitlab_version")
     fi
 
     # Only need to target 3 versions
-    if [ $(echo ${target_versions} | awk -F: '{print NF - 1}') -eq 2 ]; then
+    # shellcheck disable=SC2046
+    if [ $(echo "${target_versions}" | awk -F: '{print NF - 1}') -eq 2 ]; then
         break
     fi
 done
 
 # download the target_versions charts to the charts directory
 rm -rf charts && mkdir charts && cd charts
-for version in $(echo ${target_versions} | tr ':' ' '); do
+for version in $(echo "${target_versions}" | tr ':' ' '); do
     echo "Fetching ${GITLAB_CHART}-${version}"
-    ../helm fetch ${GITLAB_CHART} --version ${version} 2>/dev/null
+    ../helm fetch "${GITLAB_CHART}" --version "${version}" 2>/dev/null
 done

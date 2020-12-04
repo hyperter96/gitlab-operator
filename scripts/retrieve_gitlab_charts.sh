@@ -90,9 +90,6 @@ done
 
 # download the target_versions charts to the charts directory
 rm -rf charts && mkdir charts && cd charts
-#IFS=: read -r versions <<EOF
-#$target_versions
-#EOF
 for version in $(echo ${target_versions} | tr ':' ' '); do
     echo "Fetching ${GITLAB_CHART}-${version}"
     ../helm fetch ${GITLAB_CHART} --version ${version} 2>/dev/null

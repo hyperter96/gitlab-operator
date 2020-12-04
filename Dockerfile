@@ -34,6 +34,9 @@ COPY LICENSE /licenses/GITLAB
 # Copy config templates
 COPY hack/assets /
 
+# Add pre-packaged charts for the operator to deploy
+COPY charts /charts
+
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER ${USER_UID}

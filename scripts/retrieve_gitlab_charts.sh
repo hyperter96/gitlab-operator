@@ -11,11 +11,9 @@ HELM_VERSION="v3.4.1"
 
 
 chart_versions() {
-    # escape the slash in the chart name
-    # shellcheck disable=SC3060
-    awk_chart_filter=${GITLAB_CHART//\//\\/}
-    ./helm search repo ${GITLAB_CHART} -l 2>/dev/null | sed 1d | awk "
-    /${awk_chart_filter}\s/ { print \$3 \":\" \$2 }"
+    # The space after ${GITLAB_CHART} in grep is critically important
+    ./helm search repo ${GITLAB_CHART} -l 2>/dev/null | \
+        grep "${GITLAB_CHART} " | awk "{ print \$3 \":\" \$2 }"
 }
 
 install_helm() {

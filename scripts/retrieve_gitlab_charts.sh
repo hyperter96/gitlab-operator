@@ -94,3 +94,6 @@ for version in $(echo "${target_versions}" | tr ':' ' '); do
     echo "Fetching ${GITLAB_CHART}-${version}"
     ../helm fetch "${GITLAB_CHART}" --version "${version}" 2>/dev/null
 done
+
+# Clean up helm binary. Not needed any longer
+rm ../helm

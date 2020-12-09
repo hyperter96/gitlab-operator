@@ -84,3 +84,5 @@ install/
 gcloud.json
 pull_secret
 must-gather.*
+charts/
+helm

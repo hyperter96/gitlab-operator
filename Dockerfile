@@ -26,7 +26,11 @@ LABEL name=gitlab-operator \
       description='Operator to deploy GitLab and Runner instances' \
       summary='GitLab is a DevOps lifecycle tool that provides Git repositories'
 
-ENV USER_UID=1001
+# Allow the chart directory to be overwritten with --build-arg
+ARG chart_dir="/charts"
+
+ENV USER_UID=1001 \
+    CHART_DIR=$chart_dir
 
 # ADD GITLAB LICENSE
 COPY LICENSE /licenses/GITLAB
@@ -35,7 +39,7 @@ COPY LICENSE /licenses/GITLAB
 COPY hack/assets /
 
 # Add pre-packaged charts for the operator to deploy
-COPY charts /charts
+COPY charts ${CHART_DIR}
 
 WORKDIR /
 COPY --from=builder /workspace/manager .

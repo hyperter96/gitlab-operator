@@ -11,9 +11,9 @@ HELM_VERSION="v3.4.1"
 
 
 chart_versions() {
-    # The space after ${GITLAB_CHART} in grep is critically important
+    # Find all the applicable charts and return a list of "app vers:chart vers" entries
     ./helm search repo ${GITLAB_CHART} -l 2>/dev/null | \
-        grep "${GITLAB_CHART} " | awk "{ print \$3 \":\" \$2 }"
+        awk -v CHART="${GITLAB_CHART}" '{if ( match($1, "^" CHART "$") ){ print $3 ":" $2}}'
 }
 
 install_helm() {

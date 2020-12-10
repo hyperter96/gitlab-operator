@@ -10,8 +10,9 @@ import (
 )
 
 var _ = Describe("Template", func() {
-	It("Must return all objects when the selector matches all", func() {
-		template, _, err := loadTemplate()
+
+	It("must return all objects when the selector matches all", func() {
+		template, err := loadTemplate()
 		Expect(err).To(BeNil())
 
 		selectedObjects, err := template.GetObjects(helm.TrueSelector)
@@ -19,8 +20,8 @@ var _ = Describe("Template", func() {
 		Expect(selectedObjects).To(Equal(template.Objects()))
 	})
 
-	It("Must only select ConfigMaps that match the expected label", func() {
-		template, _, err := loadTemplate()
+	It("must only select ConfigMaps that match the expected label", func() {
+		template, err := loadTemplate()
 		Expect(err).To(BeNil())
 
 		selector := func(configMap *corev1.ConfigMap) bool {
@@ -32,8 +33,8 @@ var _ = Describe("Template", func() {
 		Expect(selectedObjects).To(HaveLen(1))
 	})
 
-	It("Must delete no object when the selector does not match any", func() {
-		template, _, err := loadTemplate()
+	It("must delete no object when the selector does not match any", func() {
+		template, err := loadTemplate()
 		Expect(err).To(BeNil())
 
 		deletedCount, err := template.DeleteObjects(helm.FalseSelector)
@@ -41,8 +42,8 @@ var _ = Describe("Template", func() {
 		Expect(deletedCount).To(BeZero())
 	})
 
-	It("Must delete the Ingress objects", func() {
-		template, _, err := loadTemplate()
+	It("must delete the Ingress objects", func() {
+		template, err := loadTemplate()
 		Expect(err).To(BeNil())
 
 		initialLength := len(template.Objects())
@@ -59,8 +60,8 @@ var _ = Describe("Template", func() {
 		Expect(len(template.Objects())).To(Equal(initialLength - deletedCount))
 	})
 
-	It("Must edit Deployment objects", func() {
-		template, _, err := loadTemplate()
+	It("must edit Deployment objects", func() {
+		template, err := loadTemplate()
 		Expect(err).To(BeNil())
 
 		initialLength := len(template.Objects())
@@ -84,7 +85,7 @@ var _ = Describe("Template", func() {
 		Expect(editedCount).NotTo(BeZero())
 
 		for _, o := range deployments {
-			deployment, ok := (*o).(*appsv1.Deployment)
+			deployment, ok := o.(*appsv1.Deployment)
 			Expect(ok).To(BeTrue())
 			Expect(deployment.Spec.Paused).To(BeTrue())
 

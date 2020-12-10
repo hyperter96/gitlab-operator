@@ -1,4 +1,5 @@
 #!/bin/sh -e
+# Note: POSIX only! This script is expected to run in busybox ash.
 
 # This script executes during the image_build job of the pipeline
 # and is responsible for retrieving the correct versions of the

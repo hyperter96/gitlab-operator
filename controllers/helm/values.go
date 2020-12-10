@@ -9,41 +9,55 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// Values stores a chart values.
-type Values struct {
-	container map[string]interface{}
+// Values provides an interface to manipulate and store the values that are needed to render a Helm
+// template.
+type Values interface {
+	// AsMap returns values in a map.
+	AsMap() map[string]interface{}
+
+	// AddValue merges the value using the key. The key conforms to Helm format.
+	AddValue(key, value string) error
+
+	// AddStringValue merges the string value using the key. The key conforms to Helm format.
+	AddStringValue(key, value string) error
+
+	// AddFileValue merges the content of the file using the key. The key conforms to Helm format.
+	AddFileValue(key, filePath string) error
+
+	// AddFromFile reads the specified file in YAML format and merges its content.
+	AddFromFile(filePath string) error
 }
 
 // EmptyValues returns an empty value store.
-func EmptyValues() *Values {
-	return &Values{
+func EmptyValues() Values {
+	return &plainValues{
 		container: map[string]interface{}{},
 	}
 }
 
-// AsMap returns values in a map.
-func (v *Values) AsMap() map[string]interface{} {
+type plainValues struct {
+	container map[string]interface{}
+}
+
+func (v *plainValues) AsMap() map[string]interface{} {
 	return v.container
 }
 
-// AddValue merges the specified value using the key.
-func (v *Values) AddValue(key, value string) error {
+func (v *plainValues) AddValue(key, value string) error {
 	if err := strvals.ParseInto(fmt.Sprintf("%s=%s", key, value), v.container); err != nil {
 		return errors.Wrapf(err, "failed to parse value assignment: %s=%s", key, value)
 	}
 	return nil
 }
 
-// AddStringValue merges the specified string value using the key.
-func (v *Values) AddStringValue(key, value string) error {
+func (v *plainValues) AddStringValue(key, value string) error {
 	if err := strvals.ParseIntoString(fmt.Sprintf("%s=%s", key, value), v.container); err != nil {
 		return errors.Wrapf(err, "failed to parse string value assignment: %s=%s", key, value)
 	}
 	return nil
 }
 
-// AddFileValue merges the content of the specified file using the key.
-func (v *Values) AddFileValue(key, filePath string) error {
+func (v *plainValues) AddFileValue(key, filePath string) error {
 	reader := func(r []rune) (interface{}, error) {
 		fileContent, err := ioutil.ReadFile(string(r))
 		return string(fileContent), err
@@ -54,8 +68,7 @@ func (v *Values) AddFileValue(key, filePath string) error {
 	return nil
 }
 
-// AddFromFile reads the specified file in YAML format and merges its content.
-func (v *Values) AddFromFile(filePath string) error {
+func (v *plainValues) AddFromFile(filePath string) error {
 	newValues := map[string]interface{}{}
 
 	fileContent, err := ioutil.ReadFile(filePath)

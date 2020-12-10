@@ -9,19 +9,19 @@ import (
 
 var _ = Describe("Values", func() {
 
-	When("Initialized", func() {
+	When("initialized", func() {
 
 		subject := helm.EmptyValues()
 
-		It("Must be empty", func() {
+		It("must be empty", func() {
 			Expect(subject.AsMap()).To(BeEmpty())
 		})
 
 	})
 
-	When("Values added as key-value assignments", func() {
+	When("values added as key-value assignments", func() {
 
-		It("Must store nested values", func() {
+		It("must store nested values", func() {
 			subject := helm.EmptyValues()
 
 			Expect(subject.AddValue("foo.bar", "FOOBAR")).To(BeNil())
@@ -31,7 +31,7 @@ var _ = Describe("Values", func() {
 			Expect(foo["bar"]).To(Equal("FOOBAR"))
 		})
 
-		It("Must store indexed values", func() {
+		It("must store indexed values", func() {
 			subject := helm.EmptyValues()
 
 			Expect(subject.AddValue("foo", "{FOO-0}")).To(BeNil())
@@ -41,7 +41,7 @@ var _ = Describe("Values", func() {
 			Expect(foo[0]).To(Equal("FOO-0"))
 		})
 
-		It("Must merge and override values", func() {
+		It("must merge and override values", func() {
 			subject := helm.EmptyValues()
 
 			Expect(subject.AddValue("foo.bar", "FOOBAR")).To(BeNil())
@@ -60,9 +60,9 @@ var _ = Describe("Values", func() {
 		})
 	})
 
-	When("Values added from file", func() {
+	When("values added from file", func() {
 
-		It("Must load file content", func() {
+		It("must load file content", func() {
 			subject := helm.EmptyValues()
 
 			Expect(subject.AddFromFile("testdata/values.yaml")).To(BeNil())
@@ -79,7 +79,7 @@ var _ = Describe("Values", func() {
 			Expect(fooBaz[0]).To(Equal("FOOBAZ-0"))
 		})
 
-		It("Must merge and override values added later", func() {
+		It("must merge and override values added later", func() {
 			subject := helm.EmptyValues()
 
 			Expect(subject.AddFromFile("testdata/values.yaml")).To(BeNil())

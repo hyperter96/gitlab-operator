@@ -37,7 +37,7 @@ type CustomResourceAdapter interface {
 	ReleaseName() string
 
 	// Values returns the set of values that will be used the render GitLab chart.
-	Values() *helm.Values
+	Values() helm.Values
 }
 
 // NewCustomResourceAdapter returns a new adapter for the provided GitLab instance.
@@ -52,7 +52,7 @@ func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapte
 
 type wrappingCustomResourceAdapter struct {
 	gitlab *gitlabv1beta1.GitLab
-	values *helm.Values
+	values helm.Values
 }
 
 func (w *wrappingCustomResourceAdapter) Hash() string {
@@ -100,7 +100,7 @@ func (w *wrappingCustomResourceAdapter) ReleaseName() string {
 	return w.gitlab.Labels["release"]
 }
 
-func (w *wrappingCustomResourceAdapter) Values() *helm.Values {
+func (w *wrappingCustomResourceAdapter) Values() helm.Values {
 	return w.values
 }
 

@@ -86,3 +86,4 @@ pull_secret
 must-gather.*
 charts/
 helm
+!helm/

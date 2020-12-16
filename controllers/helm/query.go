@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -25,11 +26,35 @@ type Query interface {
 	// ObjectByKindAndLabels returns the all objects that match the kind specifier and have the labels.
 	ObjectsByKindAndLabels(kindArg string, labels map[string]string) []runtime.Object
 
+	// ConfigMapByName returns the ConfigMap with the specified name.
+	ConfigMapByName(name string) *corev1.ConfigMap
+
+	// ConfigMapsByLabels lists all ConfigMaps that match the labels.
+	ConfigMapsByLabels(labels map[string]string) []*corev1.ConfigMap
+
+	// SecretByName returns the Secret with the specified name.
+	SecretByName(name string) *corev1.Secret
+
+	// SecretByLabels lists all Secrets that match the labels.
+	SecretsByLabels(labels map[string]string) []*corev1.Secret
+
+	// DeploymentByName returns the Deployment with the specified name.
+	DeploymentByName(name string) *appsv1.Deployment
+
 	// DeploymentsByLabels lists all Deployments that match the labels.
 	DeploymentsByLabels(labels map[string]string) []*appsv1.Deployment
 
 	// DeploymentByComponent returns the Deployment for a specific component.
 	DeploymentByComponent(component string) *appsv1.Deployment
+
+	// ServiceByName returns the Service with the specified name.
+	ServiceByName(name string) *corev1.Service
+
+	// ServicesByLabels lists all Services that match the labels.
+	ServicesByLabels(labels map[string]string) []*corev1.Service
+
+	// ServiceByComponent returns the Service for a specific component.
+	ServiceByComponent(component string) *corev1.Service
 
 	// Reset clears the query cache when applicable.
 	Reset()
@@ -52,6 +77,9 @@ func newQuery(t Template) Query {
 const (
 	anything      = "*"
 	gvkDeployment = "Deployment.v1.apps"
+	gvkConfigMap  = "ConfigMap.v1.core"
+	gvkSecret     = "Secret.v1.core"
+	gvkService    = "Service.v1.core"
 )
 
 var (
@@ -150,6 +178,129 @@ func (q *cachingQuery) ObjectsByKindAndLabels(kindArg string, labels map[string]
 	})
 }
 
+func (q *cachingQuery) ConfigMapByName(name string) *corev1.ConfigMap {
+	key := q.cacheKey(name, gvkConfigMap, nil)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewConfigMapSelector(
+					func(d *corev1.ConfigMap) bool {
+						return d.ObjectMeta.Name == name
+					},
+				),
+			)
+			if err != nil {
+				Logger.Error(err, "Unexpected error while querying ConfigMaps", "name", name)
+				return nil
+			}
+			return unsafeConvertConfigMaps(objects)
+		},
+	)
+
+	configMaps := result.([]*corev1.ConfigMap)
+
+	if len(configMaps) == 0 {
+		return nil
+	}
+	return configMaps[0]
+}
+
+func (q *cachingQuery) ConfigMapsByLabels(labels map[string]string) []*corev1.ConfigMap {
+	key := q.cacheKey(anything, gvkConfigMap, labels)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewConfigMapSelector(
+					func(d *corev1.ConfigMap) bool {
+						return matchLabels(d.ObjectMeta.Labels, labels)
+					},
+				),
+			)
+			if err != nil {
+				Logger.Error(err, "Unexpected error while querying ConfigMaps", "labels", labels)
+				return nil
+			}
+			return unsafeConvertConfigMaps(objects)
+		},
+	)
+	return result.([]*corev1.ConfigMap)
+}
+
+func (q *cachingQuery) SecretByName(name string) *corev1.Secret {
+	key := q.cacheKey(name, gvkSecret, nil)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewSecretSelector(
+					func(d *corev1.Secret) bool {
+						return d.ObjectMeta.Name == name
+					},
+				),
+			)
+			if err != nil {
+				Logger.Error(err, "Unexpected error while querying Secrets", "name", name)
+				return nil
+			}
+			return unsafeConvertSecrets(objects)
+		},
+	)
+
+	secrets := result.([]*corev1.Secret)
+
+	if len(secrets) == 0 {
+		return nil
+	}
+	return secrets[0]
+}
+
+func (q *cachingQuery) SecretsByLabels(labels map[string]string) []*corev1.Secret {
+	key := q.cacheKey(anything, gvkSecret, labels)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewSecretSelector(
+					func(d *corev1.Secret) bool {
+						return matchLabels(d.ObjectMeta.Labels, labels)
+					},
+				),
+			)
+			if err != nil {
+				Logger.Error(err, "Unexpected error while querying Secrets", "labels", labels)
+				return nil
+			}
+			return unsafeConvertSecrets(objects)
+		},
+	)
+	return result.([]*corev1.Secret)
+}
+
+func (q *cachingQuery) DeploymentByName(name string) *appsv1.Deployment {
+	key := q.cacheKey(name, gvkDeployment, nil)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewDeploymentSelector(
+					func(d *appsv1.Deployment) bool {
+						return d.ObjectMeta.Name == name
+					},
+				),
+			)
+			if err != nil {
+				Logger.Error(err, "Unexpected error while querying Deployments", "name", name)
+				return nil
+			}
+			return unsafeConvertDeployments(objects)
+		},
+	)
+
+	deployments := result.([]*appsv1.Deployment)
+
+	if len(deployments) == 0 {
+		return nil
+	}
+	return deployments[0]
+}
+
 func (q *cachingQuery) DeploymentsByLabels(labels map[string]string) []*appsv1.Deployment {
 	key := q.cacheKey(anything, gvkDeployment, labels)
 	result := q.runQuery(key,
@@ -168,34 +319,84 @@ func (q *cachingQuery) DeploymentsByLabels(labels map[string]string) []*appsv1.D
 			return unsafeConvertDeployments(objects)
 		},
 	)
-	return (result).([]*appsv1.Deployment)
+	return result.([]*appsv1.Deployment)
 }
 
 func (q *cachingQuery) DeploymentByComponent(component string) *appsv1.Deployment {
 	deployments := q.DeploymentsByLabels(map[string]string{
 		"app": component,
 	})
-	if len(deployments) > 0 {
-		return deployments[0]
+	if len(deployments) == 0 {
+		return nil
 	}
-	return nil
+	return deployments[0]
+}
+
+func (q *cachingQuery) ServiceByName(name string) *corev1.Service {
+	key := q.cacheKey(name, gvkService, nil)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewServiceSelector(
+					func(d *corev1.Service) bool {
+						return d.ObjectMeta.Name == name
+					},
+				),
+			)
+			if err != nil {
+				Logger.Error(err, "Unexpected error while querying Services", "name", name)
+				return nil
+			}
+			return unsafeConvertServices(objects)
+		},
+	)
+
+	services := result.([]*corev1.Service)
+
+	if len(services) == 0 {
+		return nil
+	}
+	return services[0]
+}
+
+func (q *cachingQuery) ServicesByLabels(labels map[string]string) []*corev1.Service {
+	key := q.cacheKey(anything, gvkService, labels)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewServiceSelector(
+					func(d *corev1.Service) bool {
+						return matchLabels(d.ObjectMeta.Labels, labels)
+					},
+				),
+			)
+			if err != nil {
+				Logger.Error(err, "Unexpected error while querying Services", "labels", labels)
+				return nil
+			}
+			return unsafeConvertServices(objects)
+		},
+	)
+	return result.([]*corev1.Service)
+}
+
+func (q *cachingQuery) ServiceByComponent(component string) *corev1.Service {
+	services := q.ServicesByLabels(map[string]string{
+		"app": component,
+	})
+	if len(services) == 0 {
+		return nil
+	}
+	return services[0]
 }
 
 func (q *cachingQuery) Reset() {
 	q.clearCache()
 }
 
-func unsafeConvertDeployments(objects []runtime.Object) []*appsv1.Deployment {
-	deployments := make([]*appsv1.Deployment, len(objects))
-	for i, o := range objects {
-		deployments[i] = o.(*appsv1.Deployment)
-	}
-	return deployments
-}
-
 func matchLabels(oLabels, qLabels map[string]string) bool {
 	for k, v := range qLabels {
-		if w, ok := oLabels[k]; ok && v != w {
+		if w, ok := oLabels[k]; !ok || v != w {
 			return false
 		}
 	}
@@ -233,6 +434,38 @@ func matchParsedKindArg(object runtime.Object, qGVK *schema.GroupVersionKind, qG
 
 	return qGK.Kind == oGVK.Kind &&
 		(qGK.Group == "" || qGK.Group == oGVK.Group || qGK.Group == oGVK.Version)
+}
+
+func unsafeConvertConfigMaps(objects []runtime.Object) []*corev1.ConfigMap {
+	configMaps := make([]*corev1.ConfigMap, len(objects))
+	for i, o := range objects {
+		configMaps[i] = o.(*corev1.ConfigMap)
+	}
+	return configMaps
+}
+
+func unsafeConvertSecrets(objects []runtime.Object) []*corev1.Secret {
+	secrets := make([]*corev1.Secret, len(objects))
+	for i, o := range objects {
+		secrets[i] = o.(*corev1.Secret)
+	}
+	return secrets
+}
+
+func unsafeConvertDeployments(objects []runtime.Object) []*appsv1.Deployment {
+	deployments := make([]*appsv1.Deployment, len(objects))
+	for i, o := range objects {
+		deployments[i] = o.(*appsv1.Deployment)
+	}
+	return deployments
+}
+
+func unsafeConvertServices(objects []runtime.Object) []*corev1.Service {
+	services := make([]*corev1.Service, len(objects))
+	for i, o := range objects {
+		services[i] = o.(*corev1.Service)
+	}
+	return services
 }
 
 // CacheBackdoor is used by test cases.

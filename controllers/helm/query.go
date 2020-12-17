@@ -63,14 +63,14 @@ type Query interface {
 type cachingQuery struct {
 	template Template
 	cache    map[string]interface{}
-	lock     *sync.Mutex
+	locker   sync.Locker
 }
 
 func newQuery(t Template) Query {
 	return &cachingQuery{
 		template: t,
 		cache:    make(map[string]interface{}),
-		lock:     &sync.Mutex{},
+		locker:   &sync.Mutex{},
 	}
 }
 
@@ -91,8 +91,8 @@ func (q *cachingQuery) cacheKey(nameOrComponent, gvk string, labels map[string]s
 }
 
 func (q *cachingQuery) readCache(key string) interface{} {
-	q.lock.Lock()
-	defer q.lock.Unlock()
+	q.locker.Lock()
+	defer q.locker.Unlock()
 
 	if result, ok := q.cache[key]; ok {
 		return result
@@ -105,15 +105,15 @@ func (q *cachingQuery) updateCache(key string, objects interface{}) {
 		return
 	}
 
-	q.lock.Lock()
-	defer q.lock.Unlock()
+	q.locker.Lock()
+	defer q.locker.Unlock()
 
 	q.cache[key] = objects
 }
 
 func (q *cachingQuery) clearCache() {
-	q.lock.Lock()
-	defer q.lock.Unlock()
+	q.locker.Lock()
+	defer q.locker.Unlock()
 
 	q.cache = make(map[string]interface{})
 }
@@ -139,7 +139,6 @@ func (q *cachingQuery) queryObjectsWithKindArg(key, kindArg string, selector Obj
 				},
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying kind", "kindArg", kindArg)
 				return nil
 			}
 			return objects
@@ -190,7 +189,6 @@ func (q *cachingQuery) ConfigMapByName(name string) *corev1.ConfigMap {
 				),
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying ConfigMaps", "name", name)
 				return nil
 			}
 			return unsafeConvertConfigMaps(objects)
@@ -217,7 +215,6 @@ func (q *cachingQuery) ConfigMapsByLabels(labels map[string]string) []*corev1.Co
 				),
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying ConfigMaps", "labels", labels)
 				return nil
 			}
 			return unsafeConvertConfigMaps(objects)
@@ -238,7 +235,6 @@ func (q *cachingQuery) SecretByName(name string) *corev1.Secret {
 				),
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying Secrets", "name", name)
 				return nil
 			}
 			return unsafeConvertSecrets(objects)
@@ -265,7 +261,6 @@ func (q *cachingQuery) SecretsByLabels(labels map[string]string) []*corev1.Secre
 				),
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying Secrets", "labels", labels)
 				return nil
 			}
 			return unsafeConvertSecrets(objects)
@@ -286,7 +281,6 @@ func (q *cachingQuery) DeploymentByName(name string) *appsv1.Deployment {
 				),
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying Deployments", "name", name)
 				return nil
 			}
 			return unsafeConvertDeployments(objects)
@@ -313,7 +307,6 @@ func (q *cachingQuery) DeploymentsByLabels(labels map[string]string) []*appsv1.D
 				),
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying Deployments", "labels", labels)
 				return nil
 			}
 			return unsafeConvertDeployments(objects)
@@ -344,7 +337,6 @@ func (q *cachingQuery) ServiceByName(name string) *corev1.Service {
 				),
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying Services", "name", name)
 				return nil
 			}
 			return unsafeConvertServices(objects)
@@ -371,7 +363,6 @@ func (q *cachingQuery) ServicesByLabels(labels map[string]string) []*corev1.Serv
 				),
 			)
 			if err != nil {
-				Logger.Error(err, "Unexpected error while querying Services", "labels", labels)
 				return nil
 			}
 			return unsafeConvertServices(objects)

@@ -27,10 +27,10 @@ LABEL name=gitlab-operator \
       summary='GitLab is a DevOps lifecycle tool that provides Git repositories'
 
 # Allow the chart directory to be overwritten with --build-arg
-ARG chart_dir="/charts"
+ARG CHART_DIR="/charts"
 
 ENV USER_UID=1001 \
-    CHART_DIR=$chart_dir
+    HELM_CHARTS=${CHART_DIR}
 
 # ADD GITLAB LICENSE
 COPY LICENSE /licenses/GITLAB

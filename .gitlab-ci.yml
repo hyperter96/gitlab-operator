@@ -4,16 +4,29 @@ stages:
   - prepare
   - test
   - build
+  - release
 
 .cache:
   variables:
     GOPATH: "${CI_PROJECT_DIR}/.go"
   before_script:
-    - mkdir -p .go
+    - mkdir -p .go charts
   cache:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
       - .go/pkg/mod/
+      - charts/
+
+.docker_build_job: &docker_build_job
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+  script:
+    - docker build -t "${DOCKER_IMAGE}" -f "${DOCKER_FILE:-Dockerfile}" .
+    - docker push "${DOCKER_IMAGE}"
+  extends: .cache
 
 lint_code:
   stage: prepare
@@ -21,9 +34,16 @@ lint_code:
     - /go/bin/golint -set_exit_status $(go list ./... | grep -v /vendor/)
   extends: .cache
 
+pull_charts:
+  stage: prepare
+  script:
+    - scripts/retrieve_gitlab_charts.sh
+  extends: .cache
+
 unit_tests:
   stage: test
   script:
+    - export HELM_CHARTS="${PWD}/charts"
     - mkdir coverage
     - /go/bin/ginkgo -cover -outputdir=coverage ./...
   extends: .cache
@@ -34,45 +54,27 @@ build_all:
     - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo ./...
   extends: .cache
 
-image-build-master:
-  image: docker:latest
-  stage: build
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - scripts/retrieve_gitlab_charts.sh
-    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
-    - docker push "$CI_REGISTRY_IMAGE"
+build_latest_image:
+  <<: *docker_build_job
+  stage: release
+  variables:
+    DOCKER_IMAGE: "${CI_REGISTRY_IMAGE}:latest"
   only:
     - master
 
-image-build:
-  image: docker:latest
-  stage: build
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - scripts/retrieve_gitlab_charts.sh
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" .
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+build_branch_image:
+  <<: *docker_build_job
+  stage: release
+  variables:
+    DOCKER_IMAGE: "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
   except:
     - master
 
-bundle-image:
+build_bundle_image:
+  <<: *docker_build_job
+  stage: release
   variables:
-    OPERATOR_BUNDLE_IMG: "${CI_REGISTRY_IMAGE}/gitlab-operator-bundle"
-  image: docker:latest
-  stage: build
-  services:
-    - docker:dind
-  before_script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  script:
-    - docker build --pull -t  "$OPERATOR_BUNDLE_IMG"  . -f bundle.Dockerfile
-    - docker push "$OPERATOR_BUNDLE_IMG"
+    DOCKER_IMAGE: "${CI_REGISTRY_IMAGE}/bundle"
+    DOCKER_FILE: Dockerfile.bundle
   only:
     - master

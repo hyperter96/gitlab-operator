@@ -8,12 +8,14 @@ require (
 	github.com/imdario/mergo v0.3.9
 	github.com/jetstack/cert-manager v0.16.1
 	github.com/nginxinc/nginx-ingress-operator v0.0.6
-	github.com/onsi/ginkgo v1.12.1
+	github.com/nxadm/tail v1.4.5 // indirect
+	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.1
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.10.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e // indirect
 	helm.sh/helm/v3 v3.3.0
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6

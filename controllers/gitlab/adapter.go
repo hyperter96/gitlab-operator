@@ -20,10 +20,14 @@ type CustomResourceAdapter interface {
 	// Helm template.
 	Hash() string
 
+	// Reference returns a fully qualified name of the associated GitLab Custom Resource. As opposed
+	// to Hash this value does not change.
+	Reference() string
+
 	// Namespace returns the namespace in which the GitLab instance must be deployed. When Operator
 	// is scoped to
 	// a namespace this must be equal to the namespace of the Operator.
-	Nampespace() string
+	Namespace() string
 
 	// ChartVersion returns the version of GitLab chart that must be used to deploy this GitLab
 	// instance.
@@ -42,25 +46,74 @@ type CustomResourceAdapter interface {
 
 // NewCustomResourceAdapter returns a new adapter for the provided GitLab instance.
 func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapter {
-	result := &wrappingCustomResourceAdapter{
+	result := &populatingAdapter{
 		gitlab: gitlab,
 		values: helm.EmptyValues(),
 	}
 	result.populateValues()
+	result.hashValues()
 	return result
 }
 
-type wrappingCustomResourceAdapter struct {
-	gitlab *gitlabv1beta1.GitLab
-	values helm.Values
+type populatingAdapter struct {
+	gitlab    *gitlabv1beta1.GitLab
+	values    helm.Values
+	hash      string
+	reference string
 }
 
-func (w *wrappingCustomResourceAdapter) Hash() string {
+func (a *populatingAdapter) Hash() string {
+	return a.hash
+}
+
+func (a *populatingAdapter) Reference() string {
+	return a.reference
+}
+
+func (a *populatingAdapter) Namespace() string {
+	return a.gitlab.Namespace
+}
+
+func (a *populatingAdapter) GitLabVersion() string {
+	return a.gitlab.Spec.Release
+}
+
+func (a *populatingAdapter) ChartVersion() string {
+	// Warning: This is a heuristic and may not work all the time.
+	s := strings.Split(a.gitlab.Labels["chart"], "-")
+	if len(s) < 2 {
+		return ""
+	}
+	return s[len(s)-1]
+}
+
+func (a *populatingAdapter) ReleaseName() string {
+	return a.gitlab.Name
+}
+
+func (a *populatingAdapter) Values() helm.Values {
+	return a.values
+}
+
+func (a *populatingAdapter) populateValues() {
+	a.reference = fmt.Sprintf("%s.%s", a.gitlab.Name, a.gitlab.Namespace)
+
+	// Use auto-generated self-signed wildcard certificate
+	a.values.AddValue("certmanager.install", "false")
+	a.values.AddValue("global.ingress.configureCertmanager", "false")
+
+	// Skip GitLab Runner
+	a.values.AddValue("gitlab-runner.install", "false")
+}
+
+func (a *populatingAdapter) hashValues() {
 	hasher := fnv.New64()
 	valuesToHash := []([]byte){
-		[]byte(w.ChartVersion()),
-		[]byte(w.GitLabVersion()),
-		// Marshal values
+		[]byte(a.Namespace()),
+		[]byte(a.ReleaseName()),
+		[]byte(a.ChartVersion()),
+
+		// TODO: Marshal required values
 	}
 	valuesHashed := 0
 
@@ -73,37 +126,9 @@ func (w *wrappingCustomResourceAdapter) Hash() string {
 	}
 
 	if valuesHashed == 0 {
-		return fmt.Sprintf("%s/%s", w.ChartVersion(), w.GitLabVersion())
+		// This is here to cover all the bases. Otherwise it should never happen.
+		a.hash = fmt.Sprintf("%s/%s", a.ChartVersion(), a.GitLabVersion())
 	}
 
-	return fmt.Sprintf("%x", hasher.Sum64())
-}
-
-func (w *wrappingCustomResourceAdapter) Nampespace() string {
-	return w.gitlab.Namespace
-}
-
-func (w *wrappingCustomResourceAdapter) GitLabVersion() string {
-	return w.gitlab.Spec.Release
-}
-
-func (w *wrappingCustomResourceAdapter) ChartVersion() string {
-	// Warning: This is a heuristic and may not work all the time.
-	s := strings.Split(w.gitlab.Labels["chart"], "-")
-	if len(s) < 2 {
-		return ""
-	}
-	return s[len(s)-1]
-}
-
-func (w *wrappingCustomResourceAdapter) ReleaseName() string {
-	return w.gitlab.Labels["release"]
-}
-
-func (w *wrappingCustomResourceAdapter) Values() helm.Values {
-	return w.values
-}
-
-func (w *wrappingCustomResourceAdapter) populateValues() {
-	// Read values for rendering Helm template from GitLab Custom Resource.
+	a.hash = fmt.Sprintf("%x", hasher.Sum64())
 }

@@ -7,6 +7,8 @@ This document walks you through using the automation scripts in this project to 
 First, you should have a Red Hat account associated with your GitLab email.
 Contact our Red Hat Alliance liason; they will arrange to send you an account invitation email. Once you activate your Red Hat account, you will have access the to licenses and subscriptions needed to run OpenShift.
 
+To launch a cluster in Google Cloud, a public Cloud DNS zone must be connected to a registered domain and configured in Google Cloud DNS. If a domain is not already available, follow the steps [in this guide](https://github.com/openshift/installer/blob/master/docs/user/gcp/dns.md) to create one.
+
 ### Get the CLI tools and Pull Secret
 
 Two CLI tools are required to create an OpenShift cluster (`openshift-install`) and then interact with the cluster (`oc`).
@@ -50,9 +52,7 @@ Configuration can be applied during runtime by setting environment variables. Al
 |LOG_LEVEL|Verbosity of `openshift-install` output|info|
 
 NOTE: **Note:**
-The variables `CLUSTER_NAME` and `BASE_DOMAIN` are combined to build the domain
-name for the cluster. The domain name in `BASE_DOMAIN` needs to already exist so
-that the DNS records for the cluster are registered properly.
+The variables `CLUSTER_NAME` and `BASE_DOMAIN` are combined to build the domain name for the cluster.
 
 ## Destroy your OpenShift cluster
 

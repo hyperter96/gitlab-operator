@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/coreos/prometheus-operator v0.41.1
 	github.com/go-logr/logr v0.1.0
+	github.com/google/go-cmp v0.4.0
 	github.com/imdario/mergo v0.3.9
 	github.com/jetstack/cert-manager v0.16.1
 	github.com/nginxinc/nginx-ingress-operator v0.0.6

@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"fmt"
+	"os"
 	"io/ioutil"
 	"strings"
 
@@ -62,7 +63,7 @@ func getImage(release *Release, target string) string {
 // getRelease gets the release filename
 // and returns a release object
 func getRelease(filename string) *Release {
-	releaseFile, err := ioutil.ReadFile(filepath.Join("/", "releases", filename))
+	releaseFile, err := ioutil.ReadFile(filepath.Join(os.Getenv("GITLAB_OPERATOR_ASSETS"), "/releases", filename))
 	if err != nil {
 		return nil
 	}
@@ -79,7 +80,7 @@ func getRelease(filename string) *Release {
 // returns a list of releases in releases directory
 func getReleaseList() []*Release {
 	var releases []*Release
-	contents, err := ioutil.ReadDir("/releases/")
+	contents, err := ioutil.ReadDir(filepath.Join(os.Getenv("GITLAB_OPERATOR_ASSETS"), "/releases"))
 	if err != nil {
 		// log.Error(err, "Error listing directory contents")
 		return nil

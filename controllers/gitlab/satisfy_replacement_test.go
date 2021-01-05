@@ -8,6 +8,7 @@ import (
 	"github.com/onsi/gomega/types"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,10 +40,11 @@ type internalReplacementMatcher struct {
 func (m *internalReplacementMatcher) Match(actual interface{}) (success bool, err error) {
 	cmpOptions := []cmp.Option{
 		cmpopts.IgnoreFields(metav1.ObjectMeta{}, negligibleObjectMetaFields...),
-		cmpopts.IgnoreFields(appsv1.Deployment{}, commonFieldsToIgnore...),
+		cmpopts.IgnoreFields(appsv1.Deployment{}, negligibleDeploymentFields...),
 		cmpopts.IgnoreFields(appsv1.DeploymentSpec{}, negligibleDeploymentSpecFields...),
+		cmpopts.IgnoreFields(corev1.ConfigMap{}, negligibleConfigMapFields...),
+		cmpopts.IgnoreFields(corev1.Service{}, negligibleServiceFields...),
 	}
-
 	for _, entry := range m.fieldsToIgnore {
 		cmpOptions = append(cmpOptions, cmpopts.IgnoreFields(entry.kind, entry.fields...))
 	}
@@ -52,7 +54,7 @@ func (m *internalReplacementMatcher) Match(actual interface{}) (success bool, er
 }
 
 func (m *internalReplacementMatcher) FailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected a satisfactory replacement but found significant differences.\n\n"+
+	return fmt.Sprintf("Expected a satisfactory replacement. Check the differences:\n\n"+
 		"--- %T (expected)\n"+
 		"+++ %T (actual)\n\n"+
 		"%s", m.expected, actual, m.differences)
@@ -82,7 +84,14 @@ var (
 		"RevisionHistoryLimit",
 		"ProgressDeadlineSeconds",
 	}
-	commonFieldsToIgnore = []string{
+	negligibleDeploymentFields = []string{
+		"TypeMeta",
+		"Status",
+	}
+	negligibleConfigMapFields = []string{
+		"TypeMeta",
+	}
+	negligibleServiceFields = []string{
 		"TypeMeta",
 		"Status",
 	}

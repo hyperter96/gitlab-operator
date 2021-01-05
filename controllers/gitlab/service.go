@@ -201,9 +201,9 @@ func WebserviceService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// ShellService returns service to export GitLab shell
-func ShellService(cr *gitlabv1beta1.GitLab) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
+// ShellServiceDEPRECATED returns service to export GitLab shell
+func ShellServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
+	labels := gitlabutils.Label(cr.Name, "gitlab-shell", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{

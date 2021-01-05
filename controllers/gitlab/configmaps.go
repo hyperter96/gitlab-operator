@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"bytes"
+	"os"
 	"text/template"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
@@ -160,20 +161,20 @@ func WorkhorseConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return workhorse
 }
 
-// ShellConfigMap returns the configmap object for GitLab shell
-func ShellConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
-	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
+// ShellConfigMapDEPRECATED returns the configmap object for GitLab shell
+func ShellConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+	labels := gitlabutils.Label(cr.Name, "gitlab-shell", gitlabutils.GitlabType)
 	var script bytes.Buffer
 
-	configureScript := gitlabutils.ReadConfig("/templates/shell/configure.sh")
-	sshdConfig := gitlabutils.ReadConfig("/templates/shell/sshd-config")
+	configureScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shell/configure.sh")
+	sshdConfig := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shell/sshd-config")
 
 	options := SystemBuildOptions(cr)
 
-	configureTemplate := template.Must(template.ParseFiles("/templates/shell/config.yml.erb"))
+	configureTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shell/config.yml.erb"))
 	configureTemplate.Execute(&script, options)
 
-	shell := gitlabutils.GenericConfigMap(cr.Name+"-shell-config", cr.Namespace, labels)
+	shell := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-shell", cr.Namespace, labels)
 	shell.Data = map[string]string{
 		"configure":      configureScript,
 		"config.yml.erb": script.String(),

@@ -104,6 +104,12 @@ func (a *populatingAdapter) populateValues() {
 
 	// Skip GitLab Runner
 	a.values.AddValue("gitlab-runner.install", "false")
+
+	// Set the default ImagePullPolicy
+	a.values.AddValue("global.imagePullPolicy", "IfNotPresent")
+
+	// Use NodePort Service type for GitLab Shell
+	a.values.AddValue("gitlab.gitlab-shell.service.type", "NodePort")
 }
 
 func (a *populatingAdapter) hashValues() {

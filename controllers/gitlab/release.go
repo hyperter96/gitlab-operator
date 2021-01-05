@@ -2,8 +2,8 @@ package gitlab
 
 import (
 	"fmt"
-	"os"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"path/filepath"

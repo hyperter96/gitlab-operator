@@ -44,8 +44,19 @@ unit_tests:
   stage: test
   script:
     - export HELM_CHARTS="${PWD}/charts"
+    - export GITLAB_OPERATOR_ASSETS="${PWD}/hack/assets"
     - mkdir coverage
-    - /go/bin/ginkgo -cover -outputdir=coverage ./...
+    - /go/bin/ginkgo -skip 'replacement' -cover -outputdir=coverage ./...
+  extends: .cache
+
+replacement_tests:
+  stage: test
+  script:
+    - export HELM_CHARTS="${PWD}/charts"
+    - export GITLAB_OPERATOR_ASSETS="${PWD}/hack/assets"
+    - mkdir coverage
+    - /go/bin/ginkgo -focus 'replacement' -cover -outputdir=coverage ./...
+  allow_failure: true
   extends: .cache
 
 build_all:

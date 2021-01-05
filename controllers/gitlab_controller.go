@@ -186,7 +186,13 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	var configmaps []*corev1.ConfigMap
 
-	shell := gitlabctl.ShellConfigMap(cr)
+	/*
+	 * TODO: reconcileShellDeployment must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	shell := gitlabctl.ShellConfigMaps(adapter)
 
 	gitaly := gitlabctl.GitalyConfigMap(cr)
 
@@ -213,7 +219,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	initdb := gitlabctl.PostgresInitDBConfigMap(cr)
 
 	configmaps = append(configmaps,
-		shell,
 		gitaly,
 		redis,
 		redisScripts,
@@ -227,6 +232,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 		taskRunner,
 		migration,
 	)
+	configmaps = append(configmaps, shell...)
 
 	for _, cm := range configmaps {
 		if err := r.createKubernetesResource(cm, cr); err != nil {
@@ -455,6 +461,14 @@ func (r *GitLabReconciler) reconcileSecrets(cr *gitlabv1beta1.GitLab) error {
 func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	var services []*corev1.Service
 
+	/*
+	 * TODO: reconcileShellDeployment must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	shell := gitlabctl.ShellService(adapter)
+
 	postgres := gitlabctl.PostgresqlService(cr)
 
 	postgresHeadless := gitlabctl.PostgresHeadlessService(cr)
@@ -468,8 +482,6 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	registry := gitlabctl.RegistryService(cr)
 
 	webservice := gitlabctl.WebserviceService(cr)
-
-	shell := gitlabctl.ShellService(cr)
 
 	exporter := gitlabctl.ExporterService(cr)
 
@@ -579,7 +591,14 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, cr *
 }
 
 func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	shell := gitlabctl.ShellDeployment(cr)
+
+	/*
+	 * TODO: reconcileShellDeployment must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	shell := gitlabctl.ShellDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(cr, shell, r.Scheme); err != nil {
 		return err

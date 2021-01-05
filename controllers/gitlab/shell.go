@@ -9,9 +9,9 @@ import (
 
 var localUser int64 = 1000
 
-// ShellDeployment returns GitLab shell deployment
-func ShellDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
-	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
+// ShellDeploymentDEPRECATED returns GitLab shell deployment
+func ShellDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
+	labels := gitlabutils.Label(cr.Name, "gitlab-shell", gitlabutils.GitlabType)
 
 	shell := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,
@@ -37,7 +37,7 @@ func ShellDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 			{
 				Name:            "configure",
 				Image:           BuildRelease(cr).Busybox(),
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"sh", "/config/configure"},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -140,7 +140,7 @@ func ShellDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cr.Name + "-shell-config",
+							Name: cr.Name + "-gitlab-shell",
 						},
 						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 					},
@@ -151,7 +151,7 @@ func ShellDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cr.Name + "-shell-config",
+							Name: cr.Name + "-gitlab-shell-sshd",
 						},
 						Items: []corev1.KeyToPath{
 							{
@@ -172,14 +172,14 @@ func ShellDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-shell-host-keys-secret",
+										Name: cr.Name + "-gitlab-shell-host-keys",
 									},
 								},
 							},
 							{
 								Secret: &corev1.SecretProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-shell-secret",
+										Name: cr.Name + "-gitlab-shell-secret",
 									},
 									Items: []corev1.KeyToPath{
 										{

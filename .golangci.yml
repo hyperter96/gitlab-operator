@@ -1,0 +1,88 @@
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  skip-dirs:
+    - api
+    - controllers/runner
+
+linters-settings:
+  goimports:
+    # Expects local packages to be listed separately from third party
+    # packages in the `imports` block.
+    local-prefixes: gitlab.com/gitlab-org/gl-openshift/gitlab-operator
+
+whitespace:
+  multi-if: true   # Enforces newlines (or comments) after every multi-line if statement
+  multi-func: true # Enforces newlines (or comments) after every multi-line function signature
+
+wsl:
+    # If true append is only allowed to be cuddled if appending value is
+    # matching variables, fields or types on line above. Default is true.
+    strict-append: true
+    # Allow calls and assignments to be cuddled as long as the lines have any
+    # matching variables, fields or types. Default is true.
+    allow-assign-and-call: true
+    # Allow multiline assignments to be cuddled. Default is true.
+    allow-multiline-assign: true
+    # Allow declarations (var) to be cuddled.
+    allow-cuddle-declarations: false
+    # Allow trailing comments in ending of blocks
+    allow-trailing-comment: false
+    # Force newlines in end of case at this limit (0 = never).
+    force-case-trailing-whitespace: 0
+
+# https://golangci-lint.run/usage/linters/
+linters:
+  fast: false
+  enable:
+    # Enabled by default
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    # Disabled by default, but desired for this project
+    - golint
+    - unconvert
+    - dupl
+    - goconst
+    - gocyclo
+    - gocognit
+    - asciicheck
+    - gofmt
+    - goimports
+    - misspell
+    - unparam
+    - dogsled
+    - nakedret
+    - godox
+    - funlen
+    - whitespace
+    - wsl
+    - godot
+    - testpackage
+    - nestif
+    - exhaustive
+    - nolintlint
+    - gosec
+    - interfacer
+  disable:
+    - maligned
+    - prealloc
+
+  # Independently from option `exclude` we use default exclude patterns,
+  # it can be disabled by this option. To list all
+  # excluded by default patterns execute `golangci-lint run --help`.
+  # Default value for this option is true.
+  exclude-use-default: false
+
+  # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
+  max-per-linter: 0
+
+  # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
+  max-same: 0

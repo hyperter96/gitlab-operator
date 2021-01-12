@@ -34,10 +34,17 @@ default:
   interruptible: false
 
 lint_code:
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
   stage: lint
   script:
-    - /go/bin/golint -set_exit_status $(go list ./... | grep -v /vendor/)
+    - golangci-lint run --out-format code-climate | tee gl-code-quality-report.json | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"'
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+    paths:
+      - gl-code-quality-report.json
   extends: .cache
+  allow_failure: true
 
 pull_charts:
   stage: prepare

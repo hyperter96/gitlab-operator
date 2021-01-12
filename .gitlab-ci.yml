@@ -1,10 +1,14 @@
 image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
 
 stages:
+  - lint
   - prepare
   - test
   - build
   - release
+
+default:
+  interruptible: true
 
 .cache:
   variables:
@@ -27,9 +31,10 @@ stages:
     - docker build -t "${DOCKER_IMAGE}" -f "${DOCKER_FILE:-Dockerfile}" .
     - docker push "${DOCKER_IMAGE}"
   extends: .cache
+  interruptible: false
 
 lint_code:
-  stage: prepare
+  stage: lint
   script:
     - /go/bin/golint -set_exit_status $(go list ./... | grep -v /vendor/)
   extends: .cache

@@ -24,7 +24,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 			Name:      "test",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"chart": "gitlab-4.6.3",
+				"chart": "gitlab-4.6.4",
 			},
 		},
 	}
@@ -34,7 +34,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 			Name:      "test",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"chart": "gitlab-4.5.5",
+				"chart": "gitlab-4.5.6",
 			},
 		},
 	}
@@ -72,11 +72,11 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(chartInfo1).NotTo(BeNil())
 		Expect(chartInfo1.Namespace).To(Equal(namespace))
 		Expect(chartInfo1.Labels["release"]).To(Equal("test"))
-		Expect(chartInfo1.Data["gitlabChartVersion"]).To(Equal("4.6.3"))
+		Expect(chartInfo1.Data["gitlabChartVersion"]).To(Equal("4.6.4"))
 
 		Expect(chartInfo2).NotTo(BeNil())
 		Expect(chartInfo1.Namespace).To(Equal(namespace))
 		Expect(chartInfo1.Labels["release"]).To(Equal("test"))
-		Expect(chartInfo2.Data["gitlabChartVersion"]).To(Equal("4.5.5"))
+		Expect(chartInfo2.Data["gitlabChartVersion"]).To(Equal("4.5.6"))
 	})
 })

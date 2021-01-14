@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -80,7 +81,7 @@ func getDatabaseConfiguration(cr *gitlabv1beta1.GitLab) string {
 	var config bytes.Buffer
 
 	options := SystemBuildOptions(cr)
-	postgresTemplate := template.Must(template.ParseFiles("/templates/shared/database.yml.erb"))
+	postgresTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/database.yml.erb"))
 	postgresTemplate.Execute(&config, options)
 
 	return config.String()
@@ -90,7 +91,7 @@ func getRedisConfiguration(cr *gitlabv1beta1.GitLab) string {
 	var config bytes.Buffer
 
 	options := SystemBuildOptions(cr)
-	resqueTemplate := template.Must(template.ParseFiles("/templates/shared/resque.yml.erb"))
+	resqueTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/resque.yml.erb"))
 	resqueTemplate.Execute(&config, options)
 
 	return config.String()
@@ -100,7 +101,7 @@ func getCableConfiguration(cr *gitlabv1beta1.GitLab) string {
 	var config bytes.Buffer
 
 	options := SystemBuildOptions(cr)
-	resqueTemplate := template.Must(template.ParseFiles("/templates/shared/cable.yml.erb"))
+	resqueTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/cable.yml.erb"))
 	resqueTemplate.Execute(&config, options)
 
 	return config.String()
@@ -137,7 +138,7 @@ func getSMTPSettings(cr *gitlabv1beta1.GitLab) string {
 		return ""
 	}
 
-	smtpTemplate := template.Must(template.ParseFiles("/templates/smtp/smtp_settings.rb"))
+	smtpTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/smtp/smtp_settings.rb"))
 	smtpTemplate.Execute(&settings, cr.Spec.SMTP)
 
 	// Remove whitespaces

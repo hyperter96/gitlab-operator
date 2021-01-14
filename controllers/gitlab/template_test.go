@@ -1,6 +1,7 @@
 package gitlab_test
 
 import (
+	"fmt"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -14,6 +15,8 @@ import (
 
 var _ = Describe("CustomResourceAdapter", func() {
 
+	chartVersions := gitlab.AvailableChartVersions()
+
 	namespace := os.Getenv("HELM_NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
@@ -24,7 +27,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 			Name:      "test",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"chart": "gitlab-4.6.4",
+				"chart": fmt.Sprintf("gitlab-%s", chartVersions[0]),
 			},
 		},
 	}
@@ -34,7 +37,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 			Name:      "test",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"chart": "gitlab-4.5.6",
+				"chart": fmt.Sprintf("gitlab-%s", chartVersions[1]),
 			},
 		},
 	}
@@ -72,11 +75,11 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(chartInfo1).NotTo(BeNil())
 		Expect(chartInfo1.Namespace).To(Equal(namespace))
 		Expect(chartInfo1.Labels["release"]).To(Equal("test"))
-		Expect(chartInfo1.Data["gitlabChartVersion"]).To(Equal("4.6.4"))
+		Expect(chartInfo1.Data["gitlabChartVersion"]).To(Equal(chartVersions[0]))
 
 		Expect(chartInfo2).NotTo(BeNil())
 		Expect(chartInfo1.Namespace).To(Equal(namespace))
 		Expect(chartInfo1.Labels["release"]).To(Equal("test"))
-		Expect(chartInfo2.Data["gitlabChartVersion"]).To(Equal("4.5.6"))
+		Expect(chartInfo2.Data["gitlabChartVersion"]).To(Equal(chartVersions[1]))
 	})
 })

@@ -1,6 +1,8 @@
 package gitlab
 
 import (
+	"os"
+
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -191,9 +193,9 @@ func MinioStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 func MinioScriptConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
 
-	initScript := gitlabutils.ReadConfig("/templates/minio/initialize-buckets.sh")
-	configureScript := gitlabutils.ReadConfig("/templates/minio/configure.sh")
-	configJSON := gitlabutils.ReadConfig("/templates/minio/config.json")
+	initScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/minio/initialize-buckets.sh")
+	configureScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/minio/configure.sh")
+	configJSON := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/minio/config.json")
 
 	init := gitlabutils.GenericConfigMap(cr.Name+"-minio-script", cr.Namespace, labels)
 	init.Data = map[string]string{

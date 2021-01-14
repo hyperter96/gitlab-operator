@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"sync"
 
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helm"
@@ -139,4 +141,28 @@ func getChartArchive(chartVersion string) string {
 
 	return filepath.Join(chartsDir,
 		fmt.Sprintf("gitlab-%s.tgz", chartVersion))
+}
+
+// AvailableChartVersions lists the version of available GitLab Charts.
+func AvailableChartVersions() []string {
+	versions := []string{}
+
+	chartsDir := os.Getenv("HELM_CHARTS")
+	if chartsDir == "" {
+		chartsDir = "/charts"
+	}
+
+	filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
+		if filepath.Ext(info.Name()) == ".tgz" {
+			comp := strings.Split(info.Name()[:len(info.Name())-4], "-")
+			if len(comp) == 2 {
+				versions = append(versions, comp[1])
+			}
+		}
+		return nil
+	})
+
+	sort.Sort(sort.Reverse(sort.StringSlice(versions)))
+
+	return versions
 }

@@ -75,9 +75,6 @@ tags
 .history
 # Local build tools
 Makefile
-controllers/suite_test.go
-controllers/runner_controller_test.go
-controllers/gitlab_controller_test.go
 config/local
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 install/

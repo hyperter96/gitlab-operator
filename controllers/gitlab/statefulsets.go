@@ -1,6 +1,8 @@
 package gitlab
 
 import (
+	"os"
+
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -312,7 +314,7 @@ func RedisStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 
 	var redisUser int64 = 1001
 
-	redisEntrypoint := gitlabutils.ReadConfig("/templates/redis/entrypoint.sh")
+	redisEntrypoint := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/redis/entrypoint.sh")
 	claims := []corev1.PersistentVolumeClaim{}
 	mounts := []corev1.VolumeMount{
 		// Pre-populating the mounts with the Redis config volume

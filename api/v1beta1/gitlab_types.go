@@ -17,7 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	acmev1beta1 "github.com/jetstack/cert-manager/pkg/apis/acme/v1beta1"
+	acmev1alpha2 "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -160,12 +160,12 @@ type ACMEOptions struct {
 	// ExternalAccountBinding is a reference to a CA external account of the ACME
 	// server.
 	// +optional
-	ExternalAccountBinding *acmev1beta1.ACMEExternalAccountBinding `json:"externalAccountBinding,omitempty"`
+	ExternalAccountBinding *acmev1alpha2.ACMEExternalAccountBinding `json:"externalAccountBinding,omitempty"`
 
 	// Solvers is a list of challenge solvers that will be used to solve
 	// ACME challenges for the matching domains.
 	// +optional
-	Solvers []acmev1beta1.ACMEChallengeSolver `json:"solvers,omitempty"`
+	Solvers []acmev1alpha2.ACMEChallengeSolver `json:"solvers,omitempty"`
 }
 
 // VolumeSpec defines volume specifications

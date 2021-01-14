@@ -31,7 +31,7 @@ Once the Service Account is created, generate a JSON key and save it as `gcloud.
 Run `./scripts/create_cluster.sh` to create your OpenShift cluster in Google Cloud.
 This will be a 6 node cluster with 3 control plane (master) nodes and 3 worker nodes. This takes around 40 minutes. Follow the instructions at the end of the console output to connect to the cluster.
 
-Once created, you should be able to see your cluster registered here: https://cloud.redhat.com/openshift/. All installation logs and metadata will be stored in the `install/` directory in this repository. This folder is gitignored.
+Once created, you should be able to see your cluster registered here: https://cloud.redhat.com/openshift/. All installation logs and metadata will be stored in the `install-$CLUSTER_NAME/` directory in this repository. This folder is gitignored.
 
 ### Configuration Options
 
@@ -50,6 +50,7 @@ Configuration can be applied during runtime by setting environment variables. Al
 |SSH_PUBLIC_KEY_FILE|Path to SSH public key file|$HOME/.ssh/id_rsa.pub|
 |SSH_PUBLIC_KEY|Content of SSH public key file|Content of $SSH_PUBLIC_KEY_FILE|
 |LOG_LEVEL|Verbosity of `openshift-install` output|info|
+|INSTALL_DIR|Directory for install assets, useful for launching multiple clusters|install-$CLUSTER_NAME|
 
 NOTE: **Note:**
 The variables `CLUSTER_NAME` and `BASE_DOMAIN` are combined to build the domain name for the cluster.
@@ -67,6 +68,11 @@ Configuration can be applied during runtime by setting the following environment
 |GOOGLE_APPLICATION_CREDENTIALS|Path to Google Cloud service account JSON file|gcloud.json|
 |GOOGLE_CREDENTIALS|Content of Google Cloud service account JSON file|Content of $GOOGLE_APPLICATION_CREDENTIALS|
 |LOG_LEVEL|Verbosity of `openshift-install` output|info|
+|INSTALL_DIR|Directory for install assets, useful for launching multiple clusters|install-$CLUSTER_NAME|
+
+## Next Steps
+
+See [doc/installation.md](installation.md) for instruction on installing the GitLab operator in your OpenShift cluster.
 
 ## Resources
 

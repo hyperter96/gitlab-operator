@@ -36,7 +36,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 
-	certmanagerv1beta1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1beta1"
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+
 	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
@@ -176,8 +177,8 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&batchv1.Job{}).
 		Owns(&extensionsv1beta1.Ingress{}).
 		Owns(&monitoringv1.ServiceMonitor{}).
-		Owns(&certmanagerv1beta1.Issuer{}).
-		Owns(&certmanagerv1beta1.Certificate{}).
+		Owns(&certmanagerv1alpha2.Issuer{}).
+		Owns(&certmanagerv1alpha2.Certificate{}).
 		Owns(&nginxv1alpha1.NginxIngressController{}).
 		Complete(r)
 }

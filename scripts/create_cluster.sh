@@ -17,8 +17,7 @@ SSH_PUBLIC_KEY="${SSH_PUBLIC_KEY:-$(cat $SSH_PUBLIC_KEY_FILE)}"
 
 LOG_LEVEL="${LOG_LEVEL:-info}"
 
-# Constants
-INSTALL_DIR='install'
+INSTALL_DIR="install-${CLUSTER_NAME}"
 
 main() {
   export GOOGLE_CREDENTIALS  # needed for openshift-install to see them

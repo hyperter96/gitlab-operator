@@ -6,6 +6,7 @@ stages:
   - test
   - build
   - release
+  - functional_test
 
 default:
   interruptible: true
@@ -101,3 +102,13 @@ build_bundle_image:
     DOCKER_FILE: Dockerfile.bundle
   only:
     - master
+
+functional_tests:
+  image:
+    name: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
+  stage: functional_test
+  variables:
+    NAMESPACE: "${CI_COMMIT_REF_SLUG}"
+  script:
+    - ./scripts/test.sh
+  extends: .cache

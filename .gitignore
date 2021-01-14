@@ -77,8 +77,8 @@ tags
 Makefile
 config/local
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
-install/
-gcloud.json
+install-*/
+gcloud*.json
 pull_secret
 must-gather.*
 charts/

@@ -23,7 +23,7 @@ func GitLabMock() *gitlabv1beta1.GitLab {
 			Name:      "test",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"chart": "gitlab-4.6.4",
+				"chart": "gitlab-4.6.5",
 			},
 		},
 		Spec: gitlabv1beta1.GitLabSpec{

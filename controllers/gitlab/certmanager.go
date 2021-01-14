@@ -1,8 +1,8 @@
 package gitlab
 
 import (
-	acmev1beta1 "github.com/jetstack/cert-manager/pkg/apis/acme/v1beta1"
-	certmanagerv1beta1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1beta1"
+	acmev1alpha2 "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	certmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
@@ -10,7 +10,7 @@ import (
 )
 
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource
-func GetIssuerConfig(cr *gitlabv1beta1.GitLab) certmanagerv1beta1.IssuerConfig {
+func GetIssuerConfig(cr *gitlabv1beta1.GitLab) certmanagerv1alpha2.IssuerConfig {
 
 	if cr.Spec.CertIssuer != nil {
 		var ingressClass string = "nginx"
@@ -19,13 +19,13 @@ func GetIssuerConfig(cr *gitlabv1beta1.GitLab) certmanagerv1beta1.IssuerConfig {
 			cr.Spec.CertIssuer.Server = "https://acme-v02.api.letsencrypt.org/directory"
 		}
 
-		var solvers []acmev1beta1.ACMEChallengeSolver = cr.Spec.CertIssuer.Solvers
+		var solvers []acmev1alpha2.ACMEChallengeSolver = cr.Spec.CertIssuer.Solvers
 		if len(solvers) == 0 {
-			solvers = []acmev1beta1.ACMEChallengeSolver{
+			solvers = []acmev1alpha2.ACMEChallengeSolver{
 				{
-					Selector: &acmev1beta1.CertificateDNSNameSelector{},
-					HTTP01: &acmev1beta1.ACMEChallengeSolverHTTP01{
-						Ingress: &acmev1beta1.ACMEChallengeSolverHTTP01Ingress{
+					Selector: &acmev1alpha2.CertificateDNSNameSelector{},
+					HTTP01: &acmev1alpha2.ACMEChallengeSolverHTTP01{
+						Ingress: &acmev1alpha2.ACMEChallengeSolverHTTP01Ingress{
 							Class: &ingressClass,
 						},
 					},
@@ -33,8 +33,8 @@ func GetIssuerConfig(cr *gitlabv1beta1.GitLab) certmanagerv1beta1.IssuerConfig {
 			}
 		}
 
-		return certmanagerv1beta1.IssuerConfig{
-			ACME: &acmev1beta1.ACMEIssuer{
+		return certmanagerv1alpha2.IssuerConfig{
+			ACME: &acmev1alpha2.ACMEIssuer{
 				Email:                  cr.Spec.CertIssuer.Email,
 				Server:                 cr.Spec.CertIssuer.Server,
 				SkipTLSVerify:          cr.Spec.CertIssuer.SkipTLSVerify,
@@ -49,22 +49,22 @@ func GetIssuerConfig(cr *gitlabv1beta1.GitLab) certmanagerv1beta1.IssuerConfig {
 		}
 	}
 
-	return certmanagerv1beta1.IssuerConfig{
-		SelfSigned: &certmanagerv1beta1.SelfSignedIssuer{},
+	return certmanagerv1alpha2.IssuerConfig{
+		SelfSigned: &certmanagerv1alpha2.SelfSignedIssuer{},
 	}
 }
 
 // CertificateIssuer create a certificate generator
-func CertificateIssuer(cr *gitlabv1beta1.GitLab) *certmanagerv1beta1.Issuer {
+func CertificateIssuer(cr *gitlabv1beta1.GitLab) *certmanagerv1alpha2.Issuer {
 	labels := gitlabutils.Label(cr.Name, "issuer", gitlabutils.GitlabType)
 
-	issuer := &certmanagerv1beta1.Issuer{
+	issuer := &certmanagerv1alpha2.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: cr.Namespace,
 			Labels:    labels,
 		},
-		Spec: certmanagerv1beta1.IssuerSpec{
+		Spec: certmanagerv1alpha2.IssuerSpec{
 			IssuerConfig: GetIssuerConfig(cr),
 		},
 	}

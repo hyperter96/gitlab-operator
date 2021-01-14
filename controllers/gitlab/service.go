@@ -228,8 +228,8 @@ func ShellServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// ExporterService returns service that exposes GitLab exporter
-func ExporterService(cr *gitlabv1beta1.GitLab) *corev1.Service {
+// ExporterServiceDEPRECATED returns service that exposes GitLab exporter
+func ExporterServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
 
 	return &corev1.Service{

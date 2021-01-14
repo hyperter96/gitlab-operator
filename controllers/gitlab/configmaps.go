@@ -215,15 +215,15 @@ func SidekiqConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return sidekiq
 }
 
-// ExporterConfigMap returns the configmap object for the GitLab Exporter
-func ExporterConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// ExporterConfigMapDEPRECATED returns the configmap object for the GitLab Exporter
+func ExporterConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
 
-	configure := gitlabutils.ReadConfig("/templates/gitlab-exporter/configure.sh")
+	configure := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-exporter/configure.sh")
 
 	options := SystemBuildOptions(cr)
 	var exporterYML bytes.Buffer
-	exporterTemplate := template.Must(template.ParseFiles("/templates/gitlab-exporter/gitlab-exporter.yml.erb"))
+	exporterTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-exporter/gitlab-exporter.yml.erb"))
 	exporterTemplate.Execute(&exporterYML, options)
 
 	exporter := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-exporter-config", cr.Namespace, labels)

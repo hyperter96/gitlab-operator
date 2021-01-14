@@ -11,6 +11,9 @@ import (
 const (
 	// GitLabShellComponentName is the common name of GitLab Shell.
 	GitLabShellComponentName = "gitlab-shell"
+
+	// GitLabExporterComponentName is the common name of GitLab Exporter.
+	GitLabExporterComponentName = "gitlab-exporter"
 )
 
 // ShellDeployment returns the Deployment of GitLab Shell component.
@@ -103,6 +106,86 @@ func patchGitLabShellService(adapter CustomResourceAdapter, service *corev1.Serv
 	updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &service.Spec.Selector)
 
 	return service
+}
+
+// ExporterService returns the Service for the GitLab Exporter component.
+func ExporterService(adapter CustomResourceAdapter) *corev1.Service {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().ServiceByComponent(GitLabExporterComponentName)
+
+	return patchGitLabExporterService(adapter, result)
+}
+
+// ExporterDeployment returns the Deployment for the GitLab Exporter component.
+func ExporterDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().DeploymentByComponent(GitLabExporterComponentName)
+
+	return patchGitLabExporterDeployment(adapter, result)
+}
+
+// ExporterConfigMaps returns the ConfigMaps for the GitLab Exporter component.
+func ExporterConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	exporterCfgMap := template.Query().ConfigMapByName(
+		fmt.Sprintf("%s-%s", adapter.ReleaseName(), GitLabExporterComponentName))
+
+	result := []*corev1.ConfigMap{exporterCfgMap}
+
+	return patchGitLabExporterConfigMaps(adapter, result)
+}
+
+func patchGitLabExporterService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+	updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &service.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &service.Spec.Selector)
+
+	return service
+}
+
+func patchGitLabExporterDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+	updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &deployment.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &deployment.Spec.Selector.MatchLabels)
+	updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &deployment.Spec.Template.ObjectMeta.Labels)
+
+	if deployment.Spec.Template.Spec.SecurityContext == nil {
+		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
+	}
+
+	var userID int64 = 1000
+	var replicas int32 = 1
+	var volCfgMapDefaultMode int32 = 420
+
+	deployment.Spec.Replicas = &replicas
+	deployment.Spec.Template.Spec.SecurityContext.FSGroup = &userID
+	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = &userID
+	deployment.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+	for _, v := range deployment.Spec.Template.Spec.Volumes {
+		if v.VolumeSource.ConfigMap != nil {
+			v.VolumeSource.ConfigMap.DefaultMode = &volCfgMapDefaultMode
+		}
+	}
+
+	return deployment
+}
+
+func patchGitLabExporterConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+	for _, c := range configMaps {
+		updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &c.ObjectMeta.Labels)
+	}
+
+	return configMaps
 }
 
 func updateCommonLabels(releaseName, componentName string, labels *map[string]string) {

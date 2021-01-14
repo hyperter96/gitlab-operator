@@ -195,6 +195,8 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
 
+	exporter := gitlabctl.ExporterConfigMaps(adapter)
+
 	gitaly := gitlabctl.GitalyConfigMap(cr)
 
 	redis := gitlabctl.RedisConfigMap(cr)
@@ -208,8 +210,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	gitlab := gitlabctl.GetGitLabConfigMap(cr)
 
 	sidekiq := gitlabctl.SidekiqConfigMap(cr)
-
-	exporter := gitlabctl.ExporterConfigMap(cr)
 
 	registry := gitlabctl.RegistryConfigMap(cr)
 
@@ -228,12 +228,12 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 		initdb,
 		gitlab,
 		sidekiq,
-		exporter,
 		registry,
 		taskRunner,
 		migration,
 	)
 	configmaps = append(configmaps, shell...)
+	configmaps = append(configmaps, exporter...)
 
 	for _, cm := range configmaps {
 		if err := r.createKubernetesResource(cm, cr); err != nil {
@@ -470,6 +470,8 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 
 	shell := gitlabctl.ShellService(adapter)
 
+	exporter := gitlabctl.ExporterService(adapter)
+
 	postgres := gitlabctl.PostgresqlService(cr)
 
 	postgresHeadless := gitlabctl.PostgresHeadlessService(cr)
@@ -483,8 +485,6 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	registry := gitlabctl.RegistryService(cr)
 
 	webservice := gitlabctl.WebserviceService(cr)
-
-	exporter := gitlabctl.ExporterService(cr)
 
 	services = append(services,
 		postgres,
@@ -508,7 +508,13 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 }
 
 func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	exporter := gitlabctl.ExporterDeployment(cr)
+	/*
+	 * TODO: reconcileExporterDeployment must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	exporter := gitlabctl.ExporterDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(cr, exporter, r.Scheme); err != nil {
 		return err

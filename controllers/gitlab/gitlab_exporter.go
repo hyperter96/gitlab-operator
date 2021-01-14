@@ -7,8 +7,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ExporterDeployment returns the GitLab Exporter deployment object
-func ExporterDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
+// ExporterDeploymentDEPRECATED returns the GitLab Exporter deployment object
+func ExporterDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "gitlab-exporter", gitlabutils.GitlabType)
 
 	exporter := gitlabutils.GenericDeployment(gitlabutils.Component{

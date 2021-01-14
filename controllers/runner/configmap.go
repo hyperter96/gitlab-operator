@@ -3,6 +3,7 @@ package runner
 import (
 	"bytes"
 	"fmt"
+	"os"
 
 	"text/template"
 
@@ -39,13 +40,13 @@ func ConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 	var gitlabURL string
 
 	var configToml bytes.Buffer
-	configTemplate := template.Must(template.ParseFiles("/templates/gitlab-runner/config.toml"))
+	configTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/config.toml"))
 	configTemplate.Execute(&configToml, userOptions(cr))
 
-	entrypointScript := gitlabutils.ReadConfig("/templates/gitlab-runner/entrypoint.sh")
-	configureScript := gitlabutils.ReadConfig("/templates/gitlab-runner/configure.sh")
-	registrationScript := gitlabutils.ReadConfig("/templates/gitlab-runner/registration.sh")
-	aliveScript := gitlabutils.ReadConfig("/templates/gitlab-runner/check-live.sh")
+	entrypointScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/entrypoint.sh")
+	configureScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/configure.sh")
+	registrationScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/registration.sh")
+	aliveScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/check-live.sh")
 
 	// Gitlab URL should be used for Gitlab instances
 	// outside k8s or the current namespace

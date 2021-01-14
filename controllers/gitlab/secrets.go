@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"text/template"
 
@@ -172,7 +173,7 @@ func RailsSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	}
 
 	var secret bytes.Buffer
-	secretsTemplate := template.Must(template.ParseFiles("/templates/rails-secret.yml"))
+	secretsTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/rails-secret.yml"))
 	secretsTemplate.Execute(&secret, options)
 
 	rails := gitlabutils.GenericSecret(cr.Name+"-rails-secret", cr.Namespace, labels)

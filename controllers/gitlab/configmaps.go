@@ -82,8 +82,8 @@ func RedisSciptsConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return scripts
 }
 
-// GitalyConfigMap returns the configmap object for Gitaly
-func GitalyConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// GitalyConfigMapDEPRECATED returns the configmap object for Gitaly
+func GitalyConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
 	gitaly := gitlabutils.GenericConfigMap(cr.Name+"-gitaly-config", cr.Namespace, labels)

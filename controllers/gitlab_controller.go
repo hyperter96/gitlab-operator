@@ -195,10 +195,10 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
 	taskRunner := gitlabctl.TaskRunnerConfigMap(adapter)
+	gitaly := gitlabctl.GitalyConfigMap(adapter)
+
 	exporter := gitlabctl.ExporterConfigMaps(adapter)
 	webservice := gitlabctl.WebserviceConfigMaps(adapter)
-
-	gitaly := gitlabctl.GitalyConfigMap(cr)
 
 	redis := gitlabctl.RedisConfigMap(cr)
 
@@ -322,11 +322,17 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, cr *gitlab
 
 	var statefulsets []*appsv1.StatefulSet
 
+	/*
+	 * TODO: reconcileShellDeployment must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	gitaly := gitlabctl.GitalyStatefulSet(adapter)
+
 	postgres := gitlabctl.PostgresStatefulSet(cr)
 
 	redis := gitlabctl.RedisStatefulSet(cr)
-
-	gitaly := gitlabctl.GitalyStatefulSet(cr)
 
 	statefulsets = append(statefulsets, postgres, redis, gitaly)
 
@@ -466,6 +472,7 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	adapter := gitlabctl.NewCustomResourceAdapter(cr)
 
 	shell := gitlabctl.ShellService(adapter)
+	gitaly := gitlabctl.GitalyService(adapter)
 	exporter := gitlabctl.ExporterService(adapter)
 	webservice := gitlabctl.WebserviceService(adapter)
 
@@ -476,8 +483,6 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	redis := gitlabctl.RedisService(cr)
 
 	redisHeadless := gitlabctl.RedisHeadlessService(cr)
-
-	gitaly := gitlabctl.GitalyService(cr)
 
 	registry := gitlabctl.RegistryService(cr)
 

@@ -118,8 +118,8 @@ func PostgresqlService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// GitalyService returns service to expose the Gitaly service
-func GitalyService(cr *gitlabv1beta1.GitLab) *corev1.Service {
+// GitalyServiceDEPRECATED returns service to expose the Gitaly service
+func GitalyServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "gitaly", gitlabutils.GitlabType)
 
 	return &corev1.Service{

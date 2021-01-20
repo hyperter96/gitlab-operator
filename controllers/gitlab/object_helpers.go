@@ -8,10 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var (
-	localUser int64 = 1000
-)
-
 const (
 	// GitLabShellComponentName is the common name of GitLab Shell.
 	GitLabShellComponentName = "gitlab-shell"
@@ -24,6 +20,13 @@ const (
 
 	// WebserviceComponentName is the common name of Webservice.
 	WebserviceComponentName = "webservice"
+	// GitalyComponentName is the common name of Gitaly.
+	GitalyComponentName = "gitaly"
+)
+
+var (
+	localUser  int64 = 1000
+	gitalyUser int64 = 1000
 )
 
 // ShellDeployment returns the Deployment of GitLab Shell component.
@@ -219,6 +222,70 @@ func TaskRunnerConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	return patchTaskRunnerConfigMap(adapter, result)
 }
 
+// GitalyStatefulSet returns the StatefulSet of Gitaly component.
+func GitalyStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
+
+	template, err := GetTemplate(adapter)
+
+	if err != nil {
+		return nil
+		/* WARNING: This should return an error instead. */
+	}
+
+	result := template.Query().StatefulSetByComponent(GitalyComponentName)
+
+	return patchGitalyStatefulSet(adapter, result)
+}
+
+// GitalyConfigMap returns the ConfigMap of Gitaly component.
+func GitalyConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+	template, err := GetTemplate(adapter)
+
+	if err != nil {
+		return nil
+		/* WARNING: This should return an error instead. */
+	}
+
+	result := template.Query().ConfigMapByComponent(GitalyComponentName)
+
+	return patchGitalyConfigMaps(adapter, result)
+}
+
+// GitalyService returns the Service of GitLab Shell component.
+func GitalyService(adapter CustomResourceAdapter) *corev1.Service {
+	template, err := GetTemplate(adapter)
+
+	if err != nil {
+		return nil
+		/* WARNING: This should return an error instead. */
+	}
+
+	result := template.Query().ServiceByComponent(GitalyComponentName)
+
+	return patchGitalyService(adapter, result)
+}
+
+func patchWebserviceService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.Spec.Selector)
+
+	return service
+}
+
+func patchWebserviceDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+	updateCommonDeployments(WebserviceComponentName, deployment)
+
+	return deployment
+}
+
+func patchWebserviceConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+	for _, c := range configMaps {
+		updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &c.ObjectMeta.Labels)
+	}
+
+	return configMaps
+}
+
 func patchTaskRunnerDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
 	updateCommonDeployments(TaskRunnerComponentName, deployment)
 
@@ -229,6 +296,46 @@ func patchTaskRunnerConfigMap(adapter CustomResourceAdapter, configMap *corev1.C
 	updateCommonLabels(adapter.ReleaseName(), TaskRunnerComponentName, &configMap.ObjectMeta.Labels)
 
 	return configMap
+}
+
+func patchGitalyStatefulSet(adapter CustomResourceAdapter, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
+	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &statefulSet.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &statefulSet.Spec.Selector.MatchLabels)
+	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &statefulSet.Spec.Template.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &statefulSet.Spec.VolumeClaimTemplates[0].Labels)
+	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName,
+		&statefulSet.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.LabelSelector.MatchLabels)
+
+	if statefulSet.Spec.Template.Spec.SecurityContext == nil {
+		statefulSet.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
+	}
+
+	var volCfgMapDefaultMode int32 = 420
+
+	statefulSet.Spec.Template.Spec.SecurityContext.FSGroup = &gitalyUser
+	statefulSet.Spec.Template.Spec.SecurityContext.RunAsUser = &gitalyUser
+	statefulSet.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+	for _, v := range statefulSet.Spec.Template.Spec.Volumes {
+		if v.VolumeSource.ConfigMap != nil {
+			v.VolumeSource.ConfigMap.DefaultMode = &volCfgMapDefaultMode
+		}
+	}
+
+	return statefulSet
+}
+
+func patchGitalyConfigMaps(adapter CustomResourceAdapter, cfgMap *corev1.ConfigMap) *corev1.ConfigMap {
+	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &cfgMap.ObjectMeta.Labels)
+
+	return cfgMap
+}
+
+func patchGitalyService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &service.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &service.Spec.Selector)
+
+	return service
+
 }
 
 func updateCommonDeployments(componentName string, deployment *appsv1.Deployment) {
@@ -252,46 +359,6 @@ func updateCommonDeployments(componentName string, deployment *appsv1.Deployment
 			v.VolumeSource.ConfigMap.DefaultMode = &volCfgMapDefaultMode
 		}
 	}
-}
-
-func patchWebserviceService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
-	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.ObjectMeta.Labels)
-	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.Spec.Selector)
-
-	return service
-}
-
-func patchWebserviceDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
-	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &deployment.ObjectMeta.Labels)
-	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &deployment.Spec.Selector.MatchLabels)
-	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &deployment.Spec.Template.ObjectMeta.Labels)
-
-	if deployment.Spec.Template.Spec.SecurityContext == nil {
-		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
-	}
-
-	var replicas int32 = 1
-	var volCfgMapDefaultMode int32 = 420
-
-	deployment.Spec.Replicas = &replicas
-	deployment.Spec.Template.Spec.SecurityContext.FSGroup = &localUser
-	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = &localUser
-	deployment.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
-	for _, v := range deployment.Spec.Template.Spec.Volumes {
-		if v.VolumeSource.ConfigMap != nil {
-			v.VolumeSource.ConfigMap.DefaultMode = &volCfgMapDefaultMode
-		}
-	}
-
-	return deployment
-}
-
-func patchWebserviceConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
-	for _, c := range configMaps {
-		updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &c.ObjectMeta.Labels)
-	}
-
-	return configMaps
 }
 
 func updateCommonLabels(releaseName, componentName string, labels *map[string]string) {

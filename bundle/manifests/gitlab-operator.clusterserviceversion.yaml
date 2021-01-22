@@ -304,7 +304,7 @@ spec:
     # Overview
 
     The GitLab operator is responsible for managing the full lifecycle of GitLab instances in Kubernetes and OpenShift container platforms. The operator is currently in development, and not recommended for production use.
-    
+
     Supported features:
     - Deploy GitLab instances
     - Upgrade an instance to a new version
@@ -712,7 +712,7 @@ spec:
                 resources:
                   limits:
                     cpu: 200m
-                    memory: 125Mi
+                    memory: 300Mi
                   requests:
                     cpu: 200m
                     memory: 100Mi

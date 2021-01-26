@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,6 +32,18 @@ type Query interface {
 
 	// ConfigMapsByLabels lists all ConfigMaps that match the labels.
 	ConfigMapsByLabels(labels map[string]string) []*corev1.ConfigMap
+
+	// ConfigMapsByComponent lists all ConfigMaps for a specific component.
+	ConfigMapsByComponent(component string) []*corev1.ConfigMap
+
+	// JobByName returns the Job with the specified name.
+	JobByName(name string) *batchv1.Job
+
+	// JobsByLabels lists all Jobs that match the labels.
+	JobsByLabels(labels map[string]string) []*batchv1.Job
+
+	// JobByComponent lists all Jobs for a specific component.
+	JobByComponent(component string) *batchv1.Job
 
 	// SecretByName returns the Secret with the specified name.
 	SecretByName(name string) *corev1.Secret
@@ -78,6 +91,7 @@ const (
 	anything      = "*"
 	gvkDeployment = "Deployment.v1.apps"
 	gvkConfigMap  = "ConfigMap.v1.core"
+	gvkJob        = "Job.v1.batch"
 	gvkSecret     = "Secret.v1.core"
 	gvkService    = "Service.v1.core"
 )
@@ -221,6 +235,69 @@ func (q *cachingQuery) ConfigMapsByLabels(labels map[string]string) []*corev1.Co
 		},
 	)
 	return result.([]*corev1.ConfigMap)
+}
+
+func (q *cachingQuery) ConfigMapsByComponent(component string) []*corev1.ConfigMap {
+	return q.ConfigMapsByLabels(map[string]string{
+		"app": component,
+	})
+}
+
+func (q *cachingQuery) JobByName(name string) *batchv1.Job {
+	key := q.cacheKey(name, gvkJob, nil)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewJobSelector(
+					func(d *batchv1.Job) bool {
+						return d.ObjectMeta.Name == name
+					},
+				),
+			)
+			if err != nil {
+				return nil
+			}
+			return unsafeConvertJobs(objects)
+		},
+	)
+
+	jobs := result.([]*batchv1.Job)
+
+	if len(jobs) == 0 {
+		return nil
+	}
+	return jobs[0]
+}
+
+func (q *cachingQuery) JobsByLabels(labels map[string]string) []*batchv1.Job {
+	key := q.cacheKey(anything, gvkJob, labels)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewJobSelector(
+					func(d *batchv1.Job) bool {
+						return matchLabels(d.ObjectMeta.Labels, labels)
+					},
+				),
+			)
+			if err != nil {
+				return nil
+			}
+			return unsafeConvertJobs(objects)
+		},
+	)
+	return result.([]*batchv1.Job)
+}
+
+func (q *cachingQuery) JobByComponent(component string) *batchv1.Job {
+	jobs := q.JobsByLabels(map[string]string{
+		"app": component,
+	})
+
+	if len(jobs) == 0 {
+		return nil
+	}
+	return jobs[0]
 }
 
 func (q *cachingQuery) SecretByName(name string) *corev1.Secret {
@@ -433,6 +510,14 @@ func unsafeConvertConfigMaps(objects []runtime.Object) []*corev1.ConfigMap {
 		configMaps[i] = o.(*corev1.ConfigMap)
 	}
 	return configMaps
+}
+
+func unsafeConvertJobs(objects []runtime.Object) []*batchv1.Job {
+	jobs := make([]*batchv1.Job, len(objects))
+	for i, o := range objects {
+		jobs[i] = o.(*batchv1.Job)
+	}
+	return jobs
 }
 
 func unsafeConvertSecrets(objects []runtime.Object) []*corev1.Secret {

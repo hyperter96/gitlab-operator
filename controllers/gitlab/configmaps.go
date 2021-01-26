@@ -288,8 +288,8 @@ func TaskRunnerConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return tasker
 }
 
-// MigrationsConfigMap returns configmap object for the Migration job
-func MigrationsConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// MigrationsConfigMapDEPRECATED returns configmap object for the Migration job
+func MigrationsConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "migrations", gitlabutils.GitlabType)
 
 	options := SystemBuildOptions(cr)

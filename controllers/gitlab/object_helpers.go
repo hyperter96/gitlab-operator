@@ -230,6 +230,8 @@ func patchMigrationsConfigMap(adapter CustomResourceAdapter, configMap *corev1.C
 func patchMigrationsJob(adapter CustomResourceAdapter, job *batchv1.Job) *batchv1.Job {
 	updateCommonLabels(adapter.ReleaseName(), MigrationsComponentName, &job.ObjectMeta.Labels)
 
+	job.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+
 	return job
 }
 

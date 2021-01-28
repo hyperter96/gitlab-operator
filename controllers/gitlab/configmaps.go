@@ -259,8 +259,8 @@ func RegistryConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return registry
 }
 
-// TaskRunnerConfigMap returns configmap object for the TaskRunner deployment
-func TaskRunnerConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// TaskRunnerConfigMapDEPRECATED returns configmap object for the TaskRunner deployment
+func TaskRunnerConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
 
 	options := SystemBuildOptions(cr)

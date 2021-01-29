@@ -195,6 +195,8 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
 
+	taskRunner := gitlabctl.TaskRunnerConfigMap(adapter)
+
 	exporter := gitlabctl.ExporterConfigMaps(adapter)
 
 	migration := gitlabctl.MigrationsConfigMap(adapter)
@@ -214,8 +216,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	sidekiq := gitlabctl.SidekiqConfigMap(cr)
 
 	registry := gitlabctl.RegistryConfigMap(cr)
-
-	taskRunner := gitlabctl.TaskRunnerConfigMap(cr)
 
 	initdb := gitlabctl.PostgresInitDBConfigMap(cr)
 
@@ -689,7 +689,13 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, cr *g
 }
 
 func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	tasker := gitlabctl.TaskRunnerDeployment(cr)
+	/*
+	 * TODO: reconcileTaskRunnerDeployment must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	tasker := gitlabctl.TaskRunnerDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(cr, tasker, r.Scheme); err != nil {
 		return err

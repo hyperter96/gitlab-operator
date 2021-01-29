@@ -7,8 +7,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// TaskRunnerDeployment returns deployment for TaskRunner
-func TaskRunnerDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
+// TaskRunnerDeploymentDEPRECATED returns deployment for TaskRunner
+func TaskRunnerDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
 	options := SystemBuildOptions(cr)
 

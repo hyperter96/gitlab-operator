@@ -108,8 +108,8 @@ func GitalyConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return gitaly
 }
 
-// WebserviceConfigMap returns the configmap object for GitLab webservice
-func WebserviceConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// WebserviceConfigMapDEPRECATED returns the configmap object for GitLab webservice
+func WebserviceConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
 
 	webservice := gitlabutils.GenericConfigMap(cr.Name+"-webservice-config", cr.Namespace, labels)

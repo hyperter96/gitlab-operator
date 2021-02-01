@@ -8,8 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// WebserviceDeployment returns webservice deployment
-func WebserviceDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
+// WebserviceDeploymentDEPRECATED returns webservice deployment
+func WebserviceDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
 	options := SystemBuildOptions(cr)
 

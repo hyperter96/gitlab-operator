@@ -9,6 +9,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+var (
+	localUser int64 = 1000
+)
+
 const (
 	// GitLabShellComponentName is the common name of GitLab Shell.
 	GitLabShellComponentName = "gitlab-shell"
@@ -21,6 +25,9 @@ const (
 
 	// GitLabExporterComponentName is the common name of GitLab Exporter.
 	GitLabExporterComponentName = "gitlab-exporter"
+
+	// WebserviceComponentName is the common name of Webservice.
+	WebserviceComponentName = "webservice"
 )
 
 // ShellDeployment returns the Deployment of GitLab Shell component.
@@ -68,27 +75,6 @@ func ShellService(adapter CustomResourceAdapter) *corev1.Service {
 	result := template.Query().ServiceByComponent(GitLabShellComponentName)
 
 	return patchGitLabShellService(adapter, result)
-}
-
-func patchGitLabShellDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
-	updateCommonDeployments(GitLabShellComponentName, deployment)
-
-	return deployment
-}
-
-func patchGitLabShellConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
-	for _, c := range configMaps {
-		updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &c.ObjectMeta.Labels)
-	}
-
-	return configMaps
-}
-
-func patchGitLabShellService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
-	updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &service.ObjectMeta.Labels)
-	updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &service.Spec.Selector)
-
-	return service
 }
 
 // ExporterService returns the Service for the GitLab Exporter component.
@@ -156,6 +142,65 @@ func MigrationsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 	job := template.Query().JobByComponent(MigrationsComponentName)
 
 	return patchMigrationsJob(adapter, job), nil
+}
+
+// WebserviceDeployment returns the Deployment for the Webservice component.
+func WebserviceDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().DeploymentByComponent(WebserviceComponentName)
+
+	return patchWebserviceDeployment(adapter, result)
+}
+
+// WebserviceConfigMaps returns the ConfigMaps for the Webservice component.
+func WebserviceConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().ConfigMapsByLabels(map[string]string{
+		"app": WebserviceComponentName,
+	})
+
+	return patchWebserviceConfigMaps(adapter, result)
+}
+
+// WebserviceService returns the Service for the Webservice component.
+func WebserviceService(adapter CustomResourceAdapter) *corev1.Service {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().ServiceByComponent(WebserviceComponentName)
+
+	return patchWebserviceService(adapter, result)
+}
+
+func patchGitLabShellDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+	updateCommonDeployments(GitLabShellComponentName, deployment)
+
+	return deployment
+}
+
+func patchGitLabShellConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+	for _, c := range configMaps {
+		updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &c.ObjectMeta.Labels)
+	}
+
+	return configMaps
+}
+
+func patchGitLabShellService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+	updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &service.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &service.Spec.Selector)
+
+	return service
 }
 
 func patchGitLabExporterService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
@@ -228,13 +273,12 @@ func updateCommonDeployments(componentName string, deployment *appsv1.Deployment
 		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
 	}
 
-	var userID int64 = 1000
 	var replicas int32 = 1
 	var volCfgMapDefaultMode int32 = 420
 
 	deployment.Spec.Replicas = &replicas
-	deployment.Spec.Template.Spec.SecurityContext.FSGroup = &userID
-	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = &userID
+	deployment.Spec.Template.Spec.SecurityContext.FSGroup = &localUser
+	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = &localUser
 	deployment.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 	for _, v := range deployment.Spec.Template.Spec.Volumes {
 		if v.VolumeSource.ConfigMap != nil {
@@ -255,6 +299,46 @@ func patchMigrationsJob(adapter CustomResourceAdapter, job *batchv1.Job) *batchv
 	job.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
 
 	return job
+}
+
+func patchWebserviceService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.Spec.Selector)
+
+	return service
+}
+
+func patchWebserviceDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &deployment.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &deployment.Spec.Selector.MatchLabels)
+	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &deployment.Spec.Template.ObjectMeta.Labels)
+
+	if deployment.Spec.Template.Spec.SecurityContext == nil {
+		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
+	}
+
+	var replicas int32 = 1
+	var volCfgMapDefaultMode int32 = 420
+
+	deployment.Spec.Replicas = &replicas
+	deployment.Spec.Template.Spec.SecurityContext.FSGroup = &localUser
+	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = &localUser
+	deployment.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+	for _, v := range deployment.Spec.Template.Spec.Volumes {
+		if v.VolumeSource.ConfigMap != nil {
+			v.VolumeSource.ConfigMap.DefaultMode = &volCfgMapDefaultMode
+		}
+	}
+
+	return deployment
+}
+
+func patchWebserviceConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+	for _, c := range configMaps {
+		updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &c.ObjectMeta.Labels)
+	}
+
+	return configMaps
 }
 
 func updateCommonLabels(releaseName, componentName string, labels *map[string]string) {

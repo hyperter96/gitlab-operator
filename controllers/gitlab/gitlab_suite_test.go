@@ -1,6 +1,7 @@
 package gitlab_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -10,28 +11,42 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 )
 
 func GitLabMock() *gitlabv1beta1.GitLab {
+	releaseName := "test"
+	chartVersion := gitlabctl.AvailableChartVersions()[0]
 	namespace := os.Getenv("HELM_NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
 	}
 
-	gitlab := &gitlabv1beta1.GitLab{
+	return &gitlabv1beta1.GitLab{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.gitlab.com/v1beta1",
+			Kind:       "GitLab",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
+			Name:      releaseName,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"chart": "gitlab-4.6.5",
+				"chart": fmt.Sprintf("gitlab-%s", chartVersion),
 			},
 		},
 		Spec: gitlabv1beta1.GitLabSpec{
-			Release: "13.6.3",
+			AutoScaling: &gitlabv1beta1.AutoScalingSpec{},
+			Database: &gitlabv1beta1.DatabaseSpec{
+				Volume: gitlabv1beta1.VolumeSpec{
+					Capacity: "50Gi",
+				},
+			},
+			Redis: &gitlabv1beta1.RedisSpec{},
+			Volume: gitlabv1beta1.VolumeSpec{
+				Capacity: "50Gi",
+			},
 		},
 	}
-
-	return gitlab
 }
 
 func TestGitLab(t *testing.T) {

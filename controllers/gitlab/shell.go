@@ -7,8 +7,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var localUser int64 = 1000
-
 // ShellDeploymentDEPRECATED returns GitLab shell deployment
 func ShellDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "gitlab-shell", gitlabutils.GitlabType)

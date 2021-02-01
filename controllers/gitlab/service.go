@@ -172,8 +172,8 @@ func RegistryService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// WebserviceService returns service to expose Webservice
-func WebserviceService(cr *gitlabv1beta1.GitLab) *corev1.Service {
+// WebserviceServiceDEPRECATED returns service to expose Webservice
+func WebserviceServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
 
 	return &corev1.Service{

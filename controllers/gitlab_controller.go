@@ -194,18 +194,15 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	adapter := gitlabctl.NewCustomResourceAdapter(cr)
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
-
 	taskRunner := gitlabctl.TaskRunnerConfigMap(adapter)
-
 	exporter := gitlabctl.ExporterConfigMaps(adapter)
+	webservice := gitlabctl.WebserviceConfigMaps(adapter)
 
 	gitaly := gitlabctl.GitalyConfigMap(cr)
 
 	redis := gitlabctl.RedisConfigMap(cr)
 
 	redisScripts := gitlabctl.RedisSciptsConfigMap(cr)
-
-	webservice := gitlabctl.WebserviceConfigMap(cr)
 
 	workhorse := gitlabctl.WorkhorseConfigMap(cr)
 
@@ -223,7 +220,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 		gitaly,
 		redis,
 		redisScripts,
-		webservice,
 		workhorse,
 		initdb,
 		gitlab,
@@ -234,6 +230,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	)
 	configmaps = append(configmaps, shell...)
 	configmaps = append(configmaps, exporter...)
+	configmaps = append(configmaps, webservice...)
 
 	for _, cm := range configmaps {
 		if err := r.createKubernetesResource(cm, cr); err != nil {
@@ -469,8 +466,8 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	adapter := gitlabctl.NewCustomResourceAdapter(cr)
 
 	shell := gitlabctl.ShellService(adapter)
-
 	exporter := gitlabctl.ExporterService(adapter)
+	webservice := gitlabctl.WebserviceService(adapter)
 
 	postgres := gitlabctl.PostgresqlService(cr)
 
@@ -483,8 +480,6 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	gitaly := gitlabctl.GitalyService(cr)
 
 	registry := gitlabctl.RegistryService(cr)
-
-	webservice := gitlabctl.WebserviceService(cr)
 
 	services = append(services,
 		postgres,
@@ -542,7 +537,14 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 }
 
 func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	webservice := gitlabctl.WebserviceDeployment(cr)
+
+	/*
+	 * TODO: reconcileShellDeployment must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	webservice := gitlabctl.WebserviceDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(cr, webservice, r.Scheme); err != nil {
 		return err

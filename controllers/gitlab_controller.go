@@ -355,7 +355,7 @@ func (r *GitLabReconciler) createKubernetesResource(object interface{}, parent *
 		}
 	}
 
-	return r.Create(context.TODO(), object.(runtime.Object))
+	return r.Create(context.TODO(), object.(runtime.Object).DeepCopyObject())
 }
 
 func (r *GitLabReconciler) maskEmailPasword(cr *gitlabv1beta1.GitLab) error {
@@ -527,13 +527,13 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 	}
 	if err := r.Get(ctx, lookupKey, found); err != nil {
 		if errors.IsNotFound(err) {
-			return r.Create(ctx, exporter)
+			return r.Create(ctx, exporter.DeepCopy())
 		}
 
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, exporter)
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, exporter.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -555,13 +555,13 @@ func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, cr
 	}
 	if err := r.Get(ctx, lookupKey, found); err != nil {
 		if errors.IsNotFound(err) {
-			return r.Create(ctx, webservice)
+			return r.Create(ctx, webservice.DeepCopy())
 		}
 
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, webservice)
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, webservice.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -583,13 +583,13 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, cr *
 	}
 	if err := r.Get(ctx, lookupKey, found); err != nil {
 		if errors.IsNotFound(err) {
-			return r.Create(ctx, registry)
+			return r.Create(ctx, registry.DeepCopy())
 		}
 
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, registry)
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, registry.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -624,7 +624,7 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, cr *git
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, shell)
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, shell.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -646,13 +646,13 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, cr *g
 	}
 	if err := r.Get(ctx, lookupKey, found); err != nil {
 		if errors.IsNotFound(err) {
-			return r.Create(ctx, sidekiq)
+			return r.Create(ctx, sidekiq.DeepCopy())
 		}
 
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, sidekiq)
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, sidekiq.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -680,13 +680,13 @@ func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, cr
 	}
 	if err := r.Get(ctx, lookupKey, found); err != nil {
 		if errors.IsNotFound(err) {
-			return r.Create(ctx, tasker)
+			return r.Create(ctx, tasker.DeepCopy())
 		}
 
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, tasker)
+	deployment, changed := gitlabutils.IsDeploymentChanged(found, tasker.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -800,7 +800,7 @@ func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.
 				return err
 			}
 
-			return r.Create(ctx, hpa)
+			return r.Create(ctx, hpa.DeepCopy())
 		}
 
 		return err

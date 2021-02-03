@@ -33,8 +33,8 @@ type Query interface {
 	// ConfigMapsByLabels lists all ConfigMaps that match the labels.
 	ConfigMapsByLabels(labels map[string]string) []*corev1.ConfigMap
 
-	// ConfigMapsByComponent lists all ConfigMaps for a specific component.
-	ConfigMapsByComponent(component string) []*corev1.ConfigMap
+	// ConfigMapByComponent returns the ConfigMap for a specific component.
+	ConfigMapByComponent(component string) *corev1.ConfigMap
 
 	// JobByName returns the Job with the specified name.
 	JobByName(name string) *batchv1.Job
@@ -59,6 +59,15 @@ type Query interface {
 
 	// DeploymentByComponent returns the Deployment for a specific component.
 	DeploymentByComponent(component string) *appsv1.Deployment
+
+	// StatefulSetByName returns the StatefulSet with the specified name.
+	StatefulSetByName(name string) *appsv1.StatefulSet
+
+	// StatefulSetsByLabels lists all StatefulSets that match the labels.
+	StatefulSetsByLabels(labels map[string]string) []*appsv1.StatefulSet
+
+	// StatefulSetByComponent returns the StatefulSet for a specific component.
+	StatefulSetByComponent(component string) *appsv1.StatefulSet
 
 	// ServiceByName returns the Service with the specified name.
 	ServiceByName(name string) *corev1.Service
@@ -88,12 +97,13 @@ func newQuery(t Template) Query {
 }
 
 const (
-	anything      = "*"
-	gvkDeployment = "Deployment.v1.apps"
-	gvkConfigMap  = "ConfigMap.v1.core"
-	gvkJob        = "Job.v1.batch"
-	gvkSecret     = "Secret.v1.core"
-	gvkService    = "Service.v1.core"
+	anything       = "*"
+	gvkDeployment  = "Deployment.v1.apps"
+	gvkStatefulSet = "StatefulSet.v1.apps"
+	gvkConfigMap   = "ConfigMap.v1.core"
+	gvkSecret      = "Secret.v1.core"
+	gvkService     = "Service.v1.core"
+	gvkJob         = "Job.v1.batch"
 )
 
 var (
@@ -237,10 +247,14 @@ func (q *cachingQuery) ConfigMapsByLabels(labels map[string]string) []*corev1.Co
 	return result.([]*corev1.ConfigMap)
 }
 
-func (q *cachingQuery) ConfigMapsByComponent(component string) []*corev1.ConfigMap {
-	return q.ConfigMapsByLabels(map[string]string{
+func (q *cachingQuery) ConfigMapByComponent(component string) *corev1.ConfigMap {
+	cfgMaps := q.ConfigMapsByLabels(map[string]string{
 		"app": component,
 	})
+	if len(cfgMaps) == 0 {
+		return nil
+	}
+	return cfgMaps[0]
 }
 
 func (q *cachingQuery) JobByName(name string) *batchv1.Job {
@@ -402,6 +416,62 @@ func (q *cachingQuery) DeploymentByComponent(component string) *appsv1.Deploymen
 	return deployments[0]
 }
 
+func (q *cachingQuery) StatefulSetByName(name string) *appsv1.StatefulSet {
+	key := q.cacheKey(name, gvkStatefulSet, nil)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewStatefulSetSelector(
+					func(d *appsv1.StatefulSet) bool {
+						return d.ObjectMeta.Name == name
+					},
+				),
+			)
+			if err != nil {
+				return nil
+			}
+			return unsafeConvertStatefulSets(objects)
+		},
+	)
+
+	statefulSets := result.([]*appsv1.StatefulSet)
+
+	if len(statefulSets) == 0 {
+		return nil
+	}
+	return statefulSets[0]
+}
+
+func (q *cachingQuery) StatefulSetsByLabels(labels map[string]string) []*appsv1.StatefulSet {
+	key := q.cacheKey(anything, gvkStatefulSet, labels)
+	result := q.runQuery(key,
+		func() interface{} {
+			objects, err := q.template.GetObjects(
+				NewStatefulSetSelector(
+					func(d *appsv1.StatefulSet) bool {
+						return matchLabels(d.ObjectMeta.Labels, labels)
+					},
+				),
+			)
+			if err != nil {
+				return nil
+			}
+			return unsafeConvertStatefulSets(objects)
+		},
+	)
+	return result.([]*appsv1.StatefulSet)
+}
+
+func (q *cachingQuery) StatefulSetByComponent(component string) *appsv1.StatefulSet {
+	statefulSets := q.StatefulSetsByLabels(map[string]string{
+		"app": component,
+	})
+	if len(statefulSets) == 0 {
+		return nil
+	}
+	return statefulSets[0]
+}
+
 func (q *cachingQuery) ServiceByName(name string) *corev1.Service {
 	key := q.cacheKey(name, gvkService, nil)
 	result := q.runQuery(key,
@@ -534,6 +604,14 @@ func unsafeConvertDeployments(objects []runtime.Object) []*appsv1.Deployment {
 		deployments[i] = o.(*appsv1.Deployment)
 	}
 	return deployments
+}
+
+func unsafeConvertStatefulSets(objects []runtime.Object) []*appsv1.StatefulSet {
+	statefulSets := make([]*appsv1.StatefulSet, len(objects))
+	for i, o := range objects {
+		statefulSets[i] = o.(*appsv1.StatefulSet)
+	}
+	return statefulSets
 }
 
 func unsafeConvertServices(objects []runtime.Object) []*corev1.Service {

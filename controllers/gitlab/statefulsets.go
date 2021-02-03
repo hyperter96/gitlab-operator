@@ -503,9 +503,9 @@ func RedisStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 	return redis
 }
 
-// GitalyStatefulSet returns Gitaly statefulset service
+// GitalyStatefulSetDEPRECATED returns Gitaly statefulset service
 // TODO 1: Remove hard corded CPU resources
-func GitalyStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
+func GitalyStatefulSetDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "gitaly", gitlabutils.GitlabType)
 
 	var replicas int32 = 1

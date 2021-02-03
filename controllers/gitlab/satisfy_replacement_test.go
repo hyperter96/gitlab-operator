@@ -42,6 +42,7 @@ func (m *internalReplacementMatcher) Match(actual interface{}) (success bool, er
 		cmpopts.IgnoreFields(metav1.ObjectMeta{}, negligibleObjectMetaFields...),
 		cmpopts.IgnoreFields(appsv1.Deployment{}, negligibleDeploymentFields...),
 		cmpopts.IgnoreFields(appsv1.DeploymentSpec{}, negligibleDeploymentSpecFields...),
+		cmpopts.IgnoreFields(appsv1.StatefulSet{}, negligibleStatefulSetFields...),
 		cmpopts.IgnoreFields(corev1.ConfigMap{}, negligibleConfigMapFields...),
 		cmpopts.IgnoreFields(corev1.Service{}, negligibleServiceFields...),
 	}
@@ -92,6 +93,10 @@ var (
 		"TypeMeta",
 	}
 	negligibleServiceFields = []string{
+		"TypeMeta",
+		"Status",
+	}
+	negligibleStatefulSetFields = []string{
 		"TypeMeta",
 		"Status",
 	}

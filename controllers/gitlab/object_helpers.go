@@ -371,13 +371,6 @@ func patchMigrationsJob(adapter CustomResourceAdapter, job *batchv1.Job) *batchv
 	return job
 }
 
-func patchWebserviceService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
-	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.ObjectMeta.Labels)
-	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.Spec.Selector)
-
-	return service
-}
-
 func patchGitalyConfigMaps(adapter CustomResourceAdapter, cfgMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &cfgMap.ObjectMeta.Labels)
 

@@ -196,9 +196,9 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	shell := gitlabctl.ShellConfigMaps(adapter)
 	taskRunner := gitlabctl.TaskRunnerConfigMap(adapter)
 	gitaly := gitlabctl.GitalyConfigMap(adapter)
-
 	exporter := gitlabctl.ExporterConfigMaps(adapter)
 	webservice := gitlabctl.WebserviceConfigMaps(adapter)
+	migration := gitlabctl.MigrationsConfigMap(adapter)
 
 	redis := gitlabctl.RedisConfigMap(cr)
 
@@ -211,8 +211,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	sidekiq := gitlabctl.SidekiqConfigMap(cr)
 
 	registry := gitlabctl.RegistryConfigMap(cr)
-
-	migration := gitlabctl.MigrationsConfigMap(cr)
 
 	initdb := gitlabctl.PostgresInitDBConfigMap(cr)
 
@@ -249,8 +247,10 @@ func (r *GitLabReconciler) reconcileJobs(cr *gitlabv1beta1.GitLab) error {
 		return err
 	}
 
-	migration := gitlabctl.MigrationsJob(cr)
-	return r.createKubernetesResource(migration, cr)
+	// migration := gitlabctl.MigrationsJob(cr)
+	// return r.createKubernetesResource(migration, cr)
+
+	return r.runMigrationsJob(cr)
 }
 
 func (r *GitLabReconciler) reconcileServiceMonitor(cr *gitlabv1beta1.GitLab) error {
@@ -287,6 +287,32 @@ func (r *GitLabReconciler) reconcileServiceMonitor(cr *gitlabv1beta1.GitLab) err
 
 	prometheus := gitlabctl.PrometheusCluster(cr)
 	return r.createKubernetesResource(prometheus, nil)
+}
+
+func (r *GitLabReconciler) runMigrationsJob(cr *gitlabv1beta1.GitLab) error {
+	/*
+	 * TODO: runMigrationsJob must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	migrations, err := gitlabctl.MigrationsJob(adapter)
+	if err != nil {
+		return err
+	}
+
+	lookupKey := types.NamespacedName{
+		Name:      migrations.Name,
+		Namespace: migrations.Namespace,
+	}
+
+	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", lookupKey)
+	logger.V(1).Info("Creating migrations Job", "name", migrations.Name)
+	if err := r.createKubernetesResource(migrations, cr); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.GitLab) error {

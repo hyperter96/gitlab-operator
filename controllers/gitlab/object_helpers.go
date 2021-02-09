@@ -5,6 +5,7 @@ import (
 
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -14,6 +15,9 @@ const (
 
 	// TaskRunnerComponentName is the common name of GitLab Task Runner.
 	TaskRunnerComponentName = "task-runner"
+
+	// MigrationsComponentName is the common name of Migrations.
+	MigrationsComponentName = "migrations"
 
 	// GitLabExporterComponentName is the common name of GitLab Exporter.
 	GitLabExporterComponentName = "gitlab-exporter"
@@ -112,6 +116,35 @@ func ExporterConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 	result := []*corev1.ConfigMap{exporterCfgMap}
 
 	return patchGitLabExporterConfigMaps(adapter, result)
+}
+
+// MigrationsConfigMap returns the ConfigMaps of Migrations component.
+func MigrationsConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+	var result *corev1.ConfigMap
+	template, err := GetTemplate(adapter)
+
+	if err != nil {
+		return result
+		/* WARNING: This should return an error instead. */
+	}
+
+	result = template.Query().ConfigMapByName(
+		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MigrationsComponentName))
+
+	return patchMigrationsConfigMap(adapter, result)
+}
+
+// MigrationsJob returns the Job for Migrations component.
+func MigrationsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
+	template, err := GetTemplate(adapter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	job := template.Query().JobByComponent(MigrationsComponentName)
+
+	return patchMigrationsJob(adapter, job), nil
 }
 
 // WebserviceDeployment returns the Deployment for the Webservice component.
@@ -324,6 +357,20 @@ func patchGitalyStatefulSet(adapter CustomResourceAdapter, statefulSet *appsv1.S
 	return statefulSet
 }
 
+func patchMigrationsConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+	updateCommonLabels(adapter.ReleaseName(), MigrationsComponentName, &configMap.ObjectMeta.Labels)
+
+	return configMap
+}
+
+func patchMigrationsJob(adapter CustomResourceAdapter, job *batchv1.Job) *batchv1.Job {
+	updateCommonLabels(adapter.ReleaseName(), MigrationsComponentName, &job.ObjectMeta.Labels)
+
+	job.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+
+	return job
+}
+
 func patchGitalyConfigMaps(adapter CustomResourceAdapter, cfgMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &cfgMap.ObjectMeta.Labels)
 
@@ -335,7 +382,6 @@ func patchGitalyService(adapter CustomResourceAdapter, service *corev1.Service) 
 	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &service.Spec.Selector)
 
 	return service
-
 }
 
 func updateCommonDeployments(componentName string, deployment *appsv1.Deployment) {

@@ -7,8 +7,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// MigrationsJob returns job object to run database migration
-func MigrationsJob(cr *gitlabv1beta1.GitLab) *batchv1.Job {
+// MigrationsJobDEPRECATED returns job object to run database migration
+func MigrationsJobDEPRECATED(cr *gitlabv1beta1.GitLab) *batchv1.Job {
 	labels := gitlabutils.Label(cr.Name, "migrations", gitlabutils.GitlabType)
 
 	migration := gitlabutils.GenericJob(gitlabutils.Component{

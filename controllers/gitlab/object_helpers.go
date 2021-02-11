@@ -24,8 +24,12 @@ const (
 
 	// WebserviceComponentName is the common name of Webservice.
 	WebserviceComponentName = "webservice"
+
 	// GitalyComponentName is the common name of Gitaly.
 	GitalyComponentName = "gitaly"
+
+	// SidekiqComponentName is the common name of Sidekiq.
+	SidekiqComponentName = "sidekiq"
 )
 
 var (
@@ -382,6 +386,52 @@ func patchGitalyService(adapter CustomResourceAdapter, service *corev1.Service) 
 	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &service.Spec.Selector)
 
 	return service
+}
+
+// SidekiqDeployment returns the Deployment of the Sidekiq component.
+func SidekiqDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().DeploymentByComponent(SidekiqComponentName)
+
+	return patchSidekiqDeployment(result)
+}
+
+func patchSidekiqDeployment(deployment *appsv1.Deployment) *appsv1.Deployment {
+	updateCommonDeployments(SidekiqComponentName, deployment)
+
+	return deployment
+}
+
+// SidekiqConfigMaps returns the ConfigMaps of the Sidekiq component.
+func SidekiqConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return []*corev1.ConfigMap{} // WARNING: this should return an error instead.
+	}
+
+	queueCfgMap := template.Query().ConfigMapByName(
+		fmt.Sprintf("%s-%s-%s", adapter.ReleaseName(), SidekiqComponentName, "all-in-1"))
+	mainCfgMap := template.Query().ConfigMapByName(
+		fmt.Sprintf("%s-%s", adapter.ReleaseName(), SidekiqComponentName))
+
+	result := []*corev1.ConfigMap{
+		queueCfgMap,
+		mainCfgMap,
+	}
+
+	return patchSidekiqConfigMaps(adapter, result)
+}
+
+func patchSidekiqConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+	for _, c := range configMaps {
+		updateCommonLabels(adapter.ReleaseName(), SidekiqComponentName, &c.ObjectMeta.Labels)
+	}
+
+	return configMaps
 }
 
 func updateCommonDeployments(componentName string, deployment *appsv1.Deployment) {

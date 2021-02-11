@@ -186,8 +186,8 @@ func ShellConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return shell
 }
 
-// SidekiqConfigMap returns the configmap object for GitLab sidekiq
-func SidekiqConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// SidekiqConfigMapDEPRECATED returns the configmap object for GitLab sidekiq
+func SidekiqConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "sidekiq", gitlabutils.GitlabType)
 
 	configureScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/sidekiq/configure.sh")

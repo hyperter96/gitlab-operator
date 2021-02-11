@@ -199,6 +199,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	exporter := gitlabctl.ExporterConfigMaps(adapter)
 	webservice := gitlabctl.WebserviceConfigMaps(adapter)
 	migration := gitlabctl.MigrationsConfigMap(adapter)
+	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
 
 	redis := gitlabctl.RedisConfigMap(cr)
 
@@ -207,8 +208,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	workhorse := gitlabctl.WorkhorseConfigMap(cr)
 
 	gitlab := gitlabctl.GetGitLabConfigMap(cr)
-
-	sidekiq := gitlabctl.SidekiqConfigMap(cr)
 
 	registry := gitlabctl.RegistryConfigMap(cr)
 
@@ -221,7 +220,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 		workhorse,
 		initdb,
 		gitlab,
-		sidekiq,
 		registry,
 		taskRunner,
 		migration,
@@ -229,6 +227,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	configmaps = append(configmaps, shell...)
 	configmaps = append(configmaps, exporter...)
 	configmaps = append(configmaps, webservice...)
+	configmaps = append(configmaps, sidekiq...)
 
 	for _, cm := range configmaps {
 		if err := r.createKubernetesResource(cm, cr); err != nil {
@@ -666,7 +665,13 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, cr *git
 }
 
 func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	sidekiq := gitlabctl.SidekiqDeployment(cr)
+	/*
+	 * TODO: reconcileShellDeployment must receive the adapter instead of
+	 *       the CR itself and the following line should be removed.
+	 */
+	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+
+	sidekiq := gitlabctl.SidekiqDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(cr, sidekiq, r.Scheme); err != nil {
 		return err

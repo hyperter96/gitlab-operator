@@ -8,8 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// SidekiqDeployment returns GitLab sidekiq deployment
-func SidekiqDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
+// SidekiqDeploymentDEPRECATED returns GitLab sidekiq deployment
+func SidekiqDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "sidekiq", gitlabutils.GitlabType)
 	options := SystemBuildOptions(cr)
 

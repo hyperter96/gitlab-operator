@@ -36,7 +36,7 @@ var (
 const (
 	Namespace    = "default"
 	PollTimeout  = 30 * time.Second
-	PollInterval = 1 * time.Second
+	PollInterval = 3 * time.Second
 )
 
 func TestAPIs(t *testing.T) {

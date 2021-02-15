@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -102,13 +103,18 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
+	if err := r.runSharedSecretsJob(adapter); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if err := r.reconcileConfigMaps(gitlab); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileSecrets(gitlab); err != nil {
-		return ctrl.Result{}, err
-	}
+	// if err := r.reconcileSecrets(gitlab); err != nil {
+	// 	return ctrl.Result{}, err
+	// }
 
 	if err := r.reconcileServices(gitlab); err != nil {
 		return ctrl.Result{}, err
@@ -181,6 +187,88 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&certmanagerv1alpha2.Certificate{}).
 		Owns(&nginxv1alpha1.NginxIngressController{}).
 		Complete(r)
+}
+
+func (r *GitLabReconciler) runSharedSecretsJob(adapter gitlabctl.CustomResourceAdapter) error {
+
+	logger := r.Log.WithValues("gitlab", adapter.Reference())
+
+	logger.Info("Preparing resources shared secrets Job.")
+
+	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter)
+	if err != nil {
+		return err
+	}
+
+	lookupKey := types.NamespacedName{
+		Name:      job.Name,
+		Namespace: job.Namespace,
+	}
+	logger = r.Log.WithValues("gitlab", adapter.Reference(), "job", lookupKey)
+
+	logger.V(1).Info("Creating shared secrets ConfigMap", "name", cfgMap.Name)
+	if err := r.createKubernetesResource(cfgMap, adapter.Resource()); err != nil {
+		return err
+	}
+
+	logger.V(1).Info("Creating shared secrets Job", "name", job.Name)
+	if err := r.createKubernetesResource(job, adapter.Resource()); err != nil {
+		return err
+	}
+
+	logger.Info("Waiting for shared secrets Job to finish")
+
+	elapsed := time.Duration(0)
+	timeout := gitlabctl.SharedSecretsJobTimeout()
+	waitPeriod := gitlabctl.SharedSecretsJobWaitPeriod(timeout, elapsed)
+
+	var result error = nil
+
+	for {
+		if elapsed > timeout {
+			result = errors.NewTimeoutError("The shared secrets Job did not finish in time", int(timeout))
+			logger.Error(result, "Timeout for shared secrets Job exceeded.",
+				"timeout", timeout)
+			break
+		}
+
+		logger.V(1).Info("Checking the status of shared secrets Job")
+		lookupVal := &batchv1.Job{}
+		if err := r.Get(context.Background(), lookupKey, lookupVal); err != nil {
+			logger.V(1).Info("Failed to check the status of shared secrets Job. Skipping.", "error", err)
+
+			/*
+			 * This will make sure we won't stuck here forever,
+			 * in case the error is recurring.
+			 */
+			clientDelay, _ := errors.SuggestsClientDelay(err)
+			if clientDelay == 0 {
+				clientDelay = 1
+			}
+			delay := time.Duration(clientDelay) * time.Second
+			elapsed += delay
+			time.Sleep(delay)
+
+			continue
+		}
+
+		if lookupVal.Status.Succeeded > 0 {
+			logger.Info("Success! The shared secrets Job is complete.")
+			break
+		}
+
+		if lookupVal.Status.Failed > 0 {
+			result = errors.NewInternalError(
+				fmt.Errorf("The shared secret Job has failed. Check the log output of the Job: %s", lookupKey))
+			logger.Error(result, "Failure! The shared secrets Job is complete.")
+			break
+		}
+
+		elapsed += waitPeriod
+		time.Sleep(waitPeriod)
+	}
+
+	return result
 }
 
 //	Reconciler for all ConfigMaps come below
@@ -436,56 +524,56 @@ func (r *GitLabReconciler) reconcileMinioInstance(cr *gitlabv1beta1.GitLab) erro
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileSecrets(cr *gitlabv1beta1.GitLab) error {
-	var secrets []*corev1.Secret
+// func (r *GitLabReconciler) reconcileSecrets(cr *gitlabv1beta1.GitLab) error {
+// 	var secrets []*corev1.Secret
 
-	gitaly := gitlabctl.GitalySecret(cr)
+// 	gitaly := gitlabctl.GitalySecret(cr)
 
-	workhorse := gitlabctl.WorkhorseSecret(cr)
+// 	workhorse := gitlabctl.WorkhorseSecret(cr)
 
-	registry := gitlabctl.RegistryHTTPSecret(cr)
+// 	registry := gitlabctl.RegistryHTTPSecret(cr)
 
-	registryCert := gitlabctl.RegistryCertSecret(cr)
+// 	registryCert := gitlabctl.RegistryCertSecret(cr)
 
-	rails := gitlabctl.RailsSecret(cr)
+// 	rails := gitlabctl.RailsSecret(cr)
 
-	postgres := gitlabctl.PostgresSecret(cr)
+// 	postgres := gitlabctl.PostgresSecret(cr)
 
-	redis := gitlabctl.RedisSecret(cr)
+// 	redis := gitlabctl.RedisSecret(cr)
 
-	runner := gitlabctl.RunnerRegistrationSecret(cr)
+// 	runner := gitlabctl.RunnerRegistrationSecret(cr)
 
-	root := gitlabctl.RootUserSecret(cr)
+// 	root := gitlabctl.RootUserSecret(cr)
 
-	smtp := gitlabctl.SMTPSettingsSecret(cr)
+// 	smtp := gitlabctl.SMTPSettingsSecret(cr)
 
-	shell := gitlabctl.ShellSecret(cr)
+// 	shell := gitlabctl.ShellSecret(cr)
 
-	keys := gitlabctl.ShellSSHKeysSecret(cr)
+// 	keys := gitlabctl.ShellSSHKeysSecret(cr)
 
-	secrets = append(secrets,
-		gitaly,
-		registry,
-		registryCert,
-		workhorse,
-		rails,
-		postgres,
-		redis,
-		root,
-		runner,
-		smtp,
-		shell,
-		keys,
-	)
+// 	secrets = append(secrets,
+// 		gitaly,
+// 		registry,
+// 		registryCert,
+// 		workhorse,
+// 		rails,
+// 		postgres,
+// 		redis,
+// 		root,
+// 		runner,
+// 		smtp,
+// 		shell,
+// 		keys,
+// 	)
 
-	for _, secret := range secrets {
-		if err := r.createKubernetesResource(secret, cr); err != nil {
-			return err
-		}
-	}
+// 	for _, secret := range secrets {
+// 		if err := r.createKubernetesResource(secret, cr); err != nil {
+// 			return err
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	var services []*corev1.Service

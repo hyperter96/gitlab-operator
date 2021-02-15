@@ -85,3 +85,4 @@ charts/
 helm
 !helm/
 *.coverprofile
+*.log

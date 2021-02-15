@@ -123,7 +123,7 @@ func buildTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 
 	builder.SetNamespace(adapter.Namespace())
 	builder.SetReleaseName(adapter.ReleaseName())
-	builder.DisableHooks()
+	builder.EnableHooks()
 
 	return builder.Render(adapter.Values())
 }

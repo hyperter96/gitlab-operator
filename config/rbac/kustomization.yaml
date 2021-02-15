@@ -21,3 +21,6 @@ resources:
 - custom/gitlab_runner_serviceaccount.yaml
 - custom/gitlab_service_account.yaml
 - custom/manager_service_account.yaml
+
+configurations:
+- kustomizeconfig.yaml

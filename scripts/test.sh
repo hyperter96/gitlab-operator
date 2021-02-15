@@ -1,14 +1,20 @@
 #!/bin/bash -e
 
-# Smoke test that verifies the GitLab operator installs without error
+# Functional test that verifies the GitLab operator and CR install without error
 
 NAMESPACE="${NAMESPACE:-gitlab-system}"
 CLEANUP="${CLEANUP:-yes}"
 
 finish() {
-  git checkout -q config/manager  # Restore manager image tag
-  git checkout -q config/default/kustomization.yaml  # Restore namespace
-  git checkout -q config/rbac  # Restore ClusterRoleBinding names
+  local exitcode=$?
+
+  make restore_kustomize_files
+
+  if [ $exitcode -ne 0 ]; then
+    echo "!!!ERROR!!!"
+    echo "deployment/gitlab-controller-manager logs"
+    kubectl -n "$NAMESPACE" logs deployment/gitlab-controller-manager -c manager || true
+  fi
 
   if [ "$CLEANUP" = "yes" ]; then
     cleanup
@@ -20,12 +26,16 @@ trap finish EXIT
 
 main() {
   [ "$CLEANUP" = "only" ] && { cleanup; exit 0; }
+
+  CHART_VERSION="${CHART_VERSION:-$(latest_chart_version)}"
+
   echo 'Starting test'
   install_required_operators
   install_crds
-  rename_clusterrolebindings
   install_gitlab_operator
-  verify_operator_running
+  verify_operator_is_running
+  install_gitlab_custom_resource
+  verify_gitlab_is_running
 }
 
 install_required_operators() {
@@ -33,19 +43,13 @@ install_required_operators() {
   echo 'Installing required operators'  # See https://www.itix.fr/blog/install-operator-openshift-cli/
   kubectl apply -f scripts/manifests/nginx-ingress-operator-group.yaml
   kubectl apply -f scripts/manifests/nginx-ingress-operator-sub.yaml
-  until kubectl get crd nginxingresscontrollers.k8s.nginx.org &>/dev/null; do
-    echo -n '.'
-    sleep 1
-  done
+  wait_until_exists "crd/nginxingresscontrollers.k8s.nginx.org"
   kubectl wait --for=condition=Established crd/nginxingresscontrollers.k8s.nginx.org
   kubectl wait --for=condition=Available -n default deployment/nginx-ingress-operator
 
   # cert-manager
   kubectl apply -f scripts/manifests/cert-manager-sub.yaml
-  until kubectl get crd certmanagers.operator.cert-manager.io &>/dev/null; do
-    echo -n '.'
-    sleep 1
-  done
+  wait_until_exists "crd/certmanagers.operator.cert-manager.io"
   kubectl wait --for=condition=Established crd/certmanagers.operator.cert-manager.io
   kubectl apply -f scripts/manifests/cert-manager-instance.yaml
   kubectl wait --for=condition=Initialized -n default certmanager/cert-manager
@@ -57,36 +61,97 @@ install_crds() {
   make install
 }
 
-rename_clusterrolebindings() {
-  echo 'Renaming ClusterRoleBindings'
-
-  local manifests=($(grep -rwl 'config/rbac' -e 'kind: ClusterRoleBinding'))
-
-  for m in "${manifests[@]}"; do
-    local currentName="$(yq read "$m" 'metadata.name')"
-    yq write --inplace "${m}" 'metadata.name' "$NAMESPACE-$currentName"
-  done
-}
-
 install_gitlab_operator() {
   echo 'Installing GitLab operator'
+  make suffix_clusterrolebinding_names
+  make suffix_webhook_names
   make deploy
 }
 
-verify_operator_running() {
+verify_operator_is_running() {
   echo 'Verifying that operator is running'
 
   kubectl wait --for=condition=Available -n "$NAMESPACE" deployment/gitlab-controller-manager
+
+  local maxattempts=30
+  local attempts=0
+  until kubectl -n $NAMESPACE logs deployment/gitlab-controller-manager -c manager | grep -q 'successfully acquired lease'; do
+    attempts=$((attempts+1))
+    if [ "$attempts" -ge "$maxattempts" ]; then
+      echo "Failed waiting for manager to start"; exit 1;
+    fi
+    echo -n '.'; sleep 2
+  done
+}
+
+install_gitlab_custom_resource() {
+  echo 'Installing GitLab custom resource'
+  make CHART_VERSION="${CHART_VERSION}" deploy_sample
+}
+
+verify_gitlab_is_running() {
+  echo 'Verifying that GitLab is running'
+
+  statefulsets=(gitlab-gitaly gitlab-redis gitlab-minio gitlab-postgresql)
+  wait_until_exists "statefulset/${statefulsets[0]}"
+  for statefulset in "${statefulsets[@]}"; do
+    kubectl -n "$NAMESPACE" rollout status -w --timeout 120s "statefulset/$statefulset"
+    echo "statefulset/$statefulset ok"
+  done
+
+  deployments=(gitlab-registry gitlab-sidekiq gitlab-task-runner gitlab-webservice gitlab-ingress-controller)
+  # gitlab-gitlab-exporter and gitlab-gitlab-shell skipped for now, need shared secrets for certs
+  wait_until_exists "deployment/${deployments[0]}"
+  for deployment in "${deployments[@]}"; do
+    kubectl -n "$NAMESPACE" wait --timeout 120s --for=condition=Available "deployment/$deployment"
+    echo "deployment/$deployment ok"
+  done
+
+  echo 'Testing GitLab endpoint'
+  kubectl -n $NAMESPACE exec deployment/gitlab-task-runner -- \
+    bash -c 'curl -IL $GITLAB_WEBSERVICE_PORT_8181_TCP_ADDR:8181'
 }
 
 cleanup() {
   echo 'Cleaning up test resources'
-  local clusterrolebindings=($(kubectl get clusterrolebindings -o=name | grep $NAMESPACE))
-  for crb in "${clusterrolebindings[@]}"; do
-    kubectl delete "${crb}"
-  done
-
   kubectl delete namespace "$NAMESPACE"
+  kubectl get clusterrolebindings -o=name | grep $NAMESPACE | xargs kubectl delete
+  kubectl get validatingwebhookconfiguration -o name | grep $NAMESPACE | xargs kubectl delete
+  kubectl get mutatingwebhookconfiguration -o name | grep $NAMESPACE | xargs kubectl delete
+}
+
+latest_chart_version() {
+  local latest_chart_archive="$(basename $(ls charts/*.tgz | tail -n1) .tgz)"
+  echo "${latest_chart_archive#gitlab-}"
+}
+
+wait_until_exists() {
+  local resource="$1"
+  local maxattempts="${2:-60}"
+  local attempts=0
+  local output
+  local exitcode
+
+  while true; do
+    attempts=$((attempts+1))
+    if [ "$attempts" -ge "$maxattempts" ]; then
+      echo "Failed waiting for $resource"; exit 1;
+    fi
+
+    set +e
+    output="$(kubectl -n "$NAMESPACE" get "$resource" 2>&1)"
+    exitcode=$?
+    set -e
+    if [ $exitcode -eq 0 ]; then
+      break
+    fi
+
+    if [[ "$output" == *"not found"* ]]; then
+      echo -n '.'; sleep 2
+    else
+      echo "$output"; exit 1
+    fi
+  done
 }
 
 main

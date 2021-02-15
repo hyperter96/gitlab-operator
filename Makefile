@@ -12,7 +12,8 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator:latest
+IMG ?= registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator
+TAG ?= latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 # Namespace to deploy operator into
@@ -49,15 +50,38 @@ install: manifests kustomize
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
+# Suffix operator clusterrolebinding names so they can be installed in parallel
+suffix_clusterrolebinding_names: kustomize
+	cd config/rbac && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
+
+# Suffix operator webhooks names so they can be installed in parallel
+suffix_webhook_names: kustomize
+	cd config/webhook && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
+
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image ${IMG}=${IMG}:${TAG}
+	cd config/manager && $(KUSTOMIZE) edit add patch --path patches/deployment_always_pull_image.yaml
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+# Deploy sample GitLab custom resource to cluster
+deploy_sample: kustomize
+	cd config/samples && $(KUSTOMIZE) edit add label -f chart:gitlab-${CHART_VERSION}
+	$(KUSTOMIZE) build config/samples | kubectl -n ${NAMESPACE} apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+# Restores files that are modified during operator and CR deploy
+restore_kustomize_files:
+	git checkout -q \
+    config/default/kustomization.yaml \
+    config/manager/kustomization.yaml \
+    config/rbac/kustomization.yaml \
+    config/samples/kustomization.yaml \
+    config/webhook/kustomization.yaml
 
 # Run go fmt against code
 fmt:
@@ -115,7 +139,7 @@ endif
 .PHONY: bundle
 bundle: manifests
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image ${IMG}=${IMG}:${TAG}
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 

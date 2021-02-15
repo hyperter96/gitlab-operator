@@ -44,6 +44,7 @@ install_helm() {
 add_gitlab_repo() {
     echo "Adding ${GITLAB_HELM_REPO} to list of helm repos"
     ./helm repo list | grep -q '^gitlab' || ./helm repo add gitlab ${GITLAB_HELM_REPO}
+    ./helm repo update
 }
 
 previous_minor() {

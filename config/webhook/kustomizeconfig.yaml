@@ -1,3 +1,7 @@
+namePrefix:
+- path: metadata/name
+  group: admissionregistration.k8s.io
+
 # the following config is for teaching kustomize where to look at when substituting vars.
 # It requires kustomize v2.1.0 or newer to work properly.
 nameReference:

@@ -33,7 +33,7 @@ type Query interface {
 	// ConfigMapsByLabels lists all ConfigMaps that match the labels.
 	ConfigMapsByLabels(labels map[string]string) []*corev1.ConfigMap
 
-	// ConfigMapByComponent returns the ConfigMap for a specific component.
+	// ConfigMapByComponent lists all ConfigMaps for a specific component.
 	ConfigMapByComponent(component string) *corev1.ConfigMap
 
 	// JobByName returns the Job with the specified name.
@@ -100,10 +100,10 @@ const (
 	anything       = "*"
 	gvkDeployment  = "Deployment.v1.apps"
 	gvkStatefulSet = "StatefulSet.v1.apps"
+	gvkJob         = "Job.v1.batch"
 	gvkConfigMap   = "ConfigMap.v1.core"
 	gvkSecret      = "Secret.v1.core"
 	gvkService     = "Service.v1.core"
-	gvkJob         = "Job.v1.batch"
 )
 
 var (
@@ -248,13 +248,14 @@ func (q *cachingQuery) ConfigMapsByLabels(labels map[string]string) []*corev1.Co
 }
 
 func (q *cachingQuery) ConfigMapByComponent(component string) *corev1.ConfigMap {
-	cfgMaps := q.ConfigMapsByLabels(map[string]string{
+	configMaps := q.ConfigMapsByLabels(map[string]string{
 		"app": component,
 	})
-	if len(cfgMaps) == 0 {
+
+	if len(configMaps) == 0 {
 		return nil
 	}
-	return cfgMaps[0]
+	return configMaps[0]
 }
 
 func (q *cachingQuery) JobByName(name string) *batchv1.Job {

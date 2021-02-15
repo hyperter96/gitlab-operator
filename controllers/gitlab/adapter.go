@@ -15,6 +15,9 @@ import (
 // This adapter is immutable and will not update itself after initialization. Therefore, it must be
 // created when GitLab Custom Resource changes, e.g. in reconcile loop.
 type CustomResourceAdapter interface {
+	// Resource returns the reference to the underlaying Custom Resource.
+	Resource() *gitlabv1beta1.GitLab
+
 	// Hash generates a hash based on the key parts of a GitLab Custom Resource. The hash can be used
 	// to identify changes to the underlaying resource. For example this is useful when rendering a
 	// Helm template.
@@ -47,8 +50,8 @@ type CustomResourceAdapter interface {
 // NewCustomResourceAdapter returns a new adapter for the provided GitLab instance.
 func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapter {
 	result := &populatingAdapter{
-		gitlab: gitlab,
-		values: helm.EmptyValues(),
+		resource: gitlab,
+		values:   helm.EmptyValues(),
 	}
 	result.populateValues()
 	result.hashValues()
@@ -56,10 +59,14 @@ func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapte
 }
 
 type populatingAdapter struct {
-	gitlab    *gitlabv1beta1.GitLab
+	resource  *gitlabv1beta1.GitLab
 	values    helm.Values
 	hash      string
 	reference string
+}
+
+func (a *populatingAdapter) Resource() *gitlabv1beta1.GitLab {
+	return a.resource
 }
 
 func (a *populatingAdapter) Hash() string {
@@ -71,16 +78,16 @@ func (a *populatingAdapter) Reference() string {
 }
 
 func (a *populatingAdapter) Namespace() string {
-	return a.gitlab.Namespace
+	return a.resource.Namespace
 }
 
 func (a *populatingAdapter) GitLabVersion() string {
-	return a.gitlab.Spec.Release
+	return a.resource.Spec.Release
 }
 
 func (a *populatingAdapter) ChartVersion() string {
 	// Warning: This is a heuristic and may not work all the time.
-	s := strings.Split(a.gitlab.Labels["chart"], "-")
+	s := strings.Split(a.resource.Labels["chart"], "-")
 	if len(s) < 2 {
 		return ""
 	}
@@ -88,7 +95,7 @@ func (a *populatingAdapter) ChartVersion() string {
 }
 
 func (a *populatingAdapter) ReleaseName() string {
-	return a.gitlab.Name
+	return a.resource.Name
 }
 
 func (a *populatingAdapter) Values() helm.Values {
@@ -96,7 +103,7 @@ func (a *populatingAdapter) Values() helm.Values {
 }
 
 func (a *populatingAdapter) populateValues() {
-	a.reference = fmt.Sprintf("%s.%s", a.gitlab.Name, a.gitlab.Namespace)
+	a.reference = fmt.Sprintf("%s.%s", a.resource.Name, a.resource.Namespace)
 
 	// Use auto-generated self-signed wildcard certificate
 	a.values.AddValue("certmanager.install", "false")
@@ -110,6 +117,12 @@ func (a *populatingAdapter) populateValues() {
 
 	// Use NodePort Service type for GitLab Shell
 	a.values.AddValue("gitlab.gitlab-shell.service.type", "NodePort")
+
+	// Use manager ServiceAccount and local user for shared secrets
+	a.values.AddValue("shared-secrets.serviceAccount.create", "false")
+	a.values.AddValue("shared-secrets.serviceAccount.name", ManagerServiceAccount)
+	a.values.AddValue("shared-secrets.securityContext.runAsUser", "")
+	a.values.AddValue("shared-secrets.securityContext.fsGroup", "")
 }
 
 func (a *populatingAdapter) hashValues() {

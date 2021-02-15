@@ -59,7 +59,16 @@ unit_tests:
     - export HELM_CHARTS="${CI_PROJECT_DIR}/charts"
     - export GITLAB_OPERATOR_ASSETS="${CI_PROJECT_DIR}/hack/assets"
     - mkdir coverage
-    - /go/bin/ginkgo -skip 'replacement' -cover -outputdir=coverage ./...
+    - /go/bin/ginkgo -skip 'replacement|controller' -cover -outputdir=coverage ./...
+  extends: .cache
+
+slow_unit_tests:
+  stage: test
+  script:
+    - export HELM_CHARTS="${CI_PROJECT_DIR}/charts"
+    - export GITLAB_OPERATOR_ASSETS="${CI_PROJECT_DIR}/hack/assets"
+    - mkdir coverage
+    - /go/bin/ginkgo -focus 'controller' -cover -outputdir=coverage ./...
   extends: .cache
 
 replacement_tests:
@@ -104,8 +113,6 @@ build_bundle_image:
     - master
 
 functional_tests:
-  image:
-    name: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
   stage: functional_test
   variables:
     NAMESPACE: "${CI_COMMIT_REF_SLUG}"

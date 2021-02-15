@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"fmt"
+	"strings"
 
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -10,6 +11,9 @@ import (
 )
 
 const (
+	// ManagerServiceAccount is the name of the ServiceAccount that GitLab controller uses.
+	ManagerServiceAccount = "gitlab-manager"
+
 	// GitLabShellComponentName is the common name of GitLab Shell.
 	GitLabShellComponentName = "gitlab-shell"
 
@@ -25,11 +29,17 @@ const (
 	// WebserviceComponentName is the common name of Webservice.
 	WebserviceComponentName = "webservice"
 
+	// SharedSecretsComponentName is the common name of Shared Secrets.
+	SharedSecretsComponentName = "shared-secrets"
+
 	// GitalyComponentName is the common name of Gitaly.
 	GitalyComponentName = "gitaly"
 
 	// SidekiqComponentName is the common name of Sidekiq.
 	SidekiqComponentName = "sidekiq"
+
+	// LocalUserID is the SecurityContext user.
+	LocalUserID = "1000"
 )
 
 var (
@@ -217,18 +227,32 @@ func patchGitLabExporterService(adapter CustomResourceAdapter, service *corev1.S
 	return service
 }
 
-func patchGitLabExporterDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
-	updateCommonDeployments(GitLabExporterComponentName, deployment)
+// SharedSecretsConfigMap returns the ConfigMaps of Shared Secret component.
+func SharedSecretsConfigMap(adapter CustomResourceAdapter) (*corev1.ConfigMap, error) {
+	template, err := GetTemplate(adapter)
 
-	return deployment
-}
-
-func patchGitLabExporterConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
-	for _, c := range configMaps {
-		updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &c.ObjectMeta.Labels)
+	if err != nil {
+		return nil, err
 	}
 
-	return configMaps
+	cfgMap := template.Query().ConfigMapByComponent(SharedSecretsComponentName)
+
+	return patchSharedSecretsConfigMap(adapter, cfgMap), nil
+}
+
+// SharedSecretsJob returns the Job for Shared Secret component.
+func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
+	template, err := GetTemplate(adapter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := template.Query().JobsByLabels(map[string]string{
+		"app": SharedSecretsComponentName,
+	})
+
+	return patchSharedSecretsJobs(adapter, jobs), nil
 }
 
 // TaskRunnerDeployment returns the Deployment of the Task Runner component.
@@ -257,6 +281,20 @@ func TaskRunnerConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), TaskRunnerComponentName))
 
 	return patchTaskRunnerConfigMap(adapter, result)
+}
+
+func patchGitLabExporterDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+	updateCommonDeployments(GitLabExporterComponentName, deployment)
+
+	return deployment
+}
+
+func patchGitLabExporterConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+	for _, c := range configMaps {
+		updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &c.ObjectMeta.Labels)
+	}
+
+	return configMaps
 }
 
 // GitalyStatefulSet returns the StatefulSet of Gitaly component.
@@ -333,6 +371,24 @@ func patchTaskRunnerConfigMap(adapter CustomResourceAdapter, configMap *corev1.C
 	updateCommonLabels(adapter.ReleaseName(), TaskRunnerComponentName, &configMap.ObjectMeta.Labels)
 
 	return configMap
+}
+
+func patchSharedSecretsConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+	updateCommonLabels(adapter.ReleaseName(), SharedSecretsComponentName, &configMap.ObjectMeta.Labels)
+
+	return configMap
+}
+
+func patchSharedSecretsJobs(adapter CustomResourceAdapter, jobs []*batchv1.Job) *batchv1.Job {
+	for _, j := range jobs {
+		if !strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
+			updateCommonLabels(adapter.ReleaseName(), SharedSecretsComponentName, &j.ObjectMeta.Labels)
+			updateCommonLabels(adapter.ReleaseName(), SharedSecretsComponentName, &j.Spec.Template.Labels)
+			return j
+		}
+	}
+
+	return nil
 }
 
 func patchGitalyStatefulSet(adapter CustomResourceAdapter, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {

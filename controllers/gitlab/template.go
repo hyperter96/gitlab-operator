@@ -29,7 +29,7 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 	if entry != nil {
 		if entry.hash == adapter.Hash() {
 
-			logger.V(1).Info("Retreiving the cached template")
+			logger.V(1).Info("Retrieving the cached template")
 
 			return entry.template, nil
 		}

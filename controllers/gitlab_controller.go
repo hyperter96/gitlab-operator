@@ -906,9 +906,11 @@ func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, cr *gitlabv1bet
 }
 
 func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, cr *gitlabv1beta1.GitLab) error {
-
-	if strings.Contains(deployment.Name, "gitlab-exporter") {
-		return nil
+	excludedDeployments := [2]string{"gitlab-exporter", "gitlab-task-runner"}
+	for _, excludedDeployment := range excludedDeployments {
+		if strings.Contains(deployment.Name, excludedDeployment) {
+			return nil
+		}
 	}
 
 	hpa := gitlabctl.HorizontalAutoscaler(deployment, cr)

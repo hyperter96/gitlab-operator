@@ -239,7 +239,7 @@ func WebserviceDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment
 							Scheme: corev1.URISchemeHTTP,
 						},
 					},
-					InitialDelaySeconds: 0,
+					InitialDelaySeconds: 10,
 					PeriodSeconds:       10,
 					SuccessThreshold:    1,
 					TimeoutSeconds:      2,

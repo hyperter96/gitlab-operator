@@ -271,7 +271,7 @@ func PostgresStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 				Name: "postgresql-password",
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
-						SecretName:  cr.Name + "-postgresql-secret",
+						SecretName:  cr.Name + "-postgresql-password",
 						DefaultMode: &gitlabutils.ConfigMapDefaultMode,
 					},
 				},

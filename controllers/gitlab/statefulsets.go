@@ -308,8 +308,8 @@ func PostgresStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 	return psql
 }
 
-// RedisStatefulSet returns Redis statefulset object
-func RedisStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
+// RedisStatefulSetDEPRECATED returns Redis statefulset object
+func RedisStatefulSetDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
 	var redisUser int64 = 1001

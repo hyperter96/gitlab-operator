@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -38,13 +39,13 @@ const (
 	// SidekiqComponentName is the common name of Sidekiq.
 	SidekiqComponentName = "sidekiq"
 
-	// LocalUserID is the SecurityContext user.
-	LocalUserID = "1000"
+	// RedisComponentName is the common name of Redis.
+	RedisComponentName = "redis"
 )
 
 var (
-	localUser  int64 = 1000
-	gitalyUser int64 = 1000
+	localUser                 int64 = 1000
+	deploymentReplicasDefault int32 = 1
 )
 
 // ShellDeployment returns the Deployment of GitLab Shell component.
@@ -392,29 +393,9 @@ func patchSharedSecretsJobs(adapter CustomResourceAdapter, jobs []*batchv1.Job) 
 }
 
 func patchGitalyStatefulSet(adapter CustomResourceAdapter, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
-	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &statefulSet.ObjectMeta.Labels)
-	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &statefulSet.Spec.Selector.MatchLabels)
-	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &statefulSet.Spec.Template.ObjectMeta.Labels)
-	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &statefulSet.Spec.VolumeClaimTemplates[0].Labels)
-	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName,
+	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], GitalyComponentName,
 		&statefulSet.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.LabelSelector.MatchLabels)
-
-	if statefulSet.Spec.Template.Spec.SecurityContext == nil {
-		statefulSet.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
-	}
-
-	var volCfgMapDefaultMode int32 = 420
-
-	statefulSet.Spec.Template.Spec.SecurityContext.FSGroup = &gitalyUser
-	statefulSet.Spec.Template.Spec.SecurityContext.RunAsUser = &gitalyUser
-	statefulSet.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
-	for _, v := range statefulSet.Spec.Template.Spec.Volumes {
-		if v.VolumeSource.ConfigMap != nil {
-			v.VolumeSource.ConfigMap.DefaultMode = &volCfgMapDefaultMode
-		}
-	}
-
-	return statefulSet
+	return updateCommonStatefulSets(GitalyComponentName, statefulSet)
 }
 
 func patchMigrationsConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
@@ -490,6 +471,69 @@ func patchSidekiqConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.
 	return configMaps
 }
 
+// RedisConfigMaps returns the ConfigMaps of the Redis component.
+func RedisConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return []*corev1.ConfigMap{} // WARNING: this should return an error instead.
+	}
+
+	result := template.Query().ConfigMapsByLabels(map[string]string{
+		"app": RedisComponentName,
+	})
+
+	return patchRedisConfigMaps(adapter, result)
+}
+
+func patchRedisConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+	for _, c := range configMaps {
+		updateCommonLabels(adapter.ReleaseName(), RedisComponentName, &c.ObjectMeta.Labels)
+	}
+
+	return configMaps
+}
+
+// RedisServices returns the Services of the Redis component.
+func RedisServices(adapter CustomResourceAdapter) []*corev1.Service {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil
+		/* WARNING: This should return an error instead. */
+	}
+
+	results := template.Query().ServicesByLabels(map[string]string{
+		"app": RedisComponentName,
+	})
+
+	return patchRedisServices(adapter, results)
+}
+
+func patchRedisServices(adapter CustomResourceAdapter, services []*corev1.Service) []*corev1.Service {
+	for _, s := range services {
+		updateCommonLabels(adapter.ReleaseName(), RedisComponentName, &s.ObjectMeta.Labels)
+		updateCommonLabels(adapter.ReleaseName(), RedisComponentName, &s.Spec.Selector)
+	}
+
+	return services
+}
+
+// RedisStatefulSet returns the Statefulset of the Redis component.
+func RedisStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil
+		/* WARNING: This should return an error instead. */
+	}
+
+	result := template.Query().StatefulSetByComponent(RedisComponentName)
+
+	return patchRedisStatefulSet(result)
+}
+
+func patchRedisStatefulSet(statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
+	return updateCommonStatefulSets(RedisComponentName, statefulSet)
+}
+
 func updateCommonDeployments(componentName string, deployment *appsv1.Deployment) {
 	updateCommonLabels(deployment.ObjectMeta.Labels["release"], componentName, &deployment.ObjectMeta.Labels)
 	updateCommonLabels(deployment.ObjectMeta.Labels["release"], componentName, &deployment.Spec.Selector.MatchLabels)
@@ -499,22 +543,67 @@ func updateCommonDeployments(componentName string, deployment *appsv1.Deployment
 		deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
 	}
 
-	var replicas int32 = 1
-	var volCfgMapDefaultMode int32 = 420
-
-	deployment.Spec.Replicas = &replicas
+	deployment.Spec.Replicas = &deploymentReplicasDefault
 	deployment.Spec.Template.Spec.SecurityContext.FSGroup = &localUser
 	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = &localUser
 	deployment.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+
 	for _, v := range deployment.Spec.Template.Spec.Volumes {
 		if v.VolumeSource.ConfigMap != nil {
-			v.VolumeSource.ConfigMap.DefaultMode = &volCfgMapDefaultMode
+			v.VolumeSource.ConfigMap.DefaultMode = &utils.ConfigMapDefaultMode
 		}
 	}
+}
+
+func updateCommonStatefulSets(componentName string, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
+	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.ObjectMeta.Labels)
+	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.Spec.Selector.MatchLabels)
+	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.Spec.Template.ObjectMeta.Labels)
+	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.Spec.VolumeClaimTemplates[0].Labels)
+
+	if statefulSet.Spec.Template.Spec.SecurityContext == nil {
+		statefulSet.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}
+	}
+
+	statefulSet.Spec.Template.Spec.SecurityContext.FSGroup = &localUser
+	statefulSet.Spec.Template.Spec.SecurityContext.RunAsUser = &localUser
+	statefulSet.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+
+	for _, v := range statefulSet.Spec.Template.Spec.Volumes {
+		if v.VolumeSource.ConfigMap != nil {
+			if v.VolumeSource.ConfigMap.DefaultMode == nil {
+				v.VolumeSource.ConfigMap.DefaultMode = &utils.ConfigMapDefaultMode
+			}
+		}
+	}
+
+	return statefulSet
 }
 
 func updateCommonLabels(releaseName, componentName string, labels *map[string]string) {
 	for k, v := range gitlabutils.Label(releaseName, componentName, gitlabutils.GitlabType) {
 		(*labels)[k] = v
 	}
+}
+
+// CfgMapFromList returns a ConfigMap by name from a list of ConfigMaps.
+func CfgMapFromList(name string, cfgMaps []*corev1.ConfigMap) *corev1.ConfigMap {
+	for _, cm := range cfgMaps {
+		if cm.Name == name {
+			return cm
+		}
+	}
+
+	return nil
+}
+
+// SvcFromList returns a Service by name from a list of Services.
+func SvcFromList(name string, services []*corev1.Service) *corev1.Service {
+	for _, s := range services {
+		if s.Name == name {
+			return s
+		}
+	}
+
+	return nil
 }

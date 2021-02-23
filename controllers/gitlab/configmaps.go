@@ -36,8 +36,8 @@ func GetGitLabConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return gitlab
 }
 
-// RedisConfigMap returns the configmap object containing Redis config
-func RedisConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// RedisConfigMapDEPRECATED returns the configmap object containing Redis config
+func RedisConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
 	masterConf := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/redis/master.conf")
@@ -56,8 +56,8 @@ func RedisConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return redis
 }
 
-// RedisSciptsConfigMap returns the configmap object containing Redis scripts
-func RedisSciptsConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// RedisSciptsConfigMapDEPRECATED returns the configmap object containing Redis scripts
+func RedisSciptsConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
 	localLiveness := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/redis/liveness_local.sh")

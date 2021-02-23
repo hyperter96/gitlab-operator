@@ -10,8 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// RedisHeadlessService returns the headless service for Postgres statefulset
-func RedisHeadlessService(cr *gitlabv1beta1.GitLab) *corev1.Service {
+// RedisHeadlessServiceDEPRECATED returns the headless service for Postgres statefulset
+func RedisHeadlessServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
 	return &corev1.Service{
@@ -35,8 +35,8 @@ func RedisHeadlessService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// RedisService returns service to expose Redis
-func RedisService(cr *gitlabv1beta1.GitLab) *corev1.Service {
+// RedisServiceDEPRECATED returns service to expose Redis
+func RedisServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
 	return &corev1.Service{

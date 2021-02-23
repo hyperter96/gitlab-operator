@@ -288,10 +288,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	webservice := gitlabctl.WebserviceConfigMaps(adapter)
 	migration := gitlabctl.MigrationsConfigMap(adapter)
 	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
-
-	redis := gitlabctl.RedisConfigMap(cr)
-
-	redisScripts := gitlabctl.RedisSciptsConfigMap(cr)
+	redis := gitlabctl.RedisConfigMaps(adapter)
 
 	workhorse := gitlabctl.WorkhorseConfigMap(cr)
 
@@ -303,8 +300,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 
 	configmaps = append(configmaps,
 		gitaly,
-		redis,
-		redisScripts,
 		workhorse,
 		initdb,
 		gitlab,
@@ -316,6 +311,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	configmaps = append(configmaps, exporter...)
 	configmaps = append(configmaps, webservice...)
 	configmaps = append(configmaps, sidekiq...)
+	configmaps = append(configmaps, redis...)
 
 	for _, cm := range configmaps {
 		if err := r.createKubernetesResource(cm, cr); err != nil {
@@ -442,10 +438,9 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, cr *gitlab
 	adapter := gitlabctl.NewCustomResourceAdapter(cr)
 
 	gitaly := gitlabctl.GitalyStatefulSet(adapter)
+	redis := gitlabctl.RedisStatefulSet(adapter)
 
 	postgres := gitlabctl.PostgresStatefulSet(cr)
-
-	redis := gitlabctl.RedisStatefulSet(cr)
 
 	statefulsets = append(statefulsets, postgres, redis, gitaly)
 
@@ -588,28 +583,24 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	gitaly := gitlabctl.GitalyService(adapter)
 	exporter := gitlabctl.ExporterService(adapter)
 	webservice := gitlabctl.WebserviceService(adapter)
+	redis := gitlabctl.RedisServices(adapter)
 
 	postgres := gitlabctl.PostgresqlService(cr)
 
 	postgresHeadless := gitlabctl.PostgresHeadlessService(cr)
-
-	redis := gitlabctl.RedisService(cr)
-
-	redisHeadless := gitlabctl.RedisHeadlessService(cr)
 
 	registry := gitlabctl.RegistryService(cr)
 
 	services = append(services,
 		postgres,
 		postgresHeadless,
-		redis,
-		redisHeadless,
 		gitaly,
 		registry,
 		webservice,
 		shell,
 		exporter,
 	)
+	services = append(services, redis...)
 
 	for _, svc := range services {
 		if err := r.createKubernetesResource(svc, cr); err != nil {

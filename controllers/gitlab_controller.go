@@ -104,7 +104,12 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
+
 	if err := r.runSharedSecretsJob(adapter); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.runSelfSignedCertsJob(adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -190,33 +195,45 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *GitLabReconciler) runSharedSecretsJob(adapter gitlabctl.CustomResourceAdapter) error {
-
-	logger := r.Log.WithValues("gitlab", adapter.Reference())
-
-	logger.Info("Preparing resources shared secrets Job.")
-
 	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter)
 	if err != nil {
 		return err
 	}
 
-	lookupKey := types.NamespacedName{
-		Name:      job.Name,
-		Namespace: job.Namespace,
-	}
-	logger = r.Log.WithValues("gitlab", adapter.Reference(), "job", lookupKey)
+	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
 
-	logger.V(1).Info("Creating shared secrets ConfigMap", "name", cfgMap.Name)
+	logger.V(1).Info("Ensuring Job's ConfigMap exists", "configmap", cfgMap.Name)
 	if err := r.createKubernetesResource(cfgMap, adapter.Resource()); err != nil {
 		return err
 	}
 
-	logger.V(1).Info("Creating shared secrets Job", "name", job.Name)
+	return r.runJobAndWait(adapter, job)
+}
+
+func (r *GitLabReconciler) runSelfSignedCertsJob(adapter gitlabctl.CustomResourceAdapter) error {
+	job, err := gitlabctl.SelfSignedCertsJob(adapter)
+	if err != nil {
+		return err
+	}
+
+	return r.runJobAndWait(adapter, job)
+}
+
+func (r *GitLabReconciler) runJobAndWait(adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job) error {
+
+	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
+
+	lookupKey := types.NamespacedName{
+		Name:      job.Name,
+		Namespace: job.Namespace,
+	}
+
+	logger.V(1).Info("Creating Job")
 	if err := r.createKubernetesResource(job, adapter.Resource()); err != nil {
 		return err
 	}
 
-	logger.Info("Waiting for shared secrets Job to finish")
+	logger.Info("Waiting for Job to finish")
 
 	elapsed := time.Duration(0)
 	timeout := gitlabctl.SharedSecretsJobTimeout()
@@ -226,16 +243,16 @@ func (r *GitLabReconciler) runSharedSecretsJob(adapter gitlabctl.CustomResourceA
 
 	for {
 		if elapsed > timeout {
-			result = errors.NewTimeoutError("The shared secrets Job did not finish in time", int(timeout))
-			logger.Error(result, "Timeout for shared secrets Job exceeded.",
+			result = errors.NewTimeoutError("The Job did not finish in time", int(timeout))
+			logger.Error(result, "Timeout for Job exceeded.",
 				"timeout", timeout)
 			break
 		}
 
-		logger.V(1).Info("Checking the status of shared secrets Job")
+		logger.V(1).Info("Checking the status of Job")
 		lookupVal := &batchv1.Job{}
 		if err := r.Get(context.Background(), lookupKey, lookupVal); err != nil {
-			logger.V(1).Info("Failed to check the status of shared secrets Job. Skipping.", "error", err)
+			logger.V(1).Info("Failed to check the status of Job. Skipping.", "error", err)
 
 			/*
 			 * This will make sure we won't stuck here forever,
@@ -253,14 +270,14 @@ func (r *GitLabReconciler) runSharedSecretsJob(adapter gitlabctl.CustomResourceA
 		}
 
 		if lookupVal.Status.Succeeded > 0 {
-			logger.Info("Success! The shared secrets Job is complete.")
+			logger.Info("Success! The Job is complete.")
 			break
 		}
 
 		if lookupVal.Status.Failed > 0 {
 			result = errors.NewInternalError(
-				fmt.Errorf("The shared secret Job has failed. Check the log output of the Job: %s", lookupKey))
-			logger.Error(result, "Failure! The shared secrets Job is complete.")
+				fmt.Errorf("The %s Job has failed. Check the log output of the Job: %s", job.Name, lookupKey))
+			logger.Error(result, "Failure! The Job is complete.")
 			break
 		}
 

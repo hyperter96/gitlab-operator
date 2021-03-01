@@ -159,6 +159,10 @@ func appLabels(releaseName, appName string) string {
 	return fmt.Sprintf("release=%s,app=%s", releaseName, appName)
 }
 
+func componentLabels(releaseName, componentName string) string {
+	return fmt.Sprintf("release=%s,app.kubernetes.io/component=%s", releaseName, componentName)
+}
+
 func createGitLabResource(releaseName string) {
 	By("Creating a new GitLab resource")
 	Expect(createObject(newGitLab(releaseName), true)).Should(Succeed())

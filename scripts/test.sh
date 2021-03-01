@@ -92,7 +92,7 @@ install_gitlab_custom_resource() {
 verify_gitlab_is_running() {
   echo 'Verifying that GitLab is running'
 
-  statefulsets=(gitlab-gitaly gitlab-redis gitlab-minio gitlab-postgresql)
+  statefulsets=(gitlab-gitaly gitlab-redis-master gitlab-minio gitlab-postgresql)
   wait_until_exists "statefulset/${statefulsets[0]}"
   for statefulset in "${statefulsets[@]}"; do
     kubectl -n "$NAMESPACE" rollout status -w --timeout 120s "statefulset/$statefulset"

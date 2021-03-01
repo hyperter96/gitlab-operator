@@ -33,6 +33,9 @@ const (
 	// SharedSecretsComponentName is the common name of Shared Secrets.
 	SharedSecretsComponentName = "shared-secrets"
 
+	// SelfSignedCertsComponentName is the common name of Self Signed Certs.
+	SelfSignedCertsComponentName = "shared-secrets-selfsign"
+
 	// GitalyComponentName is the common name of Gitaly.
 	GitalyComponentName = "gitaly"
 
@@ -254,6 +257,33 @@ func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 	})
 
 	return patchSharedSecretsJobs(adapter, jobs), nil
+}
+
+// SelfSignedCertsJob returns the Job for Self Signed Certificates component.
+func SelfSignedCertsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
+	template, err := GetTemplate(adapter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := template.Query().JobsByLabels(map[string]string{
+		"app": SharedSecretsComponentName,
+	})
+
+	return patchSelfSignedCertsJob(adapter, jobs), nil
+}
+
+func patchSelfSignedCertsJob(adapter CustomResourceAdapter, jobs []*batchv1.Job) *batchv1.Job {
+	for _, j := range jobs {
+		if strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
+			updateCommonLabels(adapter.ReleaseName(), SelfSignedCertsComponentName, &j.ObjectMeta.Labels)
+			updateCommonLabels(adapter.ReleaseName(), SelfSignedCertsComponentName, &j.Spec.Template.Labels)
+			return j
+		}
+	}
+
+	return nil
 }
 
 // TaskRunnerDeployment returns the Deployment of the Task Runner component.

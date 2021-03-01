@@ -8,12 +8,13 @@
 
 GITLAB_HELM_REPO="https://charts.gitlab.io/"
 GITLAB_CHART="gitlab/gitlab"
+HELM=helm
 HELM_VERSION="v3.4.1"
 
 
 chart_versions() {
     # Find all the applicable charts and return a list of "app vers:chart vers" entries
-    ./helm search repo ${GITLAB_CHART} -l 2>/dev/null | \
+    $HELM search repo ${GITLAB_CHART} -l 2>/dev/null | \
         awk -v CHART="${GITLAB_CHART}" '{if ( match($1, "^" CHART "$") ){ print $3 ":" $2}}'
 }
 
@@ -37,14 +38,13 @@ install_helm() {
     esac
     HELM_RELEASE_URL="https://get.helm.sh/helm-${HELM_VERSION}-${platform}.tar.gz"
     wget -O - "${HELM_RELEASE_URL}" | tar xzf - ${platform}/helm
-    mv ${platform}/helm .
-    rm -rf ${platform}
+    HELM=$(find "$PWD"/ -name helm -type f)
 }
 
 add_gitlab_repo() {
     echo "Adding ${GITLAB_HELM_REPO} to list of helm repos"
-    ./helm repo list | grep -q '^gitlab' || ./helm repo add gitlab ${GITLAB_HELM_REPO}
-    ./helm repo update
+    $HELM repo list | grep -q '^gitlab' || ./helm repo add gitlab ${GITLAB_HELM_REPO}
+    $HELM repo update
 }
 
 previous_minor() {
@@ -59,7 +59,9 @@ previous_minor() {
 
 
 # Setup helm so that the GitLab charts can be fetched
-install_helm
+if ! helm version --short 2>&1 > /dev/null; then
+  install_helm
+fi
 add_gitlab_repo
 
 # Retrieve a list of GitLab charts and determine versions to fetch
@@ -94,8 +96,10 @@ done
 rm -rf charts && mkdir charts && cd charts
 for version in $(echo "${target_versions}" | tr ':' ' '); do
     echo "Fetching ${GITLAB_CHART}-${version}"
-    ../helm fetch "${GITLAB_CHART}" --version "${version}" 2>/dev/null
+    $HELM fetch "${GITLAB_CHART}" --version "${version}" 2>/dev/null
 done
 
 # Clean up helm binary. Not needed any longer
-rm ../helm
+if [ $HELM != "helm" ]; then
+  rm $HELM
+fi

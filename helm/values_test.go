@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helm"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 )
 
 var _ = Describe("Values", func() {

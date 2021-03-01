@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helm"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

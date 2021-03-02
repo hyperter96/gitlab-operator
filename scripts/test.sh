@@ -99,13 +99,9 @@ verify_gitlab_is_running() {
     echo "statefulset/$statefulset ok"
   done
 
-  deployments=(gitlab-registry gitlab-sidekiq gitlab-task-runner gitlab-webservice gitlab-ingress-controller)
-  # gitlab-gitlab-exporter and gitlab-gitlab-shell skipped for now, need shared secrets for certs
+  deployments=(gitlab-exporter gitlab-gitlab-shell gitlab-registry gitlab-sidekiq-all-in-1-v1 gitlab-task-runner gitlab-webservice-default gitlab-ingress-controller)
   wait_until_exists "deployment/${deployments[0]}"
-  for deployment in "${deployments[@]}"; do
-    kubectl -n "$NAMESPACE" wait --timeout 120s --for=condition=Available "deployment/$deployment"
-    echo "deployment/$deployment ok"
-  done
+  kubectl -n "$NAMESPACE" wait --timeout=600s --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
 
   echo 'Testing GitLab endpoint'
   kubectl -n $NAMESPACE exec deployment/gitlab-task-runner -- \

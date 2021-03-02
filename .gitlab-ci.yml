@@ -121,7 +121,7 @@ build_sha_image:
 functional_tests:
   stage: functional_test
   variables:
-    NAMESPACE: "${CI_COMMIT_REF_SLUG}"
+    NAMESPACE: "${CI_COMMIT_SHORT_SHA}"
     TAG: "${CI_COMMIT_SHORT_SHA}"
     CHART_VERSION: '4.9.1'
   script:

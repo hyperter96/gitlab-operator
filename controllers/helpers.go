@@ -49,7 +49,7 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, cr *gitlabv1beta1.GitLab) bool {
 	return r.isEndpointReady(ctx, cr.Name+"-postgresql", cr) &&
 		r.isEndpointReady(ctx, cr.Name+"-gitaly", cr) &&
-		r.isEndpointReady(ctx, cr.Name+"-redis", cr)
+		r.isEndpointReady(ctx, cr.Name+"-redis-master", cr)
 }
 
 func getLabelSet(cr *gitlabv1beta1.GitLab) labels.Set {

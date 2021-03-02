@@ -4,6 +4,7 @@ import (
 	"context"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -30,11 +31,11 @@ func (r *GLBackupReconciler) isObjectFound(object interface{}) bool {
 	return gitlabutils.IsObjectFound(r.Client, getNamespacedName(object), object.(runtime.Object))
 }
 
-func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, cr *gitlabv1beta1.GitLab) bool {
+func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlabctl.CustomResourceAdapter) bool {
 	var addresses []corev1.EndpointAddress
 
 	ep := &corev1.Endpoints{}
-	err := r.Get(ctx, types.NamespacedName{Name: service, Namespace: cr.Namespace}, ep)
+	err := r.Get(ctx, types.NamespacedName{Name: service, Namespace: adapter.Namespace()}, ep)
 	if err != nil && errors.IsNotFound(err) {
 		return false
 	}
@@ -46,10 +47,10 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 	return len(addresses) > 0
 }
 
-func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, cr *gitlabv1beta1.GitLab) bool {
-	return r.isEndpointReady(ctx, cr.Name+"-postgresql", cr) &&
-		r.isEndpointReady(ctx, cr.Name+"-gitaly", cr) &&
-		r.isEndpointReady(ctx, cr.Name+"-redis-master", cr)
+func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+	return r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) &&
+		r.isEndpointReady(ctx, adapter.ReleaseName()+"-gitaly", adapter) &&
+		r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis", adapter)
 }
 
 func getLabelSet(cr *gitlabv1beta1.GitLab) labels.Set {

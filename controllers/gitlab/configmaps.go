@@ -136,8 +136,8 @@ func WebserviceConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return webservice
 }
 
-// WorkhorseConfigMap returns the configmap object for GitLab workhorse
-func WorkhorseConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// WorkhorseConfigMapDEPRECATED returns the configmap object for GitLab workhorse
+func WorkhorseConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "workhorse", gitlabutils.GitlabType)
 	var config bytes.Buffer
 
@@ -238,17 +238,17 @@ func ExporterConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 }
 
 // RegistryConfigMap returns configmap object for container Registry
-func RegistryConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
-	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
+func RegistryConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "registry", gitlabutils.GitlabType)
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(adapter.Resource())
 	configure := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/registry/configure.sh")
 
 	var configYML bytes.Buffer
 	registryTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/registry/config.yml"))
 	registryTemplate.Execute(&configYML, options)
 
-	registry := gitlabutils.GenericConfigMap(cr.Name+"-registry-config", cr.Namespace, labels)
+	registry := gitlabutils.GenericConfigMap(adapter.ReleaseName()+"-registry-config", adapter.Namespace(), labels)
 	registry.Data = map[string]string{
 		"configure":  configure,
 		"config.yml": configYML.String(),

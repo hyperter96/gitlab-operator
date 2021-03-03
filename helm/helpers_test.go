@@ -1,10 +1,9 @@
-package helm_test
+package helm
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -15,7 +14,7 @@ var _ = Describe("Template", func() {
 		template, err := loadTemplate()
 		Expect(err).To(BeNil())
 
-		selectedObjects, err := template.GetObjects(helm.TrueSelector)
+		selectedObjects, err := template.GetObjects(TrueSelector)
 		Expect(err).To(BeNil())
 		Expect(selectedObjects).To(Equal(template.Objects()))
 	})
@@ -27,7 +26,7 @@ var _ = Describe("Template", func() {
 		selector := func(configMap *corev1.ConfigMap) bool {
 			return configMap.ObjectMeta.Labels["app.kubernetes.io/managed-by"] == "Helm"
 		}
-		selectedObjects, err := template.GetObjects(helm.NewConfigMapSelector(selector))
+		selectedObjects, err := template.GetObjects(NewConfigMapSelector(selector))
 		Expect(err).To(BeNil())
 
 		Expect(selectedObjects).To(HaveLen(1))
@@ -37,7 +36,7 @@ var _ = Describe("Template", func() {
 		template, err := loadTemplate()
 		Expect(err).To(BeNil())
 
-		deletedCount, err := template.DeleteObjects(helm.FalseSelector)
+		deletedCount, err := template.DeleteObjects(FalseSelector)
 		Expect(err).To(BeNil())
 		Expect(deletedCount).To(BeZero())
 	})
@@ -49,11 +48,11 @@ var _ = Describe("Template", func() {
 		initialLength := len(template.Objects())
 		Expect(initialLength).NotTo(BeZero())
 
-		ingresses, err := template.GetObjects(helm.IngressSelector)
+		ingresses, err := template.GetObjects(IngressSelector)
 		Expect(err).To(BeNil())
 		Expect(ingresses).ToNot(BeEmpty())
 
-		deletedCount, err := template.DeleteObjects(helm.IngressSelector)
+		deletedCount, err := template.DeleteObjects(IngressSelector)
 		Expect(err).To(BeNil())
 		Expect(deletedCount).ToNot(BeZero())
 
@@ -67,11 +66,11 @@ var _ = Describe("Template", func() {
 		initialLength := len(template.Objects())
 		Expect(initialLength).NotTo(BeZero())
 
-		deployments, err := template.GetObjects(helm.DeploymentSelector)
+		deployments, err := template.GetObjects(DeploymentSelector)
 		Expect(err).To(BeNil())
 		Expect(deployments).ToNot(BeEmpty())
 
-		editedCount, err := template.EditObjects(helm.NewDeploymentEditor(
+		editedCount, err := template.EditObjects(NewDeploymentEditor(
 			func(d *appsv1.Deployment) error {
 				d.Spec.Paused = true
 				if d.ObjectMeta.Annotations == nil {

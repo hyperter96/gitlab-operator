@@ -1,17 +1,15 @@
-package helm_test
+package helm
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 )
 
 var _ = Describe("Values", func() {
 
 	When("initialized", func() {
 
-		subject := helm.EmptyValues()
+		subject := EmptyValues()
 
 		It("must be empty", func() {
 			Expect(subject.AsMap()).To(BeEmpty())
@@ -22,7 +20,7 @@ var _ = Describe("Values", func() {
 	When("values added as key-value assignments", func() {
 
 		It("must store nested values", func() {
-			subject := helm.EmptyValues()
+			subject := EmptyValues()
 
 			Expect(subject.AddValue("foo.bar", "FOOBAR")).To(BeNil())
 
@@ -32,7 +30,7 @@ var _ = Describe("Values", func() {
 		})
 
 		It("must store indexed values", func() {
-			subject := helm.EmptyValues()
+			subject := EmptyValues()
 
 			Expect(subject.AddValue("foo", "{FOO-0}")).To(BeNil())
 
@@ -42,7 +40,7 @@ var _ = Describe("Values", func() {
 		})
 
 		It("must merge and override values", func() {
-			subject := helm.EmptyValues()
+			subject := EmptyValues()
 
 			Expect(subject.AddValue("foo.bar", "FOOBAR")).To(BeNil())
 			Expect(subject.AddValue("foo.baz", "FOOBAZ")).To(BeNil())
@@ -63,7 +61,7 @@ var _ = Describe("Values", func() {
 	When("values added from file", func() {
 
 		It("must load file content", func() {
-			subject := helm.EmptyValues()
+			subject := EmptyValues()
 
 			Expect(subject.AddFromFile("testdata/values.yaml")).To(BeNil())
 
@@ -80,7 +78,7 @@ var _ = Describe("Values", func() {
 		})
 
 		It("must merge and override values added later", func() {
-			subject := helm.EmptyValues()
+			subject := EmptyValues()
 
 			Expect(subject.AddFromFile("testdata/values.yaml")).To(BeNil())
 			Expect(subject.AddValue("foo.baz", "FOOBAZ")).To(BeNil())

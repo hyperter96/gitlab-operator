@@ -17,7 +17,7 @@ var _ = Describe("Query", func() {
 	It("must cache the query", func() {
 		Expect(err).To(BeNil())
 
-		cache := CacheBackdoor(template.Query())
+		cache := cacheBackdoor(template.Query())
 		saveCacheSize := len(*cache)
 
 		deployments := template.Query().DeploymentsByLabels(labels)

@@ -38,12 +38,12 @@ install_helm() {
     esac
     HELM_RELEASE_URL="https://get.helm.sh/helm-${HELM_VERSION}-${platform}.tar.gz"
     wget -O - "${HELM_RELEASE_URL}" | tar xzf - ${platform}/helm
-    HELM=$(find "$PWD"/ -name helm -type f)
+    HELM=$(find "$PWD"/ -name helm -type f -executable )
 }
 
 add_gitlab_repo() {
     echo "Adding ${GITLAB_HELM_REPO} to list of helm repos"
-    $HELM repo list | grep -q '^gitlab' || ./helm repo add gitlab ${GITLAB_HELM_REPO}
+    $HELM repo list | grep -q '^gitlab' || $HELM repo add gitlab ${GITLAB_HELM_REPO}
     $HELM repo update
 }
 

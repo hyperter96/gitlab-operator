@@ -1,4 +1,4 @@
-package helm_test
+package helm
 
 import (
 	"os"
@@ -6,10 +6,9 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helm"
 )
 
-func loadTemplate() (helm.Template, error) {
+func loadTemplate() (Template, error) {
 	chartPath := os.Getenv("HELM_CHART")
 	if chartPath == "" {
 		chartPath = "testdata/chart/test"
@@ -20,10 +19,10 @@ func loadTemplate() (helm.Template, error) {
 		valuesPath = "testdata/chart/values.yaml"
 	}
 
-	values := helm.EmptyValues()
+	values := EmptyValues()
 	values.AddFromFile(valuesPath)
 
-	template, err := helm.NewBuilder(chartPath).Render(values)
+	template, err := NewBuilder(chartPath).Render(values)
 
 	return template, err
 }

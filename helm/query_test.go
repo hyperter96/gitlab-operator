@@ -1,9 +1,8 @@
-package helm_test
+package helm
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helm"
 )
 
 var _ = Describe("Query", func() {
@@ -18,7 +17,7 @@ var _ = Describe("Query", func() {
 	It("must cache the query", func() {
 		Expect(err).To(BeNil())
 
-		cache := helm.CacheBackdoor(template.Query())
+		cache := cacheBackdoor(template.Query())
 		saveCacheSize := len(*cache)
 
 		deployments := template.Query().DeploymentsByLabels(labels)

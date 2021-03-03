@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helm"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 )
 
 // CustomResourceAdapter is a wrapper for GitLab Custom Resource. It provides a convenient interface

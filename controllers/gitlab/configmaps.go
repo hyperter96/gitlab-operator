@@ -313,8 +313,8 @@ func MigrationsConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return migrations
 }
 
-// PostgresInitDBConfigMap returns configmap object containing Postgresql init scripts
-func PostgresInitDBConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// PostgresInitDBConfigMapDEPRECATED returns configmap object containing Postgresql init scripts
+func PostgresInitDBConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "postgres", gitlabutils.GitlabType)
 
 	script := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/postgresql/postgresql-pgtrm.sh")

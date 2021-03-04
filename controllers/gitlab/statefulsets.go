@@ -11,8 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// PostgresStatefulSet returns the Postgresql statefulset object
-func PostgresStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
+// PostgresStatefulSetDEPRECATED returns the Postgresql statefulset object
+func PostgresStatefulSetDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 	labels := gitlabutils.Label(cr.Name, "postgresql", gitlabutils.GitlabType)
 
 	var (

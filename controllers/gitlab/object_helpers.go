@@ -44,6 +44,9 @@ const (
 
 	// RedisComponentName is the common name of Redis.
 	RedisComponentName = "redis"
+
+	// PostgresComponentName is the common name of PostgreSQL.
+	PostgresComponentName = "postgresql"
 )
 
 var (
@@ -564,6 +567,73 @@ func patchRedisStatefulSet(statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet 
 	return updateCommonStatefulSets(RedisComponentName, statefulSet)
 }
 
+// PostgresServices returns the Services of the Postgres component.
+func PostgresServices(adapter CustomResourceAdapter) []*corev1.Service {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil
+		/* WARNING: This should return an error instead. */
+	}
+
+	results := template.Query().ServicesByLabels(map[string]string{
+		"app": PostgresComponentName,
+	})
+
+	return patchPostgresServices(adapter, results)
+}
+
+func patchPostgresServices(adapter CustomResourceAdapter, services []*corev1.Service) []*corev1.Service {
+	for _, s := range services {
+		updateCommonLabels(adapter.ReleaseName(), PostgresComponentName, &s.ObjectMeta.Labels)
+		updateCommonLabels(adapter.ReleaseName(), PostgresComponentName, &s.Spec.Selector)
+
+		// Temporary fix: patch in the namespace because the version of the PostgreSQL chart
+		// we use does not specify `namespace` in the template.
+		s.ObjectMeta.Namespace = adapter.Namespace()
+	}
+
+	return services
+}
+
+// PostgresStatefulSet returns the StatefulSet of the PostgreSQL component.
+func PostgresStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil
+		/* WARNING: This should return an error instead. */
+	}
+
+	result := template.Query().StatefulSetByComponent(PostgresComponentName)
+
+	return patchPostgresStatefulSet(adapter, result)
+}
+
+func patchPostgresStatefulSet(adapter CustomResourceAdapter, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
+	// Temporary fix: patch in the namespace because the version of the PostgreSQL chart
+	// we use does not specify `namespace` in the template.
+	statefulSet.ObjectMeta.Namespace = adapter.Namespace()
+	return updateCommonStatefulSets(PostgresComponentName, statefulSet)
+}
+
+// PostgresConfigMap returns the ConfigMap of the PostgreSQL component.
+func PostgresConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	initDBConfigMap := template.Query().ConfigMapByName(
+		fmt.Sprintf("%s-postgresql-init-db", adapter.ReleaseName()))
+
+	return patchPostgresConfigMap(adapter, initDBConfigMap)
+}
+
+func patchPostgresConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+	updateCommonLabels(adapter.ReleaseName(), PostgresComponentName, &configMap.ObjectMeta.Labels)
+
+	return configMap
+}
+
 func updateCommonDeployments(componentName string, deployment *appsv1.Deployment) {
 	updateCommonLabels(deployment.ObjectMeta.Labels["release"], componentName, &deployment.ObjectMeta.Labels)
 	updateCommonLabels(deployment.ObjectMeta.Labels["release"], componentName, &deployment.Spec.Selector.MatchLabels)
@@ -589,7 +659,10 @@ func updateCommonStatefulSets(componentName string, statefulSet *appsv1.Stateful
 	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.ObjectMeta.Labels)
 	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.Spec.Selector.MatchLabels)
 	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.Spec.Template.ObjectMeta.Labels)
-	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.Spec.VolumeClaimTemplates[0].Labels)
+
+	if statefulSet.Spec.VolumeClaimTemplates[0].Labels != nil {
+		updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], componentName, &statefulSet.Spec.VolumeClaimTemplates[0].Labels)
+	}
 
 	if statefulSet.Spec.Template.Spec.SecurityContext == nil {
 		statefulSet.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{}

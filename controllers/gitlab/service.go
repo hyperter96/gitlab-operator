@@ -64,8 +64,8 @@ func RedisServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// PostgresHeadlessService returns headless service for Postgresql statefulset
-func PostgresHeadlessService(cr *gitlabv1beta1.GitLab) *corev1.Service {
+// PostgresHeadlessServiceDEPRECATED returns headless service for Postgresql statefulset
+func PostgresHeadlessServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "postgresql", gitlabutils.GitlabType)
 
 	return &corev1.Service{
@@ -89,8 +89,8 @@ func PostgresHeadlessService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// PostgresqlService returns Postgres service
-func PostgresqlService(cr *gitlabv1beta1.GitLab) *corev1.Service {
+// PostgresqlServiceDEPRECATED returns Postgres service
+func PostgresqlServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "postgresql", gitlabutils.GitlabType)
 
 	return &corev1.Service{

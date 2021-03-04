@@ -306,6 +306,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	migration := gitlabctl.MigrationsConfigMap(adapter)
 	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
 	redis := gitlabctl.RedisConfigMaps(adapter)
+	postgres := gitlabctl.PostgresConfigMap(adapter)
 
 	workhorse := gitlabctl.WorkhorseConfigMap(cr)
 
@@ -313,16 +314,14 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 
 	registry := gitlabctl.RegistryConfigMap(cr)
 
-	initdb := gitlabctl.PostgresInitDBConfigMap(cr)
-
 	configmaps = append(configmaps,
 		gitaly,
 		workhorse,
-		initdb,
 		gitlab,
 		registry,
 		taskRunner,
 		migration,
+		postgres,
 	)
 	configmaps = append(configmaps, shell...)
 	configmaps = append(configmaps, exporter...)
@@ -456,8 +455,7 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, cr *gitlab
 
 	gitaly := gitlabctl.GitalyStatefulSet(adapter)
 	redis := gitlabctl.RedisStatefulSet(adapter)
-
-	postgres := gitlabctl.PostgresStatefulSet(cr)
+	postgres := gitlabctl.PostgresStatefulSet(adapter)
 
 	statefulsets = append(statefulsets, postgres, redis, gitaly)
 
@@ -601,16 +599,11 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	exporter := gitlabctl.ExporterService(adapter)
 	webservice := gitlabctl.WebserviceService(adapter)
 	redis := gitlabctl.RedisServices(adapter)
-
-	postgres := gitlabctl.PostgresqlService(cr)
-
-	postgresHeadless := gitlabctl.PostgresHeadlessService(cr)
+	postgres := gitlabctl.PostgresServices(adapter)
 
 	registry := gitlabctl.RegistryService(cr)
 
 	services = append(services,
-		postgres,
-		postgresHeadless,
 		gitaly,
 		registry,
 		webservice,
@@ -618,6 +611,7 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 		exporter,
 	)
 	services = append(services, redis...)
+	services = append(services, postgres...)
 
 	for _, svc := range services {
 		if err := r.createKubernetesResource(svc, cr); err != nil {

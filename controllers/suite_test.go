@@ -21,13 +21,9 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-
-	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 )
 
 var (
-	ChartVersion = gitlabctl.AvailableChartVersions()[0]
-
 	cfg       *rest.Config
 	k8sClient client.Client
 	testEnv   *envtest.Environment

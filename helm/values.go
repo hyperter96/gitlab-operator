@@ -3,6 +3,7 @@ package helm
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/strvals"
@@ -26,6 +27,16 @@ type Values interface {
 
 	// AddFromFile reads the specified file in YAML format and merges its content.
 	AddFromFile(filePath string) error
+
+	// GetValue returns the value of the specified key or an error when the key not present. The key
+	// is limited to dot-separated field names and array indexing is not supported. It is the
+	// responsibility of the caller to determine the type of the value.
+	GetValue(key string) (interface{}, error)
+
+	// SetValue sets the value of the specified key . Retruns error when the key is not writable. The
+	// key is limited to dot-separated field names and array indexing is not supported. It is the
+	// responsibility of the caller to pass the choose the right value type.
+	SetValue(key string, value interface{}) error
 }
 
 // EmptyValues returns an empty value store.
@@ -82,6 +93,67 @@ func (v *plainValues) AddFromFile(filePath string) error {
 
 	v.container = mergeMaps(v.container, newValues)
 
+	return nil
+}
+
+func (v *plainValues) GetValue(key string) (interface{}, error) {
+	cursor := v.container
+	elements := []string{}
+	if key != "" {
+		elements = strings.Split(key, ".")
+	}
+
+	var target interface{} = cursor
+	for idx, elm := range elements {
+		target = cursor[elm]
+
+		if target == nil {
+			if idx < len(elements)-1 {
+				return nil, errors.Errorf("Missing element at %s for %s key", elm, key)
+			}
+		}
+
+		if targetAsMap, ok := target.(map[string]interface{}); ok {
+			cursor = targetAsMap
+		} else {
+			if idx < len(elements)-1 {
+				return nil, errors.Errorf("Leaf element at %s for %s key", elm, key)
+			}
+		}
+	}
+
+	return target, nil
+}
+
+func (v *plainValues) SetValue(key string, value interface{}) error {
+	if key == "" {
+		return errors.Errorf("Can not set the root element")
+	}
+
+	cursor := v.container
+	elements := strings.Split(key, ".")
+
+	var target interface{} = cursor
+	for idx, elm := range elements {
+		target = cursor[elm]
+
+		if target == nil {
+			if idx < len(elements)-1 {
+				target = map[string]interface{}{}
+				cursor[elm] = target
+			}
+		}
+
+		if targetAsMap, ok := target.(map[string]interface{}); ok {
+			cursor = targetAsMap
+		} else {
+			if idx < len(elements)-1 {
+				return errors.Errorf("Leaf element at %s for %s key", elm, key)
+			}
+		}
+	}
+
+	cursor[elements[len(elements)-1]] = value
 	return nil
 }
 

@@ -88,4 +88,82 @@ var _ = Describe("Values", func() {
 			Expect(foo["baz"]).To(Equal("FOOBAZ"))
 		})
 	})
+
+	Context("getter", func() {
+
+		subject := EmptyValues()
+
+		Expect(subject.AddValue("foo.bar", "FOOBAR")).To(BeNil())
+
+		It("must return the root node when key is empty", func() {
+			value, err := subject.GetValue("")
+			Expect(err).To(Succeed())
+			Expect(value).To(Equal(map[string]interface{}{
+				"foo": map[string]interface{}{
+					"bar": "FOOBAR",
+				},
+			}))
+		})
+
+		It("must read leaf node values and return nil when missing", func() {
+			value, err := subject.GetValue("foo.bar")
+			Expect(err).To(Succeed())
+			Expect(value).To(Equal("FOOBAR"))
+
+			value, err = subject.GetValue("foo.baz")
+			Expect(err).To(Succeed())
+			Expect(value).To(BeNil())
+		})
+
+		It("must return error when key element is missing or is a leaf node", func() {
+			value, err := subject.GetValue("foo.baz.bar")
+			Expect(err).To(HaveOccurred())
+			Expect(value).To(BeNil())
+
+			value, err = subject.GetValue("foo.bar.baz")
+			Expect(err).To(HaveOccurred())
+			Expect(value).To(BeNil())
+		})
+	})
+
+	Context("setter", func() {
+
+		It("must fail when key is empty", func() {
+			Expect(EmptyValues().SetValue("", "Oops!")).To(HaveOccurred())
+		})
+
+		It("must create the full path even when it is missing", func() {
+			subject := EmptyValues()
+
+			Expect(subject.SetValue("baz", "BAZ")).To(Succeed())
+			Expect(subject.SetValue("foo.bar", map[string]interface{}{
+				"box": "BOX",
+				"baz": []int{1, 2, 3},
+			})).To(Succeed())
+
+			Expect(subject.AsMap()).To(Equal(map[string]interface{}{
+				"baz": "BAZ",
+				"foo": map[string]interface{}{
+					"bar": map[string]interface{}{
+						"box": "BOX",
+						"baz": []int{1, 2, 3},
+					},
+				},
+			}))
+		})
+
+		It("must return error when key element is a leaf node", func() {
+			subject := EmptyValues()
+
+			Expect(subject.SetValue("foo.bar", "FOOBAR")).To(Succeed())
+			Expect(subject.SetValue("foo.bar.baz", "Oops!")).To(HaveOccurred())
+
+			Expect(subject.AsMap()).To(Equal(map[string]interface{}{
+				"foo": map[string]interface{}{
+					"bar": "FOOBAR",
+				},
+			}))
+		})
+
+	})
 })

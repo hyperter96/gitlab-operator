@@ -3,6 +3,7 @@ module gitlab.com/gitlab-org/gl-openshift/gitlab-operator
 go 1.13
 
 require (
+	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/coreos/prometheus-operator v0.41.1
 	github.com/go-logr/logr v0.1.0
 	github.com/google/go-cmp v0.4.0

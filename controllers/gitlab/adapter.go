@@ -89,7 +89,7 @@ func (a *populatingAdapter) ChartVersion() string {
 	// Warning: This is a heuristic and may not work all the time.
 	s := strings.Split(a.resource.Labels["chart"], "-")
 	if len(s) < 2 {
-		return ""
+		return AvailableChartVersions()[0]
 	}
 	return s[len(s)-1]
 }

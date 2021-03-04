@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
-	"strings"
 	"sync"
 
+	"github.com/Masterminds/semver/v3"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -144,25 +145,41 @@ func getChartArchive(chartVersion string) string {
 }
 
 // AvailableChartVersions lists the version of available GitLab Charts.
+// The values are sorted from newest to oldest (semantic versioning).
 func AvailableChartVersions() []string {
-	versions := []string{}
+	versions := []*semver.Version{}
 
 	chartsDir := os.Getenv("HELM_CHARTS")
 	if chartsDir == "" {
 		chartsDir = "/charts"
 	}
 
+	re := regexp.MustCompile(`gitlab\-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\.tgz`)
+
 	filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
-		if filepath.Ext(info.Name()) == ".tgz" {
-			comp := strings.Split(info.Name()[:len(info.Name())-4], "-")
-			if len(comp) == 2 {
-				versions = append(versions, comp[1])
+		submatches := re.FindStringSubmatch(info.Name())
+
+		if len(submatches) > 1 {
+			semver, err := semver.NewVersion(submatches[1])
+			if err != nil {
+				return err
 			}
+
+			versions = append(versions, semver)
 		}
+
 		return nil
 	})
 
-	sort.Sort(sort.Reverse(sort.StringSlice(versions)))
+	// Sort versions from newest to oldest.
+	sort.Sort(sort.Reverse(semver.Collection(versions)))
 
-	return versions
+	// Convert list back to strings for compatibility with rest of codebase.
+	// NOTE: We can consider returning SemVer objects if we want to do comparisons.
+	result := make([]string, len(versions))
+	for i, v := range versions {
+		result[i] = v.String()
+	}
+
+	return result
 }

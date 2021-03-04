@@ -19,14 +19,14 @@ var _ = Describe("CustomResourceAdapter", func() {
 		namespace = "default"
 	}
 
-	chartVersions := gitlab.AvailableChartVersions()
+	chartVersion := gitlab.AvailableChartVersions()[0]
 
 	mockGitLab := &gitlabv1beta1.GitLab{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"chart": fmt.Sprintf("gitlab-%s", chartVersions[0]),
+				"chart": fmt.Sprintf("gitlab-%s", chartVersion),
 			},
 		},
 	}
@@ -38,7 +38,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(adapter.Reference()).To(Equal(fmt.Sprintf("test.%s", namespace)))
 		Expect(adapter.Namespace()).To(Equal(namespace))
 		Expect(adapter.ReleaseName()).To(Equal("test"))
-		Expect(adapter.ChartVersion()).To(Equal(chartVersions[0]))
+		Expect(adapter.ChartVersion()).To(Equal(chartVersion))
 	})
 
 })

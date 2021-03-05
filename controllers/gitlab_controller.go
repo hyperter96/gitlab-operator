@@ -51,6 +51,7 @@ import (
 // GitLabReconciler reconciles a GitLab object
 type GitLabReconciler struct {
 	client.Client
+
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
@@ -95,7 +96,9 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileServiceAccount(ctx, gitlab); err != nil {
+	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
+
+	if err := r.reconcileServiceAccount(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -103,72 +106,66 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
-
-	if err := r.runSharedSecretsJob(adapter); err != nil {
+	if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.runSelfSignedCertsJob(adapter); err != nil {
+	if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileConfigMaps(gitlab); err != nil {
+	if err := r.reconcileConfigMaps(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// if err := r.reconcileSecrets(gitlab); err != nil {
-	// 	return ctrl.Result{}, err
-	// }
-
-	if err := r.reconcileServices(gitlab); err != nil {
+	if err := r.reconcileServices(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileStatefulSets(ctx, gitlab, log); err != nil {
+	if err := r.reconcileStatefulSets(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileMinioInstance(gitlab); err != nil {
+	if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	if gitlabctl.RequiresCertManagerCertificate(gitlab).All() {
-		if err := r.reconcileCertManagerCertificates(gitlab); err != nil {
+		if err := r.reconcileCertManagerCertificates(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	waitInterval := 5 * time.Second
-	if !r.ifCoreServicesReady(ctx, gitlab) {
+	if !r.ifCoreServicesReady(ctx, adapter) {
 		return ctrl.Result{RequeueAfter: waitInterval}, nil
 	}
 
-	if err := r.reconcileJobs(gitlab); err != nil {
+	if err := r.reconcileJobs(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileDeployments(ctx, gitlab); err != nil {
+	if err := r.reconcileDeployments(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.setupAutoscaling(ctx, gitlab); err != nil {
+	if err := r.setupAutoscaling(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	// Deploy route is on Openshift, Ingress otherwise
-	if err := r.exposeGitLabInstance(gitlab); err != nil {
+	if err := r.exposeGitLabInstance(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	if gitlabutils.IsPrometheusSupported() {
 		// Deploy a prometheus service monitor
-		if err := r.reconcileServiceMonitor(gitlab); err != nil {
+		if err := r.reconcileServiceMonitor(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	if err := r.reconcileGitlabStatus(gitlab); err != nil {
+	if err := r.reconcileGitlabStatus(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -194,7 +191,7 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *GitLabReconciler) runSharedSecretsJob(adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter)
 	if err != nil {
 		return err
@@ -203,23 +200,23 @@ func (r *GitLabReconciler) runSharedSecretsJob(adapter gitlabctl.CustomResourceA
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
 
 	logger.V(1).Info("Ensuring Job's ConfigMap exists", "configmap", cfgMap.Name)
-	if err := r.createKubernetesResource(cfgMap, adapter.Resource()); err != nil {
+	if err := r.createKubernetesResource(ctx, cfgMap, adapter); err != nil {
 		return err
 	}
 
-	return r.runJobAndWait(adapter, job)
+	return r.runJobAndWait(ctx, adapter, job)
 }
 
-func (r *GitLabReconciler) runSelfSignedCertsJob(adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	job, err := gitlabctl.SelfSignedCertsJob(adapter)
 	if err != nil {
 		return err
 	}
 
-	return r.runJobAndWait(adapter, job)
+	return r.runJobAndWait(ctx, adapter, job)
 }
 
-func (r *GitLabReconciler) runJobAndWait(adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job) error {
+func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job) error {
 
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
 
@@ -229,7 +226,7 @@ func (r *GitLabReconciler) runJobAndWait(adapter gitlabctl.CustomResourceAdapter
 	}
 
 	logger.V(1).Info("Creating Job")
-	if err := r.createKubernetesResource(job, adapter.Resource()); err != nil {
+	if err := r.createKubernetesResource(ctx, job, adapter); err != nil {
 		return err
 	}
 
@@ -289,14 +286,8 @@ func (r *GitLabReconciler) runJobAndWait(adapter gitlabctl.CustomResourceAdapter
 }
 
 //	Reconciler for all ConfigMaps come below
-func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var configmaps []*corev1.ConfigMap
-
-	/*
-	 * TODO: reconcileShellDeployment must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
 	taskRunner := gitlabctl.TaskRunnerConfigMap(adapter)
@@ -307,16 +298,12 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
 	redis := gitlabctl.RedisConfigMaps(adapter)
 	postgres := gitlabctl.PostgresConfigMap(adapter)
+	registry := gitlabctl.RegistryConfigMap(adapter)
 
-	workhorse := gitlabctl.WorkhorseConfigMap(cr)
-
-	gitlab := gitlabctl.GetGitLabConfigMap(cr)
-
-	registry := gitlabctl.RegistryConfigMap(cr)
+	gitlab := gitlabctl.GetGitLabConfigMap(adapter.Resource())
 
 	configmaps = append(configmaps,
 		gitaly,
-		workhorse,
 		gitlab,
 		registry,
 		taskRunner,
@@ -330,7 +317,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	configmaps = append(configmaps, redis...)
 
 	for _, cm := range configmaps {
-		if err := r.createKubernetesResource(cm, cr); err != nil {
+		if err := r.createKubernetesResource(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
@@ -338,32 +325,32 @@ func (r *GitLabReconciler) reconcileConfigMaps(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileJobs(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
 	// initialize buckets once s3 storage is up
-	buckets := gitlabctl.BucketCreationJob(cr)
-	if err := r.createKubernetesResource(buckets, cr); err != nil {
+	buckets := gitlabctl.BucketCreationJob(adapter.Resource())
+	if err := r.createKubernetesResource(ctx, buckets, adapter); err != nil {
 		return err
 	}
 
 	// migration := gitlabctl.MigrationsJob(cr)
 	// return r.createKubernetesResource(migration, cr)
 
-	return r.runMigrationsJob(cr)
+	return r.runMigrationsJob(ctx, adapter)
 }
 
-func (r *GitLabReconciler) reconcileServiceMonitor(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
-	gitaly := gitlabctl.GitalyServiceMonitor(cr)
+	gitaly := gitlabctl.GitalyServiceMonitor(adapter.Resource())
 
-	gitlab := gitlabctl.ExporterServiceMonitor(cr)
+	gitlab := gitlabctl.ExporterServiceMonitor(adapter.Resource())
 
-	postgres := gitlabctl.PostgresqlServiceMonitor(cr)
+	postgres := gitlabctl.PostgresqlServiceMonitor(adapter.Resource())
 
-	redis := gitlabctl.RedisServiceMonitor(cr)
+	redis := gitlabctl.RedisServiceMonitor(adapter.Resource())
 
-	workhorse := gitlabctl.WebserviceServiceMonitor(cr)
+	workhorse := gitlabctl.WebserviceServiceMonitor(adapter.Resource())
 
 	servicemonitors = append(servicemonitors,
 		gitlab,
@@ -374,27 +361,21 @@ func (r *GitLabReconciler) reconcileServiceMonitor(cr *gitlabv1beta1.GitLab) err
 	)
 
 	for _, sm := range servicemonitors {
-		if err := r.createKubernetesResource(sm, cr); err != nil {
+		if err := r.createKubernetesResource(ctx, sm, adapter); err != nil {
 			return err
 		}
 	}
 
-	service := gitlabctl.ExposePrometheusCluster(cr)
-	if err := r.createKubernetesResource(service, nil); err != nil {
+	service := gitlabctl.ExposePrometheusCluster(adapter.Resource())
+	if err := r.createKubernetesResource(ctx, service, nil); err != nil {
 		return err
 	}
 
-	prometheus := gitlabctl.PrometheusCluster(cr)
-	return r.createKubernetesResource(prometheus, nil)
+	prometheus := gitlabctl.PrometheusCluster(adapter.Resource())
+	return r.createKubernetesResource(ctx, prometheus, nil)
 }
 
-func (r *GitLabReconciler) runMigrationsJob(cr *gitlabv1beta1.GitLab) error {
-	/*
-	 * TODO: runMigrationsJob must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
-
+func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	migrations, err := gitlabctl.MigrationsJob(adapter)
 	if err != nil {
 		return err
@@ -407,51 +388,45 @@ func (r *GitLabReconciler) runMigrationsJob(cr *gitlabv1beta1.GitLab) error {
 
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", lookupKey)
 	logger.V(1).Info("Creating migrations Job", "name", migrations.Name)
-	if err := r.createKubernetesResource(migrations, cr); err != nil {
+	if err := r.createKubernetesResource(ctx, migrations, adapter); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
-	if err := r.reconcileWebserviceDeployment(ctx, cr); err != nil {
+	if err := r.reconcileWebserviceDeployment(ctx, adapter); err != nil {
 		return err
 	}
 
-	if err := r.reconcileShellDeployment(ctx, cr); err != nil {
+	if err := r.reconcileShellDeployment(ctx, adapter); err != nil {
 		return err
 	}
 
-	if err := r.reconcileSidekiqDeployment(ctx, cr); err != nil {
+	if err := r.reconcileSidekiqDeployment(ctx, adapter); err != nil {
 		return err
 	}
 
-	if err := r.reconcileRegistryDeployment(ctx, cr); err != nil {
+	if err := r.reconcileRegistryDeployment(ctx, adapter); err != nil {
 		return err
 	}
 
-	if err := r.reconcileTaskRunnerDeployment(ctx, cr); err != nil {
+	if err := r.reconcileTaskRunnerDeployment(ctx, adapter); err != nil {
 		return err
 	}
 
-	if err := r.reconcileGitlabExporterDeployment(ctx, cr); err != nil {
+	if err := r.reconcileGitlabExporterDeployment(ctx, adapter); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, cr *gitlabv1beta1.GitLab, log logr.Logger) error {
+func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
 	var statefulsets []*appsv1.StatefulSet
-
-	/*
-	 * TODO: reconcileShellDeployment must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
 
 	gitaly := gitlabctl.GitalyStatefulSet(adapter)
 	redis := gitlabctl.RedisStatefulSet(adapter)
@@ -460,7 +435,7 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, cr *gitlab
 	statefulsets = append(statefulsets, postgres, redis, gitaly)
 
 	for _, statefulset := range statefulsets {
-		if err := r.createKubernetesResource(statefulset, cr); err != nil {
+		if err := r.createKubernetesResource(ctx, statefulset, adapter); err != nil {
 			return err
 		}
 	}
@@ -468,22 +443,23 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, cr *gitlab
 	return nil
 }
 
-func (r *GitLabReconciler) createKubernetesResource(object interface{}, parent *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) createKubernetesResource(ctx context.Context, object interface{}, adapter gitlabctl.CustomResourceAdapter) error {
 
 	if r.isObjectFound(object) {
 		return nil
 	}
 
 	// If parent resource is nil, not owner reference will be set
-	if parent != nil {
-		if err := controllerutil.SetControllerReference(parent, object.(metav1.Object), r.Scheme); err != nil {
+	if adapter != nil && adapter.Resource() != nil {
+		if err := controllerutil.SetControllerReference(adapter.Resource(), object.(metav1.Object), r.Scheme); err != nil {
 			return err
 		}
 	}
 
-	return r.Create(context.TODO(), object.(runtime.Object).DeepCopyObject())
+	return r.Create(ctx, object.(runtime.Object).DeepCopyObject())
 }
 
+// TODO: Remove this function
 func (r *GitLabReconciler) maskEmailPasword(cr *gitlabv1beta1.GitLab) error {
 	gitlab := &gitlabv1beta1.GitLab{}
 	r.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, gitlab)
@@ -508,91 +484,34 @@ func (r *GitLabReconciler) maskEmailPasword(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileMinioInstance(cr *gitlabv1beta1.GitLab) error {
-	cm := gitlabctl.MinioScriptConfigMap(cr)
-	if err := r.createKubernetesResource(cm, cr); err != nil {
+func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	cm := gitlabctl.MinioScriptConfigMap(adapter.Resource())
+	if err := r.createKubernetesResource(ctx, cm, adapter); err != nil {
 		return err
 	}
 
-	secret := gitlabctl.MinioSecret(cr)
-	if err := r.createKubernetesResource(secret, cr); err != nil && errors.IsAlreadyExists(err) {
+	secret := gitlabctl.MinioSecret(adapter.Resource())
+	if err := r.createKubernetesResource(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
 	// Only deploy the minio service and statefulset for development builds
-	if cr.Spec.ObjectStore.Development {
-		svc := gitlabctl.MinioService(cr)
-		if err := r.createKubernetesResource(svc, cr); err != nil {
+	if adapter.Resource().Spec.ObjectStore.Development {
+		svc := gitlabctl.MinioService(adapter.Resource())
+		if err := r.createKubernetesResource(ctx, svc, adapter); err != nil {
 			return err
 		}
 
 		// deploy minio
-		minio := gitlabctl.MinioStatefulSet(cr)
-		return r.createKubernetesResource(minio, cr)
+		minio := gitlabctl.MinioStatefulSet(adapter.Resource())
+		return r.createKubernetesResource(ctx, minio, adapter)
 	}
 
 	return nil
 }
 
-// func (r *GitLabReconciler) reconcileSecrets(cr *gitlabv1beta1.GitLab) error {
-// 	var secrets []*corev1.Secret
-
-// 	gitaly := gitlabctl.GitalySecret(cr)
-
-// 	workhorse := gitlabctl.WorkhorseSecret(cr)
-
-// 	registry := gitlabctl.RegistryHTTPSecret(cr)
-
-// 	registryCert := gitlabctl.RegistryCertSecret(cr)
-
-// 	rails := gitlabctl.RailsSecret(cr)
-
-// 	postgres := gitlabctl.PostgresSecret(cr)
-
-// 	redis := gitlabctl.RedisSecret(cr)
-
-// 	runner := gitlabctl.RunnerRegistrationSecret(cr)
-
-// 	root := gitlabctl.RootUserSecret(cr)
-
-// 	smtp := gitlabctl.SMTPSettingsSecret(cr)
-
-// 	shell := gitlabctl.ShellSecret(cr)
-
-// 	keys := gitlabctl.ShellSSHKeysSecret(cr)
-
-// 	secrets = append(secrets,
-// 		gitaly,
-// 		registry,
-// 		registryCert,
-// 		workhorse,
-// 		rails,
-// 		postgres,
-// 		redis,
-// 		root,
-// 		runner,
-// 		smtp,
-// 		shell,
-// 		keys,
-// 	)
-
-// 	for _, secret := range secrets {
-// 		if err := r.createKubernetesResource(secret, cr); err != nil {
-// 			return err
-// 		}
-// 	}
-
-// 	return nil
-// }
-
-func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var services []*corev1.Service
-
-	/*
-	 * TODO: reconcileShellDeployment must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
 
 	shell := gitlabctl.ShellService(adapter)
 	gitaly := gitlabctl.GitalyService(adapter)
@@ -601,7 +520,7 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	redis := gitlabctl.RedisServices(adapter)
 	postgres := gitlabctl.PostgresServices(adapter)
 
-	registry := gitlabctl.RegistryService(cr)
+	registry := gitlabctl.RegistryService(adapter.Resource())
 
 	services = append(services,
 		gitaly,
@@ -614,7 +533,7 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	services = append(services, postgres...)
 
 	for _, svc := range services {
-		if err := r.createKubernetesResource(svc, cr); err != nil {
+		if err := r.createKubernetesResource(ctx, svc, adapter); err != nil {
 			return err
 		}
 	}
@@ -622,16 +541,11 @@ func (r *GitLabReconciler) reconcileServices(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	/*
-	 * TODO: reconcileExporterDeployment must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
+func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
 	exporter := gitlabctl.ExporterDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(cr, exporter, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(adapter.Resource(), exporter, r.Scheme); err != nil {
 		return err
 	}
 
@@ -656,17 +570,10 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-
-	/*
-	 * TODO: reconcileShellDeployment must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
-
+func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	webservice := gitlabctl.WebserviceDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(cr, webservice, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(adapter.Resource(), webservice, r.Scheme); err != nil {
 		return err
 	}
 
@@ -691,10 +598,10 @@ func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, cr
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	registry := gitlabctl.RegistryDeployment(cr)
+func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	registry := gitlabctl.RegistryDeployment(adapter.Resource())
 
-	if err := controllerutil.SetControllerReference(cr, registry, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(adapter.Resource(), registry, r.Scheme); err != nil {
 		return err
 	}
 
@@ -719,17 +626,10 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, cr *
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-
-	/*
-	 * TODO: reconcileShellDeployment must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
-
+func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	shell := gitlabctl.ShellDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(cr, shell, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(adapter.Resource(), shell, r.Scheme); err != nil {
 		return err
 	}
 
@@ -754,16 +654,10 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, cr *git
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	/*
-	 * TODO: reconcileShellDeployment must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
-
+func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	sidekiq := gitlabctl.SidekiqDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(cr, sidekiq, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(adapter.Resource(), sidekiq, r.Scheme); err != nil {
 		return err
 	}
 
@@ -788,16 +682,10 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, cr *g
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	/*
-	 * TODO: reconcileTaskRunnerDeployment must receive the adapter instead of
-	 *       the CR itself and the following line should be removed.
-	 */
-	adapter := gitlabctl.NewCustomResourceAdapter(cr)
-
+func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	tasker := gitlabctl.TaskRunnerDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(cr, tasker, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(adapter.Resource(), tasker, r.Scheme); err != nil {
 		return err
 	}
 
@@ -822,20 +710,20 @@ func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, cr
 	return nil
 }
 
-func (r *GitLabReconciler) exposeGitLabInstance(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	// if gitlabutils.IsOpenshift() {
 	// 	return r.reconcileRoute(cr)
 	// }
 
-	return r.reconcileIngress(cr)
+	return r.reconcileIngress(ctx, adapter)
 }
 
-func (r *GitLabReconciler) reconcileRoute(cr *gitlabv1beta1.GitLab) error {
-	app := gitlabctl.MainRoute(cr)
+func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	app := gitlabctl.MainRoute(adapter.Resource())
 
-	admin := gitlabctl.AdminRoute(cr)
+	admin := gitlabctl.AdminRoute(adapter.Resource())
 
-	registry := gitlabctl.RegistryRoute(cr)
+	registry := gitlabctl.RegistryRoute(adapter.Resource())
 
 	var routes []*routev1.Route
 	routes = append(routes,
@@ -845,7 +733,7 @@ func (r *GitLabReconciler) reconcileRoute(cr *gitlabv1beta1.GitLab) error {
 	)
 
 	for _, route := range routes {
-		if err := r.createKubernetesResource(route, cr); err != nil {
+		if err := r.createKubernetesResource(ctx, route, adapter); err != nil {
 			return err
 		}
 	}
@@ -853,17 +741,16 @@ func (r *GitLabReconciler) reconcileRoute(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileIngress(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
-	controller := gitlabctl.IngressController(cr)
-	if err := r.createKubernetesResource(controller, cr); err != nil {
+	controller := gitlabctl.IngressController(adapter.Resource())
+	if err := r.createKubernetesResource(ctx, controller, adapter); err != nil {
 		return err
 	}
 
 	var ingresses []*extensionsv1beta1.Ingress
-	gitlab := gitlabctl.Ingress(cr)
-
-	registry := gitlabctl.RegistryIngress(cr)
+	gitlab := gitlabctl.Ingress(adapter.Resource())
+	registry := gitlabctl.RegistryIngress(adapter.Resource())
 
 	ingresses = append(ingresses,
 		gitlab,
@@ -871,7 +758,7 @@ func (r *GitLabReconciler) reconcileIngress(cr *gitlabv1beta1.GitLab) error {
 	)
 
 	for _, ingress := range ingresses {
-		if err := r.createKubernetesResource(ingress, cr); err != nil {
+		if err := r.createKubernetesResource(ctx, ingress, adapter); err != nil {
 			return err
 		}
 	}
@@ -879,27 +766,27 @@ func (r *GitLabReconciler) reconcileIngress(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileCertManagerCertificates(cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	// certificates := RequiresCertificate(cr)
 
-	issuer := gitlabctl.CertificateIssuer(cr)
+	issuer := gitlabctl.CertificateIssuer(adapter.Resource())
 
-	return r.createKubernetesResource(issuer, cr)
+	return r.createKubernetesResource(ctx, issuer, adapter)
 }
 
-func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	selector := client.MatchingLabelsSelector{
-		Selector: getLabelSet(cr).AsSelector(),
+		Selector: getLabelSet(adapter.Resource()).AsSelector(),
 	}
 
 	deployments := &appsv1.DeploymentList{}
-	err := r.List(ctx, deployments, client.InNamespace(cr.Namespace), selector)
+	err := r.List(ctx, deployments, client.InNamespace(adapter.Resource().Namespace), selector)
 	if err != nil {
 		return err
 	}
 
 	for _, deploy := range deployments.Items {
-		if err := r.reconcileHPA(ctx, &deploy, cr); err != nil {
+		if err := r.reconcileHPA(ctx, &deploy, adapter); err != nil {
 			return err
 		}
 	}
@@ -907,7 +794,7 @@ func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, cr *gitlabv1bet
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, cr *gitlabv1beta1.GitLab) error {
+func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, adapter gitlabctl.CustomResourceAdapter) error {
 	excludedDeployments := [2]string{"gitlab-exporter", "gitlab-task-runner"}
 	for _, excludedDeployment := range excludedDeployments {
 		if strings.Contains(deployment.Name, excludedDeployment) {
@@ -915,10 +802,10 @@ func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.
 		}
 	}
 
-	hpa := gitlabctl.HorizontalAutoscaler(deployment, cr)
+	hpa := gitlabctl.HorizontalAutoscaler(deployment, adapter.Resource())
 
 	found := &autoscalingv1.HorizontalPodAutoscaler{}
-	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: cr.Namespace}, found)
+	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: adapter.Resource().Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// return nil if hpa is nil
@@ -926,7 +813,7 @@ func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.
 				return nil
 			}
 
-			if err := controllerutil.SetControllerReference(cr, hpa, r.Scheme); err != nil {
+			if err := controllerutil.SetControllerReference(adapter.Resource(), hpa, r.Scheme); err != nil {
 				return err
 			}
 
@@ -936,7 +823,7 @@ func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.
 		return err
 	}
 
-	if cr.Spec.AutoScaling == nil {
+	if adapter.Resource().Spec.AutoScaling == nil {
 		return r.Delete(ctx, found)
 	}
 
@@ -994,11 +881,11 @@ func (r *GitLabReconciler) createNamespace(ctx context.Context, namespace *corev
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, cr *gitlabv1beta1.GitLab) error {
-	sa := gitlabutils.ServiceAccount("gitlab-app", cr.Namespace)
+func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	sa := gitlabutils.ServiceAccount("gitlab-app", adapter.Namespace())
 
 	found := &corev1.ServiceAccount{}
-	lookupKey := types.NamespacedName{Name: sa.Name, Namespace: cr.Namespace}
+	lookupKey := types.NamespacedName{Name: sa.Name, Namespace: adapter.Namespace()}
 	if err := r.Get(ctx, lookupKey, found); err != nil {
 		if errors.IsNotFound(err) {
 			if err := r.Create(ctx, sa); err != nil {

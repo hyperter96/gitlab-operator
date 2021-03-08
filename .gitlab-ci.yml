@@ -123,7 +123,6 @@ functional_tests:
   variables:
     NAMESPACE: "${CI_COMMIT_SHORT_SHA}"
     TAG: "${CI_COMMIT_SHORT_SHA}"
-    CHART_VERSION: '4.9.1'
   script:
     - ./scripts/test.sh
   extends: .cache

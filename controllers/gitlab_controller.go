@@ -495,6 +495,29 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 		return err
 	}
 
+	appConfigSecret, err := gitlabctl.AppConfigConnectionSecret(adapter, *secret)
+	if err != nil {
+		return err
+	}
+
+	if err := r.createKubernetesResource(ctx, appConfigSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+		return err
+	}
+
+	registryConnectionSecret, err := gitlabctl.RegistryConnectionSecret(adapter, *secret)
+	if err != nil {
+		return err
+	}
+
+	if err := r.createKubernetesResource(ctx, registryConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+		return err
+	}
+
+	taskRunnerConnectionSecret := gitlabctl.TaskRunnerConnectionSecret(adapter, *secret)
+	if err := r.createKubernetesResource(ctx, taskRunnerConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+		return err
+	}
+
 	// Only deploy the minio service and statefulset for development builds
 	if adapter.Resource().Spec.ObjectStore.Development {
 		svc := gitlabctl.MinioService(adapter.Resource())
@@ -519,8 +542,7 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 	webservice := gitlabctl.WebserviceService(adapter)
 	redis := gitlabctl.RedisServices(adapter)
 	postgres := gitlabctl.PostgresServices(adapter)
-
-	registry := gitlabctl.RegistryService(adapter.Resource())
+	registry := gitlabctl.RegistryService(adapter)
 
 	services = append(services,
 		gitaly,
@@ -599,7 +621,7 @@ func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, ad
 }
 
 func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	registry := gitlabctl.RegistryDeployment(adapter.Resource())
+	registry := gitlabctl.RegistryDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), registry, r.Scheme); err != nil {
 		return err

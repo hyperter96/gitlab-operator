@@ -18,6 +18,7 @@ require (
 	github.com/prometheus/common v0.10.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e // indirect
+	gopkg.in/yaml.v2 v2.3.0
 	helm.sh/helm/v3 v3.3.0
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6

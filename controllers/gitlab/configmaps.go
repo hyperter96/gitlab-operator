@@ -237,8 +237,8 @@ func ExporterConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	return exporter
 }
 
-// RegistryConfigMap returns configmap object for container Registry
-func RegistryConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+// RegistryConfigMapDEPRECATED returns configmap object for container Registry
+func RegistryConfigMapDEPRECATED(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "registry", gitlabutils.GitlabType)
 
 	options := SystemBuildOptions(adapter.Resource())

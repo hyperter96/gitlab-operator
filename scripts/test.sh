@@ -99,13 +99,13 @@ verify_gitlab_is_running() {
     echo "statefulset/$statefulset ok"
   done
 
-  deployments=(gitlab-exporter gitlab-gitlab-shell gitlab-registry gitlab-sidekiq-all-in-1-v1 gitlab-task-runner gitlab-webservice-default gitlab-ingress-controller)
+  deployments=(gitlab-gitlab-exporter gitlab-gitlab-shell gitlab-registry gitlab-sidekiq-all-in-1-v1 gitlab-task-runner gitlab-webservice-default gitlab-ingress-controller)
   wait_until_exists "deployment/${deployments[0]}"
   kubectl -n "$NAMESPACE" wait --timeout=600s --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
 
   echo 'Testing GitLab endpoint'
   kubectl -n $NAMESPACE exec deployment/gitlab-task-runner -- \
-    bash -c 'curl -IL $GITLAB_WEBSERVICE_PORT_8181_TCP_ADDR:8181'
+    bash -c 'curl -IL $GITLAB_WEBSERVICE_DEFAULT_PORT_8181_TCP_ADDR:8181'
 }
 
 cleanup() {

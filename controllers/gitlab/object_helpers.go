@@ -27,6 +27,9 @@ const (
 	// GitLabExporterComponentName is the common name of GitLab Exporter.
 	GitLabExporterComponentName = "gitlab-exporter"
 
+	// RegistryComponentName is the common name of the Registry.
+	RegistryComponentName = "registry"
+
 	// WebserviceComponentName is the common name of Webservice.
 	WebserviceComponentName = "webservice"
 
@@ -403,6 +406,61 @@ func patchTaskRunnerDeployment(adapter CustomResourceAdapter, deployment *appsv1
 
 func patchTaskRunnerConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), TaskRunnerComponentName, &configMap.ObjectMeta.Labels)
+
+	return configMap
+}
+
+// RegistryService returns the Service of the Registry component.
+func RegistryService(adapter CustomResourceAdapter) *corev1.Service {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+	result := template.Query().ServiceByComponent(RegistryComponentName)
+
+	return patchRegistryService(adapter, result)
+}
+
+func patchRegistryService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+	updateCommonLabels(adapter.ReleaseName(), RegistryComponentName, &service.ObjectMeta.Labels)
+	updateCommonLabels(adapter.ReleaseName(), RegistryComponentName, &service.Spec.Selector)
+
+	return service
+}
+
+// RegistryDeployment returns the Deployment of the Registry component.
+func RegistryDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().DeploymentByComponent(RegistryComponentName)
+
+	return patchRegistryDeployment(result)
+}
+
+func patchRegistryDeployment(deployment *appsv1.Deployment) *appsv1.Deployment {
+	updateCommonDeployments(RegistryComponentName, deployment)
+
+	return deployment
+}
+
+// RegistryConfigMap returns the ConfigMap of the Registry component.
+func RegistryConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+	template, err := GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().ConfigMapByName(
+		fmt.Sprintf("%s-%s", adapter.ReleaseName(), RegistryComponentName))
+
+	return patchRegistryConfigMap(adapter, result)
+}
+
+func patchRegistryConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+	updateCommonLabels(adapter.ReleaseName(), RegistryComponentName, &configMap.ObjectMeta.Labels)
 
 	return configMap
 }

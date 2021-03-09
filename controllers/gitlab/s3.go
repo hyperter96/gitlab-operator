@@ -1,14 +1,25 @@
 package gitlab
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+const (
+	region                         = "us-east-1"
+	registryBucket                 = "registry" // taken from hack/assets/templates/minio/initialize-buckets.sh
+	appConfigConnectionSecretName  = "storage-config"
+	registryConnectionSecretName   = "registry-storage"
+	taskRunnerConnectionSecretName = "s3cmd-config"
 )
 
 // MinioSecret returns secret containing Minio accesskey and secretkey
@@ -229,4 +240,88 @@ func MinioService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 			Type: corev1.ServiceTypeClusterIP,
 		},
 	}
+}
+
+// AppConfigConnectionSecret returns secret containing MinIO connection config for `global.appConfig.object_store.connection.secret`.
+func AppConfigConnectionSecret(adapter CustomResourceAdapter, minioSecret corev1.Secret) (*corev1.Secret, error) {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
+	options := SystemBuildOptions(adapter.Resource())
+	secret := gitlabutils.GenericSecret(appConfigConnectionSecretName, adapter.Namespace(), labels)
+
+	data := minioSecret.StringData
+
+	connectionInfo := map[string]string{
+		"provider":              "AWS",
+		"region":                region,
+		"host":                  options.ObjectStore.URL,
+		"endpoint":              options.ObjectStore.Endpoint,
+		"aws_access_key_id":     data["accesskey"],
+		"aws_secret_access_key": data["secretkey"],
+	}
+
+	connectionBytes, err := json.Marshal(connectionInfo)
+	if err != nil {
+		return &corev1.Secret{}, fmt.Errorf("unable to encode connection string for storage-config")
+	}
+
+	secret.StringData = map[string]string{
+		"connection": string(connectionBytes),
+	}
+
+	return secret, nil
+}
+
+// RegistryConnectionSecret returns secret containing MinIO connection config for `registry.storage.secret`.
+func RegistryConnectionSecret(adapter CustomResourceAdapter, minioSecret corev1.Secret) (*corev1.Secret, error) {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
+	options := SystemBuildOptions(adapter.Resource())
+	secret := gitlabutils.GenericSecret(registryConnectionSecretName, adapter.Namespace(), labels)
+
+	data := minioSecret.StringData
+
+	connectionInfo := map[string]map[string]string{
+		"s3": {
+			"bucket":         registryBucket,
+			"accesskey":      data["accesskey"],
+			"secretkey":      data["secretkey"],
+			"region":         region,
+			"regionendpoint": options.ObjectStore.Endpoint,
+			"v4auth":         "true",
+		},
+	}
+
+	connectionBytes, err := yaml.Marshal(connectionInfo)
+	if err != nil {
+		return &corev1.Secret{}, fmt.Errorf("unable to encode connection string for registry")
+	}
+
+	secret.StringData = map[string]string{
+		"config": string(connectionBytes),
+	}
+
+	return secret, nil
+}
+
+// TaskRunnerConnectionSecret returns secret containing MinIO connection config for `global.task-runner.backups.objectStorage.config.secret`.
+func TaskRunnerConnectionSecret(adapter CustomResourceAdapter, minioSecret corev1.Secret) *corev1.Secret {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
+	secret := gitlabutils.GenericSecret(taskRunnerConnectionSecretName, adapter.Namespace(), labels)
+
+	data := minioSecret.StringData
+
+	template := `
+	[default]
+	access_key = %s
+	secret_key = %s
+	bucket_location = %s
+	multipart_chunk_size_mb = 128 # default is 15 (MB)
+	`
+
+	result := fmt.Sprintf(template, data["accesskey"], data["secretkey"], region)
+
+	secret.StringData = map[string]string{
+		"config": result,
+	}
+
+	return secret
 }

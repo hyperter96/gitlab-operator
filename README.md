@@ -55,7 +55,6 @@ spec:
     minReplicas: 2
     maxReplicas: 5
     targetCPU: 60
-
 ```
 
 #### 2. GitLab Runner

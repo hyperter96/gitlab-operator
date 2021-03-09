@@ -123,6 +123,35 @@ func (a *populatingAdapter) populateValues() {
 	a.values.AddValue("shared-secrets.serviceAccount.name", ManagerServiceAccount)
 	a.values.AddValue("shared-secrets.securityContext.runAsUser", "")
 	a.values.AddValue("shared-secrets.securityContext.fsGroup", "")
+
+	// Configure Operator's MinIO as external object storage provider.
+	// https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/examples/values-external-objectstorage.yaml
+
+	// - Disable the Chart's MinIO.
+	a.values.AddValue("global.minio.enabled", "false")
+
+	// - Configure consolidated object storage and bucket names
+	//   per hack/assets/templates/minio/initialize-buckets.sh.
+	a.values.AddValue("global.appConfig.object_store.enabled", "true")
+	a.values.AddValue("global.appConfig.object_store.connection.secret", appConfigConnectionSecretName)
+	a.values.AddValue("global.appConfig.object_store.connection.key", "connection")
+	a.values.AddValue("global.appConfig.lfs.bucket", "git-lfs")
+	a.values.AddValue("global.appConfig.artifacts.bucket", "gitlab-artifacts")
+	a.values.AddValue("global.appConfig.uploads.bucket", "gitlab-uploads")
+	a.values.AddValue("global.appConfig.packages.bucket", "gitlab-packages")
+	a.values.AddValue("global.appConfig.backups.bucket", "gitlab-backups")
+	a.values.AddValue("global.appConfig.backups.tmpBucket", "tmp")
+	a.values.AddValue("global.appConfig.externalDiffs.bucket", "gitlab-mr-diffs")
+	a.values.AddValue("global.appConfig.pseudonymizer.bucket", "gitlab-pseudo")
+
+	// - Configure Task Runner's object storage connection.
+	a.values.AddValue("gitlab.task-runner.backups.objectStorage.config.secret", taskRunnerConnectionSecretName)
+	a.values.AddValue("gitlab.task-runner.backups.objectStorage.config.key", "config")
+
+	// - Configure Registry's object storage connection.
+	a.values.AddValue("global.registry.bucket", "registry")
+	a.values.AddValue("registry.storage.secret", registryConnectionSecretName)
+	a.values.AddValue("registry.storage.key", "config")
 }
 
 func (a *populatingAdapter) hashValues() {

@@ -8,8 +8,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// RegistryDeployment returns container registry deployment
-func RegistryDeployment(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
+// RegistryDeploymentDEPRECATED returns container registry deployment
+func RegistryDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
 	options := SystemBuildOptions(cr)
 

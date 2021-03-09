@@ -148,8 +148,8 @@ func GitalyServiceDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// RegistryService returns the service to expose GitLab container registry
-func RegistryService(cr *gitlabv1beta1.GitLab) *corev1.Service {
+// RegistryServiceDeprecated returns the service to expose GitLab container registry
+func RegistryServiceDeprecated(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
 
 	return &corev1.Service{

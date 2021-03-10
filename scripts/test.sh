@@ -27,8 +27,6 @@ trap finish EXIT
 main() {
   [ "$CLEANUP" = "only" ] && { cleanup; exit 0; }
 
-  CHART_VERSION="${CHART_VERSION:-$(latest_chart_version)}"
-
   echo 'Starting test'
   install_required_operators
   install_crds
@@ -86,7 +84,10 @@ verify_operator_is_running() {
 
 install_gitlab_custom_resource() {
   echo 'Installing GitLab custom resource'
-  make CHART_VERSION="${CHART_VERSION}" deploy_sample
+  if [ -n "$CHART_VERSION" ]; then
+    make set_chart_version
+  fi
+  make deploy_sample
 }
 
 verify_gitlab_is_running() {
@@ -114,11 +115,6 @@ cleanup() {
   kubectl get clusterrolebindings -o=name | grep $NAMESPACE | xargs kubectl delete
   kubectl get validatingwebhookconfiguration -o name | grep $NAMESPACE | xargs kubectl delete
   kubectl get mutatingwebhookconfiguration -o name | grep $NAMESPACE | xargs kubectl delete
-}
-
-latest_chart_version() {
-  local latest_chart_archive="$(basename $(ls charts/*.tgz | tail -n1) .tgz)"
-  echo "${latest_chart_archive#gitlab-}"
 }
 
 wait_until_exists() {

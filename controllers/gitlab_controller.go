@@ -149,9 +149,13 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.setupAutoscaling(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
-	}
+	// Disables autoscaling so the Operator does not attempt to
+	// remove replicas that it is not expecting. Considered a temporary
+	// fix until HPAs can be disabled in the Chart, and/or the Operator
+	// is updated to accept replicas created by HPAs.
+	// if err := r.setupAutoscaling(ctx, adapter); err != nil {
+	//   return ctrl.Result{}, err
+	// }
 
 	// Deploy route is on Openshift, Ingress otherwise
 	if err := r.exposeGitLabInstance(ctx, adapter); err != nil {

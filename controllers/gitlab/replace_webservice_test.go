@@ -1,25 +1,20 @@
-package gitlab_test
+package gitlab
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
-)
-
-const (
-	// WebserviceComponentName is the common name of Webservice.
-	WebserviceComponentName = "webservice"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 )
 
 var _ = Describe("Webservice replacement", func() {
 
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := gitlab.WebserviceDeployment(adapter)
-		generated := gitlab.WebserviceDeploymentDEPRECATED(mockCR)
+		templated := WebserviceDeployment(adapter)
+		generated := WebserviceDeploymentDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(
@@ -28,8 +23,8 @@ var _ = Describe("Webservice replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := gitlab.WebserviceConfigMaps(adapter)
-		generated := gitlab.WebserviceConfigMapDEPRECATED(mockCR)
+		templated := WebserviceConfigMaps(adapter)
+		generated := WebserviceConfigMapDEPRECATED(mockCR)
 
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
 			Expect(templated).To(HaveLen(2))
@@ -61,8 +56,8 @@ var _ = Describe("Webservice replacement", func() {
 	})
 
 	When("replacing Service", func() {
-		templated := gitlab.WebserviceService(adapter)
-		generated := gitlab.WebserviceServiceDEPRECATED(mockCR)
+		templated := WebserviceService(adapter)
+		generated := WebserviceServiceDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(

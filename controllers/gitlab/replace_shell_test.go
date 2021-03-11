@@ -1,27 +1,21 @@
-package gitlab_test
+package gitlab
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 
 	corev1 "k8s.io/api/core/v1"
-
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
-)
-
-const (
-	// GitLabShellComponentName is the common name of GitLab Shell.
-	GitLabShellComponentName = "gitlab-shell"
 )
 
 var _ = Describe("GitLab Shell replacement", func() {
 
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := gitlab.ShellDeployment(adapter)
-		generated := gitlab.ShellDeploymentDEPRECATED(mockCR)
+		templated := ShellDeployment(adapter)
+		generated := ShellDeploymentDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(
@@ -32,8 +26,8 @@ var _ = Describe("GitLab Shell replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := gitlab.ShellConfigMaps(adapter)
-		generated := gitlab.ShellConfigMapDEPRECATED(mockCR)
+		templated := ShellConfigMaps(adapter)
+		generated := ShellConfigMapDEPRECATED(mockCR)
 
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
 
@@ -65,8 +59,8 @@ var _ = Describe("GitLab Shell replacement", func() {
 	})
 
 	When("replacing Service", func() {
-		templated := gitlab.ShellService(adapter)
-		generated := gitlab.ShellServiceDEPRECATED(mockCR)
+		templated := ShellService(adapter)
+		generated := ShellServiceDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(

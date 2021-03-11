@@ -37,6 +37,7 @@ import (
 
 	appsv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -46,6 +47,8 @@ var (
 )
 
 func init() {
+	settings.Load()
+
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(appsv1beta1.AddToScheme(scheme))

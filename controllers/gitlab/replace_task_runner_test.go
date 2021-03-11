@@ -1,22 +1,21 @@
-package gitlab_test
+package gitlab
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 
 	corev1 "k8s.io/api/core/v1"
-
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 )
 
 var _ = Describe("Task Runner replacement", func() {
 
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := gitlab.TaskRunnerDeployment(adapter)
-		generated := gitlab.TaskRunnerDeploymentDEPRECATED(mockCR)
+		templated := TaskRunnerDeployment(adapter)
+		generated := TaskRunnerDeploymentDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(
@@ -27,8 +26,8 @@ var _ = Describe("Task Runner replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := gitlab.TaskRunnerConfigMap(adapter)
-		generated := gitlab.TaskRunnerConfigMapDEPRECATED(mockCR)
+		templated := TaskRunnerConfigMap(adapter)
+		generated := TaskRunnerConfigMapDEPRECATED(mockCR)
 
 		It("must return one ConfigMap with similar ObjectMeta", func() {
 			Expect(templated.ObjectMeta).To(

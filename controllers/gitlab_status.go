@@ -10,7 +10,7 @@ import (
 
 	"github.com/prometheus/common/log"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +22,7 @@ import (
 // EndpointMembers returns a list of members
 var EndpointMembers []string
 
-func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	// get current Gitlab resource
 	gitlab := &gitlabv1beta1.GitLab{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: adapter.Namespace(), Name: adapter.ReleaseName()}, gitlab)
@@ -64,7 +64,7 @@ func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter gi
 	return nil
 }
 
-func getReadinessStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) *gitlabv1beta1.HealthCheck {
+func getReadinessStatus(ctx context.Context, adapter helpers.CustomResourceAdapter) *gitlabv1beta1.HealthCheck {
 	var err error
 	status := &ReadinessStatus{}
 
@@ -128,7 +128,7 @@ func parseStatus(status *ReadinessStatus) *gitlabv1beta1.HealthCheck {
 	return &result
 }
 
-func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter helpers.CustomResourceAdapter) bool {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "postgresql", gitlabutils.GitlabType)
 
 	postgres := &appsv1.StatefulSet{}
@@ -136,7 +136,7 @@ func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter gitla
 	return !reflect.DeepEqual(*postgres, appsv1.Deployment{}) || !errors.IsNotFound(err)
 }
 
-func (r *GitLabReconciler) isWebserviceDeployed(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) isWebserviceDeployed(ctx context.Context, adapter helpers.CustomResourceAdapter) bool {
 	webservice := &appsv1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: adapter.ReleaseName() + "-webservice", Namespace: adapter.Namespace()}, webservice)
 	return !reflect.DeepEqual(*webservice, appsv1.Deployment{}) || !errors.IsNotFound(err)
@@ -147,7 +147,7 @@ func (r *GitLabReconciler) setGitlabStatus(ctx context.Context, object runtime.O
 	return r.Status().Update(ctx, object)
 }
 
-func (r *GitLabReconciler) getEndpointMembers(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, endpoint string) []string {
+func (r *GitLabReconciler) getEndpointMembers(ctx context.Context, adapter helpers.CustomResourceAdapter, endpoint string) []string {
 	members := []string{}
 
 	ep := &corev1.Endpoints{}

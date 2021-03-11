@@ -6,6 +6,7 @@ import (
 	"text/template"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -238,7 +239,7 @@ func ExporterConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 }
 
 // RegistryConfigMapDEPRECATED returns configmap object for container Registry
-func RegistryConfigMapDEPRECATED(adapter CustomResourceAdapter) *corev1.ConfigMap {
+func RegistryConfigMapDEPRECATED(adapter helpers.CustomResourceAdapter) *corev1.ConfigMap {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "registry", gitlabutils.GitlabType)
 
 	options := SystemBuildOptions(adapter.Resource())

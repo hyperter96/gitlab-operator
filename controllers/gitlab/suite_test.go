@@ -1,4 +1,4 @@
-package gitlab_test
+package gitlab
 
 import (
 	"fmt"
@@ -11,12 +11,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 )
 
 func GitLabMock() *gitlabv1beta1.GitLab {
 	releaseName := "test"
-	chartVersion := gitlabctl.AvailableChartVersions()[0]
+	chartVersion := helpers.AvailableChartVersions()[0]
 	namespace := os.Getenv("HELM_NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
@@ -50,6 +51,7 @@ func GitLabMock() *gitlabv1beta1.GitLab {
 }
 
 func TestGitLab(t *testing.T) {
+	settings.Load()
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "GitLab Suite")
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,9 +14,6 @@ import (
 )
 
 const (
-	// ManagerServiceAccount is the name of the ServiceAccount that GitLab controller uses.
-	ManagerServiceAccount = "gitlab-manager"
-
 	// GitLabShellComponentName is the common name of GitLab Shell.
 	GitLabShellComponentName = "gitlab-shell"
 
@@ -58,8 +57,8 @@ var (
 )
 
 // ShellDeployment returns the Deployment of GitLab Shell component.
-func ShellDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
-	template, err := GetTemplate(adapter)
+func ShellDeployment(adapter helpers.CustomResourceAdapter) *appsv1.Deployment {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil
 		/* WARNING: This should return an error instead. */
@@ -71,8 +70,8 @@ func ShellDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 }
 
 // ShellConfigMaps returns the ConfigMaps of GitLab Shell component.
-func ShellConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
-	template, err := GetTemplate(adapter)
+func ShellConfigMaps(adapter helpers.CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return []*corev1.ConfigMap{}
 		/* WARNING: This should return an error instead. */
@@ -92,8 +91,8 @@ func ShellConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 }
 
 // ShellService returns the Service of GitLab Shell component.
-func ShellService(adapter CustomResourceAdapter) *corev1.Service {
-	template, err := GetTemplate(adapter)
+func ShellService(adapter helpers.CustomResourceAdapter) *corev1.Service {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil
 		/* WARNING: This should return an error instead. */
@@ -105,8 +104,8 @@ func ShellService(adapter CustomResourceAdapter) *corev1.Service {
 }
 
 // ExporterService returns the Service for the GitLab Exporter component.
-func ExporterService(adapter CustomResourceAdapter) *corev1.Service {
-	template, err := GetTemplate(adapter)
+func ExporterService(adapter helpers.CustomResourceAdapter) *corev1.Service {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -116,8 +115,8 @@ func ExporterService(adapter CustomResourceAdapter) *corev1.Service {
 }
 
 // ExporterDeployment returns the Deployment for the GitLab Exporter component.
-func ExporterDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
-	template, err := GetTemplate(adapter)
+func ExporterDeployment(adapter helpers.CustomResourceAdapter) *appsv1.Deployment {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -128,8 +127,8 @@ func ExporterDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 }
 
 // ExporterConfigMaps returns the ConfigMaps for the GitLab Exporter component.
-func ExporterConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
-	template, err := GetTemplate(adapter)
+func ExporterConfigMaps(adapter helpers.CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -143,9 +142,9 @@ func ExporterConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 }
 
 // MigrationsConfigMap returns the ConfigMaps of Migrations component.
-func MigrationsConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+func MigrationsConfigMap(adapter helpers.CustomResourceAdapter) *corev1.ConfigMap {
 	var result *corev1.ConfigMap
-	template, err := GetTemplate(adapter)
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return result
@@ -159,8 +158,8 @@ func MigrationsConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 }
 
 // MigrationsJob returns the Job for Migrations component.
-func MigrationsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
-	template, err := GetTemplate(adapter)
+func MigrationsJob(adapter helpers.CustomResourceAdapter) (*batchv1.Job, error) {
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return nil, err
@@ -172,8 +171,8 @@ func MigrationsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 }
 
 // WebserviceDeployment returns the Deployment for the Webservice component.
-func WebserviceDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
-	template, err := GetTemplate(adapter)
+func WebserviceDeployment(adapter helpers.CustomResourceAdapter) *appsv1.Deployment {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -184,8 +183,8 @@ func WebserviceDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 }
 
 // WebserviceConfigMaps returns the ConfigMaps for the Webservice component.
-func WebserviceConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
-	template, err := GetTemplate(adapter)
+func WebserviceConfigMaps(adapter helpers.CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -198,8 +197,8 @@ func WebserviceConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 }
 
 // WebserviceService returns the Service for the Webservice component.
-func WebserviceService(adapter CustomResourceAdapter) *corev1.Service {
-	template, err := GetTemplate(adapter)
+func WebserviceService(adapter helpers.CustomResourceAdapter) *corev1.Service {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -209,13 +208,13 @@ func WebserviceService(adapter CustomResourceAdapter) *corev1.Service {
 	return patchWebserviceService(adapter, result)
 }
 
-func patchGitLabShellDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+func patchGitLabShellDeployment(adapter helpers.CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
 	updateCommonDeployments(GitLabShellComponentName, deployment)
 
 	return deployment
 }
 
-func patchGitLabShellConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+func patchGitLabShellConfigMaps(adapter helpers.CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	for _, c := range configMaps {
 		updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &c.ObjectMeta.Labels)
 	}
@@ -223,14 +222,14 @@ func patchGitLabShellConfigMaps(adapter CustomResourceAdapter, configMaps []*cor
 	return configMaps
 }
 
-func patchGitLabShellService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+func patchGitLabShellService(adapter helpers.CustomResourceAdapter, service *corev1.Service) *corev1.Service {
 	updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &service.ObjectMeta.Labels)
 	updateCommonLabels(adapter.ReleaseName(), GitLabShellComponentName, &service.Spec.Selector)
 
 	return service
 }
 
-func patchGitLabExporterService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+func patchGitLabExporterService(adapter helpers.CustomResourceAdapter, service *corev1.Service) *corev1.Service {
 	updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &service.ObjectMeta.Labels)
 	updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &service.Spec.Selector)
 
@@ -238,8 +237,8 @@ func patchGitLabExporterService(adapter CustomResourceAdapter, service *corev1.S
 }
 
 // SharedSecretsConfigMap returns the ConfigMaps of Shared Secret component.
-func SharedSecretsConfigMap(adapter CustomResourceAdapter) (*corev1.ConfigMap, error) {
-	template, err := GetTemplate(adapter)
+func SharedSecretsConfigMap(adapter helpers.CustomResourceAdapter) (*corev1.ConfigMap, error) {
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return nil, err
@@ -251,8 +250,8 @@ func SharedSecretsConfigMap(adapter CustomResourceAdapter) (*corev1.ConfigMap, e
 }
 
 // SharedSecretsJob returns the Job for Shared Secret component.
-func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
-	template, err := GetTemplate(adapter)
+func SharedSecretsJob(adapter helpers.CustomResourceAdapter) (*batchv1.Job, error) {
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return nil, err
@@ -266,8 +265,8 @@ func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 }
 
 // SelfSignedCertsJob returns the Job for Self Signed Certificates component.
-func SelfSignedCertsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
-	template, err := GetTemplate(adapter)
+func SelfSignedCertsJob(adapter helpers.CustomResourceAdapter) (*batchv1.Job, error) {
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return nil, err
@@ -280,7 +279,7 @@ func SelfSignedCertsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 	return patchSelfSignedCertsJob(adapter, jobs), nil
 }
 
-func patchSelfSignedCertsJob(adapter CustomResourceAdapter, jobs []*batchv1.Job) *batchv1.Job {
+func patchSelfSignedCertsJob(adapter helpers.CustomResourceAdapter, jobs []*batchv1.Job) *batchv1.Job {
 	for _, j := range jobs {
 		if strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
 			updateCommonLabels(adapter.ReleaseName(), SelfSignedCertsComponentName, &j.ObjectMeta.Labels)
@@ -293,8 +292,8 @@ func patchSelfSignedCertsJob(adapter CustomResourceAdapter, jobs []*batchv1.Job)
 }
 
 // TaskRunnerDeployment returns the Deployment of the Task Runner component.
-func TaskRunnerDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
-	template, err := GetTemplate(adapter)
+func TaskRunnerDeployment(adapter helpers.CustomResourceAdapter) *appsv1.Deployment {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -305,9 +304,9 @@ func TaskRunnerDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 }
 
 // TaskRunnerConfigMap returns the ConfigMaps of the Task Runner component.
-func TaskRunnerConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+func TaskRunnerConfigMap(adapter helpers.CustomResourceAdapter) *corev1.ConfigMap {
 	var result *corev1.ConfigMap
-	template, err := GetTemplate(adapter)
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return result
@@ -320,13 +319,13 @@ func TaskRunnerConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	return patchTaskRunnerConfigMap(adapter, result)
 }
 
-func patchGitLabExporterDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+func patchGitLabExporterDeployment(adapter helpers.CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
 	updateCommonDeployments(GitLabExporterComponentName, deployment)
 
 	return deployment
 }
 
-func patchGitLabExporterConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+func patchGitLabExporterConfigMaps(adapter helpers.CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	for _, c := range configMaps {
 		updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &c.ObjectMeta.Labels)
 	}
@@ -335,9 +334,9 @@ func patchGitLabExporterConfigMaps(adapter CustomResourceAdapter, configMaps []*
 }
 
 // GitalyStatefulSet returns the StatefulSet of Gitaly component.
-func GitalyStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
+func GitalyStatefulSet(adapter helpers.CustomResourceAdapter) *appsv1.StatefulSet {
 
-	template, err := GetTemplate(adapter)
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return nil
@@ -350,8 +349,8 @@ func GitalyStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
 }
 
 // GitalyConfigMap returns the ConfigMap of Gitaly component.
-func GitalyConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
-	template, err := GetTemplate(adapter)
+func GitalyConfigMap(adapter helpers.CustomResourceAdapter) *corev1.ConfigMap {
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return nil
@@ -364,8 +363,8 @@ func GitalyConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 }
 
 // GitalyService returns the Service of GitLab Shell component.
-func GitalyService(adapter CustomResourceAdapter) *corev1.Service {
-	template, err := GetTemplate(adapter)
+func GitalyService(adapter helpers.CustomResourceAdapter) *corev1.Service {
+	template, err := helpers.GetTemplate(adapter)
 
 	if err != nil {
 		return nil
@@ -377,20 +376,20 @@ func GitalyService(adapter CustomResourceAdapter) *corev1.Service {
 	return patchGitalyService(adapter, result)
 }
 
-func patchWebserviceService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+func patchWebserviceService(adapter helpers.CustomResourceAdapter, service *corev1.Service) *corev1.Service {
 	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.ObjectMeta.Labels)
 	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &service.Spec.Selector)
 
 	return service
 }
 
-func patchWebserviceDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+func patchWebserviceDeployment(adapter helpers.CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
 	updateCommonDeployments(WebserviceComponentName, deployment)
 
 	return deployment
 }
 
-func patchWebserviceConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+func patchWebserviceConfigMaps(adapter helpers.CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	for _, c := range configMaps {
 		updateCommonLabels(adapter.ReleaseName(), GitLabExporterComponentName, &c.ObjectMeta.Labels)
 	}
@@ -398,21 +397,21 @@ func patchWebserviceConfigMaps(adapter CustomResourceAdapter, configMaps []*core
 	return configMaps
 }
 
-func patchTaskRunnerDeployment(adapter CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
+func patchTaskRunnerDeployment(adapter helpers.CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
 	updateCommonDeployments(TaskRunnerComponentName, deployment)
 
 	return deployment
 }
 
-func patchTaskRunnerConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+func patchTaskRunnerConfigMap(adapter helpers.CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), TaskRunnerComponentName, &configMap.ObjectMeta.Labels)
 
 	return configMap
 }
 
 // RegistryService returns the Service of the Registry component.
-func RegistryService(adapter CustomResourceAdapter) *corev1.Service {
-	template, err := GetTemplate(adapter)
+func RegistryService(adapter helpers.CustomResourceAdapter) *corev1.Service {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -421,7 +420,7 @@ func RegistryService(adapter CustomResourceAdapter) *corev1.Service {
 	return patchRegistryService(adapter, result)
 }
 
-func patchRegistryService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+func patchRegistryService(adapter helpers.CustomResourceAdapter, service *corev1.Service) *corev1.Service {
 	updateCommonLabels(adapter.ReleaseName(), RegistryComponentName, &service.ObjectMeta.Labels)
 	updateCommonLabels(adapter.ReleaseName(), RegistryComponentName, &service.Spec.Selector)
 
@@ -429,8 +428,8 @@ func patchRegistryService(adapter CustomResourceAdapter, service *corev1.Service
 }
 
 // RegistryDeployment returns the Deployment of the Registry component.
-func RegistryDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
-	template, err := GetTemplate(adapter)
+func RegistryDeployment(adapter helpers.CustomResourceAdapter) *appsv1.Deployment {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -447,8 +446,8 @@ func patchRegistryDeployment(deployment *appsv1.Deployment) *appsv1.Deployment {
 }
 
 // RegistryConfigMap returns the ConfigMap of the Registry component.
-func RegistryConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
-	template, err := GetTemplate(adapter)
+func RegistryConfigMap(adapter helpers.CustomResourceAdapter) *corev1.ConfigMap {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -459,19 +458,19 @@ func RegistryConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	return patchRegistryConfigMap(adapter, result)
 }
 
-func patchRegistryConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+func patchRegistryConfigMap(adapter helpers.CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), RegistryComponentName, &configMap.ObjectMeta.Labels)
 
 	return configMap
 }
 
-func patchSharedSecretsConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+func patchSharedSecretsConfigMap(adapter helpers.CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), SharedSecretsComponentName, &configMap.ObjectMeta.Labels)
 
 	return configMap
 }
 
-func patchSharedSecretsJobs(adapter CustomResourceAdapter, jobs []*batchv1.Job) *batchv1.Job {
+func patchSharedSecretsJobs(adapter helpers.CustomResourceAdapter, jobs []*batchv1.Job) *batchv1.Job {
 	for _, j := range jobs {
 		if !strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
 			updateCommonLabels(adapter.ReleaseName(), SharedSecretsComponentName, &j.ObjectMeta.Labels)
@@ -483,33 +482,33 @@ func patchSharedSecretsJobs(adapter CustomResourceAdapter, jobs []*batchv1.Job) 
 	return nil
 }
 
-func patchGitalyStatefulSet(adapter CustomResourceAdapter, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
+func patchGitalyStatefulSet(adapter helpers.CustomResourceAdapter, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
 	updateCommonLabels(statefulSet.ObjectMeta.Labels["release"], GitalyComponentName,
 		&statefulSet.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution[0].PodAffinityTerm.LabelSelector.MatchLabels)
 	return updateCommonStatefulSets(GitalyComponentName, statefulSet)
 }
 
-func patchMigrationsConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+func patchMigrationsConfigMap(adapter helpers.CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), MigrationsComponentName, &configMap.ObjectMeta.Labels)
 
 	return configMap
 }
 
-func patchMigrationsJob(adapter CustomResourceAdapter, job *batchv1.Job) *batchv1.Job {
+func patchMigrationsJob(adapter helpers.CustomResourceAdapter, job *batchv1.Job) *batchv1.Job {
 	updateCommonLabels(adapter.ReleaseName(), MigrationsComponentName, &job.ObjectMeta.Labels)
 
-	job.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+	job.Spec.Template.Spec.ServiceAccountName = settings.AppServiceAccount
 
 	return job
 }
 
-func patchGitalyConfigMaps(adapter CustomResourceAdapter, cfgMap *corev1.ConfigMap) *corev1.ConfigMap {
+func patchGitalyConfigMaps(adapter helpers.CustomResourceAdapter, cfgMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &cfgMap.ObjectMeta.Labels)
 
 	return cfgMap
 }
 
-func patchGitalyService(adapter CustomResourceAdapter, service *corev1.Service) *corev1.Service {
+func patchGitalyService(adapter helpers.CustomResourceAdapter, service *corev1.Service) *corev1.Service {
 	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &service.ObjectMeta.Labels)
 	updateCommonLabels(adapter.ReleaseName(), GitalyComponentName, &service.Spec.Selector)
 
@@ -517,8 +516,8 @@ func patchGitalyService(adapter CustomResourceAdapter, service *corev1.Service) 
 }
 
 // SidekiqDeployment returns the Deployment of the Sidekiq component.
-func SidekiqDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
-	template, err := GetTemplate(adapter)
+func SidekiqDeployment(adapter helpers.CustomResourceAdapter) *appsv1.Deployment {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -535,8 +534,8 @@ func patchSidekiqDeployment(deployment *appsv1.Deployment) *appsv1.Deployment {
 }
 
 // SidekiqConfigMaps returns the ConfigMaps of the Sidekiq component.
-func SidekiqConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
-	template, err := GetTemplate(adapter)
+func SidekiqConfigMaps(adapter helpers.CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return []*corev1.ConfigMap{} // WARNING: this should return an error instead.
 	}
@@ -554,7 +553,7 @@ func SidekiqConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 	return patchSidekiqConfigMaps(adapter, result)
 }
 
-func patchSidekiqConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+func patchSidekiqConfigMaps(adapter helpers.CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	for _, c := range configMaps {
 		updateCommonLabels(adapter.ReleaseName(), SidekiqComponentName, &c.ObjectMeta.Labels)
 	}
@@ -563,8 +562,8 @@ func patchSidekiqConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.
 }
 
 // RedisConfigMaps returns the ConfigMaps of the Redis component.
-func RedisConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
-	template, err := GetTemplate(adapter)
+func RedisConfigMaps(adapter helpers.CustomResourceAdapter) []*corev1.ConfigMap {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return []*corev1.ConfigMap{} // WARNING: this should return an error instead.
 	}
@@ -576,7 +575,7 @@ func RedisConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 	return patchRedisConfigMaps(adapter, result)
 }
 
-func patchRedisConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
+func patchRedisConfigMaps(adapter helpers.CustomResourceAdapter, configMaps []*corev1.ConfigMap) []*corev1.ConfigMap {
 	for _, c := range configMaps {
 		updateCommonLabels(adapter.ReleaseName(), RedisComponentName, &c.ObjectMeta.Labels)
 	}
@@ -585,8 +584,8 @@ func patchRedisConfigMaps(adapter CustomResourceAdapter, configMaps []*corev1.Co
 }
 
 // RedisServices returns the Services of the Redis component.
-func RedisServices(adapter CustomResourceAdapter) []*corev1.Service {
-	template, err := GetTemplate(adapter)
+func RedisServices(adapter helpers.CustomResourceAdapter) []*corev1.Service {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil
 		/* WARNING: This should return an error instead. */
@@ -599,7 +598,7 @@ func RedisServices(adapter CustomResourceAdapter) []*corev1.Service {
 	return patchRedisServices(adapter, results)
 }
 
-func patchRedisServices(adapter CustomResourceAdapter, services []*corev1.Service) []*corev1.Service {
+func patchRedisServices(adapter helpers.CustomResourceAdapter, services []*corev1.Service) []*corev1.Service {
 	for _, s := range services {
 		updateCommonLabels(adapter.ReleaseName(), RedisComponentName, &s.ObjectMeta.Labels)
 		updateCommonLabels(adapter.ReleaseName(), RedisComponentName, &s.Spec.Selector)
@@ -609,8 +608,8 @@ func patchRedisServices(adapter CustomResourceAdapter, services []*corev1.Servic
 }
 
 // RedisStatefulSet returns the Statefulset of the Redis component.
-func RedisStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
-	template, err := GetTemplate(adapter)
+func RedisStatefulSet(adapter helpers.CustomResourceAdapter) *appsv1.StatefulSet {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil
 		/* WARNING: This should return an error instead. */
@@ -626,8 +625,8 @@ func patchRedisStatefulSet(statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet 
 }
 
 // PostgresServices returns the Services of the Postgres component.
-func PostgresServices(adapter CustomResourceAdapter) []*corev1.Service {
-	template, err := GetTemplate(adapter)
+func PostgresServices(adapter helpers.CustomResourceAdapter) []*corev1.Service {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil
 		/* WARNING: This should return an error instead. */
@@ -640,7 +639,7 @@ func PostgresServices(adapter CustomResourceAdapter) []*corev1.Service {
 	return patchPostgresServices(adapter, results)
 }
 
-func patchPostgresServices(adapter CustomResourceAdapter, services []*corev1.Service) []*corev1.Service {
+func patchPostgresServices(adapter helpers.CustomResourceAdapter, services []*corev1.Service) []*corev1.Service {
 	for _, s := range services {
 		updateCommonLabels(adapter.ReleaseName(), PostgresComponentName, &s.ObjectMeta.Labels)
 		updateCommonLabels(adapter.ReleaseName(), PostgresComponentName, &s.Spec.Selector)
@@ -654,8 +653,8 @@ func patchPostgresServices(adapter CustomResourceAdapter, services []*corev1.Ser
 }
 
 // PostgresStatefulSet returns the StatefulSet of the PostgreSQL component.
-func PostgresStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
-	template, err := GetTemplate(adapter)
+func PostgresStatefulSet(adapter helpers.CustomResourceAdapter) *appsv1.StatefulSet {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil
 		/* WARNING: This should return an error instead. */
@@ -666,7 +665,7 @@ func PostgresStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
 	return patchPostgresStatefulSet(adapter, result)
 }
 
-func patchPostgresStatefulSet(adapter CustomResourceAdapter, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
+func patchPostgresStatefulSet(adapter helpers.CustomResourceAdapter, statefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
 	// Temporary fix: patch in the namespace because the version of the PostgreSQL chart
 	// we use does not specify `namespace` in the template.
 	statefulSet.ObjectMeta.Namespace = adapter.Namespace()
@@ -674,8 +673,8 @@ func patchPostgresStatefulSet(adapter CustomResourceAdapter, statefulSet *appsv1
 }
 
 // PostgresConfigMap returns the ConfigMap of the PostgreSQL component.
-func PostgresConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
-	template, err := GetTemplate(adapter)
+func PostgresConfigMap(adapter helpers.CustomResourceAdapter) *corev1.ConfigMap {
+	template, err := helpers.GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
@@ -686,7 +685,7 @@ func PostgresConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	return patchPostgresConfigMap(adapter, initDBConfigMap)
 }
 
-func patchPostgresConfigMap(adapter CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
+func patchPostgresConfigMap(adapter helpers.CustomResourceAdapter, configMap *corev1.ConfigMap) *corev1.ConfigMap {
 	updateCommonLabels(adapter.ReleaseName(), PostgresComponentName, &configMap.ObjectMeta.Labels)
 
 	return configMap
@@ -704,7 +703,7 @@ func updateCommonDeployments(componentName string, deployment *appsv1.Deployment
 	deployment.Spec.Replicas = &deploymentReplicasDefault
 	deployment.Spec.Template.Spec.SecurityContext.FSGroup = &localUser
 	deployment.Spec.Template.Spec.SecurityContext.RunAsUser = &localUser
-	deployment.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+	deployment.Spec.Template.Spec.ServiceAccountName = settings.AppServiceAccount
 
 	for _, v := range deployment.Spec.Template.Spec.Volumes {
 		if v.VolumeSource.ConfigMap != nil {
@@ -728,7 +727,7 @@ func updateCommonStatefulSets(componentName string, statefulSet *appsv1.Stateful
 
 	statefulSet.Spec.Template.Spec.SecurityContext.FSGroup = &localUser
 	statefulSet.Spec.Template.Spec.SecurityContext.RunAsUser = &localUser
-	statefulSet.Spec.Template.Spec.ServiceAccountName = AppServiceAccount
+	statefulSet.Spec.Template.Spec.ServiceAccountName = settings.AppServiceAccount
 
 	for _, v := range statefulSet.Spec.Template.Spec.Volumes {
 		if v.VolumeSource.ConfigMap != nil {

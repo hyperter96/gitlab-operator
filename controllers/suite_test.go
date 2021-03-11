@@ -20,10 +20,14 @@ import (
 	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 var (
+	ChartVersion string
+
 	cfg       *rest.Config
 	k8sClient client.Client
 	testEnv   *envtest.Environment
@@ -36,6 +40,7 @@ const (
 )
 
 func TestAPIs(t *testing.T) {
+	settings.Load()
 	RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
@@ -45,6 +50,8 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func(done Done) {
 	ctrl.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+
+	ChartVersion = helpers.AvailableChartVersions()[0]
 
 	By("Bootstrapping test environment")
 	testEnv = &envtest.Environment{

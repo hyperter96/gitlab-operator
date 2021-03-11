@@ -1,4 +1,4 @@
-package gitlab_test
+package helpers
 
 import (
 	"fmt"
@@ -8,14 +8,13 @@ import (
 	. "github.com/onsi/gomega"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("CustomResourceAdapter", func() {
 
-	chartVersions := gitlab.AvailableChartVersions()
+	chartVersions := AvailableChartVersions()
 
 	namespace := os.Getenv("HELM_NAMESPACE")
 	if namespace == "" {
@@ -48,20 +47,20 @@ var _ = Describe("CustomResourceAdapter", func() {
 	 */
 
 	It("must render the template only when the CR has changed", func() {
-		adapter1 := gitlab.NewCustomResourceAdapter(mockGitLab1)
-		adapter2 := gitlab.NewCustomResourceAdapter(mockGitLab2)
+		adapter1 := NewCustomResourceAdapter(mockGitLab1)
+		adapter2 := NewCustomResourceAdapter(mockGitLab2)
 
-		template1, err := gitlab.GetTemplate(adapter1)
+		template1, err := GetTemplate(adapter1)
 
 		Expect(err).To(BeNil())
 		Expect(template1).NotTo(BeNil())
 
-		template1prime, err := gitlab.GetTemplate(adapter1)
+		template1prime, err := GetTemplate(adapter1)
 
 		Expect(err).To(BeNil())
 		Expect(template1prime).To(BeIdenticalTo(template1))
 
-		template2, err := gitlab.GetTemplate(adapter2)
+		template2, err := GetTemplate(adapter2)
 
 		Expect(err).To(BeNil())
 		Expect(template2).NotTo(BeNil())

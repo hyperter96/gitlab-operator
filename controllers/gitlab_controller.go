@@ -43,6 +43,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -96,7 +97,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
+	adapter := helpers.NewCustomResourceAdapter(gitlab)
 
 	if err := r.reconcileServiceAccount(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
@@ -195,7 +196,7 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter)
 	if err != nil {
 		return err
@@ -211,7 +212,7 @@ func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitl
 	return r.runJobAndWait(ctx, adapter, job)
 }
 
-func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	job, err := gitlabctl.SelfSignedCertsJob(adapter)
 	if err != nil {
 		return err
@@ -220,7 +221,7 @@ func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gi
 	return r.runJobAndWait(ctx, adapter, job)
 }
 
-func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job) error {
+func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter helpers.CustomResourceAdapter, job *batchv1.Job) error {
 
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
 
@@ -290,7 +291,7 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.
 }
 
 //	Reconciler for all ConfigMaps come below
-func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	var configmaps []*corev1.ConfigMap
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
@@ -329,7 +330,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 
 	// initialize buckets once s3 storage is up
 	buckets := gitlabctl.BucketCreationJob(adapter.Resource())
@@ -343,7 +344,7 @@ func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter gitlabctl.
 	return r.runMigrationsJob(ctx, adapter)
 }
 
-func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
 	gitaly := gitlabctl.GitalyServiceMonitor(adapter.Resource())
@@ -379,7 +380,7 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	return r.createKubernetesResource(ctx, prometheus, nil)
 }
 
-func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	migrations, err := gitlabctl.MigrationsJob(adapter)
 	if err != nil {
 		return err
@@ -399,7 +400,7 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabc
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 
 	if err := r.reconcileWebserviceDeployment(ctx, adapter); err != nil {
 		return err
@@ -428,7 +429,7 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 
 	var statefulsets []*appsv1.StatefulSet
 
@@ -447,7 +448,7 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gi
 	return nil
 }
 
-func (r *GitLabReconciler) createKubernetesResource(ctx context.Context, object interface{}, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) createKubernetesResource(ctx context.Context, object interface{}, adapter helpers.CustomResourceAdapter) error {
 
 	if r.isObjectFound(object) {
 		return nil
@@ -488,7 +489,7 @@ func (r *GitLabReconciler) maskEmailPasword(cr *gitlabv1beta1.GitLab) error {
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	cm := gitlabctl.MinioScriptConfigMap(adapter.Resource())
 	if err := r.createKubernetesResource(ctx, cm, adapter); err != nil {
 		return err
@@ -537,7 +538,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	var services []*corev1.Service
 
 	shell := gitlabctl.ShellService(adapter)
@@ -567,7 +568,7 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 
 	exporter := gitlabctl.ExporterDeployment(adapter)
 
@@ -596,7 +597,7 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	webservice := gitlabctl.WebserviceDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), webservice, r.Scheme); err != nil {
@@ -624,7 +625,7 @@ func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, ad
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	registry := gitlabctl.RegistryDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), registry, r.Scheme); err != nil {
@@ -652,7 +653,7 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adap
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	shell := gitlabctl.ShellDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), shell, r.Scheme); err != nil {
@@ -680,7 +681,7 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	sidekiq := gitlabctl.SidekiqDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), sidekiq, r.Scheme); err != nil {
@@ -708,7 +709,7 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapt
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	tasker := gitlabctl.TaskRunnerDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), tasker, r.Scheme); err != nil {
@@ -736,7 +737,7 @@ func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, ad
 	return nil
 }
 
-func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	// if gitlabutils.IsOpenshift() {
 	// 	return r.reconcileRoute(cr)
 	// }
@@ -744,7 +745,7 @@ func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter git
 	return r.reconcileIngress(ctx, adapter)
 }
 
-func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	app := gitlabctl.MainRoute(adapter.Resource())
 
 	admin := gitlabctl.AdminRoute(adapter.Resource())
@@ -767,7 +768,7 @@ func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter gitlabctl
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 
 	controller := gitlabctl.IngressController(adapter.Resource())
 	if err := r.createKubernetesResource(ctx, controller, adapter); err != nil {
@@ -792,7 +793,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabc
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	// certificates := RequiresCertificate(cr)
 
 	issuer := gitlabctl.CertificateIssuer(adapter.Resource())
@@ -800,7 +801,7 @@ func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context,
 	return r.createKubernetesResource(ctx, issuer, adapter)
 }
 
-func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	selector := client.MatchingLabelsSelector{
 		Selector: getLabelSet(adapter.Resource()).AsSelector(),
 	}
@@ -820,7 +821,7 @@ func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabc
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, adapter helpers.CustomResourceAdapter) error {
 	excludedDeployments := [2]string{"gitlab-exporter", "gitlab-task-runner"}
 	for _, excludedDeployment := range excludedDeployments {
 		if strings.Contains(deployment.Name, excludedDeployment) {
@@ -907,7 +908,7 @@ func (r *GitLabReconciler) createNamespace(ctx context.Context, namespace *corev
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	sa := gitlabutils.ServiceAccount("gitlab-app", adapter.Namespace())
 
 	found := &corev1.ServiceAccount{}

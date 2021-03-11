@@ -1,4 +1,4 @@
-package gitlab_test
+package gitlab
 
 import (
 	"fmt"

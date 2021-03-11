@@ -1,20 +1,19 @@
-package gitlab_test
+package gitlab
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 )
 
 var _ = Describe("Migrations replacement", func() {
 
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Job", func() {
-		templated, _ := gitlab.MigrationsJob(adapter)
-		generated := gitlab.MigrationsJobDEPRECATED(mockCR)
+		templated, _ := MigrationsJob(adapter)
+		generated := MigrationsJobDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(
@@ -23,8 +22,8 @@ var _ = Describe("Migrations replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := gitlab.MigrationsConfigMap(adapter)
-		generated := gitlab.MigrationsConfigMapDEPRECATED(mockCR)
+		templated := MigrationsConfigMap(adapter)
+		generated := MigrationsConfigMapDEPRECATED(mockCR)
 
 		It("must return one ConfigMap with similar ObjectMeta", func() {
 			Expect(templated.ObjectMeta).To(

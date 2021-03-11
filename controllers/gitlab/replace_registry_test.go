@@ -1,21 +1,20 @@
-package gitlab_test
+package gitlab
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 
 	corev1 "k8s.io/api/core/v1"
-
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 )
 
 var _ = Describe("Registry replacement", func() {
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := gitlab.RegistryDeployment(adapter)
-		generated := gitlab.RegistryDeploymentDEPRECATED(mockCR)
+		templated := RegistryDeployment(adapter)
+		generated := RegistryDeploymentDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(
@@ -26,8 +25,8 @@ var _ = Describe("Registry replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := gitlab.RegistryConfigMap(adapter)
-		generated := gitlab.RegistryConfigMapDEPRECATED(adapter)
+		templated := RegistryConfigMap(adapter)
+		generated := RegistryConfigMapDEPRECATED(adapter)
 
 		It("must return a ConfigMap with similar ObjectMeta", func() {
 			Expect(templated.ObjectMeta).To(
@@ -40,8 +39,8 @@ var _ = Describe("Registry replacement", func() {
 	})
 
 	When("replacing Service", func() {
-		templated := gitlab.RegistryService(adapter)
-		generated := gitlab.RegistryServiceDeprecated(mockCR)
+		templated := RegistryService(adapter)
+		generated := RegistryServiceDeprecated(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(SatisfyReplacement(generated))

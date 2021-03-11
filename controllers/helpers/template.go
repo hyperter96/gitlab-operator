@@ -1,4 +1,4 @@
-package gitlab
+package helpers
 
 import (
 	"fmt"
@@ -8,7 +8,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/Masterminds/semver/v3"
+	"github.com/Masterminds/semver"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -21,9 +22,9 @@ var (
 // GetTemplate ensures that only one instance of Helm template exists per deployment and
 // it is rendered only when needed, e.g. it has changed.
 func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
-
 	logger := templateLogger.WithValues(
-		"reference", adapter.Reference(),
+		"namespace", adapter.Namespace(),
+		"releaseName", adapter.ReleaseName(),
 		"hash", adapter.Hash())
 
 	entry := store.lookup(adapter.Reference())
@@ -43,8 +44,6 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 	logger.Info("Rendering a new template.")
 
 	logger.V(2).Info("Rendering a new template.",
-		"namespace", adapter.Namespace(),
-		"releaseName", adapter.ReleaseName(),
 		"values", adapter.Values())
 
 	template, err := buildTemplate(adapter)
@@ -73,6 +72,46 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 	})
 
 	return entry.template, nil
+}
+
+// AvailableChartVersions lists the version of available GitLab Charts.
+// The values are sorted from newest to oldest (semantic versioning).
+func AvailableChartVersions() []string {
+	versions := []*semver.Version{}
+
+	chartsDir := os.Getenv("HELM_CHARTS")
+	if chartsDir == "" {
+		chartsDir = "/charts"
+	}
+
+	re := regexp.MustCompile(`gitlab\-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\.tgz`)
+
+	filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
+		submatches := re.FindStringSubmatch(info.Name())
+
+		if len(submatches) > 1 {
+			semver, err := semver.NewVersion(submatches[1])
+			if err != nil {
+				return err
+			}
+
+			versions = append(versions, semver)
+		}
+
+		return nil
+	})
+
+	// Sort versions from newest to oldest.
+	sort.Sort(sort.Reverse(semver.Collection(versions)))
+
+	// Convert list back to strings for compatibility with rest of codebase.
+	// NOTE: We can consider returning SemVer objects if we want to do comparisons.
+	result := make([]string, len(versions))
+	for i, v := range versions {
+		result[i] = v.String()
+	}
+
+	return result
 }
 
 type digestedTemplate struct {
@@ -131,55 +170,11 @@ func buildTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 
 func getChartArchive(chartVersion string) string {
 	logger := templateLogger.WithValues(
-		"chartVersion", chartVersion).V(1)
+		"chartVersion", chartVersion)
 
-	chartsDir := os.Getenv("HELM_CHARTS")
-	if chartsDir == "" {
-		chartsDir = "/charts"
-	}
+	logger.V(1).Info("Looking for the designated GitLab Chart in the specified directory.",
+		"directory", settings.HelmChartsDirectory)
 
-	logger.Info("Looking for the designated GitLab Chart in the specified directory.", "directory", chartsDir)
-
-	return filepath.Join(chartsDir,
+	return filepath.Join(settings.HelmChartsDirectory,
 		fmt.Sprintf("gitlab-%s.tgz", chartVersion))
-}
-
-// AvailableChartVersions lists the version of available GitLab Charts.
-// The values are sorted from newest to oldest (semantic versioning).
-func AvailableChartVersions() []string {
-	versions := []*semver.Version{}
-
-	chartsDir := os.Getenv("HELM_CHARTS")
-	if chartsDir == "" {
-		chartsDir = "/charts"
-	}
-
-	re := regexp.MustCompile(`gitlab\-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\.tgz`)
-
-	filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
-		submatches := re.FindStringSubmatch(info.Name())
-
-		if len(submatches) > 1 {
-			semver, err := semver.NewVersion(submatches[1])
-			if err != nil {
-				return err
-			}
-
-			versions = append(versions, semver)
-		}
-
-		return nil
-	})
-
-	// Sort versions from newest to oldest.
-	sort.Sort(sort.Reverse(semver.Collection(versions)))
-
-	// Convert list back to strings for compatibility with rest of codebase.
-	// NOTE: We can consider returning SemVer objects if we want to do comparisons.
-	result := make([]string, len(versions))
-	for i, v := range versions {
-		result[i] = v.String()
-	}
-
-	return result
 }

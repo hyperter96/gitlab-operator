@@ -1,4 +1,4 @@
-package gitlab
+package helpers
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 )
 
@@ -115,12 +116,15 @@ func (a *populatingAdapter) populateValues() {
 	// Set the default ImagePullPolicy
 	a.values.AddValue("global.imagePullPolicy", "IfNotPresent")
 
+	// Set the default ServiceAccount name
+	a.values.AddValue("global.serviceAccount.name", settings.AppServiceAccount)
+
 	// Use NodePort Service type for GitLab Shell
 	a.values.AddValue("gitlab.gitlab-shell.service.type", "NodePort")
 
 	// Use manager ServiceAccount and local user for shared secrets
 	a.values.AddValue("shared-secrets.serviceAccount.create", "false")
-	a.values.AddValue("shared-secrets.serviceAccount.name", ManagerServiceAccount)
+	a.values.AddValue("shared-secrets.serviceAccount.name", settings.ManagerServiceAccount)
 	a.values.AddValue("shared-secrets.securityContext.runAsUser", "")
 	a.values.AddValue("shared-secrets.securityContext.fsGroup", "")
 
@@ -133,7 +137,7 @@ func (a *populatingAdapter) populateValues() {
 	// - Configure consolidated object storage and bucket names
 	//   per hack/assets/templates/minio/initialize-buckets.sh.
 	a.values.AddValue("global.appConfig.object_store.enabled", "true")
-	a.values.AddValue("global.appConfig.object_store.connection.secret", appConfigConnectionSecretName)
+	a.values.AddValue("global.appConfig.object_store.connection.secret", settings.AppConfigConnectionSecretName)
 	a.values.AddValue("global.appConfig.object_store.connection.key", "connection")
 	a.values.AddValue("global.appConfig.lfs.bucket", "git-lfs")
 	a.values.AddValue("global.appConfig.artifacts.bucket", "gitlab-artifacts")
@@ -145,12 +149,12 @@ func (a *populatingAdapter) populateValues() {
 	a.values.AddValue("global.appConfig.pseudonymizer.bucket", "gitlab-pseudo")
 
 	// - Configure Task Runner's object storage connection.
-	a.values.AddValue("gitlab.task-runner.backups.objectStorage.config.secret", taskRunnerConnectionSecretName)
+	a.values.AddValue("gitlab.task-runner.backups.objectStorage.config.secret", settings.TaskRunnerConnectionSecretName)
 	a.values.AddValue("gitlab.task-runner.backups.objectStorage.config.key", "config")
 
 	// - Configure Registry's object storage connection.
 	a.values.AddValue("global.registry.bucket", "registry")
-	a.values.AddValue("registry.storage.secret", registryConnectionSecretName)
+	a.values.AddValue("registry.storage.secret", settings.RegistryConnectionSecretName)
 	a.values.AddValue("registry.storage.key", "config")
 }
 

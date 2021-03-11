@@ -1,21 +1,20 @@
-package gitlab_test
+package gitlab
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 
 	corev1 "k8s.io/api/core/v1"
-
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 )
 
 var _ = Describe("Sidekiq replacement", func() {
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := gitlab.SidekiqDeployment(adapter)
-		generated := gitlab.SidekiqDeploymentDEPRECATED(mockCR)
+		templated := SidekiqDeployment(adapter)
+		generated := SidekiqDeploymentDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(
@@ -26,8 +25,8 @@ var _ = Describe("Sidekiq replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := gitlab.SidekiqConfigMaps(adapter)
-		generated := gitlab.SidekiqConfigMapDEPRECATED(mockCR)
+		templated := SidekiqConfigMaps(adapter)
+		generated := SidekiqConfigMapDEPRECATED(mockCR)
 
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
 			Expect(templated).To(HaveLen(2))

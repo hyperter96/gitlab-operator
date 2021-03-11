@@ -1,4 +1,4 @@
-package gitlab_test
+package gitlab
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -6,16 +6,16 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 )
 
 var _ = Describe("GitLab Exporter replacement", func() {
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Service", func() {
-		templated := gitlab.ExporterService(adapter)
-		generated := gitlab.ExporterServiceDEPRECATED(mockCR)
+		templated := ExporterService(adapter)
+		generated := ExporterServiceDEPRECATED(mockCR)
 
 		It("must completely satisfy the genrator function", func() {
 			Expect(templated).To(
@@ -24,8 +24,8 @@ var _ = Describe("GitLab Exporter replacement", func() {
 	})
 
 	When("replacing Deployment", func() {
-		templated := gitlab.ExporterDeployment(adapter)
-		generated := gitlab.ExporterDeploymentDEPRECATED(mockCR)
+		templated := ExporterDeployment(adapter)
+		generated := ExporterDeploymentDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(
@@ -36,8 +36,8 @@ var _ = Describe("GitLab Exporter replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := gitlab.ExporterConfigMaps(adapter)
-		generated := gitlab.ExporterConfigMapDEPRECATED(mockCR)
+		templated := ExporterConfigMaps(adapter)
+		generated := ExporterConfigMapDEPRECATED(mockCR)
 
 		It("must return one ConfigMap with similar ObjectMeta", func() {
 			Expect(templated).To(HaveLen(1))

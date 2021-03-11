@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +18,7 @@ const (
 )
 
 // SharedSecretsResources returns Kubernetes resources for running shared secrets job.
-func SharedSecretsResources(adapter CustomResourceAdapter) (*corev1.ConfigMap, *batchv1.Job, error) {
+func SharedSecretsResources(adapter helpers.CustomResourceAdapter) (*corev1.ConfigMap, *batchv1.Job, error) {
 
 	cfgMap, err := SharedSecretsConfigMap(adapter)
 	if err != nil {

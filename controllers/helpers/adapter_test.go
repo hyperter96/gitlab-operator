@@ -1,4 +1,4 @@
-package gitlab_test
+package helpers
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,7 +18,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		namespace = "default"
 	}
 
-	chartVersion := gitlab.AvailableChartVersions()[0]
+	chartVersion := AvailableChartVersions()[0]
 
 	mockGitLab := &gitlabv1beta1.GitLab{
 		ObjectMeta: metav1.ObjectMeta{
@@ -33,7 +32,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	It("retrieve the attributes from GitLab CR", func() {
 
-		adapter := gitlab.NewCustomResourceAdapter(mockGitLab)
+		adapter := NewCustomResourceAdapter(mockGitLab)
 
 		Expect(adapter.Reference()).To(Equal(fmt.Sprintf("test.%s", namespace)))
 		Expect(adapter.Namespace()).To(Equal(namespace))

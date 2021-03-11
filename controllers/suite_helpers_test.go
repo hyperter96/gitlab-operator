@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +33,7 @@ func newGitLab(releaseName string) *gitlabv1beta1.GitLab {
 			Name:      releaseName,
 			Namespace: Namespace,
 			Labels: map[string]string{
-				"chart": fmt.Sprintf("gitlab-%s", gitlabctl.AvailableChartVersions()[0]),
+				"chart": fmt.Sprintf("gitlab-%s", helpers.AvailableChartVersions()[0]),
 			},
 		},
 		Spec: gitlabv1beta1.GitLabSpec{

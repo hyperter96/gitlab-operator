@@ -1,25 +1,19 @@
-package gitlab_test
+package gitlab
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
-)
-
-const (
-	// GitalyComponentName is the common name of Gitaly.
-	GitalyComponentName = "gitaly"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 )
 
 var _ = Describe("Gitaly replacement", func() {
 
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing StatefulSet", func() {
-		templated := gitlab.GitalyStatefulSet(adapter)
-		generated := gitlab.GitalyStatefulSetDEPRECATED(mockCR)
+		templated := GitalyStatefulSet(adapter)
+		generated := GitalyStatefulSetDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(
@@ -28,8 +22,8 @@ var _ = Describe("Gitaly replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := gitlab.GitalyConfigMap(adapter)
-		generated := gitlab.GitalyConfigMapDEPRECATED(mockCR)
+		templated := GitalyConfigMap(adapter)
+		generated := GitalyConfigMapDEPRECATED(mockCR)
 
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
 
@@ -43,8 +37,8 @@ var _ = Describe("Gitaly replacement", func() {
 	})
 
 	When("replacing Service", func() {
-		templated := gitlab.GitalyService(adapter)
-		generated := gitlab.GitalyServiceDEPRECATED(mockCR)
+		templated := GitalyService(adapter)
+		generated := GitalyServiceDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(

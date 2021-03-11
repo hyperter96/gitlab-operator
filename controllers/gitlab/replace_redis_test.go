@@ -1,22 +1,21 @@
-package gitlab_test
+package gitlab
 
 import (
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 )
 
 var _ = Describe("Redis replacement", func() {
 
 	mockCR := GitLabMock()
-	adapter := gitlab.NewCustomResourceAdapter(mockCR)
+	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing StatefulSet", func() {
-		templated := gitlab.RedisStatefulSet(adapter)
-		generated := gitlab.RedisStatefulSetDEPRECATED(mockCR)
+		templated := RedisStatefulSet(adapter)
+		generated := RedisStatefulSetDEPRECATED(mockCR)
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templated).To(SatisfyReplacement(generated))
@@ -28,12 +27,12 @@ var _ = Describe("Redis replacement", func() {
 		// - [x] test-redis-health
 		// - [x] test-redis
 		// - [ ] test-redis-scripts (unique to Chart)
-		templated := gitlab.RedisConfigMaps(adapter)
-		templatedCfgMap := gitlab.CfgMapFromList(fmt.Sprintf("%s-redis", mockCR.Name), templated)
-		templatedCfgMapScripts := gitlab.CfgMapFromList(fmt.Sprintf("%s-redis-health", mockCR.Name), templated)
+		templated := RedisConfigMaps(adapter)
+		templatedCfgMap := CfgMapFromList(fmt.Sprintf("%s-redis", mockCR.Name), templated)
+		templatedCfgMapScripts := CfgMapFromList(fmt.Sprintf("%s-redis-health", mockCR.Name), templated)
 
-		generatedCfgMap := gitlab.RedisConfigMapDEPRECATED(mockCR)              // equal to test-redis from Chart
-		generatedCfgMapScripts := gitlab.RedisSciptsConfigMapDEPRECATED(mockCR) // equal to test-redis-health from Chart
+		generatedCfgMap := RedisConfigMapDEPRECATED(mockCR)              // equal to test-redis from Chart
+		generatedCfgMapScripts := RedisSciptsConfigMapDEPRECATED(mockCR) // equal to test-redis-health from Chart
 
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
 			Expect(templatedCfgMap.ObjectMeta).To(
@@ -55,12 +54,12 @@ var _ = Describe("Redis replacement", func() {
 		// - [x] test-redis-headless
 		// - [x] test-redis-master
 		// - [ ] test-redis-metrics (unique to Chart)
-		templated := gitlab.RedisServices(adapter)
-		templatedSvc := gitlab.SvcFromList(fmt.Sprintf("%s-redis-master", mockCR.Name), templated)
-		templatedSvcHeadless := gitlab.SvcFromList(fmt.Sprintf("%s-redis-headless", mockCR.Name), templated)
+		templated := RedisServices(adapter)
+		templatedSvc := SvcFromList(fmt.Sprintf("%s-redis-master", mockCR.Name), templated)
+		templatedSvcHeadless := SvcFromList(fmt.Sprintf("%s-redis-headless", mockCR.Name), templated)
 
-		generatedSvc := gitlab.RedisServiceDEPRECATED(mockCR)                 // equal to test-redis-master from Chart
-		generatedHeadlessSvc := gitlab.RedisHeadlessServiceDEPRECATED(mockCR) // equal to test-redis-headless from Chart
+		generatedSvc := RedisServiceDEPRECATED(mockCR)                 // equal to test-redis-master from Chart
+		generatedHeadlessSvc := RedisHeadlessServiceDEPRECATED(mockCR) // equal to test-redis-headless from Chart
 
 		It("must completely satisfy the generator function", func() {
 			Expect(templatedSvc).To(SatisfyReplacement(generatedSvc))

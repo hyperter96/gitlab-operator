@@ -83,8 +83,9 @@ build_branch_image:
 build_latest_image:
   extends: .docker_build_job
   script:
-    - docker build -t "${CI_REGISTRY_IMAGE}:latest" .
+    - docker build -t "${CI_REGISTRY_IMAGE}:latest" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
     - docker push "${CI_REGISTRY_IMAGE}:latest"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   only:
     - master
 

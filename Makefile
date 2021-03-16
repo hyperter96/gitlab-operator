@@ -101,6 +101,7 @@ generate: controller-gen
 
 # Build the docker image
 docker-build: test # Pending https://github.com/kubernetes-sigs/kubebuilder/pull/1626
+	mkdir -p .go/pkg/mod # for builds outside of CI, this cache directory won't exit
 	podman build . -t ${IMG}
 
 # Push the docker image

@@ -1,7 +1,6 @@
 package gitlab
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -44,9 +43,13 @@ func DefaultRelease() *Release {
 // BuildRelease returns user specified release
 // returns default release if custom release is not found
 func BuildRelease(cr *gitlabv1beta1.GitLab) *Release {
-	if cr.Spec.Release != "" {
-		return getRelease(fmt.Sprintf("release_%s.yaml", cr.Spec.Release))
-	}
+	// We are not using generator functions. We can comment the following.
+	// TODO: Make sure that other components do not use the embedded templates.
+	/*
+		if cr.Spec.Release != "" {
+			return getRelease(fmt.Sprintf("release_%s.yaml", cr.Spec.Release))
+		}
+	*/
 
 	return DefaultRelease()
 }

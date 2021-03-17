@@ -2,10 +2,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"reflect"
 
 	"github.com/prometheus/common/log"
@@ -23,9 +19,14 @@ import (
 var EndpointMembers []string
 
 func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+
+	lookupKey := types.NamespacedName{Namespace: adapter.Namespace(), Name: adapter.ReleaseName()}
+
+	r.Log.V(1).Info("Updating GitLab resource status", "resource", lookupKey)
+
 	// get current Gitlab resource
 	gitlab := &gitlabv1beta1.GitLab{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: adapter.Namespace(), Name: adapter.ReleaseName()}, gitlab)
+	err := r.Get(ctx, lookupKey, gitlab)
 	if err != nil {
 		return err
 	}
@@ -49,7 +50,10 @@ func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter he
 			gitlab.Status.Phase = "Running"
 			gitlab.Status.Stage = ""
 
-			gitlab.Status.HealthCheck = getReadinessStatus(ctx, adapter)
+			// Temporarily disabled.
+			/*
+				gitlab.Status.HealthCheck = getReadinessStatus(ctx, adapter)
+			*/
 		}
 	}
 
@@ -64,6 +68,8 @@ func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter he
 	return nil
 }
 
+// Temporarily disabled.
+/*
 func getReadinessStatus(ctx context.Context, adapter helpers.CustomResourceAdapter) *gitlabv1beta1.HealthCheck {
 	var err error
 	status := &ReadinessStatus{}
@@ -91,6 +97,7 @@ func getReadinessStatus(ctx context.Context, adapter helpers.CustomResourceAdapt
 
 	return parseStatus(status)
 }
+*/
 
 // ReadinessStatus shows status of Gitlab services
 type ReadinessStatus struct {
@@ -108,7 +115,9 @@ type ServiceStatus struct {
 	Status string `json:"status,omitempty"`
 }
 
+// Temporarily disabled.
 // Retrieve health of a subsystem
+/*
 func parseStatus(status *ReadinessStatus) *gitlabv1beta1.HealthCheck {
 	var result gitlabv1beta1.HealthCheck
 
@@ -127,6 +136,7 @@ func parseStatus(status *ReadinessStatus) *gitlabv1beta1.HealthCheck {
 
 	return &result
 }
+*/
 
 func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter helpers.CustomResourceAdapter) bool {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "postgresql", gitlabutils.GitlabType)

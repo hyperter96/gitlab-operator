@@ -1,22 +1,9 @@
+---
 apiVersion: apps.gitlab.com/v1beta1
 kind: GitLab
 metadata:
   name: gitlab
 spec:
-  url: gitlab.example.com
-  volume:
-    capacity: 10Gi
-  registry:
-    url: registry.example.com
-  objectStore:
-    development: true
-  redis:
-    volume:
-      capacity: 4Gi
-  postgres:
-    volume:
-      capacity: 8Gi
-  autoscaling:
-    minReplicas: 2
-    maxReplicas: 5
-    targetCPU: 60
+  chart:
+    version: CHART_VERSION
+    values: {}

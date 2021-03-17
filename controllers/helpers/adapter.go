@@ -3,7 +3,6 @@ package helpers
 import (
 	"fmt"
 	"hash/fnv"
-	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
@@ -52,7 +51,7 @@ type CustomResourceAdapter interface {
 func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapter {
 	result := &populatingAdapter{
 		resource: gitlab,
-		values:   helm.EmptyValues(),
+		values:   helm.FromMap(gitlab.Spec.Chart.Values.Object),
 	}
 	result.populateValues()
 	result.hashValues()
@@ -83,16 +82,11 @@ func (a *populatingAdapter) Namespace() string {
 }
 
 func (a *populatingAdapter) GitLabVersion() string {
-	return a.resource.Spec.Release
+	return a.resource.Name
 }
 
 func (a *populatingAdapter) ChartVersion() string {
-	// Warning: This is a heuristic and may not work all the time.
-	s := strings.Split(a.resource.Labels["chart"], "-")
-	if len(s) < 2 {
-		return AvailableChartVersions()[0]
-	}
-	return s[len(s)-1]
+	return a.resource.Spec.Chart.Version
 }
 
 func (a *populatingAdapter) ReleaseName() string {
@@ -105,6 +99,11 @@ func (a *populatingAdapter) Values() helm.Values {
 
 func (a *populatingAdapter) populateValues() {
 	a.reference = fmt.Sprintf("%s.%s", a.resource.Name, a.resource.Namespace)
+
+	email, err := GetStringValue(a.Values(), "certmanager-issuer.email")
+	if err != nil || email == "" {
+		a.values.SetValue("certmanager-issuer.email", "admin@example.com")
+	}
 
 	// Use auto-generated self-signed wildcard certificate
 	a.values.AddValue("certmanager.install", "false")
@@ -164,8 +163,7 @@ func (a *populatingAdapter) hashValues() {
 		[]byte(a.Namespace()),
 		[]byte(a.ReleaseName()),
 		[]byte(a.ChartVersion()),
-
-		// TODO: Marshal required values
+		[]byte(fmt.Sprintf("%s", a.Values())),
 	}
 	valuesHashed := 0
 

@@ -46,6 +46,17 @@ func EmptyValues() Values {
 	}
 }
 
+// FromMap returns a value store that is populated with the provided map.
+func FromMap(container map[string]interface{}) Values {
+	if container == nil {
+		return EmptyValues()
+	}
+
+	return &plainValues{
+		container: container,
+	}
+}
+
 type plainValues struct {
 	container map[string]interface{}
 }

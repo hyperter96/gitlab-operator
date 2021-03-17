@@ -58,11 +58,6 @@ suffix_clusterrolebinding_names: kustomize
 suffix_webhook_names: kustomize
 	cd config/webhook && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
 
-# Tell the Operator which Chart version to use
-# If not set, will default to the latest in the image
-set_chart_version:
-	cd config/samples && $(KUSTOMIZE) edit add label -f chart:gitlab-${CHART_VERSION}
-
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator=${IMG}:${TAG}
@@ -72,7 +67,8 @@ deploy: manifests kustomize
 
 # Deploy sample GitLab custom resource to cluster
 deploy_sample: kustomize
-	$(KUSTOMIZE) build config/samples | kubectl -n ${NAMESPACE} apply -f -
+	cd config/samples && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
+	$(KUSTOMIZE) build config/samples | sed "s/CHART_VERSION/${CHART_VERSION}/g" | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen

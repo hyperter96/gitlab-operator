@@ -84,8 +84,8 @@ verify_operator_is_running() {
 
 install_gitlab_custom_resource() {
   echo 'Installing GitLab custom resource'
-  if [ -n "$CHART_VERSION" ]; then
-    make set_chart_version
+  if [ -z "$CHART_VERSION" ]; then
+    export CHART_VERSION=$(head -n1 CHART_VERSIONS)
   fi
   make deploy_sample
 }

@@ -131,7 +131,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if gitlabctl.RequiresCertManagerCertificate(gitlab).All() {
+	if gitlabctl.RequiresCertManagerCertificate(adapter).Any() {
 		if err := r.reconcileCertManagerCertificates(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -305,11 +305,8 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter help
 	postgres := gitlabctl.PostgresConfigMap(adapter)
 	registry := gitlabctl.RegistryConfigMap(adapter)
 
-	gitlab := gitlabctl.GetGitLabConfigMap(adapter.Resource())
-
 	configmaps = append(configmaps,
 		gitaly,
-		gitlab,
 		registry,
 		taskRunner,
 		migration,
@@ -454,6 +451,8 @@ func (r *GitLabReconciler) createKubernetesResource(ctx context.Context, object 
 		return nil
 	}
 
+	r.Log.V(1).Info("Creating object", "reference", object.(metav1.Object).GetSelfLink())
+
 	// If parent resource is nil, not owner reference will be set
 	if adapter != nil && adapter.Resource() != nil {
 		if err := controllerutil.SetControllerReference(adapter.Resource(), object.(metav1.Object), r.Scheme); err != nil {
@@ -462,31 +461,6 @@ func (r *GitLabReconciler) createKubernetesResource(ctx context.Context, object 
 	}
 
 	return r.Create(ctx, object.(runtime.Object).DeepCopyObject())
-}
-
-// TODO: Remove this function
-func (r *GitLabReconciler) maskEmailPasword(cr *gitlabv1beta1.GitLab) error {
-	gitlab := &gitlabv1beta1.GitLab{}
-	r.Get(context.TODO(), types.NamespacedName{Name: cr.Name, Namespace: cr.Namespace}, gitlab)
-
-	// If password is stored in secret and is still visible in CR, update it to emty string
-	emailPasswd, err := gitlabutils.GetSecretValue(r.Client, cr.Namespace, cr.Name+"-smtp-settings-secret", "smtp_user_password")
-	if err != nil {
-		// log.Error(err, "")
-	}
-
-	if gitlab.Spec.SMTP.Password == emailPasswd && cr.Spec.SMTP.Password != "" {
-		// Update CR
-		gitlab.Spec.SMTP.Password = ""
-		if err := r.Update(context.TODO(), gitlab); err != nil && errors.IsResourceExpired(err) {
-			return err
-		}
-	}
-
-	// If stored password does not match the CR password,
-	// update the secret and empty the password string in Gitlab CR
-
-	return nil
 }
 
 func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
@@ -524,7 +498,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter h
 	}
 
 	// Only deploy the minio service and statefulset for development builds
-	if adapter.Resource().Spec.ObjectStore.Development {
+	if minioEnabled, _ := helpers.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
 		svc := gitlabctl.MinioService(adapter.Resource())
 		if err := r.createKubernetesResource(ctx, svc, adapter); err != nil {
 			return err
@@ -746,11 +720,11 @@ func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter hel
 }
 
 func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
-	app := gitlabctl.MainRoute(adapter.Resource())
+	app := gitlabctl.MainRoute(adapter)
 
-	admin := gitlabctl.AdminRoute(adapter.Resource())
+	admin := gitlabctl.AdminRoute(adapter)
 
-	registry := gitlabctl.RegistryRoute(adapter.Resource())
+	registry := gitlabctl.RegistryRoute(adapter)
 
 	var routes []*routev1.Route
 	routes = append(routes,
@@ -770,14 +744,14 @@ func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter helpers.C
 
 func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 
-	controller := gitlabctl.IngressController(adapter.Resource())
+	controller := gitlabctl.IngressController(adapter)
 	if err := r.createKubernetesResource(ctx, controller, adapter); err != nil {
 		return err
 	}
 
 	var ingresses []*extensionsv1beta1.Ingress
-	gitlab := gitlabctl.Ingress(adapter.Resource())
-	registry := gitlabctl.RegistryIngress(adapter.Resource())
+	gitlab := gitlabctl.Ingress(adapter)
+	registry := gitlabctl.RegistryIngress(adapter)
 
 	ingresses = append(ingresses,
 		gitlab,
@@ -796,7 +770,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers
 func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	// certificates := RequiresCertificate(cr)
 
-	issuer := gitlabctl.CertificateIssuer(adapter.Resource())
+	issuer := gitlabctl.CertificateIssuer(adapter)
 
 	return r.createKubernetesResource(ctx, issuer, adapter)
 }
@@ -850,9 +824,13 @@ func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.
 		return err
 	}
 
-	if adapter.Resource().Spec.AutoScaling == nil {
-		return r.Delete(ctx, found)
-	}
+	// Since Operator-managed AutoScaling has been turned off temporarily, we can
+	// safely comment the following.
+	/*
+		if adapter.Resource().Spec.AutoScaling == nil {
+			return r.Delete(ctx, found)
+		}
+	*/
 
 	if !reflect.DeepEqual(hpa.Spec, found.Spec) {
 		if *found.Spec.MinReplicas != *hpa.Spec.MinReplicas {

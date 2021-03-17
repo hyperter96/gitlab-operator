@@ -1,50 +1,57 @@
 package gitlab
 
 import (
+	"fmt"
+
 	acmev1alpha2 "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	certmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	specCertIssuerEmail  = "admin@example.com"
+	specCertIssuerServer = "https://acme-v02.api.letsencrypt.org/directory"
+	specIngressClass     = "nginx"
+)
+
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource
-func GetIssuerConfig(cr *gitlabv1beta1.GitLab) certmanagerv1alpha2.IssuerConfig {
+func GetIssuerConfig(adapter helpers.CustomResourceAdapter) certmanagerv1alpha2.IssuerConfig {
 
-	if cr.Spec.CertIssuer != nil {
-		var ingressClass string = "nginx"
+	useCertIssuer, err := helpers.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager")
+	if err != nil {
+		useCertIssuer = true
+	}
 
-		if cr.Spec.CertIssuer.Server == "" {
-			cr.Spec.CertIssuer.Server = "https://acme-v02.api.letsencrypt.org/directory"
-		}
+	if useCertIssuer {
+		ingressClass := specIngressClass
 
-		var solvers []acmev1alpha2.ACMEChallengeSolver = cr.Spec.CertIssuer.Solvers
-		if len(solvers) == 0 {
-			solvers = []acmev1alpha2.ACMEChallengeSolver{
-				{
-					Selector: &acmev1alpha2.CertificateDNSNameSelector{},
-					HTTP01: &acmev1alpha2.ACMEChallengeSolverHTTP01{
-						Ingress: &acmev1alpha2.ACMEChallengeSolverHTTP01Ingress{
-							Class: &ingressClass,
-						},
-					},
-				},
-			}
+		email, err := helpers.GetStringValue(adapter.Values(), "certmanager-issuer.email")
+		if err != nil || email == "" {
+			email = specCertIssuerEmail
 		}
 
 		return certmanagerv1alpha2.IssuerConfig{
 			ACME: &acmev1alpha2.ACMEIssuer{
-				Email:                  cr.Spec.CertIssuer.Email,
-				Server:                 cr.Spec.CertIssuer.Server,
-				SkipTLSVerify:          cr.Spec.CertIssuer.SkipTLSVerify,
-				ExternalAccountBinding: cr.Spec.CertIssuer.ExternalAccountBinding,
+				Email:  email,
+				Server: specCertIssuerServer,
 				PrivateKey: certmetav1.SecretKeySelector{
 					LocalObjectReference: certmetav1.LocalObjectReference{
-						Name: cr.Name + "-issuer-key",
+						Name: fmt.Sprintf("%s-acme-key", adapter.ReleaseName()),
 					},
 				},
-				Solvers: solvers,
+				Solvers: []acmev1alpha2.ACMEChallengeSolver{
+					{
+						Selector: &acmev1alpha2.CertificateDNSNameSelector{},
+						HTTP01: &acmev1alpha2.ACMEChallengeSolverHTTP01{
+							Ingress: &acmev1alpha2.ACMEChallengeSolverHTTP01Ingress{
+								Class: &ingressClass,
+							},
+						},
+					},
+				},
 			},
 		}
 	}
@@ -55,17 +62,17 @@ func GetIssuerConfig(cr *gitlabv1beta1.GitLab) certmanagerv1alpha2.IssuerConfig 
 }
 
 // CertificateIssuer create a certificate generator
-func CertificateIssuer(cr *gitlabv1beta1.GitLab) *certmanagerv1alpha2.Issuer {
-	labels := gitlabutils.Label(cr.Name, "issuer", gitlabutils.GitlabType)
+func CertificateIssuer(adapter helpers.CustomResourceAdapter) *certmanagerv1alpha2.Issuer {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "issuer", gitlabutils.GitlabType)
 
 	issuer := &certmanagerv1alpha2.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: cr.Namespace,
+			Namespace: adapter.Namespace(),
 			Labels:    labels,
 		},
 		Spec: certmanagerv1alpha2.IssuerSpec{
-			IssuerConfig: GetIssuerConfig(cr),
+			IssuerConfig: GetIssuerConfig(adapter),
 		},
 	}
 
@@ -82,10 +89,15 @@ type EndpointTLS struct {
 
 // RequiresCertManagerCertificate function returns true an administrator
 // did not provide a TLS ceritificate for an endpoint
-func RequiresCertManagerCertificate(cr *gitlabv1beta1.GitLab) EndpointTLS {
+func RequiresCertManagerCertificate(adapter helpers.CustomResourceAdapter) EndpointTLS {
+
+	// This implies that Operator can only consume wildcard certificate and individual certificate
+	// per service will be ignored.
+	tlsSecretName, _ := helpers.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+
 	return EndpointTLS{
-		gitlab:   cr.Spec.TLS == "",
-		registry: cr.Spec.Registry.TLS == "",
+		gitlab:   tlsSecretName == "",
+		registry: tlsSecretName == "",
 	}
 }
 
@@ -107,8 +119,8 @@ func (ep EndpointTLS) Minio() bool {
 	return ep.minio
 }
 
-// All returns true if all ingresses require
+// Any returns true if any ingress requires
 // a cert-manager certificate
-func (ep EndpointTLS) All() bool {
+func (ep EndpointTLS) Any() bool {
 	return ep.gitlab || ep.registry || ep.minio
 }

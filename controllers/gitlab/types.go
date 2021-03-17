@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 )
 
 const (
@@ -38,11 +40,11 @@ type ConfigurationOptions struct {
 
 	// GitlabURL defines address reach deployed
 	// Gitlab instance
-	GitlabURL string
+	/* GitlabURL string */
 
 	// RegistryURL defines web address to access
 	// GitLab registry
-	RegistryURL string
+	/* RegistryURL string */
 
 	// PostgreSQL defines name of
 	// database instance
@@ -50,7 +52,7 @@ type ConfigurationOptions struct {
 
 	// EnableRegistry allows the user to disable the
 	// GitLab container registry
-	EnableRegistry bool
+	/* EnableRegistry bool */
 
 	// Registry defines name of gitlab registry
 	Registry string
@@ -99,67 +101,71 @@ type ObjectStoreOptions struct {
 	Replicas int32
 
 	// VolumeSpec for the Minio instance
-	gitlabv1beta1.VolumeSpec
+	/* gitlabv1beta1.VolumeSpec */
 }
 
 // SystemBuildOptions retrieves options from the Gitlab custom resource
 // and uses them to build configuration options used to deploy
 // the Gitlab instance
 func SystemBuildOptions(cr *gitlabv1beta1.GitLab) ConfigurationOptions {
+
+	values := helm.FromMap(cr.Spec.Chart.Values.Object)
+	objectStoreEnabled, _ := helpers.GetBoolValue(values, "global.appConfig.object_store.enabled")
+	objectStoreHost, _ := helpers.GetStringValue(values, "global.hosts.minio.name")
+	// This implies that we only support global object-store config.
+	objectStoreSecret, _ := helpers.GetStringValue(values, "global.appConfig.object_store.connection.secret")
+
 	options := ConfigurationOptions{
-		Namespace:      cr.Namespace,
-		GitlabURL:      DomainNameOnly(cr.Spec.URL),
-		EnableRegistry: !cr.Spec.Registry.Disabled,
-		RegistryURL:    DomainNameOnly(cr.Spec.Registry.URL),
-		PostgreSQL:     getName(cr.Name, "postgresql"),
-		RedisMaster:    getName(cr.Name, "redis"),
-		Gitaly:         getName(cr.Name, "gitaly"),
-		Registry:       getName(cr.Name, "registry"),
-		Webservice:     getName(cr.Name, "webservice"),
+		Namespace: cr.Namespace,
+		/*
+			GitlabURL:      DomainNameOnly(cr.Spec.URL),
+			EnableRegistry: !cr.Spec.Registry.Disabled,
+			RegistryURL:    DomainNameOnly(cr.Spec.Registry.URL),
+		*/
+		PostgreSQL:  getName(cr.Name, "postgresql"),
+		RedisMaster: getName(cr.Name, "redis"),
+		Gitaly:      getName(cr.Name, "gitaly"),
+		Registry:    getName(cr.Name, "registry"),
+		Webservice:  getName(cr.Name, "webservice"),
 		ObjectStore: ObjectStoreOptions{
-			URL:         DomainNameOnly(cr.Spec.ObjectStore.URL),
+			URL:         objectStoreHost,
 			Credentials: strings.Join([]string{cr.Name, "minio-secret"}, "-"),
-			VolumeSpec: gitlabv1beta1.VolumeSpec{
-				StorageClass: cr.Spec.ObjectStore.StorageClass,
-			},
+			/*
+				VolumeSpec: gitlabv1beta1.VolumeSpec{
+					StorageClass: cr.Spec.ObjectStore.StorageClass,
+				},
+			*/
 		},
 	}
 
-	if IsEmailConfigured(cr) {
-		options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
-	}
+	// We can comment the following. SMTP options are not used.
+	/*
+		if IsEmailConfigured(cr) {
+			options.EmailFrom, options.ReplyTo = setupSMTPOptions(cr)
+		}
+	*/
 
-	if cr.Spec.ObjectStore.Development {
+	if objectStoreEnabled {
 		options.ObjectStore.URL = getName(cr.Name, "minio")
 		options.ObjectStore.Capacity = "5Gi"
 	}
 
-	setObjectStoreEndpoint(cr, &options)
-
-	setObjectStoreCredentials(cr, &options)
-
-	return options
-}
-
-// set up the enpoint and othe options for the
-// S3 object store service
-func setObjectStoreEndpoint(cr *gitlabv1beta1.GitLab, options *ConfigurationOptions) {
-	protocol := "https"
-
-	if cr.Spec.ObjectStore.URL == "" {
+	if objectStoreHost == "" {
 		options.ObjectStore.Endpoint = ""
 	}
 
-	if strings.Contains(cr.Spec.ObjectStore.URL, "://") {
-		options.ObjectStore.Endpoint = cr.Spec.ObjectStore.URL
-	}
-
-	if cr.Spec.ObjectStore.Development {
+	if objectStoreEnabled {
 		minioSocket := []string{"http://", fmt.Sprintf("%s-minio", cr.Name), ":9000"}
 		options.ObjectStore.Endpoint = strings.Join(minioSocket, "")
 	} else {
-		options.ObjectStore.Endpoint = fmt.Sprintf("%s://%s", protocol, cr.Spec.ObjectStore.URL)
+		options.ObjectStore.Endpoint = fmt.Sprintf("https://%s", objectStoreHost)
 	}
+
+	if !objectStoreEnabled && options.ObjectStore.Credentials != "" {
+		options.ObjectStore.Credentials = objectStoreSecret
+	}
+
+	return options
 }
 
 // RailsOptions defines parameters
@@ -170,13 +176,4 @@ type RailsOptions struct {
 	OTPKey        string
 	RSAPrivateKey []string
 	JWTSigningKey []string
-}
-
-func setObjectStoreCredentials(cr *gitlabv1beta1.GitLab, options *ConfigurationOptions) {
-	// Sets the name of secret with 'accesskey' and 'secretkey'
-	if !cr.Spec.ObjectStore.Development &&
-		options.ObjectStore.Credentials != "" {
-		options.ObjectStore.Credentials = cr.Spec.ObjectStore.Credentials
-	}
-
 }

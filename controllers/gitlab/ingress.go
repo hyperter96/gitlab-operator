@@ -2,7 +2,7 @@ package gitlab
 
 import (
 	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
-	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,34 +10,34 @@ import (
 )
 
 // EndpointAnnotations generates annotation for ingresses
-func EndpointAnnotations(cr *gitlabv1beta1.GitLab, annotate bool) map[string]string {
+func EndpointAnnotations(adapter helpers.CustomResourceAdapter, annotate bool) map[string]string {
 	annotation := map[string]string{
 		"kubernetes.io/ingress.class": "nginx",
 	}
 
 	if annotate {
-		annotation["cert-manager.io/issuer"] = cr.Name + "-issuer"
+		annotation["cert-manager.io/issuer"] = adapter.ReleaseName() + "-issuer"
 	}
 
 	return annotation
 }
 
 // Ingress returns Ingress object used for GitLab
-func Ingress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
-	labels := gitlabutils.Label(cr.Name, "ingress", gitlabutils.GitlabType)
+func Ingress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "ingress", gitlabutils.GitlabType)
 
 	return &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        cr.Name + "-gitlab-ingress",
-			Namespace:   cr.Namespace,
+			Name:        adapter.ReleaseName() + "-gitlab-ingress",
+			Namespace:   adapter.Namespace(),
 			Labels:      labels,
-			Annotations: EndpointAnnotations(cr, RequiresCertManagerCertificate(cr).GitLab()),
+			Annotations: EndpointAnnotations(adapter, RequiresCertManagerCertificate(adapter).GitLab()),
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
 				{
 					// External URL for the gitlab instance
-					Host: getGitlabURL(cr),
+					Host: getGitlabURL(adapter),
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
@@ -47,7 +47,7 @@ func Ingress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 										ServicePort: intstr.IntOrString{
 											IntVal: 8181,
 										},
-										ServiceName: cr.Name + "-webservice",
+										ServiceName: adapter.ReleaseName() + "-webservice",
 									},
 								},
 								{
@@ -56,7 +56,7 @@ func Ingress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 										ServicePort: intstr.IntOrString{
 											IntVal: 8080,
 										},
-										ServiceName: cr.Name + "-webservice",
+										ServiceName: adapter.ReleaseName() + "-webservice",
 									},
 								},
 							},
@@ -64,27 +64,27 @@ func Ingress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 					},
 				},
 			},
-			TLS: getGitlabIngressCert(cr),
+			TLS: getGitlabIngressCert(adapter),
 		},
 	}
 }
 
 // RegistryIngress returns ingress object for GitLab registry
-func RegistryIngress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
-	labels := gitlabutils.Label(cr.Name, "ingress", gitlabutils.GitlabType)
+func RegistryIngress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "ingress", gitlabutils.GitlabType)
 
 	return &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        cr.Name + "-registry-ingress",
-			Namespace:   cr.Namespace,
+			Name:        adapter.ReleaseName() + "-registry-ingress",
+			Namespace:   adapter.Namespace(),
 			Labels:      labels,
-			Annotations: EndpointAnnotations(cr, RequiresCertManagerCertificate(cr).Registry()),
+			Annotations: EndpointAnnotations(adapter, RequiresCertManagerCertificate(adapter).Registry()),
 		},
 		Spec: extensionsv1beta1.IngressSpec{
 			Rules: []extensionsv1beta1.IngressRule{
 				{
 					// Add Registry rule only when registry is enabled
-					Host: getRegistryURL(cr),
+					Host: getRegistryURL(adapter),
 					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
@@ -94,7 +94,7 @@ func RegistryIngress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 										ServicePort: intstr.IntOrString{
 											IntVal: 5000,
 										},
-										ServiceName: cr.Name + "-registry",
+										ServiceName: adapter.ReleaseName() + "-registry",
 									},
 								},
 							},
@@ -102,58 +102,66 @@ func RegistryIngress(cr *gitlabv1beta1.GitLab) *extensionsv1beta1.Ingress {
 					},
 				},
 			},
-			TLS: getRegistryIngressCert(cr),
+			TLS: getRegistryIngressCert(adapter),
 		},
 	}
 }
 
-func getGitlabIngressCert(cr *gitlabv1beta1.GitLab) []extensionsv1beta1.IngressTLS {
-	if RequiresCertManagerCertificate(cr).GitLab() {
+func getGitlabIngressCert(adapter helpers.CustomResourceAdapter) []extensionsv1beta1.IngressTLS {
+	if RequiresCertManagerCertificate(adapter).GitLab() {
 		return []extensionsv1beta1.IngressTLS{
 			{
-				Hosts:      []string{getGitlabURL(cr)},
-				SecretName: cr.Name + "-gitlab-tls",
+				Hosts:      []string{getGitlabURL(adapter)},
+				SecretName: adapter.ReleaseName() + "-tls",
 			},
 		}
 	}
 
+	// This implies that Operator can only consume wildcard certificate and individual certificate
+	// per service will be ignored.
+	tlsSecretName, _ := helpers.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+
 	return []extensionsv1beta1.IngressTLS{
 		{
-			Hosts:      []string{getGitlabURL(cr)},
-			SecretName: cr.Spec.TLS,
+			Hosts:      []string{getGitlabURL(adapter)},
+			SecretName: tlsSecretName,
 		},
 	}
 }
 
-func getRegistryIngressCert(cr *gitlabv1beta1.GitLab) []extensionsv1beta1.IngressTLS {
+func getRegistryIngressCert(adapter helpers.CustomResourceAdapter) []extensionsv1beta1.IngressTLS {
 
-	if RequiresCertManagerCertificate(cr).Registry() {
+	if RequiresCertManagerCertificate(adapter).Registry() {
 		return []extensionsv1beta1.IngressTLS{
 			{
-				Hosts:      []string{getRegistryURL(cr)},
-				SecretName: cr.Name + "-registry-tls",
+				Hosts:      []string{getRegistryURL(adapter)},
+				SecretName: adapter.ReleaseName() + "-tls",
 			},
 		}
 	}
 
+	// This implies that Operator can only consume wildcard certificate and individual certificate
+	// per service will be ignored.
+	tlsSecretName, _ := helpers.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+
 	return []extensionsv1beta1.IngressTLS{
 		{
-			Hosts:      []string{getRegistryURL(cr)},
-			SecretName: cr.Spec.Registry.TLS,
+			Hosts:      []string{getRegistryURL(adapter)},
+			SecretName: tlsSecretName,
 		},
 	}
 }
 
 // IngressController is a GitLab controller for exposing GitLab instances
-func IngressController(cr *gitlabv1beta1.GitLab) *nginxv1alpha1.NginxIngressController {
-	labels := gitlabutils.Label(cr.Name, "ingress-controller", gitlabutils.GitlabType)
+func IngressController(adapter helpers.CustomResourceAdapter) *nginxv1alpha1.NginxIngressController {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "ingress-controller", gitlabutils.GitlabType)
 
 	var replicas int32 = 1
 
 	return &nginxv1alpha1.NginxIngressController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gitlab-ingress-controller",
-			Namespace: cr.Namespace,
+			Namespace: adapter.Namespace(),
 			Labels:    labels,
 		},
 		Spec: nginxv1alpha1.NginxIngressControllerSpec{

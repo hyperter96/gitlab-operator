@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"reflect"
-	"regexp"
 	"strings"
 	"text/template"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,9 +43,13 @@ func parseURL(url string, secured bool) string {
 	return strings.Join([]string{protocol, "://", url}, "")
 }
 
+// We comment these function. They are unused.
+// TODO: Remove these functions
+/*
 func hasTLS(cr *gitlabv1beta1.GitLab) bool {
 	return cr.Spec.TLS != ""
 }
+*/
 
 // The database endpoint returns the gitlab database endpoint
 // Function is used by other functions e.g. isDatabaseReady
@@ -107,6 +110,10 @@ func getCableConfiguration(cr *gitlabv1beta1.GitLab) string {
 	return config.String()
 }
 
+// We comment these function. They are unused.
+// TODO: Remove these functions
+
+/*
 // IsEmailConfigured returns true if SMTP is configured for the
 // Gitlab resource. False, otherwise
 func IsEmailConfigured(cr *gitlabv1beta1.GitLab) bool {
@@ -168,18 +175,23 @@ func getRedisOverrides(redis *gitlabv1beta1.RedisSpec) gitlabv1beta1.RedisSpec {
 		Replicas: replicas,
 	}
 }
+*/
 
-func getGitlabURL(cr *gitlabv1beta1.GitLab) string {
-	if cr.Spec.URL != "" {
-		return DomainNameOnly(cr.Spec.URL)
+func getGitlabURL(adapter helpers.CustomResourceAdapter) string {
+	url, err := helpers.GetStringValue(adapter.Values(), "global.hosts.gitlab.name")
+
+	if err == nil && url != "" {
+		return DomainNameOnly(url)
 	}
 
 	return "gitlab.example.com"
 }
 
-func getRegistryURL(cr *gitlabv1beta1.GitLab) string {
-	if cr.Spec.Registry.URL != "" {
-		return DomainNameOnly(cr.Spec.Registry.URL)
+func getRegistryURL(adapter helpers.CustomResourceAdapter) string {
+	url, err := helpers.GetStringValue(adapter.Values(), "global.hosts.registry.name")
+
+	if err == nil && url != "" {
+		return DomainNameOnly(url)
 	}
 
 	return "registry.example.com"

@@ -38,39 +38,42 @@ func PostgresStatefulSetDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet
 		},
 	}
 
+	// We can safely comment the following.
 	// Mount volume is specified
-	if cr.Spec.Database.Volume.Capacity != "" {
-		volumeSize := cr.Spec.Database.Volume.Capacity
-		claims = append(claims, corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "data",
-				Namespace: cr.Namespace,
-				Labels:    labels,
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{
-					corev1.ReadWriteOnce,
+	/*
+		if cr.Spec.Database.Volume.Capacity != "" {
+			volumeSize := cr.Spec.Database.Volume.Capacity
+			claims = append(claims, corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "data",
+					Namespace: cr.Namespace,
+					Labels:    labels,
 				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						"storage": gitlabutils.ResourceQuantity(volumeSize),
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{
+						corev1.ReadWriteOnce,
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							"storage": gitlabutils.ResourceQuantity(volumeSize),
+						},
 					},
 				},
-			},
-		})
+			})
 
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      "data",
-			MountPath: "/bitnami/postgresql",
-		})
-	}
+			mounts = append(mounts, corev1.VolumeMount{
+				Name:      "data",
+				MountPath: "/bitnami/postgresql",
+			})
+		}
 
-	psqlOptions := getPostgresOverrides(cr.Spec.Database)
+		psqlOptions := getPostgresOverrides(cr.Spec.Database)
+	*/
 
 	psql := gitlabutils.GenericStatefulSet(gitlabutils.Component{
 		Labels:               labels,
 		Namespace:            cr.Namespace,
-		Replicas:             psqlOptions.Replicas,
+		Replicas:             1,
 		VolumeClaimTemplates: claims,
 		InitContainers: []corev1.Container{
 			{
@@ -336,38 +339,41 @@ func RedisStatefulSetDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 		},
 	}
 
-	if cr.Spec.Redis.Volume.Capacity != "" {
-		volumeSize := cr.Spec.Redis.Volume.Capacity
-		claims = append(claims, corev1.PersistentVolumeClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "data",
-				Namespace: cr.Namespace,
-				Labels:    labels,
-			},
-			Spec: corev1.PersistentVolumeClaimSpec{
-				AccessModes: []corev1.PersistentVolumeAccessMode{
-					corev1.ReadWriteOnce,
+	// We can safely comment the following.
+	/*
+		if cr.Spec.Redis.Volume.Capacity != "" {
+			volumeSize := cr.Spec.Redis.Volume.Capacity
+			claims = append(claims, corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "data",
+					Namespace: cr.Namespace,
+					Labels:    labels,
 				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						"storage": gitlabutils.ResourceQuantity(volumeSize),
+				Spec: corev1.PersistentVolumeClaimSpec{
+					AccessModes: []corev1.PersistentVolumeAccessMode{
+						corev1.ReadWriteOnce,
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							"storage": gitlabutils.ResourceQuantity(volumeSize),
+						},
 					},
 				},
-			},
-		})
+			})
 
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      "data",
-			MountPath: "/data",
-		})
-	}
+			mounts = append(mounts, corev1.VolumeMount{
+				Name:      "data",
+				MountPath: "/data",
+			})
+		}
 
-	redisOptions := getRedisOverrides(cr.Spec.Redis)
+		redisOptions := getRedisOverrides(cr.Spec.Redis)
+	*/
 
 	redis := gitlabutils.GenericStatefulSet(gitlabutils.Component{
 		Labels:               labels,
 		Namespace:            cr.Namespace,
-		Replicas:             redisOptions.Replicas,
+		Replicas:             1,
 		VolumeClaimTemplates: claims,
 		Containers: []corev1.Container{
 			{
@@ -524,7 +530,7 @@ func GitalyStatefulSetDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						"storage": gitlabutils.ResourceQuantity(cr.Spec.Volume.Capacity),
+						"storage": gitlabutils.ResourceQuantity("5Gi"),
 					},
 				},
 			},

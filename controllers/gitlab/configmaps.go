@@ -11,24 +11,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// GetGitLabConfigMap returns the configmap object for GitLab resources
-func GetGitLabConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
+// GetGitLabConfigMapDEPRECATED returns the configmap object for GitLab resources
+func GetGitLabConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
-
-	var registryURL string = cr.Spec.Registry.URL
-	if registryURL == "" && !cr.Spec.Registry.Disabled {
-		registryURL = getRegistryURL(cr)
-	}
 
 	gitlab := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-config", cr.Namespace, labels)
 	options := SystemBuildOptions(cr)
 	gitlab.Data = map[string]string{
-		"gitlab_external_url":   parseURL(getGitlabURL(cr), hasTLS(cr)),
+		"gitlab_external_url":   parseURL(getGitlabURL(nil), true),
 		"postgres_db":           "gitlabhq_production",
 		"postgres_host":         options.PostgreSQL,
 		"postgres_user":         "gitlab",
 		"redis_host":            options.RedisMaster,
-		"registry_external_url": registryURL,
+		"registry_external_url": "",
 		"installation_type":     labels["app.kubernetes.io/managed-by"],
 	}
 

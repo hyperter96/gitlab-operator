@@ -11,8 +11,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// RootUserSecret returns secret containing credentials for initial root account
-func RootUserSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// RootUserSecretDEPRECATED returns secret containing credentials for initial root account
+func RootUserSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "root-password", gitlabutils.GitlabType)
 
 	rootPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -28,8 +28,8 @@ func RootUserSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return gitlab
 }
 
-// RunnerRegistrationSecret returns registration tokens for GitLab runner
-func RunnerRegistrationSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// RunnerRegistrationSecretDEPRECATED returns registration tokens for GitLab runner
+func RunnerRegistrationSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "runner-token", gitlabutils.GitlabType)
 
 	registrationToken := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -46,8 +46,8 @@ func RunnerRegistrationSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return runner
 }
 
-// ShellSSHKeysSecret returns secret containing SSH keys for GitLab shell
-func ShellSSHKeysSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// ShellSSHKeysSecretDEPRECATED returns secret containing SSH keys for GitLab shell
+func ShellSSHKeysSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
 
 	privateRSAKey, publicRSAKey := gitlabutils.Keypair(gitlabutils.RSAKeyPair())
@@ -70,8 +70,8 @@ func ShellSSHKeysSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return keys
 }
 
-// ShellSecret returns secret for GitLab shell
-func ShellSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// ShellSecretDEPRECATED returns secret for GitLab shell
+func ShellSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "shell", gitlabutils.GitlabType)
 
 	shellSecret := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -87,8 +87,8 @@ func ShellSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return shell
 }
 
-// GitalySecret returns secrets required by Gitaly server
-func GitalySecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// GitalySecretDEPRECATED returns secrets required by Gitaly server
+func GitalySecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "gitaly", gitlabutils.GitlabType)
 
 	token := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -104,8 +104,8 @@ func GitalySecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return gitaly
 }
 
-// RegistryCertSecret contains certificates for the container registry
-func RegistryCertSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// RegistryCertSecretDEPRECATED contains certificates for the container registry
+func RegistryCertSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
 
 	privateKey, _ := gitlabutils.PrivateKeyRSA(4096)
@@ -122,8 +122,8 @@ func RegistryCertSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return registry
 }
 
-// RegistryHTTPSecret returns the HTTP secret for Registry
-func RegistryHTTPSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// RegistryHTTPSecretDEPRECATED returns the HTTP secret for Registry
+func RegistryHTTPSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "registry-http", gitlabutils.GitlabType)
 
 	secret := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -139,8 +139,8 @@ func RegistryHTTPSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return registry
 }
 
-// RailsSecret returns rails secrets
-func RailsSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// RailsSecretDEPRECATED returns rails secrets
+func RailsSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "rails", gitlabutils.GitlabType)
 
 	secretkey := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -184,8 +184,8 @@ func RailsSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return rails
 }
 
-// PostgresSecret returns secrets required by Postgresql
-func PostgresSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// PostgresSecretDEPRECATED returns secrets required by Postgresql
+func PostgresSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "postgres", gitlabutils.GitlabType)
 
 	gitlabPassword := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -207,8 +207,8 @@ func PostgresSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return postgres
 }
 
-// RedisSecret returns secrets used by Redis
-func RedisSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// RedisSecretDEPRECATED returns secrets used by Redis
+func RedisSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "redis", gitlabutils.GitlabType)
 
 	password := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -224,8 +224,8 @@ func RedisSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return redis
 }
 
-// WorkhorseSecret returns secrets for Workhorse
-func WorkhorseSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// WorkhorseSecretDEPRECATED returns secrets for Workhorse
+func WorkhorseSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "workhorse", gitlabutils.GitlabType)
 
 	sharedSecret := gitlabutils.Password(gitlabutils.PasswordOptions{
@@ -242,18 +242,22 @@ func WorkhorseSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	return workhorse
 }
 
-// SMTPSettingsSecret contains secrets used by to relay email to SMTP server
-func SMTPSettingsSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
+// SMTPSettingsSecretDEPRECATED contains secrets used by to relay email to SMTP server
+func SMTPSettingsSecretDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 	labels := gitlabutils.Label(cr.Name, "smtp", gitlabutils.GitlabType)
 
 	settings := gitlabutils.GenericSecret(cr.Name+"-smtp-settings-secret", cr.Namespace, labels)
 	settings.StringData = map[string]string{
-		"smtp_settings.rb": getSMTPSettings(cr),
+		// This is deprecated. We can comment it.
+		// "smtp_settings.rb": getSMTPSettings(cr),
 	}
 
-	if cr.Spec.SMTP.Password != "" {
-		settings.StringData["smtp_user_password"] = cr.Spec.SMTP.Password
-	}
+	// Secrets are unused. We can safely comment the following.
+	/*
+		if cr.Spec.SMTP.Password != "" {
+			settings.StringData["smtp_user_password"] = cr.Spec.SMTP.Password
+		}
+	*/
 
 	return settings
 }

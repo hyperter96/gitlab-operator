@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"fmt"
-	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,19 +12,18 @@ import (
 
 var _ = Describe("CustomResourceAdapter", func() {
 
-	namespace := os.Getenv("HELM_NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
 	}
-
-	chartVersion := AvailableChartVersions()[0]
 
 	mockGitLab := &gitlabv1beta1.GitLab{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: namespace,
-			Labels: map[string]string{
-				"chart": fmt.Sprintf("gitlab-%s", chartVersion),
+		},
+		Spec: gitlabv1beta1.GitLabSpec{
+			Chart: gitlabv1beta1.GitLabChartSpec{
+				Version: chartVersions[0],
 			},
 		},
 	}
@@ -37,7 +35,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(adapter.Reference()).To(Equal(fmt.Sprintf("test.%s", namespace)))
 		Expect(adapter.Namespace()).To(Equal(namespace))
 		Expect(adapter.ReleaseName()).To(Equal("test"))
-		Expect(adapter.ChartVersion()).To(Equal(chartVersion))
+		Expect(adapter.ChartVersion()).To(Equal(chartVersions[0]))
 	})
 
 })

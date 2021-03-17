@@ -46,21 +46,8 @@ var _ webhook.Validator = &GitLab{}
 func (r *GitLab) ValidateCreate() error {
 	gitlablog.Info("validate create", "name", r.Name)
 
-	if r.Spec.URL == "" {
-		return errors.New("spec.url is empty")
-	}
-
-	if r.Spec.AutoScaling.MinReplicas != nil &&
-		*r.Spec.AutoScaling.MinReplicas > r.Spec.AutoScaling.MaxReplicas {
-		return errors.New("minReplicas can not be greater than maxReplicas in spec.autoscaling")
-	}
-
-	if r.Spec.CertIssuer != nil && r.Spec.CertIssuer.Email == "" {
-		return errors.New("spec.acme.email is empty")
-	}
-
-	if !r.Spec.Registry.Disabled && r.Spec.Registry.URL == "" {
-		return errors.New("spec.registry.url is empty")
+	if r.Spec.Chart.Version == "" {
+		return errors.New("spec.chart.version is empty")
 	}
 
 	return nil

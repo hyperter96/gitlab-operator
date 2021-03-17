@@ -1,7 +1,7 @@
 package gitlab
 
 import (
-	"fmt"
+	"context"
 	"os"
 	"testing"
 
@@ -13,15 +13,23 @@ import (
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
+)
+
+var (
+	ctx          = context.Background()
+	chartVersion = helpers.AvailableChartVersions()[0]
+	chartValues  = helm.EmptyValues()
+	namespace    = os.Getenv("HELM_NAMESPACE")
+	releaseName  = "test"
 )
 
 func GitLabMock() *gitlabv1beta1.GitLab {
-	releaseName := "test"
-	chartVersion := helpers.AvailableChartVersions()[0]
-	namespace := os.Getenv("HELM_NAMESPACE")
 	if namespace == "" {
 		namespace = "default"
 	}
+
+	// Set chart values
 
 	return &gitlabv1beta1.GitLab{
 		TypeMeta: metav1.TypeMeta{
@@ -31,22 +39,14 @@ func GitLabMock() *gitlabv1beta1.GitLab {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      releaseName,
 			Namespace: namespace,
-			Labels: map[string]string{
-				"chart": fmt.Sprintf("gitlab-%s", chartVersion),
-			},
 		},
 		Spec: gitlabv1beta1.GitLabSpec{
-			AutoScaling: &gitlabv1beta1.AutoScalingSpec{},
-			Database: &gitlabv1beta1.DatabaseSpec{
-				Volume: gitlabv1beta1.VolumeSpec{
-					Capacity: "50Gi",
+			Chart: gitlabv1beta1.GitLabChartSpec{
+				Version: chartVersion,
+				Values: gitlabv1beta1.ChartValues{
+					Object: chartValues.AsMap(),
 				},
-			},
-			Redis: &gitlabv1beta1.RedisSpec{},
-			Volume: gitlabv1beta1.VolumeSpec{
-				Capacity: "50Gi",
-			},
-		},
+			}},
 	}
 }
 

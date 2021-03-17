@@ -9,6 +9,7 @@ import (
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -20,10 +21,14 @@ import (
 )
 
 var (
-	ctx = context.Background()
+	ctx          = context.Background()
+	chartVersion = helpers.AvailableChartVersions()[0]
+	chartValues  = helm.EmptyValues()
 )
 
 func newGitLab(releaseName string) *gitlabv1beta1.GitLab {
+	// Set chart values
+
 	return &gitlabv1beta1.GitLab{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps.gitlab.com/v1beta1",
@@ -32,20 +37,13 @@ func newGitLab(releaseName string) *gitlabv1beta1.GitLab {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      releaseName,
 			Namespace: Namespace,
-			Labels: map[string]string{
-				"chart": fmt.Sprintf("gitlab-%s", helpers.AvailableChartVersions()[0]),
-			},
 		},
 		Spec: gitlabv1beta1.GitLabSpec{
-			AutoScaling: &gitlabv1beta1.AutoScalingSpec{},
-			Database: &gitlabv1beta1.DatabaseSpec{
-				Volume: gitlabv1beta1.VolumeSpec{
-					Capacity: "100",
+			Chart: gitlabv1beta1.GitLabChartSpec{
+				Version: chartVersion,
+				Values: gitlabv1beta1.ChartValues{
+					Object: chartValues.AsMap(),
 				},
-			},
-			Redis: &gitlabv1beta1.RedisSpec{},
-			Volume: gitlabv1beta1.VolumeSpec{
-				Capacity: "100",
 			},
 		},
 	}

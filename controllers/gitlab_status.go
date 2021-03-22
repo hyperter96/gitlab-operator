@@ -40,7 +40,7 @@ func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter he
 	// Check if the webservice deployment exists
 	if r.isWebserviceDeployed(ctx, adapter) {
 		// Find webservice pod(s)
-		pods := r.getEndpointMembers(ctx, adapter, adapter.ReleaseName()+"-webservice")
+		pods := r.getEndpointMembers(ctx, adapter, adapter.ReleaseName()+"-webservice-default")
 		if len(pods) == 0 {
 			gitlab.Status.Phase = "Initializing"
 			gitlab.Status.Stage = "Gitlab is initializing"
@@ -148,7 +148,7 @@ func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter helpe
 
 func (r *GitLabReconciler) isWebserviceDeployed(ctx context.Context, adapter helpers.CustomResourceAdapter) bool {
 	webservice := &appsv1.Deployment{}
-	err := r.Get(ctx, types.NamespacedName{Name: adapter.ReleaseName() + "-webservice", Namespace: adapter.Namespace()}, webservice)
+	err := r.Get(ctx, types.NamespacedName{Name: adapter.ReleaseName() + "-webservice-default", Namespace: adapter.Namespace()}, webservice)
 	return !reflect.DeepEqual(*webservice, appsv1.Deployment{}) || !errors.IsNotFound(err)
 }
 

@@ -65,4 +65,13 @@ var _ = Describe("Webservice replacement", func() {
 		})
 	})
 
+	When("replacing Ingress", func() {
+		templated := WebserviceIngress(adapter)
+		generated := IngressDEPRECATED(adapter)
+
+		It("must completely satisfy the generator function", func() {
+			Expect(templated).To(
+				SatisfyReplacement(generated))
+		})
+	})
 })

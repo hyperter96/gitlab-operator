@@ -750,7 +750,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers
 	}
 
 	var ingresses []*extensionsv1beta1.Ingress
-	gitlab := gitlabctl.Ingress(adapter)
+	gitlab := gitlabctl.WebserviceIngress(adapter)
 	registry := gitlabctl.RegistryIngress(adapter)
 
 	ingresses = append(ingresses,

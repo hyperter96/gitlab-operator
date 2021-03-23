@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 )
 
 const (
@@ -208,6 +209,18 @@ func WebserviceService(adapter helpers.CustomResourceAdapter) *corev1.Service {
 	return patchWebserviceService(adapter, result)
 }
 
+// WebserviceIngress returns the Ingress for the Webservice component.
+func WebserviceIngress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+	template, err := helpers.GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+
+	result := template.Query().IngressByComponent(WebserviceComponentName)
+
+	return patchWebserviceIngress(adapter, result)
+}
+
 func patchGitLabShellDeployment(adapter helpers.CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
 	updateCommonDeployments(GitLabShellComponentName, deployment)
 
@@ -383,6 +396,12 @@ func patchWebserviceService(adapter helpers.CustomResourceAdapter, service *core
 	return service
 }
 
+func patchWebserviceIngress(adapter helpers.CustomResourceAdapter, ingress *extensionsv1beta1.Ingress) *extensionsv1beta1.Ingress {
+	updateCommonLabels(adapter.ReleaseName(), WebserviceComponentName, &ingress.ObjectMeta.Labels)
+
+	return ingress
+}
+
 func patchWebserviceDeployment(adapter helpers.CustomResourceAdapter, deployment *appsv1.Deployment) *appsv1.Deployment {
 	updateCommonDeployments(WebserviceComponentName, deployment)
 
@@ -425,6 +444,23 @@ func patchRegistryService(adapter helpers.CustomResourceAdapter, service *corev1
 	updateCommonLabels(adapter.ReleaseName(), RegistryComponentName, &service.Spec.Selector)
 
 	return service
+}
+
+// RegistryIngress returns the Ingress of the Registry component.
+func RegistryIngress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+	template, err := helpers.GetTemplate(adapter)
+	if err != nil {
+		return nil // WARNING: this should return an error
+	}
+	result := template.Query().IngressByComponent(RegistryComponentName)
+
+	return patchRegistryIngress(adapter, result)
+}
+
+func patchRegistryIngress(adapter helpers.CustomResourceAdapter, ingress *extensionsv1beta1.Ingress) *extensionsv1beta1.Ingress {
+	updateCommonLabels(adapter.ReleaseName(), RegistryComponentName, &ingress.ObjectMeta.Labels)
+
+	return ingress
 }
 
 // RegistryDeployment returns the Deployment of the Registry component.

@@ -43,6 +43,7 @@ install_required_operators() {
   kubectl apply -f scripts/manifests/nginx-ingress-operator-sub.yaml
   wait_until_exists "crd/nginxingresscontrollers.k8s.nginx.org"
   kubectl wait --for=condition=Established crd/nginxingresscontrollers.k8s.nginx.org
+  wait_until_exists "deployment/nginx-ingress-operator" "default"
   kubectl wait --for=condition=Available -n default deployment/nginx-ingress-operator
 
   # cert-manager
@@ -119,7 +120,8 @@ cleanup() {
 
 wait_until_exists() {
   local resource="$1"
-  local maxattempts="${2:-60}"
+  local namespace="${2:-$NAMESPACE}"
+  local maxattempts="${3:-60}"
   local attempts=0
   local output
   local exitcode
@@ -131,7 +133,7 @@ wait_until_exists() {
     fi
 
     set +e
-    output="$(kubectl -n "$NAMESPACE" get "$resource" 2>&1)"
+    output="$(kubectl -n "$namespace" get "$resource" 2>&1)"
     exitcode=$?
     set -e
     if [ $exitcode -eq 0 ]; then

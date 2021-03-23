@@ -47,7 +47,7 @@ func Ingress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
 										ServicePort: intstr.IntOrString{
 											IntVal: 8181,
 										},
-										ServiceName: adapter.ReleaseName() + "-webservice",
+										ServiceName: adapter.ReleaseName() + "-webservice-default",
 									},
 								},
 								{
@@ -56,7 +56,7 @@ func Ingress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
 										ServicePort: intstr.IntOrString{
 											IntVal: 8080,
 										},
-										ServiceName: adapter.ReleaseName() + "-webservice",
+										ServiceName: adapter.ReleaseName() + "-webservice-default",
 									},
 								},
 							},
@@ -168,7 +168,7 @@ func IngressController(adapter helpers.CustomResourceAdapter) *nginxv1alpha1.Ngi
 			EnableCRDs: true,
 			Image: nginxv1alpha1.Image{
 				Repository: "docker.io/nginx/nginx-ingress",
-				Tag:        "1.8.0-ubi",
+				Tag:        "1.10.1-ubi",
 				PullPolicy: "Always",
 			},
 			// IngressClass: "gitlab",

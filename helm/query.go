@@ -7,6 +7,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -78,6 +79,12 @@ type Query interface {
 
 	// StatefulSetByComponent returns the StatefulSet for a specific component.
 	StatefulSetByComponent(component string) *appsv1.StatefulSet
+
+	// IngressesByLabels lists all Ingresses that match the labels.
+	IngressesByLabels(labels map[string]string) []*extensionsv1beta1.Ingress
+
+	// IngressByComponent returns the INgress for a specific component.
+	IngressByComponent(component string) *extensionsv1beta1.Ingress
 }
 
 type cachingQuery struct {
@@ -103,6 +110,7 @@ const (
 	gvkConfigMap   = "ConfigMap.v1.core"
 	gvkSecret      = "Secret.v1.core"
 	gvkService     = "Service.v1.core"
+	gvkIngress     = "Ingress.v1beta1.extensions"
 
 	appLabel = "app"
 )

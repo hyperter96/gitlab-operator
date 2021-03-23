@@ -22,8 +22,8 @@ func EndpointAnnotations(adapter helpers.CustomResourceAdapter, annotate bool) m
 	return annotation
 }
 
-// Ingress returns Ingress object used for GitLab
-func Ingress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+// IngressDEPRECATED returns Ingress object used for GitLab
+func IngressDEPRECATED(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "ingress", gitlabutils.GitlabType)
 
 	return &extensionsv1beta1.Ingress{
@@ -69,8 +69,8 @@ func Ingress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
 	}
 }
 
-// RegistryIngress returns ingress object for GitLab registry
-func RegistryIngress(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+// RegistryIngressDEPRECATED returns ingress object for GitLab registry
+func RegistryIngressDEPRECATED(adapter helpers.CustomResourceAdapter) *extensionsv1beta1.Ingress {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "ingress", gitlabutils.GitlabType)
 
 	return &extensionsv1beta1.Ingress{

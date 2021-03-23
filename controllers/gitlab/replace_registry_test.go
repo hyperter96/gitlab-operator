@@ -46,4 +46,14 @@ var _ = Describe("Registry replacement", func() {
 			Expect(templated).To(SatisfyReplacement(generated))
 		})
 	})
+
+	When("replacing Ingress", func() {
+		templated := RegistryIngress(adapter)
+		generated := RegistryIngressDEPRECATED(adapter)
+
+		It("must completely satisfy the generator function", func() {
+			Expect(templated).To(
+				SatisfyReplacement(generated))
+		})
+	})
 })

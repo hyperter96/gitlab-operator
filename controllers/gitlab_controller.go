@@ -202,10 +202,7 @@ func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter help
 		return err
 	}
 
-	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
-
-	logger.V(1).Info("Ensuring Job's ConfigMap exists", "configmap", cfgMap.Name)
-	if err := r.createKubernetesResource(ctx, cfgMap, adapter); err != nil {
+	if _, err := r.createIfNotExists(ctx, cfgMap, adapter); err != nil {
 		return err
 	}
 
@@ -225,21 +222,18 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter helpers.Cu
 
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
 
-	lookupKey := types.NamespacedName{
-		Name:      job.Name,
-		Namespace: job.Namespace,
-	}
-
-	logger.V(1).Info("Creating Job")
-	if err := r.createKubernetesResource(ctx, job, adapter); err != nil {
+	_, err := r.createIfNotExists(ctx, job, adapter)
+	if err != nil {
 		return err
 	}
-
-	logger.Info("Waiting for Job to finish")
 
 	elapsed := time.Duration(0)
 	timeout := gitlabctl.SharedSecretsJobTimeout()
 	waitPeriod := gitlabctl.SharedSecretsJobWaitPeriod(timeout, elapsed)
+	lookupKey := types.NamespacedName{
+		Name:      job.Name,
+		Namespace: job.Namespace,
+	}
 
 	var result error = nil
 
@@ -251,10 +245,10 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter helpers.Cu
 			break
 		}
 
-		logger.V(1).Info("Checking the status of Job")
+		logger.V(2).Info("Checking the status of Job")
 		lookupVal := &batchv1.Job{}
 		if err := r.Get(context.Background(), lookupKey, lookupVal); err != nil {
-			logger.V(1).Info("Failed to check the status of Job. Skipping.", "error", err)
+			logger.V(2).Info("Failed to check the status of Job", "error", err)
 
 			/*
 			 * This will make sure we won't stuck here forever,
@@ -272,14 +266,14 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter helpers.Cu
 		}
 
 		if lookupVal.Status.Succeeded > 0 {
-			logger.Info("Success! The Job is complete.")
+			logger.V(2).Info("Job succeeded")
 			break
 		}
 
 		if lookupVal.Status.Failed > 0 {
 			result = errors.NewInternalError(
-				fmt.Errorf("The %s Job has failed. Check the log output of the Job: %s", job.Name, lookupKey))
-			logger.Error(result, "Failure! The Job is complete.")
+				fmt.Errorf("Job %s has failed, check the logs in %s", job.Name, lookupKey))
+			logger.Error(result, "Job failed")
 			break
 		}
 
@@ -319,7 +313,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter help
 	configmaps = append(configmaps, redis...)
 
 	for _, cm := range configmaps {
-		if err := r.createKubernetesResource(ctx, cm, adapter); err != nil {
+		if _, err := r.createIfNotExists(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
@@ -331,12 +325,12 @@ func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter helpers.Cu
 
 	// initialize buckets once s3 storage is up
 	buckets := gitlabctl.BucketCreationJob(adapter.Resource())
-	if err := r.createKubernetesResource(ctx, buckets, adapter); err != nil {
+	if _, err := r.createIfNotExists(ctx, buckets, adapter); err != nil {
 		return err
 	}
 
 	// migration := gitlabctl.MigrationsJob(cr)
-	// return r.createKubernetesResource(migration, cr)
+	// return r.createIfNotExists(migration, cr)
 
 	return r.runMigrationsJob(ctx, adapter)
 }
@@ -363,18 +357,20 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	)
 
 	for _, sm := range servicemonitors {
-		if err := r.createKubernetesResource(ctx, sm, adapter); err != nil {
+		if _, err := r.createIfNotExists(ctx, sm, adapter); err != nil {
 			return err
 		}
 	}
 
 	service := gitlabctl.ExposePrometheusCluster(adapter.Resource())
-	if err := r.createKubernetesResource(ctx, service, nil); err != nil {
+	if _, err := r.createIfNotExists(ctx, service, nil); err != nil {
 		return err
 	}
 
 	prometheus := gitlabctl.PrometheusCluster(adapter.Resource())
-	return r.createKubernetesResource(ctx, prometheus, nil)
+
+	_, err := r.createIfNotExists(ctx, prometheus, nil)
+	return err
 }
 
 func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
@@ -383,14 +379,7 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter helpers
 		return err
 	}
 
-	lookupKey := types.NamespacedName{
-		Name:      migrations.Name,
-		Namespace: migrations.Namespace,
-	}
-
-	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", lookupKey)
-	logger.V(1).Info("Creating migrations Job", "name", migrations.Name)
-	if err := r.createKubernetesResource(ctx, migrations, adapter); err != nil {
+	if _, err := r.createIfNotExists(ctx, migrations, adapter); err != nil {
 		return err
 	}
 
@@ -437,7 +426,7 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter he
 	statefulsets = append(statefulsets, postgres, redis, gitaly)
 
 	for _, statefulset := range statefulsets {
-		if err := r.createKubernetesResource(ctx, statefulset, adapter); err != nil {
+		if _, err := r.createIfNotExists(ctx, statefulset, adapter); err != nil {
 			return err
 		}
 	}
@@ -445,32 +434,55 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter he
 	return nil
 }
 
-func (r *GitLabReconciler) createKubernetesResource(ctx context.Context, object interface{}, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object interface{}, adapter helpers.CustomResourceAdapter) (created bool, err error) {
+	created = false
+	err = nil
 
-	if r.isObjectFound(object) {
-		return nil
+	// Specify reference if the parent resource is not nil
+	var reference string
+	if adapter != nil && adapter.Reference() != "" {
+		reference = adapter.Reference()
 	}
 
-	r.Log.V(1).Info("Creating object", "reference", object.(metav1.Object).GetSelfLink())
+	logger := r.Log.WithValues(
+		"gitlab", reference,
+		"kind", object.(runtime.Object).GetObjectKind().GroupVersionKind(),
+		"name", object.(metav1.Object).GetName(),
+		"namespace", object.(metav1.Object).GetNamespace())
 
-	// If parent resource is nil, not owner reference will be set
+	logger.V(2).Info("Ensuring object exists")
+
+	if r.isObjectFound(object) {
+		logger.V(2).Info("Object already exists")
+		return
+	}
+
+	// If parent resource is nil, no owner reference will be set
 	if adapter != nil && adapter.Resource() != nil {
-		if err := controllerutil.SetControllerReference(adapter.Resource(), object.(metav1.Object), r.Scheme); err != nil {
-			return err
+		logger.V(2).Info("Setting controller reference")
+		if err = controllerutil.SetControllerReference(adapter.Resource(), object.(metav1.Object), r.Scheme); err != nil {
+			return
 		}
 	}
 
-	return r.Create(ctx, object.(runtime.Object).DeepCopyObject())
+	logger.V(1).Info("Creating object")
+	err = r.Create(ctx, object.(runtime.Object).DeepCopyObject())
+	if err == nil {
+		logger.V(1).Info("Object created successfully")
+		created = true
+	}
+
+	return
 }
 
 func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 	cm := gitlabctl.MinioScriptConfigMap(adapter.Resource())
-	if err := r.createKubernetesResource(ctx, cm, adapter); err != nil {
+	if _, err := r.createIfNotExists(ctx, cm, adapter); err != nil {
 		return err
 	}
 
 	secret := gitlabctl.MinioSecret(adapter.Resource())
-	if err := r.createKubernetesResource(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	if _, err := r.createIfNotExists(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
@@ -479,7 +491,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter h
 		return err
 	}
 
-	if err := r.createKubernetesResource(ctx, appConfigSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	if _, err := r.createIfNotExists(ctx, appConfigSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
@@ -488,25 +500,26 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter h
 		return err
 	}
 
-	if err := r.createKubernetesResource(ctx, registryConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	if _, err := r.createIfNotExists(ctx, registryConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
 	taskRunnerConnectionSecret := gitlabctl.TaskRunnerConnectionSecret(adapter, *secret)
-	if err := r.createKubernetesResource(ctx, taskRunnerConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	if _, err := r.createIfNotExists(ctx, taskRunnerConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
 	// Only deploy the minio service and statefulset for development builds
 	if minioEnabled, _ := helpers.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
 		svc := gitlabctl.MinioService(adapter.Resource())
-		if err := r.createKubernetesResource(ctx, svc, adapter); err != nil {
+		if _, err := r.createIfNotExists(ctx, svc, adapter); err != nil {
 			return err
 		}
 
 		// deploy minio
 		minio := gitlabctl.MinioStatefulSet(adapter.Resource())
-		return r.createKubernetesResource(ctx, minio, adapter)
+		_, err := r.createIfNotExists(ctx, minio, adapter)
+		return err
 	}
 
 	return nil
@@ -534,7 +547,7 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter helper
 	services = append(services, postgres...)
 
 	for _, svc := range services {
-		if err := r.createKubernetesResource(ctx, svc, adapter); err != nil {
+		if _, err := r.createIfNotExists(ctx, svc, adapter); err != nil {
 			return err
 		}
 	}
@@ -734,7 +747,7 @@ func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter helpers.C
 	)
 
 	for _, route := range routes {
-		if err := r.createKubernetesResource(ctx, route, adapter); err != nil {
+		if _, err := r.createIfNotExists(ctx, route, adapter); err != nil {
 			return err
 		}
 	}
@@ -745,7 +758,7 @@ func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter helpers.C
 func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 
 	controller := gitlabctl.IngressController(adapter)
-	if err := r.createKubernetesResource(ctx, controller, adapter); err != nil {
+	if _, err := r.createIfNotExists(ctx, controller, adapter); err != nil {
 		return err
 	}
 
@@ -759,7 +772,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers
 	)
 
 	for _, ingress := range ingresses {
-		if err := r.createKubernetesResource(ctx, ingress, adapter); err != nil {
+		if _, err := r.createIfNotExists(ctx, ingress, adapter); err != nil {
 			return err
 		}
 	}
@@ -772,7 +785,8 @@ func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context,
 
 	issuer := gitlabctl.CertificateIssuer(adapter)
 
-	return r.createKubernetesResource(ctx, issuer, adapter)
+	_, err := r.createIfNotExists(ctx, issuer, adapter)
+	return err
 }
 
 func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter helpers.CustomResourceAdapter) error {

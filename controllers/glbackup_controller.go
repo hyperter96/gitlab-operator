@@ -122,7 +122,7 @@ func (r *GLBackupReconciler) reconcileBackupJob(ctx context.Context, cr *gitlabv
 		return r.updateBackupJob(ctx, backup)
 	}
 
-	return r.createKubernetesResource(backup, cr)
+	return r.createIfNotExists(backup, cr)
 }
 
 func (r *GLBackupReconciler) updateBackupJob(ctx context.Context, backup *batchv1.Job) error {
@@ -146,7 +146,7 @@ func (r *GLBackupReconciler) reconcileBackupSchedule(ctx context.Context, cr *gi
 		return r.updateBackupSchedule(ctx, backup)
 	}
 
-	return r.createKubernetesResource(backup, cr)
+	return r.createIfNotExists(backup, cr)
 }
 
 func (r *GLBackupReconciler) updateBackupSchedule(ctx context.Context, backup *batchv1beta1.CronJob) error {
@@ -180,10 +180,10 @@ func (r *GLBackupReconciler) reconcileBackupConfigMap(ctx context.Context, cr *g
 		return r.Patch(ctx, lock, client.MergeFrom(backupLock))
 	}
 
-	return r.createKubernetesResource(backupLock, cr)
+	return r.createIfNotExists(backupLock, cr)
 }
 
-func (r *GLBackupReconciler) createKubernetesResource(object interface{}, parent *gitlabv1beta1.GLBackup) error {
+func (r *GLBackupReconciler) createIfNotExists(object interface{}, parent *gitlabv1beta1.GLBackup) error {
 
 	// If parent resource is not nil, owner reference will be set
 	if parent != nil {

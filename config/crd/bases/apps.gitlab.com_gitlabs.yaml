@@ -51,6 +51,7 @@ spec:
                   description: ChartValues is the set of Helm values that is used
                     to render the GitLab Chart.
                   type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 version:
                   description: ChartVersion is the semantic version of the GitLab
                     Chart.

@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -10,17 +11,62 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 
+	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 )
 
 var _ = Describe("GitLab controller", func() {
+
+	Context("CRD", func() {
+
+		BeforeEach(func() {
+			os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "1")
+		})
+
+		AfterEach(func() {
+			os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "300")
+		})
+
+		It("Should create a CR with the specified Chart values", func() {
+			releaseName := "crd-testing"
+
+			chartValues := helm.EmptyValues()
+			chartValues.SetValue("global.hosts.domain", "mydomain.com")
+			chartValues.SetValue("certmanager-issuer.email", "me@mydomain.com")
+
+			By("Creating a new GitLab resource")
+			Expect(createObject(newGitLab(releaseName, chartValues), true)).Should(Succeed())
+
+			By("Checking the created GitLab resource")
+			Eventually(func() error {
+				gitlab := &gitlabv1beta1.GitLab{}
+				if err := getObject(releaseName, gitlab); err != nil {
+					return err
+				}
+
+				if !reflect.DeepEqual(gitlab.Spec.Chart.Values.Object, chartValues.AsMap()) {
+					return fmt.Errorf("The Chart values of CR are not equal to the expected values. Observed: %s",
+						gitlab.Spec.Chart.Values.Object)
+				}
+
+				return nil
+			}, PollTimeout, PollInterval).Should(Succeed())
+
+			gitlab := &gitlabv1beta1.GitLab{}
+
+			By("Deleting the created GitLab resource")
+			Eventually(deleteObjectPromise(releaseName, gitlab),
+				PollTimeout, PollInterval).Should(Succeed())
+		})
+	})
 
 	Context("Shared secrets and Self signed certificates Jobs", func() {
 		When("Both Jobs succeed", func() {
 			releaseName := "jobs-succeeded"
 
 			BeforeEach(func() {
-				createGitLabResource(releaseName)
+				createGitLabResource(releaseName, emptyValues)
 			})
 
 			It("Should create resources for Jobs and continue the reconcile loop", func() {
@@ -61,7 +107,7 @@ var _ = Describe("GitLab controller", func() {
 			releaseName := "jobs-failed"
 
 			BeforeEach(func() {
-				createGitLabResource(releaseName)
+				createGitLabResource(releaseName, emptyValues)
 			})
 
 			It("Should fail the reconcile loop", func() {
@@ -82,7 +128,7 @@ var _ = Describe("GitLab controller", func() {
 			releaseName := "self-signed-job-failed"
 
 			BeforeEach(func() {
-				createGitLabResource(releaseName)
+				createGitLabResource(releaseName, emptyValues)
 			})
 
 			It("Should fail the reconcile loop", func() {
@@ -107,7 +153,7 @@ var _ = Describe("GitLab controller", func() {
 
 			BeforeEach(func() {
 				os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "1")
-				createGitLabResource(releaseName)
+				createGitLabResource(releaseName, emptyValues)
 			})
 
 			It("Should fail the reconcile loop", func() {

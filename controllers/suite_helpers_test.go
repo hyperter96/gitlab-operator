@@ -23,12 +23,10 @@ import (
 var (
 	ctx          = context.Background()
 	chartVersion = helpers.AvailableChartVersions()[0]
-	chartValues  = helm.EmptyValues()
+	emptyValues  = helm.EmptyValues()
 )
 
-func newGitLab(releaseName string) *gitlabv1beta1.GitLab {
-	// Set chart values
-
+func newGitLab(releaseName string, chartValues helm.Values) *gitlabv1beta1.GitLab {
 	return &gitlabv1beta1.GitLab{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps.gitlab.com/v1beta1",
@@ -68,6 +66,15 @@ func getObject(name string, obj runtime.Object) error {
 func getObjectPromise(name string, obj runtime.Object) func() error {
 	return func() error {
 		return getObject(name, obj)
+	}
+}
+
+func getObjectPromiseCallback(name string, obj runtime.Object, callback func(runtime.Object) error) func() error {
+	return func() error {
+		if err := getObject(name, obj); err != nil {
+			return err
+		}
+		return callback(obj)
 	}
 }
 
@@ -162,9 +169,9 @@ func componentLabels(releaseName, componentName string) string {
 	return fmt.Sprintf("release=%s,app.kubernetes.io/component=%s", releaseName, componentName)
 }
 
-func createGitLabResource(releaseName string) {
+func createGitLabResource(releaseName string, chartValues helm.Values) {
 	By("Creating a new GitLab resource")
-	Expect(createObject(newGitLab(releaseName), true)).Should(Succeed())
+	Expect(createObject(newGitLab(releaseName, chartValues), true)).Should(Succeed())
 
 	By("Checking GitLab resource is created")
 	Eventually(getObjectPromise(releaseName, &gitlabv1beta1.GitLab{}),

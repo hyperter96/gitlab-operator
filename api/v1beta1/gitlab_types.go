@@ -37,6 +37,7 @@ type GitLabChartSpec struct {
 	Version string `json:"version,omitempty"`
 
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// ChartValues is the set of Helm values that is used to render the GitLab Chart.
 	Values ChartValues `json:"values,omitempty"`
 }

@@ -45,6 +45,9 @@ install_required_operators() {
   kubectl wait --for=condition=Established crd/nginxingresscontrollers.k8s.nginx.org
   wait_until_exists "deployment/nginx-ingress-operator" "default"
   kubectl wait --for=condition=Available -n default deployment/nginx-ingress-operator
+  kubectl apply -f scripts/manifests/nginx-ingress-controller.yaml
+  wait_until_exists "deployment/nginx-ingress-controller" "default"
+  kubectl wait --for=condition=Available -n default deployment/nginx-ingress-controller
 
   # cert-manager
   kubectl apply -f scripts/manifests/cert-manager-sub.yaml

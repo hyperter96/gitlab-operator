@@ -39,7 +39,6 @@ import (
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 
-	nginxv1alpha1 "github.com/nginxinc/nginx-ingress-operator/pkg/apis/k8s/v1alpha1"
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
@@ -79,7 +78,6 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes/custom-host,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=k8s.nginx.org,resources=nginxingresscontrollers,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile triggers when an event occurs on the watched resource
 func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -192,7 +190,6 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&monitoringv1.ServiceMonitor{}).
 		Owns(&certmanagerv1alpha2.Issuer{}).
 		Owns(&certmanagerv1alpha2.Certificate{}).
-		Owns(&nginxv1alpha1.NginxIngressController{}).
 		Complete(r)
 }
 
@@ -756,12 +753,6 @@ func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter helpers.C
 }
 
 func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
-
-	controller := gitlabctl.IngressController(adapter)
-	if _, err := r.createIfNotExists(ctx, controller, adapter); err != nil {
-		return err
-	}
-
 	var ingresses []*extensionsv1beta1.Ingress
 	gitlab := gitlabctl.WebserviceIngress(adapter)
 	registry := gitlabctl.RegistryIngress(adapter)

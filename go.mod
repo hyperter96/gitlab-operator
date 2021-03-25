@@ -9,7 +9,6 @@ require (
 	github.com/google/go-cmp v0.4.0
 	github.com/imdario/mergo v0.3.9
 	github.com/jetstack/cert-manager v0.15.2
-	github.com/nginxinc/nginx-ingress-operator v0.0.6
 	github.com/nxadm/tail v1.4.5 // indirect
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.1

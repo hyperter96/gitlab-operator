@@ -13,10 +13,10 @@ var _ = Describe("Sidekiq replacement", func() {
 	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := SidekiqDeployment(adapter)
-		generated := SidekiqDeploymentDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := SidekiqDeployment(adapter)
+			generated := SidekiqDeploymentDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated,
 					IgnoreFields(corev1.ConfigMapVolumeSource{}, "Items"),
@@ -25,10 +25,10 @@ var _ = Describe("Sidekiq replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := SidekiqConfigMaps(adapter)
-		generated := SidekiqConfigMapDEPRECATED(mockCR)
-
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
+			templated := SidekiqConfigMaps(adapter)
+			generated := SidekiqConfigMapDEPRECATED(mockCR)
+
 			Expect(templated).To(HaveLen(2))
 			Expect(templated[0].ObjectMeta).To(
 				SatisfyReplacement(generated.ObjectMeta))
@@ -37,6 +37,9 @@ var _ = Describe("Sidekiq replacement", func() {
 		})
 
 		It("must return two ConfigMaps that contain the same Data items", func() {
+			templated := SidekiqConfigMaps(adapter)
+			generated := SidekiqConfigMapDEPRECATED(mockCR)
+
 			templatedData := map[string]string{}
 
 			for _, cfgMap := range templated {

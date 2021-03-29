@@ -84,7 +84,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("gitlab", req.NamespacedName)
 
-	log.Info("Reconciling GitLab", "name", req.NamespacedName.Name, "namespace", req.NamespacedName.Namespace)
+	log.Info("Reconciling GitLab")
 	gitlab := &gitlabv1beta1.GitLab{}
 	if err := r.Get(ctx, req.NamespacedName, gitlab); err != nil {
 		if errors.IsNotFound(err) {
@@ -137,6 +137,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	waitInterval := 5 * time.Second
 	if !r.ifCoreServicesReady(ctx, adapter) {
+		log.Info("Core services are not ready. Waiting and retrying", "interval", waitInterval)
 		return ctrl.Result{RequeueAfter: waitInterval}, nil
 	}
 
@@ -321,7 +322,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter help
 func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
 
 	// initialize buckets once s3 storage is up
-	buckets := gitlabctl.BucketCreationJob(adapter.Resource())
+	buckets := gitlabctl.BucketCreationJob(adapter)
 	if _, err := r.createIfNotExists(ctx, buckets, adapter); err != nil {
 		return err
 	}
@@ -473,12 +474,12 @@ func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object interfa
 }
 
 func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
-	cm := gitlabctl.MinioScriptConfigMap(adapter.Resource())
+	cm := gitlabctl.MinioScriptConfigMap(adapter)
 	if _, err := r.createIfNotExists(ctx, cm, adapter); err != nil {
 		return err
 	}
 
-	secret := gitlabctl.MinioSecret(adapter.Resource())
+	secret := gitlabctl.MinioSecret(adapter)
 	if _, err := r.createIfNotExists(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
@@ -508,13 +509,13 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter h
 
 	// Only deploy the minio service and statefulset for development builds
 	if minioEnabled, _ := helpers.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
-		svc := gitlabctl.MinioService(adapter.Resource())
+		svc := gitlabctl.MinioService(adapter)
 		if _, err := r.createIfNotExists(ctx, svc, adapter); err != nil {
 			return err
 		}
 
 		// deploy minio
-		minio := gitlabctl.MinioStatefulSet(adapter.Resource())
+		minio := gitlabctl.MinioStatefulSet(adapter)
 		_, err := r.createIfNotExists(ctx, minio, adapter)
 		return err
 	}

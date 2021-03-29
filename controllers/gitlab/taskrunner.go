@@ -10,7 +10,7 @@ import (
 // TaskRunnerDeploymentDEPRECATED returns deployment for TaskRunner
 func TaskRunnerDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	taskRunner := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,

@@ -11,7 +11,7 @@ import (
 // WebserviceDeploymentDEPRECATED returns webservice deployment
 func WebserviceDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "webservice", gitlabutils.GitlabType)
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	webservice := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,

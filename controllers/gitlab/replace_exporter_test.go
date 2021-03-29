@@ -14,20 +14,20 @@ var _ = Describe("GitLab Exporter replacement", func() {
 	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Service", func() {
-		templated := ExporterService(adapter)
-		generated := ExporterServiceDEPRECATED(mockCR)
-
 		It("must completely satisfy the genrator function", func() {
+			templated := ExporterService(adapter)
+			generated := ExporterServiceDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated))
 		})
 	})
 
 	When("replacing Deployment", func() {
-		templated := ExporterDeployment(adapter)
-		generated := ExporterDeploymentDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := ExporterDeployment(adapter)
+			generated := ExporterDeploymentDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated,
 					IgnoreFields(corev1.ConfigMapVolumeSource{}, "Items"),
@@ -36,10 +36,10 @@ var _ = Describe("GitLab Exporter replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := ExporterConfigMaps(adapter)
-		generated := ExporterConfigMapDEPRECATED(mockCR)
-
 		It("must return one ConfigMap with similar ObjectMeta", func() {
+			templated := ExporterConfigMaps(adapter)
+			generated := ExporterConfigMapDEPRECATED(mockCR)
+
 			Expect(templated).To(HaveLen(1))
 			Expect(templated[0].ObjectMeta).To(
 				SatisfyReplacement(generated.ObjectMeta),
@@ -47,6 +47,9 @@ var _ = Describe("GitLab Exporter replacement", func() {
 		})
 
 		It("must return one ConfigMap that contains the same Data items", func() {
+			templated := ExporterConfigMaps(adapter)
+			generated := ExporterConfigMapDEPRECATED(mockCR)
+
 			Expect(templated).To(HaveLen(1))
 
 			generatedData := map[string]string{}

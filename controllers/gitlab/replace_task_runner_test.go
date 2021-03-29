@@ -14,10 +14,10 @@ var _ = Describe("Task Runner replacement", func() {
 	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := TaskRunnerDeployment(adapter)
-		generated := TaskRunnerDeploymentDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := TaskRunnerDeployment(adapter)
+			generated := TaskRunnerDeploymentDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated,
 					IgnoreFields(corev1.ConfigMapVolumeSource{}, "Items"),
@@ -26,15 +26,18 @@ var _ = Describe("Task Runner replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := TaskRunnerConfigMap(adapter)
-		generated := TaskRunnerConfigMapDEPRECATED(mockCR)
-
 		It("must return one ConfigMap with similar ObjectMeta", func() {
+			templated := TaskRunnerConfigMap(adapter)
+			generated := TaskRunnerConfigMapDEPRECATED(mockCR)
+
 			Expect(templated.ObjectMeta).To(
 				SatisfyReplacement(generated.ObjectMeta))
 		})
 
 		It("must return one ConfigMap that contains the same Data items", func() {
+			templated := TaskRunnerConfigMap(adapter)
+			generated := TaskRunnerConfigMapDEPRECATED(mockCR)
+
 			Expect(templated.Data).To(SatisfyReplacement(generated.Data))
 		})
 	})

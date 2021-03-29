@@ -13,10 +13,10 @@ var _ = Describe("Registry replacement", func() {
 	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := RegistryDeployment(adapter)
-		generated := RegistryDeploymentDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := RegistryDeployment(adapter)
+			generated := RegistryDeploymentDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated,
 					IgnoreFields(corev1.ConfigMapVolumeSource{}, "Items"),
@@ -25,24 +25,27 @@ var _ = Describe("Registry replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := RegistryConfigMap(adapter)
-		generated := RegistryConfigMapDEPRECATED(adapter)
-
 		It("must return a ConfigMap with similar ObjectMeta", func() {
+			templated := RegistryConfigMap(adapter)
+			generated := RegistryConfigMapDEPRECATED(adapter)
+
 			Expect(templated.ObjectMeta).To(
 				SatisfyReplacement(generated.ObjectMeta))
 		})
 
 		It("must return a ConfigMap that contains the same Data items", func() {
+			templated := RegistryConfigMap(adapter)
+			generated := RegistryConfigMapDEPRECATED(adapter)
+
 			Expect(templated.Data).To(SatisfyReplacement(generated.Data))
 		})
 	})
 
 	When("replacing Service", func() {
-		templated := RegistryService(adapter)
-		generated := RegistryServiceDeprecated(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := RegistryService(adapter)
+			generated := RegistryServiceDeprecated(mockCR)
+
 			Expect(templated).To(SatisfyReplacement(generated))
 		})
 	})

@@ -69,15 +69,6 @@ func getObjectPromise(name string, obj runtime.Object) func() error {
 	}
 }
 
-func getObjectPromiseCallback(name string, obj runtime.Object, callback func(runtime.Object) error) func() error {
-	return func() error {
-		if err := getObject(name, obj); err != nil {
-			return err
-		}
-		return callback(obj)
-	}
-}
-
 func listObjects(query string, obj runtime.Object) error {
 	labelSelector, err := labels.Parse(query)
 	if err != nil {
@@ -96,15 +87,15 @@ func listObjects(query string, obj runtime.Object) error {
 	return nil
 }
 
-func listObjectsPromise(query string, obj runtime.Object) func() error {
+func listObjectsPromise(query string, obj runtime.Object, expectedSize int) func() error {
 	return func() error {
 		if err := listObjects(query, obj); err != nil {
 			return err
 		}
 		switch l := obj.(type) {
 		case *batchv1.JobList:
-			if len(l.Items) == 0 {
-				return fmt.Errorf("Job not found [%s]", query)
+			if len(l.Items) < expectedSize {
+				return fmt.Errorf("Only %d Jobs found with [%s]", expectedSize, query)
 			}
 		}
 		return nil
@@ -149,15 +140,20 @@ func updateJobStatusPromise(query string, success bool) func() error {
 			return fmt.Errorf("Job not found [%s]", query)
 		}
 
-		if success {
-			createdJobs.Items[0].Status.Succeeded = 1
-			createdJobs.Items[0].Status.Failed = 0
-		} else {
-			createdJobs.Items[0].Status.Succeeded = 0
-			createdJobs.Items[0].Status.Failed = 1
+		for _, j := range createdJobs.Items {
+			if success {
+				j.Status.Succeeded = 1
+				j.Status.Failed = 0
+			} else {
+				j.Status.Succeeded = 0
+				j.Status.Failed = 1
+			}
+			if err := k8sClient.Status().Update(ctx, &j); err != nil {
+				return err
+			}
 		}
 
-		return k8sClient.Status().Update(ctx, &createdJobs.Items[0])
+		return nil
 	}
 }
 

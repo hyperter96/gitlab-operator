@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
@@ -19,7 +20,7 @@ import (
 var (
 	ctx          = context.Background()
 	chartVersion = helpers.AvailableChartVersions()[0]
-	chartValues  = helm.EmptyValues()
+	emptyValues  = helm.EmptyValues()
 	namespace    = os.Getenv("HELM_NAMESPACE")
 	releaseName  = "test"
 )
@@ -44,10 +45,32 @@ func GitLabMock() *gitlabv1beta1.GitLab {
 			Chart: gitlabv1beta1.GitLabChartSpec{
 				Version: chartVersion,
 				Values: gitlabv1beta1.ChartValues{
-					Object: chartValues.AsMap(),
+					Object: emptyValues.AsMap(),
 				},
 			}},
 	}
+}
+
+// CfgMapFromList returns a ConfigMap by name from a list of ConfigMaps.
+func CfgMapFromList(name string, cfgMaps []*corev1.ConfigMap) *corev1.ConfigMap {
+	for _, cm := range cfgMaps {
+		if cm.Name == name {
+			return cm
+		}
+	}
+
+	return nil
+}
+
+// SvcFromList returns a Service by name from a list of Services.
+func SvcFromList(name string, services []*corev1.Service) *corev1.Service {
+	for _, s := range services {
+		if s.Name == name {
+			return s
+		}
+	}
+
+	return nil
 }
 
 func TestGitLab(t *testing.T) {

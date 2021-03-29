@@ -16,7 +16,7 @@ func GetGitLabConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "gitlab", gitlabutils.GitlabType)
 
 	gitlab := gitlabutils.GenericConfigMap(cr.Name+"-gitlab-config", cr.Namespace, labels)
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 	gitlab.Data = map[string]string{
 		"gitlab_external_url":   parseURL(getGitlabURL(nil), true),
 		"postgres_db":           "gitlabhq_production",
@@ -84,7 +84,7 @@ func GitalyConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 
 	gitaly := gitlabutils.GenericConfigMap(cr.Name+"-gitaly-config", cr.Namespace, labels)
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	var shell bytes.Buffer
 	shellTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitaly/shell-config.yml.erb"))
@@ -112,7 +112,7 @@ func WebserviceConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 
 	configure := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/webservice/configure.sh")
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	var gitlab bytes.Buffer
 	gitlabTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/webservice/gitlab.yml.erb"))
@@ -141,7 +141,7 @@ func WorkhorseConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 
 	configureSh := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/workhorse/configure.sh")
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	configTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/workhorse/workhorse-config.toml.erb"))
 	configTemplate.Execute(&config, options)
@@ -165,7 +165,7 @@ func ShellConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	configureScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shell/configure.sh")
 	sshdConfig := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shell/sshd-config")
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	configureTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shell/config.yml.erb"))
 	configureTemplate.Execute(&script, options)
@@ -189,7 +189,7 @@ func SidekiqConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	configureScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/sidekiq/configure.sh")
 	queuesYML := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/sidekiq/sidekiq_queues.yml.erb")
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	var gitlab bytes.Buffer
 	gitlabTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/sidekiq/gitlab.yml.erb"))
@@ -217,7 +217,7 @@ func ExporterConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 
 	configure := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-exporter/configure.sh")
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 	var exporterYML bytes.Buffer
 	exporterTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-exporter/gitlab-exporter.yml.erb"))
 	exporterTemplate.Execute(&exporterYML, options)
@@ -237,7 +237,7 @@ func ExporterConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 func RegistryConfigMapDEPRECATED(adapter helpers.CustomResourceAdapter) *corev1.ConfigMap {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "registry", gitlabutils.GitlabType)
 
-	options := SystemBuildOptions(adapter.Resource())
+	options := SystemBuildOptions(nil)
 	configure := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/registry/configure.sh")
 
 	var configYML bytes.Buffer
@@ -259,7 +259,7 @@ func RegistryConfigMapDEPRECATED(adapter helpers.CustomResourceAdapter) *corev1.
 func TaskRunnerConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "task-runner", gitlabutils.GitlabType)
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 	gsutilconf := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/task-runner/configure-gsutil.sh")
 
 	var configure, gitlab bytes.Buffer
@@ -288,7 +288,7 @@ func TaskRunnerConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 func MigrationsConfigMapDEPRECATED(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 	labels := gitlabutils.Label(cr.Name, "migrations", gitlabutils.GitlabType)
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 	configure := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/migration/configure.sh")
 
 	var gitlab bytes.Buffer

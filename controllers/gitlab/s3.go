@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
@@ -17,16 +16,16 @@ import (
 )
 
 // MinioSecret returns secret containing Minio accesskey and secretkey
-func MinioSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
-	options := SystemBuildOptions(cr)
+func MinioSecret(adapter helpers.CustomResourceAdapter) *corev1.Secret {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
+	options := SystemBuildOptions(adapter)
 
 	secretKey := gitlabutils.Password(gitlabutils.PasswordOptions{
 		EnableSpecialChars: false,
 		Length:             48,
 	})
 
-	minio := gitlabutils.GenericSecret(options.ObjectStore.Credentials, cr.Namespace, labels)
+	minio := gitlabutils.GenericSecret(options.ObjectStore.Credentials, adapter.Namespace(), labels)
 	minio.StringData = map[string]string{
 		"accesskey": "gitlab",
 		"secretkey": secretKey,
@@ -36,20 +35,20 @@ func MinioSecret(cr *gitlabv1beta1.GitLab) *corev1.Secret {
 }
 
 // MinioStatefulSet return Minio statefulset
-func MinioStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
-	options := SystemBuildOptions(cr)
+func MinioStatefulSet(adapter helpers.CustomResourceAdapter) *appsv1.StatefulSet {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
+	options := SystemBuildOptions(adapter)
 
 	var replicas int32 = 1
 
 	minio := gitlabutils.GenericStatefulSet(gitlabutils.Component{
-		Namespace: cr.Namespace,
+		Namespace: adapter.Namespace(),
 		Labels:    labels,
 		Replicas:  replicas,
 		InitContainers: []corev1.Container{
 			{
 				Name:            "configure",
-				Image:           BuildRelease(cr).Busybox(),
+				Image:           BuildRelease(adapter.Resource()).Busybox(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"sh", "/config/configure"},
 				Resources: corev1.ResourceRequirements{
@@ -72,7 +71,7 @@ func MinioStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 		Containers: []corev1.Container{
 			{
 				Name:            "minio",
-				Image:           BuildRelease(cr).Minio(),
+				Image:           BuildRelease(adapter.Resource()).Minio(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Args:            []string{"-C", "/tmp/.minio", "--quiet", "server", "/export"},
 				Resources: corev1.ResourceRequirements{
@@ -147,7 +146,7 @@ func MinioStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 							{
 								ConfigMap: &corev1.ConfigMapProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-minio-script",
+										Name: adapter.ReleaseName() + "-minio-script",
 									},
 								},
 							},
@@ -167,7 +166,7 @@ func MinioStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 			{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "export",
-					Namespace: cr.Namespace,
+					Namespace: adapter.Namespace(),
 					Labels:    labels,
 				},
 				Spec: corev1.PersistentVolumeClaimSpec{
@@ -195,14 +194,14 @@ func MinioStatefulSet(cr *gitlabv1beta1.GitLab) *appsv1.StatefulSet {
 }
 
 // MinioScriptConfigMap returns scripts used to configure Minio
-func MinioScriptConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+func MinioScriptConfigMap(adapter helpers.CustomResourceAdapter) *corev1.ConfigMap {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
 
 	initScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/minio/initialize-buckets.sh")
 	configureScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/minio/configure.sh")
 	configJSON := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/minio/config.json")
 
-	init := gitlabutils.GenericConfigMap(cr.Name+"-minio-script", cr.Namespace, labels)
+	init := gitlabutils.GenericConfigMap(adapter.ReleaseName()+"-minio-script", adapter.Namespace(), labels)
 	init.Data = map[string]string{
 		"initialize":  initScript,
 		"configure":   configureScript,
@@ -213,13 +212,13 @@ func MinioScriptConfigMap(cr *gitlabv1beta1.GitLab) *corev1.ConfigMap {
 }
 
 // MinioService returns service that exposes Minio
-func MinioService(cr *gitlabv1beta1.GitLab) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "minio", gitlabutils.GitlabType)
+func MinioService(adapter helpers.CustomResourceAdapter) *corev1.Service {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: cr.Namespace,
+			Namespace: adapter.Namespace(),
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -239,7 +238,7 @@ func MinioService(cr *gitlabv1beta1.GitLab) *corev1.Service {
 // AppConfigConnectionSecret returns secret containing MinIO connection config for `global.appConfig.object_store.connection.secret`.
 func AppConfigConnectionSecret(adapter helpers.CustomResourceAdapter, minioSecret corev1.Secret) (*corev1.Secret, error) {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
-	options := SystemBuildOptions(adapter.Resource())
+	options := SystemBuildOptions(adapter)
 	secret := gitlabutils.GenericSecret(settings.AppConfigConnectionSecretName, adapter.Namespace(), labels)
 
 	data := minioSecret.StringData
@@ -268,7 +267,7 @@ func AppConfigConnectionSecret(adapter helpers.CustomResourceAdapter, minioSecre
 // RegistryConnectionSecret returns secret containing MinIO connection config for `registry.storage.secret`.
 func RegistryConnectionSecret(adapter helpers.CustomResourceAdapter, minioSecret corev1.Secret) (*corev1.Secret, error) {
 	labels := gitlabutils.Label(adapter.ReleaseName(), "minio", gitlabutils.GitlabType)
-	options := SystemBuildOptions(adapter.Resource())
+	options := SystemBuildOptions(adapter)
 	secret := gitlabutils.GenericSecret(settings.RegistryConnectionSecretName, adapter.Namespace(), labels)
 
 	data := minioSecret.StringData

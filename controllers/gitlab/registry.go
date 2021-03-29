@@ -11,7 +11,7 @@ import (
 // RegistryDeploymentDEPRECATED returns container registry deployment
 func RegistryDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "registry", gitlabutils.GitlabType)
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	return gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,

@@ -1,6 +1,9 @@
 package settings
 
 const (
+	// LocalUser .
+	LocalUser = "1000"
+
 	// Region .
 	Region = "us-east-1"
 

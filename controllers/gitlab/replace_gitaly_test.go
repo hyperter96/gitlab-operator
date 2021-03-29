@@ -12,35 +12,37 @@ var _ = Describe("Gitaly replacement", func() {
 	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing StatefulSet", func() {
-		templated := GitalyStatefulSet(adapter)
-		generated := GitalyStatefulSetDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := GitalyStatefulSet(adapter)
+			generated := GitalyStatefulSetDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated))
 		})
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := GitalyConfigMap(adapter)
-		generated := GitalyConfigMapDEPRECATED(mockCR)
-
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
+			templated := GitalyConfigMap(adapter)
+			generated := GitalyConfigMapDEPRECATED(mockCR)
 
 			Expect(templated.ObjectMeta).To(
 				SatisfyReplacement(generated.ObjectMeta))
 		})
 
 		It("must return two ConfigMaps that contain the same Data items", func() {
+			templated := GitalyConfigMap(adapter)
+			generated := GitalyConfigMapDEPRECATED(mockCR)
+
 			Expect(templated.Data).To(SatisfyReplacement(generated.Data))
 		})
 	})
 
 	When("replacing Service", func() {
-		templated := GitalyService(adapter)
-		generated := GitalyServiceDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := GitalyService(adapter)
+			generated := GitalyServiceDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated))
 		})

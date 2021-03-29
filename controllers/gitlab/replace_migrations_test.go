@@ -12,25 +12,28 @@ var _ = Describe("Migrations replacement", func() {
 	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Job", func() {
-		templated, _ := MigrationsJob(adapter)
-		generated := MigrationsJobDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated, _ := MigrationsJob(adapter)
+			generated := MigrationsJobDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated))
 		})
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := MigrationsConfigMap(adapter)
-		generated := MigrationsConfigMapDEPRECATED(mockCR)
-
 		It("must return one ConfigMap with similar ObjectMeta", func() {
+			templated := MigrationsConfigMap(adapter)
+			generated := MigrationsConfigMapDEPRECATED(mockCR)
+
 			Expect(templated.ObjectMeta).To(
 				SatisfyReplacement(generated.ObjectMeta))
 		})
 
 		It("must return one ConfigMap that contains the same Data items", func() {
+			templated := MigrationsConfigMap(adapter)
+			generated := MigrationsConfigMapDEPRECATED(mockCR)
+
 			Expect(templated.Data).To(SatisfyReplacement(generated.Data))
 		})
 	})

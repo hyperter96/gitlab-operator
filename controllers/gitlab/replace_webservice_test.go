@@ -13,20 +13,20 @@ var _ = Describe("Webservice replacement", func() {
 	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := WebserviceDeployment(adapter)
-		generated := WebserviceDeploymentDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := WebserviceDeployment(adapter)
+			generated := WebserviceDeploymentDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated))
 		})
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := WebserviceConfigMaps(adapter)
-		generated := WebserviceConfigMapDEPRECATED(mockCR)
-
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
+			templated := WebserviceConfigMaps(adapter)
+			generated := WebserviceConfigMapDEPRECATED(mockCR)
+
 			Expect(templated).To(HaveLen(2))
 			Expect(templated[0].ObjectMeta).To(
 				SatisfyReplacement(generated.ObjectMeta))
@@ -35,6 +35,9 @@ var _ = Describe("Webservice replacement", func() {
 		})
 
 		It("must return two ConfigMaps that with similar Data items", func() {
+			templated := WebserviceConfigMaps(adapter)
+			generated := WebserviceConfigMapDEPRECATED(mockCR)
+
 			Expect(templated).To(HaveLen(2))
 
 			generatedData := map[string]string{}
@@ -56,10 +59,10 @@ var _ = Describe("Webservice replacement", func() {
 	})
 
 	When("replacing Service", func() {
-		templated := WebserviceService(adapter)
-		generated := WebserviceServiceDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := WebserviceService(adapter)
+			generated := WebserviceServiceDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated))
 		})

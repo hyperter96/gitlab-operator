@@ -14,10 +14,10 @@ var _ = Describe("GitLab Shell replacement", func() {
 	adapter := helpers.NewCustomResourceAdapter(mockCR)
 
 	When("replacing Deployment", func() {
-		templated := ShellDeployment(adapter)
-		generated := ShellDeploymentDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := ShellDeployment(adapter)
+			generated := ShellDeploymentDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated,
 					IgnoreFields(corev1.ConfigMapVolumeSource{}, "Items"),
@@ -26,10 +26,9 @@ var _ = Describe("GitLab Shell replacement", func() {
 	})
 
 	When("replacing ConfigMap", func() {
-		templated := ShellConfigMaps(adapter)
-		generated := ShellConfigMapDEPRECATED(mockCR)
-
 		It("must return two ConfigMaps with similar ObjectMeta", func() {
+			templated := ShellConfigMaps(adapter)
+			generated := ShellConfigMapDEPRECATED(mockCR)
 
 			Expect(templated).To(HaveLen(2))
 			Expect(templated[0].ObjectMeta).To(
@@ -39,6 +38,9 @@ var _ = Describe("GitLab Shell replacement", func() {
 		})
 
 		It("must return two ConfigMaps that contain the same Data items", func() {
+			templated := ShellConfigMaps(adapter)
+			generated := ShellConfigMapDEPRECATED(mockCR)
+
 			Expect(templated).To(HaveLen(2))
 
 			generatedData := map[string]string{}
@@ -59,10 +61,10 @@ var _ = Describe("GitLab Shell replacement", func() {
 	})
 
 	When("replacing Service", func() {
-		templated := ShellService(adapter)
-		generated := ShellServiceDEPRECATED(mockCR)
-
 		It("must completely satisfy the generator function", func() {
+			templated := ShellService(adapter)
+			generated := ShellServiceDEPRECATED(mockCR)
+
 			Expect(templated).To(
 				SatisfyReplacement(generated))
 		})

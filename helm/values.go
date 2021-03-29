@@ -25,6 +25,9 @@ type Values interface {
 	// AddFileValue merges the content of the file using the key. The key conforms to Helm format.
 	AddFileValue(key, filePath string) error
 
+	// AddFromYAML merges the values from the YAML formatted string.
+	AddFromYAML(yamlContent []byte) error
+
 	// AddFromFile reads the specified file in YAML format and merges its content.
 	AddFromFile(filePath string) error
 
@@ -91,15 +94,23 @@ func (v *plainValues) AddFileValue(key, filePath string) error {
 }
 
 func (v *plainValues) AddFromFile(filePath string) error {
-	newValues := map[string]interface{}{}
-
 	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 
-	if err := yaml.Unmarshal(fileContent, &newValues); err != nil {
-		return errors.Wrapf(err, "failed to parse value file: %s", filePath)
+	if err := v.AddFromYAML(fileContent); err != nil {
+		return errors.Wrapf(err, "failed to parse YAML file: %s", filePath)
+	}
+
+	return nil
+}
+
+func (v *plainValues) AddFromYAML(yamlContent []byte) error {
+	newValues := map[string]interface{}{}
+
+	if err := yaml.Unmarshal(yamlContent, &newValues); err != nil {
+		return err
 	}
 
 	v.container = mergeMaps(v.container, newValues)

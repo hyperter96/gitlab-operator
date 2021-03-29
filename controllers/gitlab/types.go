@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 )
 
 const (
@@ -107,29 +105,32 @@ type ObjectStoreOptions struct {
 // SystemBuildOptions retrieves options from the Gitlab custom resource
 // and uses them to build configuration options used to deploy
 // the Gitlab instance
-func SystemBuildOptions(cr *gitlabv1beta1.GitLab) ConfigurationOptions {
+func SystemBuildOptions(adapter helpers.CustomResourceAdapter) ConfigurationOptions {
 
-	values := helm.FromMap(cr.Spec.Chart.Values.Object)
-	objectStoreEnabled, _ := helpers.GetBoolValue(values, "global.appConfig.object_store.enabled")
-	objectStoreHost, _ := helpers.GetStringValue(values, "global.hosts.minio.name")
+	if adapter == nil {
+		panic("SystemBuildOptions is called where it was not supposed to")
+	}
+
+	objectStoreEnabled, _ := helpers.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled")
+	objectStoreHost, _ := helpers.GetStringValue(adapter.Values(), "global.hosts.minio.name")
 	// This implies that we only support global object-store config.
-	objectStoreSecret, _ := helpers.GetStringValue(values, "global.appConfig.object_store.connection.secret")
+	objectStoreSecret, _ := helpers.GetStringValue(adapter.Values(), "global.appConfig.object_store.connection.secret")
 
 	options := ConfigurationOptions{
-		Namespace: cr.Namespace,
+		Namespace: adapter.Namespace(),
 		/*
 			GitlabURL:      DomainNameOnly(cr.Spec.URL),
 			EnableRegistry: !cr.Spec.Registry.Disabled,
 			RegistryURL:    DomainNameOnly(cr.Spec.Registry.URL),
 		*/
-		PostgreSQL:  getName(cr.Name, "postgresql"),
-		RedisMaster: getName(cr.Name, "redis"),
-		Gitaly:      getName(cr.Name, "gitaly"),
-		Registry:    getName(cr.Name, "registry"),
-		Webservice:  getName(cr.Name, "webservice"),
+		PostgreSQL:  getName(adapter.ReleaseName(), "postgresql"),
+		RedisMaster: getName(adapter.ReleaseName(), "redis"),
+		Gitaly:      getName(adapter.ReleaseName(), "gitaly"),
+		Registry:    getName(adapter.ReleaseName(), "registry"),
+		Webservice:  getName(adapter.ReleaseName(), "webservice"),
 		ObjectStore: ObjectStoreOptions{
 			URL:         objectStoreHost,
-			Credentials: strings.Join([]string{cr.Name, "minio-secret"}, "-"),
+			Credentials: strings.Join([]string{adapter.ReleaseName(), "minio-secret"}, "-"),
 			/*
 				VolumeSpec: gitlabv1beta1.VolumeSpec{
 					StorageClass: cr.Spec.ObjectStore.StorageClass,
@@ -146,7 +147,7 @@ func SystemBuildOptions(cr *gitlabv1beta1.GitLab) ConfigurationOptions {
 	*/
 
 	if objectStoreEnabled {
-		options.ObjectStore.URL = getName(cr.Name, "minio")
+		options.ObjectStore.URL = getName(adapter.ReleaseName(), "minio")
 		options.ObjectStore.Capacity = "5Gi"
 	}
 
@@ -155,7 +156,7 @@ func SystemBuildOptions(cr *gitlabv1beta1.GitLab) ConfigurationOptions {
 	}
 
 	if objectStoreEnabled {
-		minioSocket := []string{"http://", fmt.Sprintf("%s-minio", cr.Name), ":9000"}
+		minioSocket := []string{"http://", fmt.Sprintf("%s-minio", adapter.ReleaseName()), ":9000"}
 		options.ObjectStore.Endpoint = strings.Join(minioSocket, "")
 	} else {
 		options.ObjectStore.Endpoint = fmt.Sprintf("https://%s", objectStoreHost)

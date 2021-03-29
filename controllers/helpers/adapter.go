@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"hash/fnv"
+	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
@@ -32,20 +33,168 @@ type CustomResourceAdapter interface {
 	// a namespace this must be equal to the namespace of the Operator.
 	Namespace() string
 
-	// ChartVersion returns the version of GitLab chart that must be used to deploy this GitLab
-	// instance.
-	ChartVersion() string
-
-	// GitLabVersion returns the version of GitLab. This is generally derived from the GitLab chart.
-	GitLabVersion() string
-
 	// ReleaseName returns the name of the GitLab instance that must be deployed. This will be used
 	// as a qualifier to distinguish between multiple GitLab instances in a namespace.
 	ReleaseName() string
 
+	// ChartVersion returns the version of GitLab chart that must be used to deploy this GitLab
+	// instance.
+	ChartVersion() string
+
 	// Values returns the set of values that will be used the render GitLab chart.
 	Values() helm.Values
 }
+
+//TODO: Use go:embed instead
+var defaultValues string = `
+certmanager:
+  install: false
+gitlab-runner:
+  install: false
+gitlab:
+  gitaly:
+    common:
+      labels:
+        app.kubernetes.io/component: gitaly
+        app.kubernetes.io/instance: $ReleaseName-gitaly
+    securityContext:
+      runAsUser: $LocalUser
+      fsGroup: $LocalUser
+  gitlab-exporter:
+    common:
+      labels:
+        app.kubernetes.io/component: gitlab-exporter
+        app.kubernetes.io/instance: $ReleaseName-gitlab-exporter
+    securityContext:
+      runAsUser: $LocalUser
+      fsGroup: $LocalUser
+  gitlab-shell:
+    common:
+      labels:
+        app.kubernetes.io/component: gitlab-shell
+        app.kubernetes.io/instance: $ReleaseName-gitlab-shell
+    securityContext:
+      runAsUser: $LocalUser
+      fsGroup: $LocalUser
+    service:
+      type: ''
+  migrations:
+    common:
+      labels:
+        app.kubernetes.io/component: migrations
+        app.kubernetes.io/instance: $ReleaseName-migrations
+  sidekiq:
+    common:
+      labels:
+        app.kubernetes.io/component: sidekiq
+        app.kubernetes.io/instance: $ReleaseName-sidekiq
+    securityContext:
+      runAsUser: $LocalUser
+      fsGroup: $LocalUser
+  task-runner:
+    backups:
+      objectStorage:
+        config:
+          secret: $TaskRunnerConnectionSecretName
+          key: config
+    common:
+      labels:
+        app.kubernetes.io/component: task-runner
+        app.kubernetes.io/instance: $ReleaseName-task-runner
+    securityContext:
+      runAsUser: $LocalUser
+      fsGroup: $LocalUser
+  webservice:
+    common:
+      labels:
+        app.kubernetes.io/component: webservice
+        app.kubernetes.io/instance: $ReleaseName-webservice
+    securityContext:
+      runAsUser: $LocalUser
+      fsGroup: $LocalUser
+
+registry:
+  common:
+    labels:
+      app.kubernetes.io/component: registry
+      app.kubernetes.io/instance: $ReleaseName-registry
+  securityContext:
+    runAsUser: $LocalUser
+    fsGroup: $LocalUser
+  storage:
+    secret: $RegistryConnectionSecretName
+    key: config
+
+shared-secrets:
+  serviceAccount:
+    create: false
+    name: $ManagerServiceAccount
+  securityContext:
+    runAsUser: ''
+    fsGroup: ''
+
+global:
+  appConfig:
+    object_store:
+      enabled: true
+      connection:
+        secret: $AppConfigConnectionSecretName
+        key: connection
+    artifacts:
+      bucket: gitlab-artifacts
+    backups:
+      bucket: gitlab-backups
+      tmpBucket: tmp
+    externalDiffs:
+      bucket: gitlab-mr-diffs
+    lfs:
+      bucket: git-lfs
+    packages:
+      bucket: gitlab-packages
+    pseudonymizer:
+      bucket: gitlab-pseudo
+    uploads:
+      bucket: gitlab-uploads
+  common:
+    labels:
+      app.kubernetes.io/name: $ReleaseName
+      app.kubernetes.io/part-of: gitlab
+      app.kubernetes.io/managed-by: gitlab-operator
+  imagePullPolicy: IfNotPresent
+  ingress:
+    configureCertmanager: false
+  minio:
+    enabled: false
+  registry:
+    bucket: registry
+  serviceAccount:
+    enabled: true,
+    create: false,
+    name: $AppServiceAccount
+
+redis:
+  master:
+    statefulset:
+      labels:
+        app.kubernetes.io/name: $ReleaseName
+        app.kubernetes.io/part-of: gitlab
+        app.kubernetes.io/managed-by: gitlab-operator
+        app.kubernetes.io/component: redis
+        app.kubernetes.io/instance: $ReleaseName-redis
+  serviceAccount:
+    name: $AppServiceAccount
+  securityContext:
+    runAsUser: $LocalUser
+    fsGroup: $LocalUser
+
+postgresql:
+  serviceAccount:
+    enabled: true
+    name: $AppServiceAccount
+  securityContext:
+    runAsUser: $LocalUser
+    fsGroup: $LocalUser  
+`
 
 // NewCustomResourceAdapter returns a new adapter for the provided GitLab instance.
 func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapter {
@@ -81,10 +230,6 @@ func (a *populatingAdapter) Namespace() string {
 	return a.resource.Namespace
 }
 
-func (a *populatingAdapter) GitLabVersion() string {
-	return a.resource.Name
-}
-
 func (a *populatingAdapter) ChartVersion() string {
 	return a.resource.Spec.Chart.Version
 }
@@ -100,61 +245,22 @@ func (a *populatingAdapter) Values() helm.Values {
 func (a *populatingAdapter) populateValues() {
 	a.reference = fmt.Sprintf("%s.%s", a.resource.Name, a.resource.Namespace)
 
+	valuesToUse := strings.NewReplacer(
+		"$ReleaseName", a.ReleaseName(),
+		"$LocalUser", settings.LocalUser,
+		"$AppServiceAccount", settings.AppServiceAccount,
+		"$ManagerServiceAccount", settings.ManagerServiceAccount,
+		"$AppConfigConnectionSecretName", settings.AppConfigConnectionSecretName,
+		"$RegistryConnectionSecretName", settings.RegistryConnectionSecretName,
+		"$TaskRunnerConnectionSecretName", settings.TaskRunnerConnectionSecretName,
+	).Replace(defaultValues)
+
+	a.values.AddFromYAML([]byte(valuesToUse))
+
 	email, err := GetStringValue(a.Values(), "certmanager-issuer.email")
 	if err != nil || email == "" {
 		a.values.SetValue("certmanager-issuer.email", "admin@example.com")
 	}
-
-	// Use auto-generated self-signed wildcard certificate
-	a.values.AddValue("certmanager.install", "false")
-	a.values.AddValue("global.ingress.configureCertmanager", "false")
-
-	// Skip GitLab Runner
-	a.values.AddValue("gitlab-runner.install", "false")
-
-	// Set the default ImagePullPolicy
-	a.values.AddValue("global.imagePullPolicy", "IfNotPresent")
-
-	// Set the default ServiceAccount name
-	a.values.AddValue("global.serviceAccount.name", settings.AppServiceAccount)
-
-	// Use NodePort Service type for GitLab Shell
-	a.values.AddValue("gitlab.gitlab-shell.service.type", "NodePort")
-
-	// Use manager ServiceAccount and local user for shared secrets
-	a.values.AddValue("shared-secrets.serviceAccount.create", "false")
-	a.values.AddValue("shared-secrets.serviceAccount.name", settings.ManagerServiceAccount)
-	a.values.AddValue("shared-secrets.securityContext.runAsUser", "")
-	a.values.AddValue("shared-secrets.securityContext.fsGroup", "")
-
-	// Configure Operator's MinIO as external object storage provider.
-	// https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/examples/values-external-objectstorage.yaml
-
-	// - Disable the Chart's MinIO.
-	a.values.AddValue("global.minio.enabled", "false")
-
-	// - Configure consolidated object storage and bucket names
-	//   per hack/assets/templates/minio/initialize-buckets.sh.
-	a.values.AddValue("global.appConfig.object_store.enabled", "true")
-	a.values.AddValue("global.appConfig.object_store.connection.secret", settings.AppConfigConnectionSecretName)
-	a.values.AddValue("global.appConfig.object_store.connection.key", "connection")
-	a.values.AddValue("global.appConfig.lfs.bucket", "git-lfs")
-	a.values.AddValue("global.appConfig.artifacts.bucket", "gitlab-artifacts")
-	a.values.AddValue("global.appConfig.uploads.bucket", "gitlab-uploads")
-	a.values.AddValue("global.appConfig.packages.bucket", "gitlab-packages")
-	a.values.AddValue("global.appConfig.backups.bucket", "gitlab-backups")
-	a.values.AddValue("global.appConfig.backups.tmpBucket", "tmp")
-	a.values.AddValue("global.appConfig.externalDiffs.bucket", "gitlab-mr-diffs")
-	a.values.AddValue("global.appConfig.pseudonymizer.bucket", "gitlab-pseudo")
-
-	// - Configure Task Runner's object storage connection.
-	a.values.AddValue("gitlab.task-runner.backups.objectStorage.config.secret", settings.TaskRunnerConnectionSecretName)
-	a.values.AddValue("gitlab.task-runner.backups.objectStorage.config.key", "config")
-
-	// - Configure Registry's object storage connection.
-	a.values.AddValue("global.registry.bucket", "registry")
-	a.values.AddValue("registry.storage.secret", settings.RegistryConnectionSecretName)
-	a.values.AddValue("registry.storage.key", "config")
 }
 
 func (a *populatingAdapter) hashValues() {
@@ -176,8 +282,7 @@ func (a *populatingAdapter) hashValues() {
 	}
 
 	if valuesHashed == 0 {
-		// This is here to cover all the bases. Otherwise it should never happen.
-		a.hash = fmt.Sprintf("%s/%s", a.ChartVersion(), a.GitLabVersion())
+		a.hash = fmt.Sprintf("%s/%s", a.Reference(), a.ChartVersion())
 	}
 
 	a.hash = fmt.Sprintf("%x", hasher.Sum64())

@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
 	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -245,17 +246,17 @@ func MigrationsJobDEPRECATED(cr *gitlabv1beta1.GitLab) *batchv1.Job {
 }
 
 // BucketCreationJob creates the buckets used by GitLab
-func BucketCreationJob(cr *gitlabv1beta1.GitLab) *batchv1.Job {
-	labels := gitlabutils.Label(cr.Name, "bucket", gitlabutils.GitlabType)
-	options := SystemBuildOptions(cr)
+func BucketCreationJob(adapter helpers.CustomResourceAdapter) *batchv1.Job {
+	labels := gitlabutils.Label(adapter.ReleaseName(), "bucket", gitlabutils.GitlabType)
+	options := SystemBuildOptions(adapter)
 
 	buckets := gitlabutils.GenericJob(gitlabutils.Component{
-		Namespace: cr.Namespace,
+		Namespace: adapter.Namespace(),
 		Labels:    labels,
 		Containers: []corev1.Container{
 			{
 				Name:            "mc",
-				Image:           BuildRelease(cr).MinioClient(),
+				Image:           BuildRelease(adapter.Resource()).MinioClient(),
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/bin/sh", "/config/initialize"},
 				Env: []corev1.EnvVar{
@@ -294,7 +295,7 @@ func BucketCreationJob(cr *gitlabv1beta1.GitLab) *batchv1.Job {
 							{
 								ConfigMap: &corev1.ConfigMapProjection{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-minio-script",
+										Name: adapter.ReleaseName() + "-minio-script",
 									},
 								},
 							},

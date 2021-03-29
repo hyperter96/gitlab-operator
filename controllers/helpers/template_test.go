@@ -8,6 +8,7 @@ import (
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -72,19 +73,19 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(template2).NotTo(BeNil())
 		Expect(template2).NotTo(BeIdenticalTo(template1))
 
-		// chartInfo1 := template1.Query().
-		// 	ObjectByKindAndName("ConfigMap", "test-gitlab-chart-info").(*corev1.ConfigMap)
-		// chartInfo2 := template2.Query().
-		// 	ObjectByKindAndName("ConfigMap", "test-gitlab-chart-info").(*corev1.ConfigMap)
+		chartInfo1 := template1.Query().
+			ObjectByKindAndName("ConfigMap", "test-gitlab-chart-info").(*corev1.ConfigMap)
+		chartInfo2 := template2.Query().
+			ObjectByKindAndName("ConfigMap", "test-gitlab-chart-info").(*corev1.ConfigMap)
 
-		// Expect(chartInfo1).NotTo(BeNil())
-		// Expect(chartInfo1.Namespace).To(Equal(namespace))
-		// Expect(chartInfo1.Labels["release"]).To(Equal("test"))
-		// Expect(chartInfo1.Data["gitlabChartVersion"]).To(Equal(chartVersions[0]))
+		Expect(chartInfo1).NotTo(BeNil())
+		Expect(chartInfo1.Namespace).To(Equal(namespace))
+		Expect(chartInfo1.Labels["release"]).To(Equal("test"))
+		Expect(chartInfo1.Data["gitlabChartVersion"]).To(Equal(chartVersions[0]))
 
-		// Expect(chartInfo2).NotTo(BeNil())
-		// Expect(chartInfo1.Namespace).To(Equal(namespace))
-		// Expect(chartInfo1.Labels["release"]).To(Equal("test"))
-		// Expect(chartInfo2.Data["gitlabChartVersion"]).To(Equal(chartVersions[1]))
+		Expect(chartInfo2).NotTo(BeNil())
+		Expect(chartInfo1.Namespace).To(Equal(namespace))
+		Expect(chartInfo1.Labels["release"]).To(Equal("test"))
+		Expect(chartInfo2.Data["gitlabChartVersion"]).To(Equal(chartVersions[1]))
 	})
 })

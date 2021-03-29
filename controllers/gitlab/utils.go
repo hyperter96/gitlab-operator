@@ -83,7 +83,7 @@ func getName(cr, component string) string {
 func getDatabaseConfiguration(cr *gitlabv1beta1.GitLab) string {
 	var config bytes.Buffer
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 	postgresTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/database.yml.erb"))
 	postgresTemplate.Execute(&config, options)
 
@@ -93,7 +93,7 @@ func getDatabaseConfiguration(cr *gitlabv1beta1.GitLab) string {
 func getRedisConfiguration(cr *gitlabv1beta1.GitLab) string {
 	var config bytes.Buffer
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 	resqueTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/resque.yml.erb"))
 	resqueTemplate.Execute(&config, options)
 
@@ -103,7 +103,7 @@ func getRedisConfiguration(cr *gitlabv1beta1.GitLab) string {
 func getCableConfiguration(cr *gitlabv1beta1.GitLab) string {
 	var config bytes.Buffer
 
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 	resqueTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/cable.yml.erb"))
 	resqueTemplate.Execute(&config, options)
 

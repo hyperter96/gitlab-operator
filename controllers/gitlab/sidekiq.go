@@ -11,7 +11,7 @@ import (
 // SidekiqDeploymentDEPRECATED returns GitLab sidekiq deployment
 func SidekiqDeploymentDEPRECATED(cr *gitlabv1beta1.GitLab) *appsv1.Deployment {
 	labels := gitlabutils.Label(cr.Name, "sidekiq", gitlabutils.GitlabType)
-	options := SystemBuildOptions(cr)
+	options := SystemBuildOptions(nil)
 
 	sidekiq := gitlabutils.GenericDeployment(gitlabutils.Component{
 		Namespace: cr.Namespace,

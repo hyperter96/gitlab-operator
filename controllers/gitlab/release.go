@@ -11,6 +11,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+var (
+	localUser                 int64 = 1000
+	deploymentReplicasDefault int32 = 1
+)
+
 // Image represents a
 // single microservice image
 type Image struct {

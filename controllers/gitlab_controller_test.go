@@ -19,16 +19,15 @@ import (
 
 var _ = Describe("GitLab controller", func() {
 
+	BeforeEach(func() {
+		os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "1")
+	})
+
+	AfterEach(func() {
+		os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", gitlabctl.SharedSecretsJobDefaultTimeout.String())
+	})
+
 	Context("CRD", func() {
-
-		BeforeEach(func() {
-			os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "1")
-		})
-
-		AfterEach(func() {
-			os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "300")
-		})
-
 		It("Should create a CR with the specified Chart values", func() {
 			releaseName := "crd-testing"
 
@@ -128,7 +127,6 @@ var _ = Describe("GitLab controller", func() {
 			releaseName := "jobs-timeout"
 
 			BeforeEach(func() {
-				os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "1")
 				createGitLabResource(releaseName, emptyValues)
 			})
 

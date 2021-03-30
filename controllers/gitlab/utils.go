@@ -1,198 +1,48 @@
 package gitlab
 
 import (
-	"bytes"
-	"context"
 	"fmt"
-	"net"
-	"os"
-	"strings"
-	"text/template"
-
-	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DomainNameOnly separates domain from URL
-func DomainNameOnly(url string) string {
-	if strings.Contains(url, "://") {
-		return strings.Split(url, "://")[1]
-	}
+const (
+	// GitLabShellComponentName is the common name of GitLab Shell.
+	GitLabShellComponentName = "gitlab-shell"
 
-	return url
-}
+	// TaskRunnerComponentName is the common name of GitLab Task Runner.
+	TaskRunnerComponentName = "task-runner"
 
-func parseURL(url string, secured bool) string {
-	var domain string
-	protocol := "http"
-	if strings.Contains(url, "://") {
-		domain = strings.Split(url, "://")[1]
-	}
+	// MigrationsComponentName is the common name of Migrations.
+	MigrationsComponentName = "migrations"
 
-	if domain != "" {
-		return strings.Join([]string{"http://", domain}, "")
-	}
+	// GitLabExporterComponentName is the common name of GitLab Exporter.
+	GitLabExporterComponentName = "gitlab-exporter"
 
-	if secured {
-		protocol = "https"
-	}
+	// RegistryComponentName is the common name of the Registry.
+	RegistryComponentName = "registry"
 
-	return strings.Join([]string{protocol, "://", url}, "")
-}
+	// WebserviceComponentName is the common name of Webservice.
+	WebserviceComponentName = "webservice"
 
-// We comment these function. They are unused.
-// TODO: Remove these functions
-/*
-func hasTLS(cr *gitlabv1beta1.GitLab) bool {
-	return cr.Spec.TLS != ""
-}
-*/
+	// SharedSecretsComponentName is the common name of Shared Secrets.
+	SharedSecretsComponentName = "shared-secrets"
 
-// The database endpoint returns the gitlab database endpoint
-// Function is used by other functions e.g. isDatabaseReady
-func getOperatorMetricsEndpoints(cr *gitlabv1beta1.GitLab) (*corev1.Endpoints, error) {
-	operatorMetricsSVC := "gitlab-operator-metrics"
-	client, err := gitlabutils.KubernetesConfig().NewKubernetesClient()
-	if err != nil {
-		// log.Error(err, "Unable to acquire client")
-		fmt.Println("Unable to acquire client")
-	}
+	// GitalyComponentName is the common name of Gitaly.
+	GitalyComponentName = "gitaly"
 
-	return client.CoreV1().Endpoints(cr.Namespace).Get(context.TODO(), operatorMetricsSVC, metav1.GetOptions{})
-}
+	// SidekiqComponentName is the common name of Sidekiq.
+	SidekiqComponentName = "sidekiq"
 
-func getNetworkAddress(address string) string {
-	if !strings.Contains(address, "/") {
-		address = fmt.Sprintf("%s/8", address)
-	}
+	// RedisComponentName is the common name of Redis.
+	RedisComponentName = "redis"
 
-	_, network, err := net.ParseCIDR(address)
-	if err != nil {
-		// log.Error(err, "Unable to get network CIDR")
-	}
-	return network.String()
-}
+	// PostgresComponentName is the common name of PostgreSQL.
+	PostgresComponentName = "postgresql"
+)
 
-func getName(cr, component string) string {
-	return strings.Join([]string{cr, component}, "-")
-}
-
-func getDatabaseConfiguration(cr *gitlabv1beta1.GitLab) string {
-	var config bytes.Buffer
-
-	options := SystemBuildOptions(nil)
-	postgresTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/database.yml.erb"))
-	postgresTemplate.Execute(&config, options)
-
-	return config.String()
-}
-
-func getRedisConfiguration(cr *gitlabv1beta1.GitLab) string {
-	var config bytes.Buffer
-
-	options := SystemBuildOptions(nil)
-	resqueTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/resque.yml.erb"))
-	resqueTemplate.Execute(&config, options)
-
-	return config.String()
-}
-
-func getCableConfiguration(cr *gitlabv1beta1.GitLab) string {
-	var config bytes.Buffer
-
-	options := SystemBuildOptions(nil)
-	resqueTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/shared/cable.yml.erb"))
-	resqueTemplate.Execute(&config, options)
-
-	return config.String()
-}
-
-// We comment these function. They are unused.
-// TODO: Remove these functions
-
-/*
-// IsEmailConfigured returns true if SMTP is configured for the
-// Gitlab resource. False, otherwise
-func IsEmailConfigured(cr *gitlabv1beta1.GitLab) bool {
-	return !reflect.DeepEqual(cr.Spec.SMTP, gitlabv1beta1.SMTPConfiguration{})
-}
-
-// Return emailFrom and ReplyTo values
-func setupSMTPOptions(cr *gitlabv1beta1.GitLab) (emailFrom, replyTo string) {
-	if cr.Spec.SMTP.EmailFrom != "" {
-		emailFrom = cr.Spec.SMTP.EmailFrom
-	} else if cr.Spec.SMTP.EmailFrom == "" && gitlabutils.IsEmailAddress(cr.Spec.SMTP.Username) {
-		emailFrom = cr.Spec.SMTP.Username
-	}
-
-	if cr.Spec.SMTP.ReplyTo != "" {
-		replyTo = cr.Spec.SMTP.ReplyTo
-	} else if cr.Spec.SMTP.ReplyTo == "" && gitlabutils.IsEmailAddress(cr.Spec.SMTP.Username) {
-		replyTo = cr.Spec.SMTP.Username
-	}
-	return
-}
-
-// This function checks the GitLab kind SMTP options and
-// returns an smtp_settings.rb file in string format
-func getSMTPSettings(cr *gitlabv1beta1.GitLab) string {
-	var settings bytes.Buffer
-
-	if reflect.DeepEqual(cr.Spec.SMTP, gitlabv1beta1.SMTPConfiguration{}) {
-		return ""
-	}
-
-	smtpTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/smtp/smtp_settings.rb"))
-	smtpTemplate.Execute(&settings, cr.Spec.SMTP)
-
-	// Remove whitespaces
-	pattern := regexp.MustCompile(`(?m)^\s+[\n\r]+|[\r\n]+\s+\z`)
-
-	return pattern.ReplaceAllString(settings.String(), "\n")
-}
-
-func getPostgresOverrides(postgres *gitlabv1beta1.DatabaseSpec) gitlabv1beta1.DatabaseSpec {
-	if postgres != nil {
-		return *postgres
-	}
-
-	var replicas int32 = 1
-	return gitlabv1beta1.DatabaseSpec{
-		Replicas: replicas,
-	}
-}
-
-func getRedisOverrides(redis *gitlabv1beta1.RedisSpec) gitlabv1beta1.RedisSpec {
-	if redis != nil {
-		return *redis
-	}
-
-	var replicas int32 = 1
-	return gitlabv1beta1.RedisSpec{
-		Replicas: replicas,
-	}
-}
-*/
-
-func getGitlabURL(adapter helpers.CustomResourceAdapter) string {
-	url, err := helpers.GetStringValue(adapter.Values(), "global.hosts.gitlab.name")
-
-	if err == nil && url != "" {
-		return DomainNameOnly(url)
-	}
-
-	return "gitlab.example.com"
-}
-
-func getRegistryURL(adapter helpers.CustomResourceAdapter) string {
-	url, err := helpers.GetStringValue(adapter.Values(), "global.hosts.registry.name")
-
-	if err == nil && url != "" {
-		return DomainNameOnly(url)
-	}
-
-	return "registry.example.com"
+func updateCommonLabels(releaseName, componentName string, labels map[string]string) {
+	labels["app.kubernetes.io/name"] = releaseName
+	labels["app.kubernetes.io/instance"] = fmt.Sprintf("%s-%s", releaseName, componentName)
+	labels["app.kubernetes.io/component"] = componentName
+	labels["app.kubernetes.io/part-of"] = "gitlab"
+	labels["app.kubernetes.io/managed-by"] = "gitlab-operator"
 }

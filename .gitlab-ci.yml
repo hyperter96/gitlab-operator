@@ -48,16 +48,11 @@ lint_code:
 
 unit_tests:
   extends: .test_job
-  script: /go/bin/ginkgo -skip 'replacement|controller' -cover -outputdir=coverage ./...
+  script: /go/bin/ginkgo -skip 'controller' -cover -outputdir=coverage ./...
 
 slow_unit_tests:
   extends: .test_job
   script: /go/bin/ginkgo -focus 'controller' -cover -outputdir=coverage ./...
-
-replacement_tests:
-  extends: .test_job
-  script: /go/bin/ginkgo -focus 'replacement' -cover -outputdir=coverage ./...
-  allow_failure: true
 
 .docker_build_job:
   extends: .cache

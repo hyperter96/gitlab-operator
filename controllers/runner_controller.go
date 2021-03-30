@@ -31,8 +31,8 @@ import (
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
 	runnerctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/runner"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -183,7 +183,7 @@ func (r *RunnerReconciler) reconcileDeployments(ctx context.Context, cr *gitlabv
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, runner)
+	deployment, changed := internal.IsDeploymentChanged(found, runner)
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -219,7 +219,7 @@ func (r *RunnerReconciler) reconcileStatus(ctx context.Context, cr *gitlabv1beta
 	// if err != nil {
 	// }
 
-	client, err := gitlabutils.KubernetesConfig().NewKubernetesClient()
+	client, err := internal.KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func (r *RunnerReconciler) reconcileStatus(ctx context.Context, cr *gitlabv1beta
 	}
 
 	var log string
-	if gitlabutils.IsPodRunning(pod) {
+	if internal.IsPodRunning(pod) {
 		log, err = runnerctl.LogStream(pod, client)
 		if err != nil {
 			return err
@@ -272,7 +272,7 @@ func (r *RunnerReconciler) reconcileMetrics(ctx context.Context, cr *gitlabv1bet
 
 func (r *RunnerReconciler) reconcileServiceMonitor(ctx context.Context, cr *gitlabv1beta1.Runner) error {
 
-	if gitlabutils.IsPrometheusSupported() {
+	if internal.IsPrometheusSupported() {
 		sm := runnerctl.ServiceMonitorService(cr)
 
 		found := &monitoringv1.ServiceMonitor{}
@@ -326,7 +326,7 @@ func (r *RunnerReconciler) validateRegistrationTokenSecret(ctx context.Context, 
 }
 
 func (r *RunnerReconciler) appendConfigMapChecksum(ctx context.Context, deployment *appsv1.Deployment) error {
-	configmaps := gitlabutils.DeploymentConfigMaps(deployment)
+	configmaps := internal.DeploymentConfigMaps(deployment)
 
 	for _, cmName := range configmaps {
 		found := &corev1.ConfigMap{}
@@ -359,7 +359,7 @@ func (r *RunnerReconciler) appendConfigMapChecksum(ctx context.Context, deployme
 }
 
 func (r *RunnerReconciler) reconcileServiceAccount(ctx context.Context, cr *gitlabv1beta1.Runner) error {
-	sa := gitlabutils.ServiceAccount("gitlab-runner", cr.Namespace)
+	sa := internal.ServiceAccount("gitlab-runner", cr.Namespace)
 	lookupKey := types.NamespacedName{
 		Name:      sa.Name,
 		Namespace: cr.Namespace,

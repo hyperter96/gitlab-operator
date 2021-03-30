@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +22,7 @@ import (
 
 var (
 	ctx          = context.Background()
-	chartVersion = helpers.AvailableChartVersions()[0]
+	chartVersion = gitlab.AvailableChartVersions()[0]
 	emptyValues  = helm.EmptyValues()
 )
 

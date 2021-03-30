@@ -3,7 +3,7 @@ package runner
 import (
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -11,7 +11,7 @@ import (
 
 // MetricsService returns the kubernetes service object for metrics
 func MetricsService(cr *gitlabv1beta1.Runner) *corev1.Service {
-	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
+	labels := internal.Label(cr.Name, "runner", internal.RunnerType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -35,7 +35,7 @@ func MetricsService(cr *gitlabv1beta1.Runner) *corev1.Service {
 
 // ServiceMonitorService returns the prometheus service monitor object
 func ServiceMonitorService(cr *gitlabv1beta1.Runner) *monitoringv1.ServiceMonitor {
-	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
+	labels := internal.Label(cr.Name, "runner", internal.RunnerType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{

@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/common/log"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/backup"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,7 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/backup"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -207,7 +207,7 @@ func (r *GLBackupReconciler) IfObjectExists(key types.NamespacedName, result run
 
 func (r *GLBackupReconciler) reconcileBackupStatus(ctx context.Context, cr *gitlabv1beta1.GLBackup) error {
 	lockName := strings.Join([]string{cr.Name, "backup", "lock"}, "-")
-	backupData, err := gitlabutils.ConfigMapData(lockName, cr.Namespace)
+	backupData, err := internal.ConfigMapData(lockName, cr.Namespace)
 	if err != nil {
 		log.Error(err, "Error getting configmap data")
 	}
@@ -292,7 +292,7 @@ func (r *GLBackupReconciler) isBackupComplete(cr *gitlabv1beta1.GLBackup, backup
 }
 
 func (r *GLBackupReconciler) reconcileServiceAcccount(ctx context.Context, cr *gitlabv1beta1.GLBackup) error {
-	sa := gitlabutils.ServiceAccount("gitlab-backup", cr.Namespace)
+	sa := internal.ServiceAccount("gitlab-backup", cr.Namespace)
 
 	found := &corev1.ServiceAccount{}
 	lookupKey := types.NamespacedName{Name: "gitlab-backup", Namespace: cr.Namespace}

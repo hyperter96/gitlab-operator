@@ -2,7 +2,7 @@ package runner
 
 import (
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -12,9 +12,9 @@ const RunnerServiceAccount string = "gitlab-runner"
 
 // Deployment returns the runner deployment object
 func Deployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
-	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
+	labels := internal.Label(cr.Name, "runner", internal.RunnerType)
 
-	runner := gitlabutils.GenericDeployment(gitlabutils.Component{
+	runner := internal.GenericDeployment(internal.Component{
 		Labels:    labels,
 		Namespace: cr.Namespace,
 		InitContainers: []corev1.Container{
@@ -145,7 +145,7 @@ func Deployment(cr *gitlabv1beta1.Runner) *appsv1.Deployment {
 	})
 
 	// Use certified image if running on Openshift
-	if gitlabutils.IsOpenshift() {
+	if internal.IsOpenshift() {
 		runner.Spec.Template.Spec.InitContainers[0].Image = CertifiedRunnerImage
 		runner.Spec.Template.Spec.Containers[0].Image = CertifiedRunnerImage
 	}

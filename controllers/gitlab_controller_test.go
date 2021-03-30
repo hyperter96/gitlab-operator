@@ -13,6 +13,7 @@ import (
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
 )
 
@@ -75,7 +76,7 @@ var _ = Describe("GitLab controller", func() {
 				gitlabShellQuery := appLabels(releaseName, gitlabctl.GitLabShellComponentName)
 
 				By("Checking ServiceAccount exists for Shared secrets Job")
-				Eventually(getObjectPromise(gitlabctl.AppServiceAccount, &corev1.ServiceAccount{}),
+				Eventually(getObjectPromise(settings.AppServiceAccount, &corev1.ServiceAccount{}),
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Checking Shared secrets Job and its ConfigMap are created")

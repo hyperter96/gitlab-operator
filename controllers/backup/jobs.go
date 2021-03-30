@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 
@@ -26,9 +26,9 @@ func IsOnDemandBackup(cr *gitlabv1beta1.GLBackup) bool {
 
 // LockConfigMap is used to ensure backups do not share names
 func LockConfigMap(cr *gitlabv1beta1.GLBackup) *corev1.ConfigMap {
-	labels := gitlabutils.Label(cr.Name, "backup-lock", gitlabutils.BackupType)
+	labels := internal.Label(cr.Name, "backup-lock", internal.BackupType)
 
-	return gitlabutils.GenericConfigMap(labels["app.kubernetes.io/instance"], cr.Namespace, labels)
+	return internal.GenericConfigMap(labels["app.kubernetes.io/instance"], cr.Namespace, labels)
 }
 
 func backupEnvBuilder(cr *gitlabv1beta1.GLBackup) []corev1.EnvVar {
@@ -77,9 +77,9 @@ func backupCommand(cr *gitlabv1beta1.GLBackup) string {
 
 // NewSchedule returns a CronJob with schedule for backups
 func NewSchedule(cr *gitlabv1beta1.GLBackup) *batchv1beta1.CronJob {
-	labels := gitlabutils.Label(cr.Name, "backup", gitlabutils.BackupType)
+	labels := internal.Label(cr.Name, "backup", internal.BackupType)
 
-	backup := gitlabutils.GenericCronJob(gitlabutils.Component{
+	backup := internal.GenericCronJob(internal.Component{
 		Namespace: cr.Namespace,
 		Labels:    labels,
 		Containers: []corev1.Container{
@@ -101,9 +101,9 @@ func NewSchedule(cr *gitlabv1beta1.GLBackup) *batchv1beta1.CronJob {
 
 // NewBackup returns a kubernetes job that will initiate a backup immediately
 func NewBackup(cr *gitlabv1beta1.GLBackup) *batchv1.Job {
-	labels := gitlabutils.Label(cr.Name, "backup", gitlabutils.BackupType)
+	labels := internal.Label(cr.Name, "backup", internal.BackupType)
 
-	backup := gitlabutils.GenericJob(gitlabutils.Component{
+	backup := internal.GenericJob(internal.Component{
 		Labels:    labels,
 		Namespace: cr.Namespace,
 		Containers: []corev1.Container{

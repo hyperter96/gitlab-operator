@@ -8,7 +8,7 @@ import (
 	"text/template"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -35,7 +35,7 @@ func userOptions(cr *gitlabv1beta1.Runner) Config {
 
 // ConfigMap returns the runner configmap object
 func ConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
-	labels := gitlabutils.Label(cr.Name, "runner", gitlabutils.RunnerType)
+	labels := internal.Label(cr.Name, "runner", internal.RunnerType)
 
 	var gitlabURL string
 
@@ -43,10 +43,10 @@ func ConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 	configTemplate := template.Must(template.ParseFiles(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/config.toml"))
 	configTemplate.Execute(&configToml, userOptions(cr))
 
-	entrypointScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/entrypoint.sh")
-	configureScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/configure.sh")
-	registrationScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/registration.sh")
-	aliveScript := gitlabutils.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/check-live.sh")
+	entrypointScript := internal.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/entrypoint.sh")
+	configureScript := internal.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/configure.sh")
+	registrationScript := internal.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/registration.sh")
+	aliveScript := internal.ReadConfig(os.Getenv("GITLAB_OPERATOR_ASSETS") + "/templates/gitlab-runner/check-live.sh")
 
 	// Gitlab URL should be used for Gitlab instances
 	// outside k8s or the current namespace
@@ -61,7 +61,7 @@ func ConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 		gitlabURL = fmt.Sprintf("http://%s:8005", service)
 	}
 
-	runnerConfigMap := gitlabutils.GenericConfigMap(labels["app.kubernetes.io/instance"]+"-config", cr.Namespace, labels)
+	runnerConfigMap := internal.GenericConfigMap(labels["app.kubernetes.io/instance"]+"-config", cr.Namespace, labels)
 	runnerConfigMap.Data = map[string]string{
 		"ci_server_url":   gitlabURL,
 		"config.toml":     configToml.String(),
@@ -72,7 +72,7 @@ func ConfigMap(cr *gitlabv1beta1.Runner) *corev1.ConfigMap {
 	}
 
 	// update configmap with checksum in annotation
-	gitlabutils.ConfigMapWithHash(runnerConfigMap)
+	internal.ConfigMapWithHash(runnerConfigMap)
 
 	return runnerConfigMap
 }

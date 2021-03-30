@@ -6,8 +6,8 @@ import (
 
 	"github.com/prometheus/common/log"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -18,7 +18,7 @@ import (
 // EndpointMembers returns a list of members
 var EndpointMembers []string
 
-func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
 	lookupKey := types.NamespacedName{Namespace: adapter.Namespace(), Name: adapter.ReleaseName()}
 
@@ -70,7 +70,7 @@ func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter he
 
 // Temporarily disabled.
 /*
-func getReadinessStatus(ctx context.Context, adapter helpers.CustomResourceAdapter) *gitlabv1beta1.HealthCheck {
+func getReadinessStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) *gitlabv1beta1.HealthCheck {
 	var err error
 	status := &ReadinessStatus{}
 
@@ -138,15 +138,15 @@ func parseStatus(status *ReadinessStatus) *gitlabv1beta1.HealthCheck {
 }
 */
 
-func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter helpers.CustomResourceAdapter) bool {
-	labels := gitlabutils.Label(adapter.ReleaseName(), "postgresql", gitlabutils.GitlabType)
+func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+	labels := internal.Label(adapter.ReleaseName(), "postgresql", internal.GitlabType)
 
 	postgres := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: adapter.Namespace(), Name: labels["app.kubernetes.io/instance"]}, postgres)
 	return !reflect.DeepEqual(*postgres, appsv1.Deployment{}) || !errors.IsNotFound(err)
 }
 
-func (r *GitLabReconciler) isWebserviceDeployed(ctx context.Context, adapter helpers.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) isWebserviceDeployed(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
 	webservice := &appsv1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: adapter.ReleaseName() + "-webservice-default", Namespace: adapter.Namespace()}, webservice)
 	return !reflect.DeepEqual(*webservice, appsv1.Deployment{}) || !errors.IsNotFound(err)
@@ -157,7 +157,7 @@ func (r *GitLabReconciler) setGitlabStatus(ctx context.Context, object runtime.O
 	return r.Status().Update(ctx, object)
 }
 
-func (r *GitLabReconciler) getEndpointMembers(ctx context.Context, adapter helpers.CustomResourceAdapter, endpoint string) []string {
+func (r *GitLabReconciler) getEndpointMembers(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, endpoint string) []string {
 	members := []string{}
 
 	ep := &corev1.Endpoints{}

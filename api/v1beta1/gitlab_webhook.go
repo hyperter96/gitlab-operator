@@ -35,9 +35,6 @@ func (r *GitLab) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-apps-gitlab-com-v1beta1-gitlab,mutating=false,failurePolicy=fail,groups=apps.gitlab.com,resources=gitlabs,versions=v1beta1,name=vgitlab.kb.io
 
 var _ webhook.Validator = &GitLab{}
@@ -57,7 +54,6 @@ func (r *GitLab) ValidateCreate() error {
 func (r *GitLab) ValidateUpdate(old runtime.Object) error {
 	gitlablog.Info("validate update", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object update.
 	return nil
 }
 
@@ -65,6 +61,5 @@ func (r *GitLab) ValidateUpdate(old runtime.Object) error {
 func (r *GitLab) ValidateDelete() error {
 	gitlablog.Info("validate delete", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }

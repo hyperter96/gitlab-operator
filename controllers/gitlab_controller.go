@@ -41,9 +41,10 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
-	gitlabutils "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/utils"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
+
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
@@ -95,7 +96,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	adapter := helpers.NewCustomResourceAdapter(gitlab)
+	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
 
 	if err := r.reconcileServiceAccount(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
@@ -129,7 +130,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if gitlabctl.RequiresCertManagerCertificate(adapter).Any() {
+	if internal.RequiresCertManagerCertificate(adapter).Any() {
 		if err := r.reconcileCertManagerCertificates(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -162,7 +163,7 @@ func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	if gitlabutils.IsPrometheusSupported() {
+	if internal.IsPrometheusSupported() {
 		// Deploy a prometheus service monitor
 		if err := r.reconcileServiceMonitor(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
@@ -194,7 +195,7 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter)
 	if err != nil {
 		return err
@@ -207,7 +208,7 @@ func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter help
 	return r.runJobAndWait(ctx, adapter, job)
 }
 
-func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	job, err := gitlabctl.SelfSignedCertsJob(adapter)
 	if err != nil {
 		return err
@@ -216,7 +217,7 @@ func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter he
 	return r.runJobAndWait(ctx, adapter, job)
 }
 
-func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter helpers.CustomResourceAdapter, job *batchv1.Job) error {
+func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job) error {
 
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
 
@@ -283,7 +284,7 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter helpers.Cu
 }
 
 //	Reconciler for all ConfigMaps come below
-func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var configmaps []*corev1.ConfigMap
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
@@ -319,10 +320,10 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter help
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
 	// initialize buckets once s3 storage is up
-	buckets := gitlabctl.BucketCreationJob(adapter)
+	buckets := internal.BucketCreationJob(adapter)
 	if _, err := r.createIfNotExists(ctx, buckets, adapter); err != nil {
 		return err
 	}
@@ -333,18 +334,18 @@ func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter helpers.Cu
 	return r.runMigrationsJob(ctx, adapter)
 }
 
-func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
-	gitaly := gitlabctl.GitalyServiceMonitor(adapter.Resource())
+	gitaly := internal.GitalyServiceMonitor(adapter.Resource())
 
-	gitlab := gitlabctl.ExporterServiceMonitor(adapter.Resource())
+	gitlab := internal.ExporterServiceMonitor(adapter.Resource())
 
-	postgres := gitlabctl.PostgresqlServiceMonitor(adapter.Resource())
+	postgres := internal.PostgresqlServiceMonitor(adapter.Resource())
 
-	redis := gitlabctl.RedisServiceMonitor(adapter.Resource())
+	redis := internal.RedisServiceMonitor(adapter.Resource())
 
-	workhorse := gitlabctl.WebserviceServiceMonitor(adapter.Resource())
+	workhorse := internal.WebserviceServiceMonitor(adapter.Resource())
 
 	servicemonitors = append(servicemonitors,
 		gitlab,
@@ -360,18 +361,18 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 		}
 	}
 
-	service := gitlabctl.ExposePrometheusCluster(adapter.Resource())
+	service := internal.ExposePrometheusCluster(adapter.Resource())
 	if _, err := r.createIfNotExists(ctx, service, nil); err != nil {
 		return err
 	}
 
-	prometheus := gitlabctl.PrometheusCluster(adapter.Resource())
+	prometheus := internal.PrometheusCluster(adapter.Resource())
 
 	_, err := r.createIfNotExists(ctx, prometheus, nil)
 	return err
 }
 
-func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	migrations, err := gitlabctl.MigrationsJob(adapter)
 	if err != nil {
 		return err
@@ -384,7 +385,7 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter helpers
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
 	if err := r.reconcileWebserviceDeployment(ctx, adapter); err != nil {
 		return err
@@ -413,7 +414,7 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter hel
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
 	var statefulsets []*appsv1.StatefulSet
 
@@ -432,7 +433,7 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter he
 	return nil
 }
 
-func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object interface{}, adapter helpers.CustomResourceAdapter) (created bool, err error) {
+func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object interface{}, adapter gitlabctl.CustomResourceAdapter) (created bool, err error) {
 	created = false
 	err = nil
 
@@ -473,18 +474,18 @@ func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object interfa
 	return
 }
 
-func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
-	cm := gitlabctl.MinioScriptConfigMap(adapter)
+func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	cm := internal.MinioScriptConfigMap(adapter)
 	if _, err := r.createIfNotExists(ctx, cm, adapter); err != nil {
 		return err
 	}
 
-	secret := gitlabctl.MinioSecret(adapter)
+	secret := internal.MinioSecret(adapter)
 	if _, err := r.createIfNotExists(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
-	appConfigSecret, err := gitlabctl.AppConfigConnectionSecret(adapter, *secret)
+	appConfigSecret, err := internal.AppConfigConnectionSecret(adapter, *secret)
 	if err != nil {
 		return err
 	}
@@ -493,7 +494,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter h
 		return err
 	}
 
-	registryConnectionSecret, err := gitlabctl.RegistryConnectionSecret(adapter, *secret)
+	registryConnectionSecret, err := internal.RegistryConnectionSecret(adapter, *secret)
 	if err != nil {
 		return err
 	}
@@ -502,20 +503,20 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter h
 		return err
 	}
 
-	taskRunnerConnectionSecret := gitlabctl.TaskRunnerConnectionSecret(adapter, *secret)
+	taskRunnerConnectionSecret := internal.TaskRunnerConnectionSecret(adapter, *secret)
 	if _, err := r.createIfNotExists(ctx, taskRunnerConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
 	// Only deploy the minio service and statefulset for development builds
-	if minioEnabled, _ := helpers.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
-		svc := gitlabctl.MinioService(adapter)
+	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
+		svc := internal.MinioService(adapter)
 		if _, err := r.createIfNotExists(ctx, svc, adapter); err != nil {
 			return err
 		}
 
 		// deploy minio
-		minio := gitlabctl.MinioStatefulSet(adapter)
+		minio := internal.MinioStatefulSet(adapter)
 		_, err := r.createIfNotExists(ctx, minio, adapter)
 		return err
 	}
@@ -523,7 +524,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter h
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var services []*corev1.Service
 
 	shell := gitlabctl.ShellService(adapter)
@@ -553,7 +554,7 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter helper
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
 	exporter := gitlabctl.ExporterDeployment(adapter)
 
@@ -574,7 +575,7 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, exporter.DeepCopy())
+	deployment, changed := internal.IsDeploymentChanged(found, exporter.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -582,7 +583,7 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	webservice := gitlabctl.WebserviceDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), webservice, r.Scheme); err != nil {
@@ -602,7 +603,7 @@ func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, ad
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, webservice.DeepCopy())
+	deployment, changed := internal.IsDeploymentChanged(found, webservice.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -610,7 +611,7 @@ func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, ad
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	registry := gitlabctl.RegistryDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), registry, r.Scheme); err != nil {
@@ -630,7 +631,7 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adap
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, registry.DeepCopy())
+	deployment, changed := internal.IsDeploymentChanged(found, registry.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -638,7 +639,7 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adap
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	shell := gitlabctl.ShellDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), shell, r.Scheme); err != nil {
@@ -658,7 +659,7 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, shell.DeepCopy())
+	deployment, changed := internal.IsDeploymentChanged(found, shell.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -666,7 +667,7 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	sidekiq := gitlabctl.SidekiqDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), sidekiq, r.Scheme); err != nil {
@@ -686,7 +687,7 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapt
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, sidekiq.DeepCopy())
+	deployment, changed := internal.IsDeploymentChanged(found, sidekiq.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -694,7 +695,7 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapt
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	tasker := gitlabctl.TaskRunnerDeployment(adapter)
 
 	if err := controllerutil.SetControllerReference(adapter.Resource(), tasker, r.Scheme); err != nil {
@@ -714,7 +715,7 @@ func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, ad
 		return err
 	}
 
-	deployment, changed := gitlabutils.IsDeploymentChanged(found, tasker.DeepCopy())
+	deployment, changed := internal.IsDeploymentChanged(found, tasker.DeepCopy())
 	if changed {
 		return r.Update(ctx, deployment)
 	}
@@ -722,20 +723,21 @@ func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, ad
 	return nil
 }
 
-func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
-	// if gitlabutils.IsOpenshift() {
+func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	// if internal.IsOpenshift() {
 	// 	return r.reconcileRoute(cr)
 	// }
 
 	return r.reconcileIngress(ctx, adapter)
 }
 
-func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
-	app := gitlabctl.MainRoute(adapter)
+// TODO: This can be removed.
+func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	app := internal.MainRoute(adapter)
 
-	admin := gitlabctl.AdminRoute(adapter)
+	admin := internal.AdminRoute(adapter)
 
-	registry := gitlabctl.RegistryRoute(adapter)
+	registry := internal.RegistryRoute(adapter)
 
 	var routes []*routev1.Route
 	routes = append(routes,
@@ -753,7 +755,7 @@ func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter helpers.C
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var ingresses []*extensionsv1beta1.Ingress
 	gitlab := gitlabctl.WebserviceIngress(adapter)
 	registry := gitlabctl.RegistryIngress(adapter)
@@ -772,18 +774,18 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter helpers
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	// certificates := RequiresCertificate(cr)
 
-	issuer := gitlabctl.CertificateIssuer(adapter)
+	issuer := internal.CertificateIssuer(adapter)
 
 	_, err := r.createIfNotExists(ctx, issuer, adapter)
 	return err
 }
 
-func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	selector := client.MatchingLabelsSelector{
-		Selector: getLabelSet(adapter.Resource()).AsSelector(),
+		Selector: internal.GetLabelSet(adapter.Resource()).AsSelector(),
 	}
 
 	deployments := &appsv1.DeploymentList{}
@@ -801,7 +803,7 @@ func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter helpers
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, adapter helpers.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, adapter gitlabctl.CustomResourceAdapter) error {
 	excludedDeployments := [2]string{"gitlab-exporter", "gitlab-task-runner"}
 	for _, excludedDeployment := range excludedDeployments {
 		if strings.Contains(deployment.Name, excludedDeployment) {
@@ -809,7 +811,7 @@ func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.
 		}
 	}
 
-	hpa := gitlabctl.HorizontalAutoscaler(deployment, adapter.Resource())
+	hpa := internal.HorizontalAutoscaler(deployment, adapter.Resource())
 
 	found := &autoscalingv1.HorizontalPodAutoscaler{}
 	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: adapter.Resource().Namespace}, found)
@@ -892,8 +894,8 @@ func (r *GitLabReconciler) createNamespace(ctx context.Context, namespace *corev
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter helpers.CustomResourceAdapter) error {
-	sa := gitlabutils.ServiceAccount("gitlab-app", adapter.Namespace())
+func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	sa := internal.ServiceAccount("gitlab-app", adapter.Namespace())
 
 	found := &corev1.ServiceAccount{}
 	lookupKey := types.NamespacedName{Name: sa.Name, Namespace: adapter.Namespace()}
@@ -910,4 +912,38 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 	}
 
 	return nil
+}
+
+func (r *GitLabReconciler) isObjectFound(object interface{}) bool {
+	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object.(runtime.Object))
+}
+
+func (r *RunnerReconciler) isObjectFound(object interface{}) bool {
+	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object.(runtime.Object))
+}
+
+func (r *GLBackupReconciler) isObjectFound(object interface{}) bool {
+	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object.(runtime.Object))
+}
+
+func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlab.CustomResourceAdapter) bool {
+	var addresses []corev1.EndpointAddress
+
+	ep := &corev1.Endpoints{}
+	err := r.Get(ctx, types.NamespacedName{Name: service, Namespace: adapter.Namespace()}, ep)
+	if err != nil && errors.IsNotFound(err) {
+		return false
+	}
+
+	for _, subset := range ep.Subsets {
+		addresses = append(addresses, subset.Addresses...)
+	}
+
+	return len(addresses) > 0
+}
+
+func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlab.CustomResourceAdapter) bool {
+	return r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) &&
+		r.isEndpointReady(ctx, adapter.ReleaseName()+"-gitaly", adapter) &&
+		r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter)
 }

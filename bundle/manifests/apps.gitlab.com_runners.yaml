@@ -76,6 +76,9 @@ spec:
               description: Option to limit the number of jobs globally that can run concurrently. The operator sets this to 10, if not specified
               format: int32
               type: integer
+            config:
+              description: allow user to provide configmap name containing the user provided config.toml
+              type: string
             gcs:
               description: options used to setup GCS (Google Container Storage) as GitLab Runner Cache
               properties:
@@ -124,6 +127,9 @@ spec:
                 server:
                   type: string
               type: object
+            serviceaccount:
+              description: allow user to override service account used by GitLab Runner
+              type: string
             tags:
               description: 'List of comma separated tags to be applied to the runner More info: https://docs.gitlab.com/ee/ci/runners/#use-tags-to-limit-the-number-of-jobs-using-the-runner'
               type: string

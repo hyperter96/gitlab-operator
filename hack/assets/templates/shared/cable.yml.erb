@@ -1,5 +1,0 @@
-production:
-  url: redis://:<%= URI.escape(File.read("/etc/gitlab/redis/redis-password").strip) %>@{{ .RedisMaster }}:6379
-
-  id:
-  adapter: redis

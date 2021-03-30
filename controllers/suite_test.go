@@ -19,7 +19,7 @@ import (
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/helpers"
+	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
@@ -50,7 +50,7 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func(done Done) {
 	ctrl.SetLogger(zap.LoggerTo(GinkgoWriter, true))
 
-	ChartVersion = helpers.AvailableChartVersions()[0]
+	ChartVersion = gitlab.AvailableChartVersions()[0]
 
 	By("Bootstrapping test environment")
 	testEnv = &envtest.Environment{

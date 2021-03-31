@@ -60,6 +60,7 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
@@ -915,10 +916,6 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 }
 
 func (r *GitLabReconciler) isObjectFound(object interface{}) bool {
-	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object.(runtime.Object))
-}
-
-func (r *RunnerReconciler) isObjectFound(object interface{}) bool {
 	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object.(runtime.Object))
 }
 

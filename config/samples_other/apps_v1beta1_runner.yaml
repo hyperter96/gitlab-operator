@@ -1,9 +1,0 @@
-apiVersion: apps.gitlab.com/v1beta1
-kind: Runner
-metadata:
-  name: example
-spec:
-  gitlab:
-    url: https://gitlab.com
-  token: runner-token-secret # Name of the secret containing the Runner token
-  tags: openshift, test

@@ -8,9 +8,6 @@ import (
 )
 
 const (
-	// RunnerType represents resource of type Runner
-	RunnerType = "runner"
-
 	// GitlabType represents resource of type Gitlab
 	GitlabType = "gitlab"
 

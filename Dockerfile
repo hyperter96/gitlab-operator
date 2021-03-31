@@ -23,7 +23,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 LABEL name=gitlab-operator \
       vendor='GitLab, Inc.' \
-      description='Operator to deploy GitLab and Runner instances' \
+      description='Operator to deploy GitLab instances' \
       summary='GitLab is a DevOps lifecycle tool that provides Git repositories'
 
 # Allow the chart directory to be overwritten with --build-arg

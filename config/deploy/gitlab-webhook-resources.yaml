@@ -69,24 +69,6 @@ webhooks:
     - UPDATE
     resources:
     - glbackups
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: gitlab-webhook-service
-      namespace: gitlab-system
-      path: /validate-apps-gitlab-com-v1beta1-runner
-  failurePolicy: Fail
-  name: vrunner.kb.io
-  rules:
-  - apiGroups:
-    - apps.gitlab.com
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - runners
 ---
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer

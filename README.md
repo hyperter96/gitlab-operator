@@ -4,11 +4,11 @@
 
 # GitLab Operator
 
-The GitLab operator aims to manage the full lifecycle of GitLab and GitLab Runner instances in your Kubernetes or Openshift container platforms.
+The GitLab operator aims to manage the full lifecycle of GitLab instances in your Kubernetes or Openshift container platforms.
 
 While new and still actively being developed, the operator aims to:
 
-- ease installation and configuration of GitLab and GitLab Runner instances
+- ease installation and configuration of GitLab instances
 - offer seamless upgrades from version to version
 - ease backup and restore of GitLab and its components
 - aggregate and visualize metrics using Prometheus and Grafana
@@ -57,24 +57,7 @@ spec:
     targetCPU: 60
 ```
 
-#### 2. GitLab Runner
-GitLab Runner is the open source project used to run your jobs and send the results back to GitLab. It is used in conjunction with GitLab CI/CD, the open-source continuous integration service included with GitLab that coordinates jobs.
-
-An example is shown below:
-
-```
-apiVersion: apps.gitlab.com/v1beta1
-kind: Runner
-metadata:
-  name: example
-spec:
-  gitlab:
-    url: https://gitlab.com
-  token: runner-token-secret # Name of the secret containing the Runner token
-  tags: openshift, test
-```
-
-#### 3. GitLab Backup
+#### 2. GitLab Backup
 The GitLab Backup resource is responsible for performing backups and restores of GitLab instances.
 
 An example is shown below:

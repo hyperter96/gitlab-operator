@@ -16,9 +16,6 @@ resources:
 - custom/gitlab_backup_serviceaccount.yaml
 - custom/gitlab_role_binding.yaml
 - custom/gitlab_role.yaml
-- custom/gitlab_runner_role_binding.yaml
-- custom/gitlab_runner_role.yaml
-- custom/gitlab_runner_serviceaccount.yaml
 - custom/gitlab_service_account.yaml
 - custom/manager_service_account.yaml
 

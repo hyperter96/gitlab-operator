@@ -1,4 +1,0 @@
-concurrent = {{ .Concurrent }}
-check_interval = {{ .CheckInterval }}
-log_level = "info"
-listen_address = '[::]:9252'

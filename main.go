@@ -102,14 +102,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "GitLab")
 		os.Exit(1)
 	}
-	if err = (&controllers.RunnerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Runner"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Runner")
-		os.Exit(1)
-	}
 	if err = (&controllers.GLBackupReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("GLBackup"),
@@ -120,10 +112,6 @@ func main() {
 	}
 	if err = (&appsv1beta1.GitLab{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "GitLab")
-		os.Exit(1)
-	}
-	if err = (&appsv1beta1.Runner{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Runner")
 		os.Exit(1)
 	}
 	if err = (&appsv1beta1.GLBackup{}).SetupWebhookWithManager(mgr); err != nil {

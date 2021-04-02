@@ -118,7 +118,6 @@ cleanup() {
   kubectl delete namespace "$NAMESPACE"
   kubectl get clusterrolebindings -o=name | grep $NAMESPACE | xargs kubectl delete
   kubectl get validatingwebhookconfiguration -o name | grep $NAMESPACE | xargs kubectl delete
-  kubectl get mutatingwebhookconfiguration -o name | grep $NAMESPACE | xargs kubectl delete
 }
 
 wait_until_exists() {

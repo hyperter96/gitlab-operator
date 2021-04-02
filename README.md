@@ -25,52 +25,24 @@ Decisions made during the design of the operator have been compiled into a
 [document](doc/design-decisions.md) with background information to provide
 reasoning for reaching the decision.
 
-## Owned Resources
+## Owned Custom Resource: GitLab
 
-The operator is responsible for owns, watches and reconciles three different primary resources at this time.
-
-#### 1. GitLab
-GitLab is a complete open-source DevOps platform, delivered as a single application. It fundamentally changes the way development, security and Ops teams collaborate and build software.
+The operator is responsible for owning, watching, and reconciling the GitLab custom resource.
 
 An example GitLab object is shown below:
 
-```
+```yaml
 apiVersion: apps.gitlab.com/v1beta1
 kind: GitLab
 metadata:
   name: example
 spec:
-  url: gitlab.example.com
-  volume:
-    capacity: 10Gi
-  registry:
-    url: registry.example.com
-  redis:
-    volume:
-      capacity: 4Gi
-  postgres:
-    volume:
-      capacity: 8Gi
-  autoscaling:
-    minReplicas: 2
-    maxReplicas: 5
-    targetCPU: 60
-```
-
-#### 2. GitLab Backup
-The GitLab Backup resource is responsible for performing backups and restores of GitLab instances.
-
-An example is shown below:
-
-```
-apiVersion: apps.gitlab.com/v1beta1
-kind: GLBackup
-metadata:
-  name: example
-spec:
-  instance: example
-  schedule: 30 1 1 * 6
-  skip: repository,registry
+  chart:
+    version: 'X.Y.Z'
+    values:
+      global:
+        hosts:
+          domain: example.com
 ```
 
 ## OpenShift Cluster Setup

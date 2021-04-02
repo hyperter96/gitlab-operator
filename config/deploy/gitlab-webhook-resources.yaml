@@ -1,31 +1,4 @@
 apiVersion: admissionregistration.k8s.io/v1beta1
-kind: MutatingWebhookConfiguration
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: gitlab-system/gitlab-serving-cert
-  name: gitlab-mutating-webhook-configuration
-  namespace: gitlab-system
-webhooks:
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: gitlab-webhook-service
-      namespace: gitlab-system
-      path: /mutate-apps-gitlab-com-v1beta1-glbackup
-  failurePolicy: Fail
-  name: mglbackup.kb.io
-  rules:
-  - apiGroups:
-    - apps.gitlab.com
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - glbackups
----
-apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
@@ -51,24 +24,6 @@ webhooks:
     - UPDATE
     resources:
     - gitlabs
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: gitlab-webhook-service
-      namespace: gitlab-system
-      path: /validate-apps-gitlab-com-v1beta1-glbackup
-  failurePolicy: Fail
-  name: vglbackup.kb.io
-  rules:
-  - apiGroups:
-    - apps.gitlab.com
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - glbackups
 ---
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer

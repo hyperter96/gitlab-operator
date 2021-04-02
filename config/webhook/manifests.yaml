@@ -1,31 +1,3 @@
-
----
-apiVersion: admissionregistration.k8s.io/v1beta1
-kind: MutatingWebhookConfiguration
-metadata:
-  creationTimestamp: null
-  name: mutating-webhook-configuration
-webhooks:
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-apps-gitlab-com-v1beta1-glbackup
-  failurePolicy: Fail
-  name: mglbackup.kb.io
-  rules:
-  - apiGroups:
-    - apps.gitlab.com
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - glbackups
-
----
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -50,21 +22,3 @@ webhooks:
     - UPDATE
     resources:
     - gitlabs
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: webhook-service
-      namespace: system
-      path: /validate-apps-gitlab-com-v1beta1-glbackup
-  failurePolicy: Fail
-  name: vglbackup.kb.io
-  rules:
-  - apiGroups:
-    - apps.gitlab.com
-    apiVersions:
-    - v1beta1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - glbackups

@@ -10,9 +10,6 @@ import (
 const (
 	// GitlabType represents resource of type Gitlab
 	GitlabType = "gitlab"
-
-	// BackupType represents the Backup resource
-	BackupType = "backup"
 )
 
 var (

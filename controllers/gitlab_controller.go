@@ -919,10 +919,6 @@ func (r *GitLabReconciler) isObjectFound(object interface{}) bool {
 	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object.(runtime.Object))
 }
 
-func (r *GLBackupReconciler) isObjectFound(object interface{}) bool {
-	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object.(runtime.Object))
-}
-
 func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlab.CustomResourceAdapter) bool {
 	var addresses []corev1.EndpointAddress
 

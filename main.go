@@ -102,20 +102,8 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "GitLab")
 		os.Exit(1)
 	}
-	if err = (&controllers.GLBackupReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("GLBackup"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "GLBackup")
-		os.Exit(1)
-	}
 	if err = (&appsv1beta1.GitLab{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "GitLab")
-		os.Exit(1)
-	}
-	if err = (&appsv1beta1.GLBackup{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "GLBackup")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

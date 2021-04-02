@@ -11,9 +11,6 @@ resources:
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
 # Build Custom RBAC service accounts and roles
-- custom/gitlab_backup_role_binding.yaml
-- custom/gitlab_backup_role.yaml
-- custom/gitlab_backup_serviceaccount.yaml
 - custom/gitlab_role_binding.yaml
 - custom/gitlab_role.yaml
 - custom/gitlab_service_account.yaml

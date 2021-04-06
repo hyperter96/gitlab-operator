@@ -18,6 +18,12 @@ TAG ?= latest
 CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 # Namespace to deploy operator into
 NAMESPACE ?= gitlab-system
+# Chart version to use in the container
+CHART_VERSION ?= $(shell head -n1 CHART_VERSIONS)
+# Domain to use for `global.hosts.domain`
+DOMAIN ?= example.com
+# Host suffix to use for `global.hosts.hostSuffix`
+HOSTSUFFIX ?= ""
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -42,12 +48,20 @@ manager: generate fmt vet
 run: generate fmt vet manifests
 	go run ./main.go
 
+# Install required operators into a cluster
+install_required_operators:
+	kubectl apply -f scripts/manifests/
+
+# Uninstalls required operators from the cluster
+uninstall_required_operators:
+	kubectl delete -f scripts/manifests/
+
 # Install CRDs into a cluster
-install: manifests kustomize
+install_crds: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 # Uninstall CRDs from a cluster
-uninstall: manifests kustomize
+uninstall_crds: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 # Suffix operator clusterrolebinding names so they can be installed in parallel
@@ -59,16 +73,30 @@ suffix_webhook_names: kustomize
 	cd config/webhook && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests kustomize
+deploy_operator: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator=${IMG}:${TAG}
 	cd config/manager && $(KUSTOMIZE) edit add patch --path patches/deployment_always_pull_image.yaml
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
+# Delete controller from the configured Kubernetes cluster
+delete_operator: manifests kustomize
+	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
+
 # Deploy sample GitLab custom resource to cluster
-deploy_sample: kustomize
+deploy_sample_cr: kustomize
 	cd config/samples && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	$(KUSTOMIZE) build config/samples | sed "s/CHART_VERSION/${CHART_VERSION}/g" | kubectl apply -f -
+	$(KUSTOMIZE) build config/samples \
+		| sed "s/CHART_VERSION/${CHART_VERSION}/g" \
+		| sed "s/DOMAIN/${DOMAIN}/g" \
+		| sed "s/HOSTSUFFIX/${HOSTSUFFIX}/g" \
+		| kubectl apply -f -
+
+# Delete the sample GitLab custom resource from cluster
+delete_sample_cr: kustomize
+	cd config/samples && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
+	$(KUSTOMIZE) build config/samples | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen

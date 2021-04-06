@@ -14,16 +14,11 @@ While new and still actively being developed, the operator aims to:
 - aggregate and visualize metrics using Prometheus and Grafana
 - setup auto-scaling
 
-## Requirements
-The GitLab operator uses native Kubernetes resources to deploy and manage GitLab in the environment. It therefore will presumably run on any container platform that is derived from Kubernetes.
+Note that this does not include the GitLab Runner. For more inforation, see the [GitLab Runner Operator repository](https://gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator).
 
-The operator depends on the Prometheus, Nginx Ingress Controller and Cert Manager operators to achieve some of the tasks it provides to its end users.
+## Documentation
 
-## Design Decisions
-
-Decisions made during the design of the operator have been compiled into a
-[document](doc/design-decisions.md) with background information to provide
-reasoning for reaching the decision.
+More information on the Operator can be found in the [Operator Documentation](doc/README.md).
 
 ## Owned Custom Resource: GitLab
 
@@ -38,17 +33,9 @@ metadata:
   name: example
 spec:
   chart:
-    version: 'X.Y.Z'
+    version: "X.Y.Z"
     values:
       global:
         hosts:
           domain: example.com
 ```
-
-## OpenShift Cluster Setup
-
-See [doc/openshift-cluster-setup.md](doc/openshift-cluster-setup.md) for instructions on how to create an OpenShift cluster for development or CI.
-
-## More Information
-
-More information on the operator can be found in the [Operator Documentation](https://gitlab.com/gitlab-org/gl-openshift/documentation) repo.

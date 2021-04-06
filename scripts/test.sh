@@ -4,6 +4,8 @@
 
 NAMESPACE="${NAMESPACE:-gitlab-system}"
 CLEANUP="${CLEANUP:-yes}"
+HOSTSUFFIX="${HOSTSUFFIX:-${NAMESPACE}}"
+DOMAIN="${DOMAIN:-example.com}"
 
 finish() {
   local exitcode=$?
@@ -37,37 +39,34 @@ main() {
 }
 
 install_required_operators() {
-  # nginx-ingress
   echo 'Installing required operators'  # See https://www.itix.fr/blog/install-operator-openshift-cli/
-  kubectl apply -f scripts/manifests/nginx-ingress-operator-group.yaml
-  kubectl apply -f scripts/manifests/nginx-ingress-operator-sub.yaml
+  make install_required_operators
+
+  # nginx-ingress
   wait_until_exists "crd/nginxingresscontrollers.k8s.nginx.org"
   kubectl wait --for=condition=Established crd/nginxingresscontrollers.k8s.nginx.org
   wait_until_exists "deployment/nginx-ingress-operator" "default"
   kubectl wait --for=condition=Available -n default deployment/nginx-ingress-operator
-  kubectl apply -f scripts/manifests/nginx-ingress-controller.yaml
   wait_until_exists "deployment/nginx-ingress-controller" "default"
   kubectl wait --for=condition=Available -n default deployment/nginx-ingress-controller
 
   # cert-manager
-  kubectl apply -f scripts/manifests/cert-manager-sub.yaml
   wait_until_exists "crd/certmanagers.operator.cert-manager.io"
   kubectl wait --for=condition=Established crd/certmanagers.operator.cert-manager.io
-  kubectl apply -f scripts/manifests/cert-manager-instance.yaml
   kubectl wait --for=condition=Initialized -n default certmanager/cert-manager
   kubectl wait --for=condition=Available -n default deployment/cert-manager-webhook
 }
 
 install_crds() {
   echo 'Installing operator CRDs'
-  make install
+  make install_crds
 }
 
 install_gitlab_operator() {
   echo 'Installing GitLab operator'
   make suffix_clusterrolebinding_names
   make suffix_webhook_names
-  make deploy
+  make deploy_operator
 }
 
 verify_operator_is_running() {
@@ -88,10 +87,7 @@ verify_operator_is_running() {
 
 install_gitlab_custom_resource() {
   echo 'Installing GitLab custom resource'
-  if [ -z "$CHART_VERSION" ]; then
-    export CHART_VERSION=$(head -n1 CHART_VERSIONS)
-  fi
-  make deploy_sample
+  make deploy_sample_cr
 }
 
 verify_gitlab_is_running() {
@@ -109,8 +105,7 @@ verify_gitlab_is_running() {
   kubectl -n "$NAMESPACE" wait --timeout=600s --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
 
   echo 'Testing GitLab endpoint'
-  kubectl -n $NAMESPACE exec deployment/gitlab-task-runner -- \
-    bash -c 'curl -IL $GITLAB_WEBSERVICE_DEFAULT_PORT_8181_TCP_ADDR:8181'
+  curl -k -IL "https://gitlab-$HOSTSUFFIX.$DOMAIN"
 }
 
 cleanup() {

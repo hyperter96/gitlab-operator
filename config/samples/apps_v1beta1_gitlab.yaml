@@ -6,4 +6,8 @@ metadata:
 spec:
   chart:
     version: CHART_VERSION
-    values: {}
+    values:
+      global:
+        hosts:
+          domain: DOMAIN
+          hostSuffix: HOSTSUFFIX

@@ -98,4 +98,6 @@ functional_tests:
   variables:
     NAMESPACE: "${CI_COMMIT_SHORT_SHA}"
     TAG: "${CI_COMMIT_SHORT_SHA}"
+    HOSTSUFFIX: "${CI_COMMIT_SHORT_SHA}"
+    DOMAIN: "apps.ocp-ci-4623.k8s-ft.win"
   script: ./scripts/test.sh

@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+[![Go Reference](https://pkg.go.dev/badge/gitlab.com/gitlab-org/gl-openshift/gitlab-operator.svg)](https://pkg.go.dev/gitlab.com/gitlab-org/gl-openshift/gitlab-operator)
+
 # GitLab Operator
 
 The GitLab operator aims to manage the full lifecycle of GitLab instances in your Kubernetes or Openshift container platforms.

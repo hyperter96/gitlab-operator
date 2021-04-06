@@ -9,19 +9,9 @@
 require 'json'
 require 'digest'
 
-$GITLAB_REGISTRY = ENV['GITLAB_REGISTRY_BASE_URL'] || ENV['CI_REGISTRY_IMAGE'] || 'registry.gitlab.com/gitlab-org/build/cng'
+$GITLAB_REGISTRY = ENV['GITLAB_REGISTRY_BASE_URL'] || ENV['CI_REGISTRY_IMAGE'] || 'registry.gitlab.com/gitlab-org/gl-openshift'
 $REDHAT_REGISTRY = ENV['REDHAT_REGISTRY_HOSTNAME'] || 'scan.connect.redhat.com'
-$IMAGE_VERSION_VAR = { 'alpine-certificates' => 'ALPINE_VERSION',
-                       'gitaly' => 'GITALY_SERVER_VERSION',
-                       'gitlab-container-registry' => 'GITLAB_CONTAINER_REGISTRY_VERSION',
-                       'gitlab-exporter' => 'GITLAB_EXPORTER_VERSION',
-                       'gitlab-mailroom' => 'MAILROOM_VERSION',
-                       'gitlab-shell' => 'GITLAB_SHELL_VERSION',
-                       'gitlab-sidekiq-ee' => 'GITLAB_VERSION',
-                       'gitlab-task-runner-ee' => 'GITLAB_VERSION',
-                       'gitlab-webservice-ee' => 'GITLAB_VERSION',
-                       'gitlab-workhorse-ee' => 'GITLAB_VERSION',
-                       'kubectl' => 'KUBECTL_VERSION' }
+$IMAGE_VERSION_VAR = { 'gitlab-operator' => 'OPERATOR_VERSION' }
 $AUTO_DEPLOY_TAG_REGEX = /^\d+\.\d+\.\d+\+\S{7,}$/
 $AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/
 

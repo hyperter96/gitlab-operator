@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,7 +46,7 @@ func newGitLab(releaseName string, chartValues helm.Values) *gitlabv1beta1.GitLa
 	}
 }
 
-func createObject(obj runtime.Object, ignoreAlreadyExists bool) error {
+func createObject(obj client.Object, ignoreAlreadyExists bool) error {
 	err := k8sClient.Create(ctx, obj)
 	if errors.IsAlreadyExists(err) && ignoreAlreadyExists {
 		err = nil
@@ -55,7 +54,7 @@ func createObject(obj runtime.Object, ignoreAlreadyExists bool) error {
 	return err
 }
 
-func getObject(name string, obj runtime.Object) error {
+func getObject(name string, obj client.Object) error {
 	lookupKey := types.NamespacedName{
 		Name:      name,
 		Namespace: Namespace,
@@ -63,13 +62,13 @@ func getObject(name string, obj runtime.Object) error {
 	return k8sClient.Get(ctx, lookupKey, obj)
 }
 
-func getObjectPromise(name string, obj runtime.Object) func() error {
+func getObjectPromise(name string, obj client.Object) func() error {
 	return func() error {
 		return getObject(name, obj)
 	}
 }
 
-func listObjects(query string, obj runtime.Object) error {
+func listObjects(query string, obj client.ObjectList) error {
 	labelSelector, err := labels.Parse(query)
 	if err != nil {
 		return err
@@ -87,7 +86,7 @@ func listObjects(query string, obj runtime.Object) error {
 	return nil
 }
 
-func listObjectsPromise(query string, obj runtime.Object, expectedSize int) func() error {
+func listObjectsPromise(query string, obj client.ObjectList, expectedSize int) func() error {
 	return func() error {
 		if err := listObjects(query, obj); err != nil {
 			return err
@@ -102,7 +101,7 @@ func listObjectsPromise(query string, obj runtime.Object, expectedSize int) func
 	}
 }
 
-func deleteObject(name string, obj runtime.Object, ignoreNotExistis bool) error {
+func deleteObject(name string, obj client.Object, ignoreNotExistis bool) error {
 	if err := getObject(name, obj); err != nil {
 		if errors.IsNotFound(err) {
 			err = nil
@@ -112,7 +111,7 @@ func deleteObject(name string, obj runtime.Object, ignoreNotExistis bool) error 
 	return k8sClient.Delete(ctx, obj)
 }
 
-func deleteObjectPromise(name string, obj runtime.Object) func() error {
+func deleteObjectPromise(name string, obj client.Object) func() error {
 	return func() error {
 		return deleteObject(name, obj, true)
 	}

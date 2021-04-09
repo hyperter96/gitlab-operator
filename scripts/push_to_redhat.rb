@@ -53,12 +53,12 @@ end
 
 # Add `-ubi8` to the commit ref if triggered with UBI_PIPELINE=true
 version = ARGV[0]
-if ENV['UBI_PIPELINE'] == 'true'
-  # we add `-ubi8` because this is probably from pipeline with UBI_PIPELINE set
-  version += '-ubi8'
-end
 
 # pull in the secrets used to auth with Red Hat registries (CI var)
+unless 'REDHAT_SECRETS_JSON' in ENV {
+  puts "REDHAT_SECRETS_JSON must be defined in the environment"
+  exit(1)
+}
 begin
   secrets = JSON.parse(ENV['REDHAT_SECRETS_JSON'])
 rescue => e

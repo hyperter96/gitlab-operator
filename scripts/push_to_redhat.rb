@@ -26,8 +26,7 @@ def retag_image(name, version, proj_id)
 end
 
 def set_credentials(secret)
-  puts "Setting credentials"
-  puts "checksum = #{Digest::SHA1.hexdigest secret}"
+  puts "Setting credentials (secret SHA1=#{Digest::SHA1.hexdigest secret})"
   %x(echo '#{secret}' | docker login -u unused --password-stdin #{$REDHAT_REGISTRY})
 end
 
@@ -55,12 +54,13 @@ end
 version = ARGV[0]
 
 # pull in the secrets used to auth with Red Hat registries (CI var)
-unless 'REDHAT_SECRETS_JSON' in ENV {
-  puts "REDHAT_SECRETS_JSON must be defined in the environment"
-  exit(1)
-}
 begin
-  secrets = JSON.parse(ENV['REDHAT_SECRETS_JSON'])
+  if ENV.include? 'REDHAT_SECRETS_JSON'
+    secrets = JSON.parse(ENV['REDHAT_SECRETS_JSON'])
+  else
+    puts "REDHAT_SECRETS_JSON must be defined in the environment"
+    exit(1)
+  end
 rescue => e
   puts "Unable to parse JSON: #{e.message}"
   puts e.backtrace

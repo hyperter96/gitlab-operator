@@ -516,6 +516,11 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 
 	// Only deploy the minio service and statefulset for development builds
 	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
+		ing := internal.MinioIngress(adapter)
+		if _, err := r.createIfNotExists(ctx, ing, adapter); err != nil {
+			return err
+		}
+
 		svc := internal.MinioService(adapter)
 		if _, err := r.createIfNotExists(ctx, svc, adapter); err != nil {
 			return err

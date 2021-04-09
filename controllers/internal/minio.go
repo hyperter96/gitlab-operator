@@ -10,6 +10,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -210,6 +211,56 @@ func MinioScriptConfigMap(adapter gitlab.CustomResourceAdapter) *corev1.ConfigMa
 	return init
 }
 
+// MinioIngress returns the Ingress that exposes MinIO.
+func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
+	annotations := map[string]string{
+		"kubernetes.io/ingress.class":                         fmt.Sprintf("%s-nginx", adapter.ReleaseName()),
+		"kubernetes.io/ingress.provider":                      "nginx",
+		"nginx.ingress.kubernetes.io/proxy-body-size":         "0",
+		"nginx.ingress.kubernetes.io/proxy-buffering":         "off",
+		"nginx.ingress.kubernetes.io/proxy-read-timeout":      "900",
+		"nginx.ingress.kubernetes.io/proxy-request-buffering": "off",
+	}
+
+	url := getMinioURL(adapter)
+
+	return &extensionsv1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        labels["app.kubernetes.io/instance"],
+			Namespace:   adapter.Namespace(),
+			Labels:      labels,
+			Annotations: annotations,
+		},
+		Spec: extensionsv1beta1.IngressSpec{
+			Rules: []extensionsv1beta1.IngressRule{
+				{
+					Host: url,
+					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
+						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
+							Paths: []extensionsv1beta1.HTTPIngressPath{
+								{
+									Path: "/",
+									Backend: extensionsv1beta1.IngressBackend{
+										ServiceName: MinioService(adapter).Name,
+										ServicePort: intstr.FromInt(9000),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			TLS: []extensionsv1beta1.IngressTLS{
+				{
+					Hosts:      []string{url},
+					SecretName: fmt.Sprintf("%s-wildcard-tls", adapter.ReleaseName()),
+				},
+			},
+		},
+	}
+}
+
 // MinioService returns service that exposes Minio
 func MinioService(adapter gitlab.CustomResourceAdapter) *corev1.Service {
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
@@ -298,18 +349,32 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 func TaskRunnerConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret corev1.Secret) *corev1.Secret {
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 	secret := GenericSecret(settings.TaskRunnerConnectionSecretName, adapter.Namespace(), labels)
-
+	url := getMinioURL(adapter)
 	data := minioSecret.StringData
 
 	template := `
-	[default]
-	access_key = %s
-	secret_key = %s
-	bucket_location = %s
-	multipart_chunk_size_mb = 128 # default is 15 (MB)
-	`
+[default]
+access_key = %s
+secret_key = %s
+bucket_location = %s
+host_base = %s
+host_bucket = %s/%%(bucket)
+default_mime_type = binary/octet-stream
+enable_multipart = True
+multipart_max_chunks = 10000
+multipart_chunk_size_mb = 128
+recursive = True
+recv_chunk = 65536
+send_chunk = 65536
+server_side_encryption = False
+signature_v2 = True
+socket_timeout = 300
+use_mime_magic = False
+verbosity = WARNING
+website_endpoint = https://%s
+`
 
-	result := fmt.Sprintf(template, data["accesskey"], data["secretkey"], settings.Region)
+	result := fmt.Sprintf(template, data["accesskey"], data["secretkey"], settings.Region, url, url, url)
 
 	secret.StringData = map[string]string{
 		"config": result,

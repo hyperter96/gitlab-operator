@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"strings"
 
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
@@ -24,6 +25,33 @@ func getRegistryURL(adapter gitlab.CustomResourceAdapter) string {
 	}
 
 	return "registry.example.com"
+}
+
+func getMinioURL(adapter gitlab.CustomResourceAdapter) string {
+	name, err := gitlab.GetStringValue(adapter.Values(), "global.hosts.minio.name")
+	if err != nil {
+		// Parameter is optional. Safe to continue.
+	}
+
+	if name != "" {
+		return name
+	}
+
+	hostSuffix, err := gitlab.GetStringValue(adapter.Values(), "global.hosts.hostSuffix")
+	if err != nil {
+		// Parameter is optional. Safe to continue.
+	}
+
+	domain, err := gitlab.GetStringValue(adapter.Values(), "global.hosts.domain")
+	if err != nil {
+		domain = "example.com"
+	}
+
+	if hostSuffix != "" {
+		return fmt.Sprintf("minio-%s.%s", hostSuffix, domain)
+	}
+
+	return fmt.Sprintf("minio.%s", domain)
 }
 
 func domainNameOnly(url string) string {

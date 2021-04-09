@@ -9,8 +9,11 @@
 require 'json'
 require 'digest'
 
-$GITLAB_REGISTRY = ENV['GITLAB_REGISTRY_BASE_URL'] || ENV['CI_REGISTRY_IMAGE'] || 'registry.gitlab.com/gitlab-org/gl-openshift'
-$REDHAT_REGISTRY = ENV['REDHAT_REGISTRY_HOSTNAME'] || 'scan.connect.redhat.com'
+$GITLAB_REGISTRY = ENV['GITLAB_REGISTRY_BASE_URL'] ||
+                   File.dirname(ENV['CI_REGISTRY_IMAGE']) ||
+                   'registry.gitlab.com/gitlab-org'
+$REDHAT_REGISTRY = ENV['REDHAT_REGISTRY_HOSTNAME'] ||
+                   'scan.connect.redhat.com'
 $IMAGE_VERSION_VAR = { 'gitlab-operator' => 'OPERATOR_VERSION' }
 $AUTO_DEPLOY_TAG_REGEX = /^\d+\.\d+\.\d+\+\S{7,}$/
 $AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/

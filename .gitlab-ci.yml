@@ -109,9 +109,11 @@ default:
 
 certification_upload:
   stage: certification
-  image: "registry.gitlab.com/gitlab-org/gitlab-omnibus-builder:ruby_docker-1.0.1"
+  image: "registry.gitlab.com/gitlab-org/gitlab-omnibus-builder/ruby_docker:1.0.1"
   services:
-    - docker:20.10.3-dind
+    - docker:19.03-dind
+  variables:
+    DOCKER_HOST: "tcp://:2375"
   rules:
     - <<: *if_release_tag
     - <<: *if_push_to_redhat
@@ -119,5 +121,8 @@ certification_upload:
   before_script:
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
   script:
-    #- env | grep -v PASSWORD | grep -v TOKEN |  sort
+    # env | grep -v PASSWORD | grep -v TOKEN | grep -v CERTIFICATE | grep -v SECRET | grep -v LICENSE |  sort
+    - ls -l /run
+    - docker version
+    - docker pull registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator:118-redhat-upload
     - ruby scripts/push_to_redhat.rb "${CI_COMMIT_REF_NAME}"

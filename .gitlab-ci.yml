@@ -108,7 +108,6 @@ functional_tests:
   script: ./scripts/test.sh
 
 certification_upload:
-  extends: .cache
   stage: certification
   image: "registry.gitlab.com/gitlab-org/gitlab-omnibus-builder:ruby_docker-0.0.7"
   services:
@@ -117,7 +116,5 @@ certification_upload:
     - <<: *if_release_tag
     - <<: *if_push_to_redhat
   retry: 1
-  before_script:
-    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
   script:
     - ruby scripts/push_to_redhat.rb "${CI_COMMIT_REF_NAME}"

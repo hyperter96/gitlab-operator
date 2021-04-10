@@ -16,96 +16,96 @@ stages:
 default:
   interruptible: true
 
-#.cache:
-#  variables:
-#    GOPATH: "${CI_PROJECT_DIR}/.go"
-#  cache:
-#    key: ${CI_JOB_NAME}
-#    paths:
-#      - .go/pkg/mod/
-#    when: 'always'
-#
-#pull_charts:
-#  stage: prepare
-#  script: scripts/retrieve_gitlab_charts.sh
-#  artifacts:
-#    paths:
-#      - charts/
-#
-#lint_code:
-#  extends: .cache
-#  stage: test
-#  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
-#  script: golangci-lint run --out-format code-climate | tee gl-code-quality-report.json | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"'
-#  artifacts:
-#    reports:
-#      codequality: gl-code-quality-report.json
-#    paths:
-#      - gl-code-quality-report.json
-#  allow_failure: true
-#
-#.test_job:
-#  extends: .cache
-#  stage: test
-#  variables:
-#    HELM_CHARTS: "${CI_PROJECT_DIR}/charts"
-#    GITLAB_OPERATOR_ASSETS: "${CI_PROJECT_DIR}/hack/assets"
-#  before_script:
-#    - mkdir coverage
-#
-#unit_tests:
-#  extends: .test_job
-#  script: /go/bin/ginkgo -skip 'controller' -cover -outputdir=coverage ./...
-#
-#slow_unit_tests:
-#  extends: .test_job
-#  script: /go/bin/ginkgo -focus 'controller' -cover -outputdir=coverage ./...
-#
-#.docker_build_job:
-#  extends: .cache
-#  stage: release
-#  image: docker:latest
-#  services:
-#    - docker:dind
-#  before_script:
-#    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
-#    # Update module cache so it can be saved in CI cache (only the dependencies required to build)
-#    - docker run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:1.13 go list ./...
-#  interruptible: false
-#
-#build_branch_image:
-#  extends: .docker_build_job
-#  script:
-#    - docker build -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
-#    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
-#    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-#  except:
-#    - master
-#
-#build_latest_image:
-#  extends: .docker_build_job
-#  script:
-#    - docker build -t "${CI_REGISTRY_IMAGE}:latest" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
-#    - docker push "${CI_REGISTRY_IMAGE}:latest"
-#    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-#  only:
-#    - master
-#
-#build_bundle_image:
-#  extends: .docker_build_job
-#  script:
-#    - docker build -t "${CI_REGISTRY_IMAGE}/bundle" -f Dockerfile.bundle .
-#    - docker push "${CI_REGISTRY_IMAGE}/bundle"
-#  only:
-#    - master
-#
-#functional_tests:
-#  extends: .cache
-#  stage: functional_test
-#  variables:
-#    NAMESPACE: "${CI_COMMIT_SHORT_SHA}"
-#    TAG: "${CI_COMMIT_SHORT_SHA}"
-#  script: ./scripts/test.sh
+.cache:
+  variables:
+    GOPATH: "${CI_PROJECT_DIR}/.go"
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+      - .go/pkg/mod/
+    when: 'always'
+
+pull_charts:
+  stage: prepare
+  script: scripts/retrieve_gitlab_charts.sh
+  artifacts:
+    paths:
+      - charts/
+
+lint_code:
+  extends: .cache
+  stage: test
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+  script: golangci-lint run --out-format code-climate | tee gl-code-quality-report.json | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"'
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+    paths:
+      - gl-code-quality-report.json
+  allow_failure: true
+
+.test_job:
+  extends: .cache
+  stage: test
+  variables:
+    HELM_CHARTS: "${CI_PROJECT_DIR}/charts"
+    GITLAB_OPERATOR_ASSETS: "${CI_PROJECT_DIR}/hack/assets"
+  before_script:
+    - mkdir coverage
+
+unit_tests:
+  extends: .test_job
+  script: /go/bin/ginkgo -skip 'controller' -cover -outputdir=coverage ./...
+
+slow_unit_tests:
+  extends: .test_job
+  script: /go/bin/ginkgo -focus 'controller' -cover -outputdir=coverage ./...
+
+.docker_build_job:
+  extends: .cache
+  stage: release
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    # Update module cache so it can be saved in CI cache (only the dependencies required to build)
+    - docker run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:1.13 go list ./...
+  interruptible: false
+
+build_branch_image:
+  extends: .docker_build_job
+  script:
+    - docker build -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+  except:
+    - master
+
+build_latest_image:
+  extends: .docker_build_job
+  script:
+    - docker build -t "${CI_REGISTRY_IMAGE}:latest" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
+    - docker push "${CI_REGISTRY_IMAGE}:latest"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+  only:
+    - master
+
+build_bundle_image:
+  extends: .docker_build_job
+  script:
+    - docker build -t "${CI_REGISTRY_IMAGE}/bundle" -f Dockerfile.bundle .
+    - docker push "${CI_REGISTRY_IMAGE}/bundle"
+  only:
+    - master
+
+functional_tests:
+  extends: .cache
+  stage: functional_test
+  variables:
+    NAMESPACE: "${CI_COMMIT_SHORT_SHA}"
+    TAG: "${CI_COMMIT_SHORT_SHA}"
+  script: ./scripts/test.sh
 
 certification_upload:
   stage: certification

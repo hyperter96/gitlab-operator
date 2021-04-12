@@ -11,8 +11,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // EndpointMembers returns a list of members
@@ -153,7 +153,7 @@ func (r *GitLabReconciler) isWebserviceDeployed(ctx context.Context, adapter git
 }
 
 // setGitlabStatus sets status of custom resource
-func (r *GitLabReconciler) setGitlabStatus(ctx context.Context, object runtime.Object) error {
+func (r *GitLabReconciler) setGitlabStatus(ctx context.Context, object client.Object) error {
 	return r.Status().Update(ctx, object)
 }
 

@@ -93,6 +93,8 @@ spec:
     - aggregate and visualize metrics using Prometheus and Grafana
     - setup auto-scaling
 
+    Note that the operator only supports HTTP(S) for cloning repositories. Follow the instructions at https://docs.gitlab.com/ee/user/admin_area/settings/visibility_and_access_controls.html#enabled-git-access-protocols to enable only HTTP(S) protocol. SSH protocol will be supported in a future release.
+
     ## GitLab
 
     GitLab is a complete open-source DevOps platform, delivered as a single application, fundamentally changing the way Development, Security, and Ops teams collaborate and build software. From idea to production, GitLab helps teams improve cycle time from weeks to minutes, reduce development process costs and decrease time to market while increasing developer productivity.

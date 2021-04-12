@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
@@ -96,7 +95,7 @@ func IsOpenshift() bool {
 }
 
 // IsObjectFound checks if kubernetes namespaced resource exists in the cluster
-func IsObjectFound(client client.Client, key types.NamespacedName, object runtime.Object) bool {
+func IsObjectFound(client client.Client, key types.NamespacedName, object client.Object) bool {
 	if err := client.Get(context.TODO(), key, object); err != nil {
 		return false
 	}

@@ -82,8 +82,7 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes/custom-host,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile triggers when an event occurs on the watched resource
-func (r *GitLabReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("gitlab", req.NamespacedName)
 
 	log.Info("Reconciling GitLab")
@@ -434,7 +433,7 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gi
 	return nil
 }
 
-func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object interface{}, adapter gitlabctl.CustomResourceAdapter) (created bool, err error) {
+func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object client.Object, adapter gitlabctl.CustomResourceAdapter) (created bool, err error) {
 	created = false
 	err = nil
 
@@ -466,7 +465,13 @@ func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object interfa
 	}
 
 	logger.V(1).Info("Creating object")
-	err = r.Create(ctx, object.(runtime.Object).DeepCopyObject())
+	objClone, ok := (object.DeepCopyObject()).(client.Object)
+	if !ok {
+		err = fmt.Errorf("%T is not compatible with client.Object", object)
+		return
+	}
+
+	err = r.Create(ctx, objClone)
 	if err == nil {
 		logger.V(1).Info("Object created successfully")
 		created = true
@@ -511,6 +516,11 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 
 	// Only deploy the minio service and statefulset for development builds
 	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
+		ing := internal.MinioIngress(adapter)
+		if _, err := r.createIfNotExists(ctx, ing, adapter); err != nil {
+			return err
+		}
+
 		svc := internal.MinioService(adapter)
 		if _, err := r.createIfNotExists(ctx, svc, adapter); err != nil {
 			return err
@@ -915,8 +925,8 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 	return nil
 }
 
-func (r *GitLabReconciler) isObjectFound(object interface{}) bool {
-	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object.(runtime.Object))
+func (r *GitLabReconciler) isObjectFound(object client.Object) bool {
+	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object)
 }
 
 func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlab.CustomResourceAdapter) bool {

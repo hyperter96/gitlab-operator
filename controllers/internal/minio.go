@@ -332,6 +332,7 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 			"region":         settings.Region,
 			"regionendpoint": options.ObjectStore.Endpoint,
 			"v4auth":         "true",
+			"path_style":     "true",
 		},
 	}
 

@@ -53,7 +53,6 @@ if ARGV.length < 1
   exit 1
 end
 
-# Add `-ubi8` to the commit ref if triggered with UBI_PIPELINE=true
 version = ARGV[0]
 
 # pull in the secrets used to auth with Red Hat registries (CI var)

@@ -15,8 +15,6 @@ $GITLAB_REGISTRY = ENV['GITLAB_REGISTRY_BASE_URL'] ||
 $REDHAT_REGISTRY = ENV['REDHAT_REGISTRY_HOSTNAME'] ||
                    'scan.connect.redhat.com'
 $IMAGE_VERSION_VAR = { 'gitlab-operator' => 'OPERATOR_VERSION' }
-$AUTO_DEPLOY_TAG_REGEX = /^\d+\.\d+\.\d+\+\S{7,}$/
-$AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/
 
 def retag_image(name, version, proj_id)
   gitlab_tag = "#{version}"
@@ -44,8 +42,7 @@ def push_image(image)
 end
 
 def is_regular_tag
-  (ENV['CI_COMMIT_TAG'] || ENV['GITLAB_TAG']) && \
-  !($AUTO_DEPLOY_BRANCH_REGEX.match(ENV['CI_COMMIT_BRANCH']) || $AUTO_DEPLOY_TAG_REGEX.match(ENV['CI_COMMIT_TAG']))
+  ENV['CI_COMMIT_TAG'] || ENV['GITLAB_TAG']
 end
 
 if ARGV.length < 1

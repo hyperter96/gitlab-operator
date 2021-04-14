@@ -19,12 +19,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/imdario/mergo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -39,13 +39,10 @@ import (
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 
-	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	gitlabctl "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/internal"
 
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -201,7 +198,7 @@ func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitl
 		return err
 	}
 
-	if _, err := r.createIfNotExists(ctx, cfgMap, adapter); err != nil {
+	if _, err := r.createOrPatch(ctx, cfgMap, adapter); err != nil {
 		return err
 	}
 
@@ -221,7 +218,7 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.
 
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
 
-	_, err := r.createIfNotExists(ctx, job, adapter)
+	_, err := r.createOrPatch(ctx, job, adapter)
 	if err != nil {
 		return err
 	}
@@ -271,7 +268,7 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.
 
 		if lookupVal.Status.Failed > 0 {
 			result = errors.NewInternalError(
-				fmt.Errorf("Job %s has failed, check the logs in %s", job.Name, lookupKey))
+				fmt.Errorf("job %s has failed, check the logs in %s", job.Name, lookupKey))
 			logger.Error(result, "Job failed")
 			break
 		}
@@ -312,7 +309,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	configmaps = append(configmaps, redis...)
 
 	for _, cm := range configmaps {
-		if _, err := r.createIfNotExists(ctx, cm, adapter); err != nil {
+		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
@@ -324,12 +321,12 @@ func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter gitlabctl.
 
 	// initialize buckets once s3 storage is up
 	buckets := internal.BucketCreationJob(adapter)
-	if _, err := r.createIfNotExists(ctx, buckets, adapter); err != nil {
+	if _, err := r.createOrPatch(ctx, buckets, adapter); err != nil {
 		return err
 	}
 
 	// migration := gitlabctl.MigrationsJob(cr)
-	// return r.createIfNotExists(migration, cr)
+	// return r.createOrPatch(migration, cr)
 
 	return r.runMigrationsJob(ctx, adapter)
 }
@@ -356,19 +353,19 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	)
 
 	for _, sm := range servicemonitors {
-		if _, err := r.createIfNotExists(ctx, sm, adapter); err != nil {
+		if _, err := r.createOrPatch(ctx, sm, adapter); err != nil {
 			return err
 		}
 	}
 
 	service := internal.ExposePrometheusCluster(adapter.Resource())
-	if _, err := r.createIfNotExists(ctx, service, nil); err != nil {
+	if _, err := r.createOrPatch(ctx, service, adapter); err != nil {
 		return err
 	}
 
 	prometheus := internal.PrometheusCluster(adapter.Resource())
 
-	_, err := r.createIfNotExists(ctx, prometheus, nil)
+	_, err := r.createOrPatch(ctx, prometheus, adapter)
 	return err
 }
 
@@ -378,7 +375,7 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabc
 		return err
 	}
 
-	if _, err := r.createIfNotExists(ctx, migrations, adapter); err != nil {
+	if _, err := r.createOrPatch(ctx, migrations, adapter); err != nil {
 		return err
 	}
 
@@ -425,7 +422,7 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gi
 	statefulsets = append(statefulsets, postgres, redis, gitaly)
 
 	for _, statefulset := range statefulsets {
-		if _, err := r.createIfNotExists(ctx, statefulset, adapter); err != nil {
+		if _, err := r.createOrPatch(ctx, statefulset, adapter); err != nil {
 			return err
 		}
 	}
@@ -433,61 +430,128 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gi
 	return nil
 }
 
-func (r *GitLabReconciler) createIfNotExists(ctx context.Context, object client.Object, adapter gitlabctl.CustomResourceAdapter) (created bool, err error) {
-	created = false
+var ignoreObjectMetaFields = []string{
+	"generateName",
+	"finalizers",
+	"clusterName",
+	"managedFields",
+
+	"uid",
+	"resourceVersion",
+	"generation",
+	"creationTimestamp",
+	"deletionTimestamp",
+	"deletionGracePeriodSeconds",
+	"clusterName",
+}
+
+func mutateObject(source, target client.Object) (err error) {
+	sourceFullName, targetFullName :=
+		fmt.Sprintf("%s/%s", source.GetName(), source.GetNamespace()),
+		fmt.Sprintf("%s/%s", target.GetName(), target.GetNamespace())
+	if sourceFullName != targetFullName {
+		err = fmt.Errorf("source and target must refer to the same object: %s, %s",
+			sourceFullName, targetFullName)
+		return
+	}
+
+	// Map both source and target to Unstructured for further untyped manipulation.
+	src, err := runtime.DefaultUnstructuredConverter.ToUnstructured(source)
+	if err != nil {
+		return
+	}
+
+	dst, err := runtime.DefaultUnstructuredConverter.ToUnstructured(target)
+	if err != nil {
+		return
+	}
+
+	// Remove status from source to make sure that
+	// the source does not have any immutable metadata field.
+	unstructured.RemoveNestedField(src, "status")
+
+	for _, f := range ignoreObjectMetaFields {
+		unstructured.RemoveNestedField(src, "metadata", f)
+	}
+
+	// TODO: Handle other immutable attributes, e.g. .sepc.selector
+
+	// Merge source into target.
+	if err = mergo.Merge(&dst, src, mergo.WithOverride); err != nil {
+		return
+	}
+
+	// Map the target back to type object.
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(dst, target); err != nil {
+		return
+	}
+
+	return
+}
+
+func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) (applied bool, err error) {
+	applied = false
 	err = nil
 
-	// Specify reference if the parent resource is not nil
-	var reference string
-	if adapter != nil && adapter.Reference() != "" {
-		reference = adapter.Reference()
+	if templateObject == nil {
+		r.Log.Info("Controller is not able to delete managed resources. This is a known issue",
+			"gitlab", adapter.Reference())
 	}
+
+	key := client.ObjectKeyFromObject(templateObject)
 
 	logger := r.Log.WithValues(
-		"gitlab", reference,
-		"kind", object.(runtime.Object).GetObjectKind().GroupVersionKind(),
-		"name", object.(metav1.Object).GetName(),
-		"namespace", object.(metav1.Object).GetNamespace())
+		"gitlab", adapter.Reference(),
+		"type", fmt.Sprintf("%T", templateObject),
+		"reference", key)
 
-	logger.V(2).Info("Ensuring object exists")
-
-	if r.isObjectFound(object) {
-		logger.V(2).Info("Object already exists")
+	logger.V(2).Info("Setting controller reference")
+	if err = controllerutil.SetControllerReference(adapter.Resource(), templateObject, r.Scheme); err != nil {
 		return
 	}
 
-	// If parent resource is nil, no owner reference will be set
-	if adapter != nil && adapter.Resource() != nil {
-		logger.V(2).Info("Setting controller reference")
-		if err = controllerutil.SetControllerReference(adapter.Resource(), object.(metav1.Object), r.Scheme); err != nil {
+	existing := templateObject.DeepCopyObject().(client.Object)
+
+	if err = r.Get(ctx, key, existing); err != nil {
+		if !errors.IsNotFound(err) {
 			return
 		}
-	}
 
-	logger.V(1).Info("Creating object")
-	objClone, ok := (object.DeepCopyObject()).(client.Object)
-	if !ok {
-		err = fmt.Errorf("%T is not compatible with client.Object", object)
+		logger.V(1).Info("Creating object")
+		err = r.Create(ctx, existing)
+		applied = err == nil
 		return
 	}
 
-	err = r.Create(ctx, objClone)
-	if err == nil {
-		logger.V(1).Info("Object created successfully")
-		created = true
+	// If Secret and related to MinIO, skip the patch.
+	// TODO: replace MinIO generated secrets (along with other objects) with MinIO chart or Operator.
+	if existing.GetLabels()["app.kubernetes.io/component"] == "minio" && existing.GetObjectKind().GroupVersionKind().Kind == "Secret" {
+		return
 	}
+
+	mutate := func() error {
+		return mutateObject(templateObject, existing)
+	}
+
+	result, err := controllerutil.CreateOrPatch(ctx, r.Client, existing, mutate)
+	if err != nil {
+		return
+	}
+
+	applied = true
+	logger.V(1).Info("createOrPatch result", "result", result)
 
 	return
 }
 
 func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	cm := internal.MinioScriptConfigMap(adapter)
-	if _, err := r.createIfNotExists(ctx, cm, adapter); err != nil {
+	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 		return err
 	}
 
 	secret := internal.MinioSecret(adapter)
-	if _, err := r.createIfNotExists(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	if _, err := r.createOrPatch(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
@@ -496,7 +560,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 		return err
 	}
 
-	if _, err := r.createIfNotExists(ctx, appConfigSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	if _, err := r.createOrPatch(ctx, appConfigSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
@@ -505,30 +569,30 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 		return err
 	}
 
-	if _, err := r.createIfNotExists(ctx, registryConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	if _, err := r.createOrPatch(ctx, registryConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
 	taskRunnerConnectionSecret := internal.TaskRunnerConnectionSecret(adapter, *secret)
-	if _, err := r.createIfNotExists(ctx, taskRunnerConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	if _, err := r.createOrPatch(ctx, taskRunnerConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
 	// Only deploy the minio service and statefulset for development builds
 	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
 		ing := internal.MinioIngress(adapter)
-		if _, err := r.createIfNotExists(ctx, ing, adapter); err != nil {
+		if _, err := r.createOrPatch(ctx, ing, adapter); err != nil {
 			return err
 		}
 
 		svc := internal.MinioService(adapter)
-		if _, err := r.createIfNotExists(ctx, svc, adapter); err != nil {
+		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
 		}
 
 		// deploy minio
 		minio := internal.MinioStatefulSet(adapter)
-		_, err := r.createIfNotExists(ctx, minio, adapter)
+		_, err := r.createOrPatch(ctx, minio, adapter)
 		return err
 	}
 
@@ -557,7 +621,7 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 	services = append(services, postgres...)
 
 	for _, svc := range services {
-		if _, err := r.createIfNotExists(ctx, svc, adapter); err != nil {
+		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
 		}
 	}
@@ -566,172 +630,51 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 }
 
 func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-
 	exporter := gitlabctl.ExporterDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), exporter, r.Scheme); err != nil {
-		return err
-	}
+	_, err := r.createOrPatch(ctx, exporter, adapter)
 
-	found := &appsv1.Deployment{}
-	lookupKey := types.NamespacedName{
-		Name:      exporter.Name,
-		Namespace: exporter.Namespace,
-	}
-	if err := r.Get(ctx, lookupKey, found); err != nil {
-		if errors.IsNotFound(err) {
-			return r.Create(ctx, exporter.DeepCopy())
-		}
-
-		return err
-	}
-
-	deployment, changed := internal.IsDeploymentChanged(found, exporter.DeepCopy())
-	if changed {
-		return r.Update(ctx, deployment)
-	}
-
-	return nil
+	return err
 }
 
 func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	webservice := gitlabctl.WebserviceDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), webservice, r.Scheme); err != nil {
-		return err
-	}
+	_, err := r.createOrPatch(ctx, webservice, adapter)
 
-	found := &appsv1.Deployment{}
-	lookupKey := types.NamespacedName{
-		Name:      webservice.Name,
-		Namespace: webservice.Namespace,
-	}
-	if err := r.Get(ctx, lookupKey, found); err != nil {
-		if errors.IsNotFound(err) {
-			return r.Create(ctx, webservice.DeepCopy())
-		}
-
-		return err
-	}
-
-	deployment, changed := internal.IsDeploymentChanged(found, webservice.DeepCopy())
-	if changed {
-		return r.Update(ctx, deployment)
-	}
-
-	return nil
+	return err
 }
 
 func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	registry := gitlabctl.RegistryDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), registry, r.Scheme); err != nil {
-		return err
-	}
+	_, err := r.createOrPatch(ctx, registry, adapter)
 
-	found := &appsv1.Deployment{}
-	lookupKey := types.NamespacedName{
-		Name:      registry.Name,
-		Namespace: registry.Namespace,
-	}
-	if err := r.Get(ctx, lookupKey, found); err != nil {
-		if errors.IsNotFound(err) {
-			return r.Create(ctx, registry.DeepCopy())
-		}
-
-		return err
-	}
-
-	deployment, changed := internal.IsDeploymentChanged(found, registry.DeepCopy())
-	if changed {
-		return r.Update(ctx, deployment)
-	}
-
-	return nil
+	return err
 }
 
 func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	shell := gitlabctl.ShellDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), shell, r.Scheme); err != nil {
-		return err
-	}
+	_, err := r.createOrPatch(ctx, shell, adapter)
 
-	found := &appsv1.Deployment{}
-	lookupKey := types.NamespacedName{
-		Name:      shell.Name,
-		Namespace: shell.Namespace,
-	}
-	if err := r.Get(ctx, lookupKey, found); err != nil {
-		if errors.IsNotFound(err) {
-			return r.Create(ctx, shell)
-		}
-
-		return err
-	}
-
-	deployment, changed := internal.IsDeploymentChanged(found, shell.DeepCopy())
-	if changed {
-		return r.Update(ctx, deployment)
-	}
-
-	return nil
+	return err
 }
 
 func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	sidekiq := gitlabctl.SidekiqDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), sidekiq, r.Scheme); err != nil {
-		return err
-	}
+	_, err := r.createOrPatch(ctx, sidekiq, adapter)
 
-	found := &appsv1.Deployment{}
-	lookupKey := types.NamespacedName{
-		Name:      sidekiq.Name,
-		Namespace: sidekiq.Namespace,
-	}
-	if err := r.Get(ctx, lookupKey, found); err != nil {
-		if errors.IsNotFound(err) {
-			return r.Create(ctx, sidekiq.DeepCopy())
-		}
-
-		return err
-	}
-
-	deployment, changed := internal.IsDeploymentChanged(found, sidekiq.DeepCopy())
-	if changed {
-		return r.Update(ctx, deployment)
-	}
-
-	return nil
+	return err
 }
 
 func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	tasker := gitlabctl.TaskRunnerDeployment(adapter)
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), tasker, r.Scheme); err != nil {
-		return err
-	}
+	_, err := r.createOrPatch(ctx, tasker, adapter)
 
-	found := &appsv1.Deployment{}
-	lookupKey := types.NamespacedName{
-		Name:      tasker.Name,
-		Namespace: tasker.Namespace,
-	}
-	if err := r.Get(ctx, lookupKey, found); err != nil {
-		if errors.IsNotFound(err) {
-			return r.Create(ctx, tasker.DeepCopy())
-		}
-
-		return err
-	}
-
-	deployment, changed := internal.IsDeploymentChanged(found, tasker.DeepCopy())
-	if changed {
-		return r.Update(ctx, deployment)
-	}
-
-	return nil
+	return err
 }
 
 func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
@@ -740,30 +683,6 @@ func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter git
 	// }
 
 	return r.reconcileIngress(ctx, adapter)
-}
-
-// TODO: This can be removed.
-func (r *GitLabReconciler) reconcileRoute(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	app := internal.MainRoute(adapter)
-
-	admin := internal.AdminRoute(adapter)
-
-	registry := internal.RegistryRoute(adapter)
-
-	var routes []*routev1.Route
-	routes = append(routes,
-		app,
-		admin,
-		registry,
-	)
-
-	for _, route := range routes {
-		if _, err := r.createIfNotExists(ctx, route, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
@@ -777,7 +696,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabc
 	)
 
 	for _, ingress := range ingresses {
-		if _, err := r.createIfNotExists(ctx, ingress, adapter); err != nil {
+		if _, err := r.createOrPatch(ctx, ingress, adapter); err != nil {
 			return err
 		}
 	}
@@ -790,84 +709,8 @@ func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context,
 
 	issuer := internal.CertificateIssuer(adapter)
 
-	_, err := r.createIfNotExists(ctx, issuer, adapter)
+	_, err := r.createOrPatch(ctx, issuer, adapter)
 	return err
-}
-
-func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	selector := client.MatchingLabelsSelector{
-		Selector: internal.GetLabelSet(adapter.Resource()).AsSelector(),
-	}
-
-	deployments := &appsv1.DeploymentList{}
-	err := r.List(ctx, deployments, client.InNamespace(adapter.Resource().Namespace), selector)
-	if err != nil {
-		return err
-	}
-
-	for _, deploy := range deployments.Items {
-		if err := r.reconcileHPA(ctx, &deploy, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *GitLabReconciler) reconcileHPA(ctx context.Context, deployment *appsv1.Deployment, adapter gitlabctl.CustomResourceAdapter) error {
-	excludedDeployments := [2]string{"gitlab-exporter", "gitlab-task-runner"}
-	for _, excludedDeployment := range excludedDeployments {
-		if strings.Contains(deployment.Name, excludedDeployment) {
-			return nil
-		}
-	}
-
-	hpa := internal.HorizontalAutoscaler(deployment, adapter.Resource())
-
-	found := &autoscalingv1.HorizontalPodAutoscaler{}
-	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: adapter.Resource().Namespace}, found)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// return nil if hpa is nil
-			if hpa == nil {
-				return nil
-			}
-
-			if err := controllerutil.SetControllerReference(adapter.Resource(), hpa, r.Scheme); err != nil {
-				return err
-			}
-
-			return r.Create(ctx, hpa.DeepCopy())
-		}
-
-		return err
-	}
-
-	// Since Operator-managed AutoScaling has been turned off temporarily, we can
-	// safely comment the following.
-	/*
-		if adapter.Resource().Spec.AutoScaling == nil {
-			return r.Delete(ctx, found)
-		}
-	*/
-
-	if !reflect.DeepEqual(hpa.Spec, found.Spec) {
-		if *found.Spec.MinReplicas != *hpa.Spec.MinReplicas {
-			found.Spec.MinReplicas = hpa.Spec.MinReplicas
-		}
-
-		if found.Spec.MaxReplicas != hpa.Spec.MaxReplicas {
-			found.Spec.MaxReplicas = hpa.Spec.MaxReplicas
-		}
-
-		if found.Spec.TargetCPUUtilizationPercentage != hpa.Spec.TargetCPUUtilizationPercentage {
-			found.Spec.TargetCPUUtilizationPercentage = hpa.Spec.TargetCPUUtilizationPercentage
-		}
-
-		return r.Update(ctx, found)
-	}
-
-	return nil
 }
 
 func (r *GitLabReconciler) reconcileNamespaces(ctx context.Context) error {
@@ -925,11 +768,7 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 	return nil
 }
 
-func (r *GitLabReconciler) isObjectFound(object client.Object) bool {
-	return internal.IsObjectFound(r.Client, internal.GetNamespacedName(object), object)
-}
-
-func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlab.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlabctl.CustomResourceAdapter) bool {
 	var addresses []corev1.EndpointAddress
 
 	ep := &corev1.Endpoints{}
@@ -945,7 +784,7 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 	return len(addresses) > 0
 }
 
-func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlab.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
 	return r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) &&
 		r.isEndpointReady(ctx, adapter.ReleaseName()+"-gitaly", adapter) &&
 		r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter)

@@ -38,4 +38,26 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(adapter.ChartVersion()).To(Equal(chartVersions[0]))
 	})
 
+	It("should change the hash when values change", func() {
+
+		adapter := NewCustomResourceAdapter(mockGitLab)
+
+		gitlabCopy := mockGitLab.DeepCopy()
+
+		gitlabCopy.Spec.Chart.Values.Object = map[string]interface{}{
+			"foo": "FOO",
+			"bar": map[string]interface{}{
+				"baz": "BAZ",
+			},
+		}
+
+		beforeHash := adapter.Hash()
+
+		adapter = NewCustomResourceAdapter(gitlabCopy)
+
+		afterHash := adapter.Hash()
+
+		Expect(beforeHash).NotTo(Equal(afterHash))
+	})
+
 })

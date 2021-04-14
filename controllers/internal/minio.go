@@ -26,9 +26,10 @@ func MinioSecret(adapter gitlab.CustomResourceAdapter) *corev1.Secret {
 	})
 
 	minio := GenericSecret(options.ObjectStore.Credentials, adapter.Namespace(), labels)
-	minio.StringData = map[string]string{
-		"accesskey": "gitlab",
-		"secretkey": secretKey,
+
+	minio.Data = map[string][]byte{
+		"accesskey": []byte("gitlab"),
+		"secretkey": []byte(secretKey),
 	}
 
 	return minio
@@ -275,9 +276,10 @@ func MinioService(adapter gitlab.CustomResourceAdapter) *corev1.Service {
 			Selector: labels,
 			Ports: []corev1.ServicePort{
 				{
-					Name:     "minio",
-					Port:     9000,
-					Protocol: corev1.ProtocolTCP,
+					Name:       "minio",
+					Port:       9000,
+					TargetPort: intstr.FromInt(9000),
+					Protocol:   corev1.ProtocolTCP,
 				},
 			},
 			Type: corev1.ServiceTypeClusterIP,
@@ -291,15 +293,15 @@ func AppConfigConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret
 	options := SystemBuildOptions(adapter)
 	secret := GenericSecret(settings.AppConfigConnectionSecretName, adapter.Namespace(), labels)
 
-	data := minioSecret.StringData
+	data := minioSecret.Data
 
 	connectionInfo := map[string]string{
 		"provider":              "AWS",
 		"region":                settings.Region,
 		"host":                  options.ObjectStore.URL,
 		"endpoint":              options.ObjectStore.Endpoint,
-		"aws_access_key_id":     data["accesskey"],
-		"aws_secret_access_key": data["secretkey"],
+		"aws_access_key_id":     string(data["accesskey"]),
+		"aws_secret_access_key": string(data["secretkey"]),
 	}
 
 	connectionBytes, err := json.Marshal(connectionInfo)
@@ -307,8 +309,8 @@ func AppConfigConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret
 		return &corev1.Secret{}, fmt.Errorf("unable to encode connection string for storage-config")
 	}
 
-	secret.StringData = map[string]string{
-		"connection": string(connectionBytes),
+	secret.Data = map[string][]byte{
+		"connection": connectionBytes,
 	}
 
 	return secret, nil
@@ -320,13 +322,13 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 	options := SystemBuildOptions(adapter)
 	secret := GenericSecret(settings.RegistryConnectionSecretName, adapter.Namespace(), labels)
 
-	data := minioSecret.StringData
+	data := minioSecret.Data
 
 	connectionInfo := map[string]map[string]string{
 		"s3": {
 			"bucket":         settings.RegistryBucket,
-			"accesskey":      data["accesskey"],
-			"secretkey":      data["secretkey"],
+			"accesskey":      string(data["accesskey"]),
+			"secretkey":      string(data["secretkey"]),
 			"region":         settings.Region,
 			"regionendpoint": options.ObjectStore.Endpoint,
 			"v4auth":         "true",
@@ -338,8 +340,8 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 		return &corev1.Secret{}, fmt.Errorf("unable to encode connection string for registry")
 	}
 
-	secret.StringData = map[string]string{
-		"config": string(connectionBytes),
+	secret.Data = map[string][]byte{
+		"config": connectionBytes,
 	}
 
 	return secret, nil
@@ -350,7 +352,7 @@ func TaskRunnerConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecre
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 	secret := GenericSecret(settings.TaskRunnerConnectionSecretName, adapter.Namespace(), labels)
 	url := getMinioURL(adapter)
-	data := minioSecret.StringData
+	data := minioSecret.Data
 
 	template := `
 [default]
@@ -376,8 +378,8 @@ website_endpoint = https://%s
 
 	result := fmt.Sprintf(template, data["accesskey"], data["secretkey"], settings.Region, url, url, url)
 
-	secret.StringData = map[string]string{
-		"config": result,
+	secret.Data = map[string][]byte{
+		"config": []byte(result),
 	}
 
 	return secret

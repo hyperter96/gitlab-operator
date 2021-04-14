@@ -54,6 +54,17 @@ func createObject(obj client.Object, ignoreAlreadyExists bool) error {
 	return err
 }
 
+func updateObject(obj client.Object, mutate func(client.Object) error) error {
+	key := client.ObjectKeyFromObject(obj)
+	if err := k8sClient.Get(ctx, key, obj); err != nil {
+		return err
+	}
+	if err := mutate(obj); err != nil {
+		return err
+	}
+	return k8sClient.Update(ctx, obj)
+}
+
 func getObject(name string, obj client.Object) error {
 	lookupKey := types.NamespacedName{
 		Name:      name,
@@ -171,4 +182,16 @@ func createGitLabResource(releaseName string, chartValues helm.Values) {
 	By("Checking GitLab resource is created")
 	Eventually(getObjectPromise(releaseName, &gitlabv1beta1.GitLab{}),
 		PollTimeout, PollInterval).Should(Succeed())
+}
+
+func updateGitLabResource(releaseName string, chartValues helm.Values) {
+	By("Update the existing GitLab resource")
+	Expect(
+		updateObject(
+			newGitLab(releaseName, helm.EmptyValues()),
+			func(obj client.Object) error {
+				gitlab := obj.(*gitlabv1beta1.GitLab)
+				gitlab.Spec.Chart.Values.Object = chartValues.AsMap()
+				return nil
+			})).Should(Succeed())
 }

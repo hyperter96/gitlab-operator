@@ -82,17 +82,23 @@ func main() {
 
 	setupLog.Info("setting operator scope", "scope", operatorScope)
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               9443,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "852d23b0.gitlab.com",
-		Namespace:          watchedNamespace,
+		Scheme:                 scheme,
+		MetricsBindAddress:     metricsAddr,
+		Port:                   9443,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "852d23b0.gitlab.com",
+		Namespace:              watchedNamespace,
+		HealthProbeBindAddress: settings.HealthProbeBindAddress,
+		ReadinessEndpointName:  settings.ReadinessEndpointName,
+		LivenessEndpointName:   settings.LivenessEndpointName,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+	mgr.AddHealthzCheck("healthz", settings.HealthzCheck)
+	mgr.AddReadyzCheck("readyz", settings.ReadyzCheck)
 
 	if err = (&controllers.GitLabReconciler{
 		Client: mgr.GetClient(),
@@ -107,6 +113,14 @@ func main() {
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
+
+	// Report Operator as "alive" to probe.
+	// TODO: put more thought into when the Operator should report liveness.
+	settings.AliveStatus = nil
+
+	// Report Operator as "ready" to probe.
+	// TODO: put more thought into when the Operator should report readiness.
+	settings.ReadyStatus = nil
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

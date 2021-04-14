@@ -71,18 +71,7 @@ install_gitlab_operator() {
 
 verify_operator_is_running() {
   echo 'Verifying that operator is running'
-
   kubectl wait --for=condition=Available -n "$NAMESPACE" deployment/gitlab-controller-manager
-
-  local maxattempts=30
-  local attempts=0
-  until kubectl -n $NAMESPACE logs deployment/gitlab-controller-manager -c manager | grep -q 'successfully acquired lease'; do
-    attempts=$((attempts+1))
-    if [ "$attempts" -ge "$maxattempts" ]; then
-      echo "Failed waiting for manager to start"; exit 1;
-    fi
-    echo -n '.'; sleep 2
-  done
 }
 
 install_gitlab_custom_resource() {

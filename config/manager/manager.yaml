@@ -29,6 +29,21 @@ spec:
         - --enable-leader-election
         image: registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator:latest
         name: manager
+        ports:
+          - name: health-port
+            containerPort: 6060
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: health-port
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: health-port
+          initialDelaySeconds: 5
+          periodSeconds: 10
         resources:
           limits:
             cpu: 200m

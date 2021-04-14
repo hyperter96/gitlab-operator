@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 )
 
@@ -18,6 +20,25 @@ var (
 	// The default value is "gitlab-manager". Use GITLAB_APP_SERVICE_ACCOUNT environment
 	// variable to change it.
 	AppServiceAccount = "gitlab-app"
+
+	// HealthProbeBindAddress returns the address for hosting health probes.
+	HealthProbeBindAddress = ":6060"
+
+	// LivenessEndpointName returns the endpoint name for the liveness probe.
+	LivenessEndpointName = "/liveness"
+
+	// ReadinessEndpointName returns the endpoint name for the readiness probe.
+	ReadinessEndpointName = "/readiness"
+
+	// AliveStatus returns an error if not alive, and nil if alive.
+	AliveStatus = fmt.Errorf("not alive")
+
+	// ReadyStatus returns an error if not ready, and nil if ready.
+	ReadyStatus = fmt.Errorf("not ready")
+
+	// HealthzCheck returns the checker.
+	HealthzCheck = func(_ *http.Request) error { return AliveStatus }
+	ReadyzCheck  = func(_ *http.Request) error { return ReadyStatus }
 )
 
 const (

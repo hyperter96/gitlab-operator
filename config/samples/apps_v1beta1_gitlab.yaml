@@ -11,3 +11,9 @@ spec:
         hosts:
           domain: DOMAIN
           hostSuffix: HOSTSUFFIX
+      # TODO: properly set TargetPort for Gitaly metrics service port,
+      # or remove the Gitaly metrics service port completely.
+      gitlab:
+        gitaly:
+          metrics:
+            enabled: false

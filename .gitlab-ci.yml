@@ -11,7 +11,7 @@ stages:
   if: '$PUSH_TO_REDHAT == "true" '
 
 .if_release_tag: &if_release_tag
-  if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+-?\w*$/'
+  if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|RC|beta)\d*)?$/'
 
 default:
   interruptible: true

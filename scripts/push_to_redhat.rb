@@ -70,15 +70,6 @@ puts "Using #{version} as the docker tag to pull"
 
 errors = []
 $IMAGE_VERSION_VAR.keys.each do |name|
-  # if job is on a tagged pipeline (but not a auto-deploy tag) or
-  # is a master branch pipeline, then use the image tags as
-  # defined in variables defined in the CI environment. Otherwise
-  # it is assumed that the "version" (commit ref) from CLI param
-  # is correct.
-  if (ENV['CI_COMMIT_REF_NAME'] == 'master' || is_regular_tag)
-    version = ENV[$IMAGE_VERSION_VAR[name]]
-  end
-
   if secrets.has_key? name
     # pull the image from the GitLab registry
     response = pull_image("#{$GITLAB_REGISTRY}/#{name}:#{version}")

@@ -18,7 +18,7 @@ $IMAGE_VERSION_VAR = { 'gitlab-operator' => 'OPERATOR_VERSION' }
 
 def retag_image(name, version, proj_id)
   gitlab_tag = "#{version}"
-  redhat_tag = version.gsub(/^v(\d+\.\d+\.\d+)/, '\1')
+  redhat_tag = gitlab_tag # we using matching tags in the operator.
   new_container_name = "#{$REDHAT_REGISTRY}/#{proj_id}/#{name}:#{redhat_tag}"
 
   puts "Retagging #{$GITLAB_REGISTRY}/#{name}:#{gitlab_tag} to #{new_container_name}"

@@ -94,15 +94,6 @@ func IsOpenshift() bool {
 	return true
 }
 
-// IsObjectFound checks if kubernetes namespaced resource exists in the cluster
-func IsObjectFound(client client.Client, key types.NamespacedName, object client.Object) bool {
-	if err := client.Get(context.TODO(), key, object); err != nil {
-		return false
-	}
-
-	return true
-}
-
 // KubeConfig returns kubernetes client configuration
 type KubeConfig struct {
 	Config *rest.Config
@@ -332,11 +323,6 @@ func DeploymentConfigMaps(deploy *appsv1.Deployment) []string {
 	}
 
 	return cms
-}
-
-func GetNamespacedName(obj interface{}) types.NamespacedName {
-	object := obj.(metav1.Object)
-	return types.NamespacedName{Name: object.GetName(), Namespace: object.GetNamespace()}
 }
 
 func GetLabelSet(cr *gitlabv1beta1.GitLab) labels.Set {

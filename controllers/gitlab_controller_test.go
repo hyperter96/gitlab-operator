@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -27,7 +28,7 @@ var _ = Describe("GitLab controller", func() {
 		os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", gitlabctl.SharedSecretsJobDefaultTimeout.String())
 	})
 
-	Context("CRD", func() {
+	Context("GitLab CRD", func() {
 		It("Should create a CR with the specified Chart values", func() {
 			releaseName := "crd-testing"
 
@@ -53,10 +54,65 @@ var _ = Describe("GitLab controller", func() {
 				return nil
 			}, PollTimeout, PollInterval).Should(Succeed())
 
-			gitlab := &gitlabv1beta1.GitLab{}
+			By("Deleting the created GitLab resource")
+			Eventually(deleteObjectPromise(releaseName, &gitlabv1beta1.GitLab{}),
+				PollTimeout, PollInterval).Should(Succeed())
+		})
+	})
+
+	Context("GitLab CR spec", func() {
+		It("Should change the managed resources when the Chart values change", func() {
+			releaseName := "cr-spec-changes"
+			chartValues := helm.EmptyValues()
+			cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+			sharedSecretQuery := appLabels(releaseName, gitlabctl.SharedSecretsComponentName)
+
+			createGitLabResource(releaseName, chartValues)
+
+			By("Checking shared secrets ConfigMap is created")
+			Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+				PollTimeout, PollInterval).Should(Succeed())
+
+			chartValues.SetValue("shared-secrets.env", "test")
+			chartValues.SetValue("shared-secrets.annotations", map[string]string{
+				"foo": "FOO",
+				"bar": "BAR",
+			})
+
+			updateGitLabResource(releaseName, chartValues)
+
+			By("Checking shared secrets ConfigMap picked up the change")
+			Eventually(func() error {
+				cfgMap := &corev1.ConfigMap{}
+				if err := getObject(cfgMapName, cfgMap); err != nil {
+					return err
+				}
+				if !strings.Contains(cfgMap.Data["generate-secrets"], "env=test") {
+					return fmt.Errorf("`generate-secrets` does not contain the changes")
+				}
+				return nil
+			}, PollTimeout, PollInterval).Should(Succeed())
+
+			By("Checking shared secrets Jobs picked up the change")
+			Eventually(func() error {
+				jobs := &batchv1.JobList{}
+				if err := listObjects(sharedSecretQuery, jobs); err != nil {
+					return err
+				}
+				if len(jobs.Items) == 0 {
+					return fmt.Errorf("Job list is emptry [%s]", sharedSecretQuery)
+				}
+				for _, job := range jobs.Items {
+					if job.Spec.Template.ObjectMeta.Annotations["foo"] == "FOO" &&
+						job.Spec.Template.ObjectMeta.Annotations["bar"] == "BAR" {
+						return nil
+					}
+				}
+				return fmt.Errorf("None of the Jobs had the expected annotations")
+			}, PollTimeout, PollInterval).Should(Succeed())
 
 			By("Deleting the created GitLab resource")
-			Eventually(deleteObjectPromise(releaseName, gitlab),
+			Eventually(deleteObjectPromise(releaseName, &gitlabv1beta1.GitLab{}),
 				PollTimeout, PollInterval).Should(Succeed())
 		})
 	})

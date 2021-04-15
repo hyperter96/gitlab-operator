@@ -54,9 +54,10 @@ func ExposePrometheusCluster(cr *gitlabv1beta1.GitLab) *corev1.Service {
 			},
 			Ports: []corev1.ServicePort{
 				{
-					Name:     "web",
-					Port:     9090,
-					Protocol: corev1.ProtocolTCP,
+					Name:       "web",
+					Port:       9090,
+					TargetPort: intstr.FromInt(9090),
+					Protocol:   corev1.ProtocolTCP,
 				},
 			},
 		},

@@ -77,6 +77,8 @@ deploy_operator: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator=${IMG}:${TAG}
 	cd config/manager && $(KUSTOMIZE) edit add patch --path patches/deployment_always_pull_image.yaml
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
+	kubectl create namespace ${NAMESPACE} || true
+	kubectl label namespace ${NAMESPACE} control-plane=controller-manager || true
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 # Delete controller from the configured Kubernetes cluster

@@ -80,7 +80,9 @@ build_branch_image:
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   except:
-    - master
+    refs:
+      - master
+      - tags
 
 build_tag_image:
   extends: .docker_build_job
@@ -99,7 +101,9 @@ build_latest_image:
     - docker push "${CI_REGISTRY_IMAGE}:latest"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   only:
-    - master
+    refs:
+      - master
+      - tags
 
 build_bundle_image:
   extends: .docker_build_job

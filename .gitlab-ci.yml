@@ -90,7 +90,10 @@ build_bundle_image:
     - docker build -t "${CI_REGISTRY_IMAGE}/bundle" -f Dockerfile.bundle .
     - docker push "${CI_REGISTRY_IMAGE}/bundle"
   only:
-    - master
+    refs:
+      - master
+    changes:
+      - bundle/**/*
 
 functional_tests:
   extends: .cache

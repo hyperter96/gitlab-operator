@@ -5,6 +5,13 @@ stages:
   - test
   - release
   - functional_test
+  - certification
+
+.if_push_to_redhat: &if_push_to_redhat
+  if: '$PUSH_TO_REDHAT == "true" '
+
+.if_release_tag: &if_release_tag
+  if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|RC|beta)\d*)?$/'
 
 default:
   interruptible: true
@@ -73,7 +80,18 @@ build_branch_image:
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   except:
-    - master
+    refs:
+      - master
+      - tags
+
+build_tag_image:
+  extends: .docker_build_job
+  script:
+    - docker build -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
+  rules:
+    - <<: *if_release_tag
 
 build_latest_image:
   extends: .docker_build_job
@@ -82,7 +100,9 @@ build_latest_image:
     - docker push "${CI_REGISTRY_IMAGE}:latest"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   only:
-    - master
+    refs:
+      - master
+      - tags
 
 build_bundle_image:
   extends: .docker_build_job
@@ -101,3 +121,19 @@ functional_tests:
     HOSTSUFFIX: "${CI_COMMIT_SHORT_SHA}"
     DOMAIN: "apps.ocp-ci-4623.k8s-ft.win"
   script: ./scripts/test.sh
+
+certification_upload:
+  stage: certification
+  image: "registry.gitlab.com/gitlab-org/gitlab-omnibus-builder/ruby_docker:1.0.1"
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: "tcp://docker:2375"
+  rules:
+    - <<: *if_release_tag
+    - <<: *if_push_to_redhat
+  retry: 1
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+  script:
+    - ruby scripts/push_to_redhat.rb "${CI_COMMIT_REF_NAME}"

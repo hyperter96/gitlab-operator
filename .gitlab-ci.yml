@@ -90,9 +90,8 @@ build_tag_image:
     - docker build -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-  only:
-    refs:
-    - tags
+  rules:
+    - <<: *if_release_tag
 
 build_latest_image:
   extends: .docker_build_job

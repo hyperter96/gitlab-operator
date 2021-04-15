@@ -302,6 +302,7 @@ func AppConfigConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret
 		"endpoint":              options.ObjectStore.Endpoint,
 		"aws_access_key_id":     string(data["accesskey"]),
 		"aws_secret_access_key": string(data["secretkey"]),
+		"path_style":            "true",
 	}
 
 	connectionBytes, err := json.Marshal(connectionInfo)

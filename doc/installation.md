@@ -51,12 +51,13 @@ These steps normally are handled by OLM, the Operator Lifecycle Manager, once an
 
 6. Clean up
 
-   The operator does not delete the persistent volume claims that hold the stateful data when a GitLab instance is deleted. Therefore, remember to delete any lingering volumes
+   The operator does not delete the persistent volume claims that hold the stateful data when a GitLab instance is deleted. Therefore, remember to delete any lingering volumes.
 
-   In addition, when you delete or uninstall the operator from the environment, you will need to remove the CRDs.
+   When deleting the Operator, the namespace where it is installed (`gitlab-system` by default) will not be deleted automatically. This is to ensure persistent volumes are not lost unintentionally.
 
    ```
    $ make delete_sample_cr
    $ make delete_operator
+   $ make uninstall_crds
    $ make uninstall_required_operators
    ```

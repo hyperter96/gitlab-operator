@@ -24,6 +24,8 @@ CHART_VERSION ?= $(shell head -n1 CHART_VERSIONS)
 DOMAIN ?= example.com
 # Host suffix to use for `global.hosts.hostSuffix`
 HOSTSUFFIX ?= ""
+# TLS secret name to use for `global.ingress.tls.secretName`
+TLSSECRETNAME ?= ""
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -93,6 +95,7 @@ deploy_sample_cr: kustomize
 		| sed "s/CHART_VERSION/${CHART_VERSION}/g" \
 		| sed "s/DOMAIN/${DOMAIN}/g" \
 		| sed "s/HOSTSUFFIX/${HOSTSUFFIX}/g" \
+		| sed "s/TLSSECRETNAME/${TLSSECRETNAME}/g" \
 		| kubectl apply -f -
 
 # Delete the sample GitLab custom resource from cluster

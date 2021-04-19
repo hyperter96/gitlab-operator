@@ -226,6 +226,11 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 
 	url := getMinioURL(adapter)
 
+	tlsSecretName, err := gitlab.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+	if err != nil || tlsSecretName == "" {
+		tlsSecretName = fmt.Sprintf("%s-wildcard-tls", adapter.ReleaseName())
+	}
+
 	return &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        labels["app.kubernetes.io/instance"],
@@ -255,7 +260,7 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 			TLS: []extensionsv1beta1.IngressTLS{
 				{
 					Hosts:      []string{url},
-					SecretName: fmt.Sprintf("%s-wildcard-tls", adapter.ReleaseName()),
+					SecretName: tlsSecretName,
 				},
 			},
 		},

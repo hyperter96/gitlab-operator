@@ -123,6 +123,7 @@ functional_tests:
     TAG: "${CI_COMMIT_SHORT_SHA}"
     HOSTSUFFIX: "${CI_COMMIT_SHORT_SHA}"
     DOMAIN: "apps.ocp-ci-4623.k8s-ft.win"
+    TLSSECRETNAME: "gitlab-ci-tls"
   script: ./scripts/test.sh
 
 certification_upload:

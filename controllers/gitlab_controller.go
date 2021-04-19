@@ -99,9 +99,9 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileNamespaces(ctx); err != nil {
-		return ctrl.Result{}, err
-	}
+	//if err := r.reconcileNamespaces(ctx); err != nil {
+	//return ctrl.Result{}, err
+	//}
 
 	if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
 		return ctrl.Result{}, err

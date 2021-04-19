@@ -107,8 +107,11 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+	tlsSecretName, err := gitlabctl.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+	if err != nil || tlsSecretName == "" {
+		if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	if err := r.reconcileConfigMaps(ctx, adapter); err != nil {

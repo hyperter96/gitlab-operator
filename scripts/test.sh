@@ -30,7 +30,6 @@ main() {
   [ "$CLEANUP" = "only" ] && { cleanup; exit 0; }
 
   echo 'Starting test'
-  install_required_operators
   install_crds
   install_gitlab_operator
   verify_operator_is_running

@@ -12,6 +12,7 @@ spec:
           domain: DOMAIN
           hostSuffix: HOSTSUFFIX
         ingress:
+          class: nginx
           tls:
             secretName: TLSSECRETNAME
       # TODO: properly set TargetPort for Gitaly metrics service port,

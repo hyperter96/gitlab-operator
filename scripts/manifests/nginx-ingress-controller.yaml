@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   ingressClass: nginx
-  serviceType: NodePort
+  serviceType: LoadBalancer
   replicas: 1
   nginxPlus: false
   type: deployment

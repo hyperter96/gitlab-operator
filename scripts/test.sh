@@ -34,6 +34,7 @@ main() {
   install_gitlab_operator
   verify_operator_is_running
   install_gitlab_custom_resource
+  copy_certificate
   verify_gitlab_is_running
 }
 
@@ -78,6 +79,19 @@ install_gitlab_custom_resource() {
   make deploy_sample_cr
 }
 
+copy_certificate() {
+  echo 'Copying certificate to namespace'
+  kubectl get secret -n default gitlab-ci-tls -o yaml \
+    | yq delete - metadata.namespace \
+    | yq delete - metadata.resourceVersion \
+    | yq delete - metadata.uid \
+    | yq delete - metadata.annotations \
+    | yq delete - metadata.creationTimestamp \
+    | yq delete - metadata.selfLink \
+    | yq delete - metadata.managedFields \
+    | kubectl apply -n "$NAMESPACE" -f -
+}
+
 verify_gitlab_is_running() {
   echo 'Verifying that GitLab is running'
 
@@ -93,7 +107,7 @@ verify_gitlab_is_running() {
   kubectl -n "$NAMESPACE" wait --timeout=600s --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
 
   echo 'Testing GitLab endpoint'
-  curl -k -IL "https://gitlab-$HOSTSUFFIX.$DOMAIN"
+  curl -fIL "https://gitlab-$HOSTSUFFIX.$DOMAIN"
 }
 
 cleanup() {

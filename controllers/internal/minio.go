@@ -214,9 +214,14 @@ func MinioScriptConfigMap(adapter gitlab.CustomResourceAdapter) *corev1.ConfigMa
 
 // MinioIngress returns the Ingress that exposes MinIO.
 func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+	ingressClass, err := gitlab.GetStringValue(adapter.Values(), "global.ingress.class")
+	if err != nil || ingressClass == "" {
+		ingressClass = fmt.Sprintf("%s-nginx", adapter.ReleaseName())
+	}
+
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 	annotations := map[string]string{
-		"kubernetes.io/ingress.class":                         fmt.Sprintf("%s-nginx", adapter.ReleaseName()),
+		"kubernetes.io/ingress.class":                         ingressClass,
 		"kubernetes.io/ingress.provider":                      "nginx",
 		"nginx.ingress.kubernetes.io/proxy-body-size":         "0",
 		"nginx.ingress.kubernetes.io/proxy-buffering":         "off",

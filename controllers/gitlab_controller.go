@@ -214,6 +214,10 @@ func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gi
 		return err
 	}
 
+	if job == nil {
+		return nil
+	}
+
 	return r.runJobAndWait(ctx, adapter, job)
 }
 

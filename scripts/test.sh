@@ -82,13 +82,7 @@ install_gitlab_custom_resource() {
 copy_certificate() {
   echo 'Copying certificate to namespace'
   kubectl get secret -n default gitlab-ci-tls -o yaml \
-    | yq delete - metadata.namespace \
-    | yq delete - metadata.resourceVersion \
-    | yq delete - metadata.uid \
-    | yq delete - metadata.annotations \
-    | yq delete - metadata.creationTimestamp \
-    | yq delete - metadata.selfLink \
-    | yq delete - metadata.managedFields \
+    | yq eval 'del(.metadata.["namespace","resourceVersion","uid","annotations","creationTimestamp","selfLink","managedFields"])' - \
     | kubectl apply -n "$NAMESPACE" -f -
 }
 

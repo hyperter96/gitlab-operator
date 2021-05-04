@@ -1,5 +1,16 @@
 image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
 
+variables:
+  # Configuration of K8s
+  NAMESPACE: "n${CI_COMMIT_SHORT_SHA}"
+  TAG: "${CI_COMMIT_SHORT_SHA}"
+  HOSTSUFFIX: "${CI_COMMIT_SHORT_SHA}"
+  DOMAIN: "apps.ocp-ci-4623.k8s-ft.win"
+  TLSSECRETNAME: "gitlab-ci-tls"
+  # docker configuration
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: tcp://docker:2375
+
 stages:
   - prepare
   - test
@@ -120,12 +131,6 @@ build_bundle_image:
 functional_tests:
   extends: .cache
   stage: functional_test
-  variables:
-    NAMESPACE: "${CI_COMMIT_SHORT_SHA}"
-    TAG: "${CI_COMMIT_SHORT_SHA}"
-    HOSTSUFFIX: "${CI_COMMIT_SHORT_SHA}"
-    DOMAIN: "apps.ocp-ci-4623.k8s-ft.win"
-    TLSSECRETNAME: "gitlab-ci-tls"
   script: 
      - CLEANUP="no" ./scripts/test.sh
      - echo "ROOT_PASSWORD=$(kubectl -n $NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> functional_tests.env
@@ -140,12 +145,7 @@ qa:
   services:
   - docker:dind
   variables:
-    NAMESPACE: "${CI_COMMIT_SHORT_SHA}"
-    TAG: "${CI_COMMIT_SHORT_SHA}"
-    DOMAIN: "apps.ocp-ci-4623.k8s-ft.win"
     QA_ENVIRONMENT_URL: "https://gitlab-${CI_COMMIT_SHORT_SHA}.${DOMAIN}"
-    DOCKER_DRIVER: overlay2
-    DOCKER_HOST: tcp://docker:2375
     QA_ARTIFACTS_DIR: $CI_PROJECT_DIR
     EE_LICENSE: $GITLAB_QA_EE_LICENSE
     QA_OPTIONS: "--tag smoke"
@@ -166,8 +166,6 @@ qa:
 cleanup:
   extends: .cache
   stage: cleanup
-  variables:
-    NAMESPACE: "${CI_COMMIT_SHORT_SHA}"
   script: CLEANUP="only" ./scripts/test.sh
   when: always
 
@@ -176,8 +174,6 @@ certification_upload:
   image: "registry.gitlab.com/gitlab-org/gitlab-omnibus-builder/ruby_docker:1.0.1"
   services:
     - docker:dind
-  variables:
-    DOCKER_HOST: "tcp://docker:2375"
   rules:
     - <<: *if_release_tag
     - <<: *if_push_to_redhat

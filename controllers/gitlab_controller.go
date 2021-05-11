@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/imdario/mergo"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -98,10 +97,6 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err := r.reconcileServiceAccount(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
-
-	//if err := r.reconcileNamespaces(ctx); err != nil {
-	//return ctrl.Result{}, err
-	//}
 
 	if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
@@ -718,26 +713,6 @@ func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context,
 
 	_, err := r.createOrPatch(ctx, issuer, adapter)
 	return err
-}
-
-func (r *GitLabReconciler) reconcileNamespaces(ctx context.Context) error {
-	secured := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "gitlab-secured-apps",
-		},
-	}
-
-	if err := r.createNamespace(ctx, secured); err != nil {
-		return err
-	}
-
-	managed := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "gitlab-managed-apps",
-		},
-	}
-
-	return r.createNamespace(ctx, managed)
 }
 
 func (r *GitLabReconciler) createNamespace(ctx context.Context, namespace *corev1.Namespace) error {

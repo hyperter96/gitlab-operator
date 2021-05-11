@@ -4,7 +4,7 @@ variables:
   # Configuration of K8s
   NAMESPACE: "n${CI_COMMIT_SHORT_SHA}"
   TAG: "${CI_COMMIT_SHORT_SHA}"
-  HOSTSUFFIX: "${CI_COMMIT_SHORT_SHA}"
+  HOSTSUFFIX: "n${CI_COMMIT_SHORT_SHA}"
   DOMAIN: "apps.ocp-ci-4623.k8s-ft.win"
   TLSSECRETNAME: "gitlab-ci-tls"
   # docker configuration
@@ -145,7 +145,7 @@ qa:
   services:
   - docker:dind
   variables:
-    QA_ENVIRONMENT_URL: "https://gitlab-${CI_COMMIT_SHORT_SHA}.${DOMAIN}"
+    QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
     QA_ARTIFACTS_DIR: $CI_PROJECT_DIR
     EE_LICENSE: $GITLAB_QA_EE_LICENSE
     QA_OPTIONS: "--tag smoke"

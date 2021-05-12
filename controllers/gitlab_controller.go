@@ -33,6 +33,7 @@ import (
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -150,13 +151,9 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	// Disables autoscaling so the Operator does not attempt to
-	// remove replicas that it is not expecting. Considered a temporary
-	// fix until HPAs can be disabled in the Chart, and/or the Operator
-	// is updated to accept replicas created by HPAs.
-	// if err := r.setupAutoscaling(ctx, adapter); err != nil {
-	//   return ctrl.Result{}, err
-	// }
+	if err := r.setupAutoscaling(ctx, adapter); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// Deploy route is on Openshift, Ingress otherwise
 	if err := r.exposeGitLabInstance(ctx, adapter); err != nil {
@@ -647,6 +644,10 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	webservice := gitlabctl.WebserviceDeployment(adapter)
 
+	if err := r.setDeploymentReplica(ctx, webservice); err != nil {
+		return err
+	}
+
 	_, err := r.createOrPatch(ctx, webservice, adapter)
 
 	return err
@@ -654,6 +655,10 @@ func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, ad
 
 func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	registry := gitlabctl.RegistryDeployment(adapter)
+
+	if err := r.setDeploymentReplica(ctx, registry); err != nil {
+		return err
+	}
 
 	_, err := r.createOrPatch(ctx, registry, adapter)
 
@@ -663,6 +668,10 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adap
 func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	shell := gitlabctl.ShellDeployment(adapter)
 
+	if err := r.setDeploymentReplica(ctx, shell); err != nil {
+		return err
+	}
+
 	_, err := r.createOrPatch(ctx, shell, adapter)
 
 	return err
@@ -670,6 +679,10 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 
 func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	sidekiq := gitlabctl.SidekiqDeployment(adapter)
+
+	if err := r.setDeploymentReplica(ctx, sidekiq); err != nil {
+		return err
+	}
 
 	_, err := r.createOrPatch(ctx, sidekiq, adapter)
 
@@ -775,6 +788,20 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 	return nil
 }
 
+func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	template, err := gitlabctl.GetTemplate(adapter)
+	if err != nil {
+		return err
+	}
+
+	for _, hpa := range template.Query().ObjectsByKind("HorizontalPodAutoscaler") {
+		if _, err := r.createOrPatch(ctx, hpa.(client.Object), adapter); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlabctl.CustomResourceAdapter) bool {
 	var addresses []corev1.EndpointAddress
 
@@ -795,4 +822,40 @@ func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitl
 	return r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) &&
 		r.isEndpointReady(ctx, adapter.ReleaseName()+"-gitaly", adapter) &&
 		r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter)
+}
+
+// If a Deployment has an HPA attached to it consult its Status to set the replica count.
+func (r *GitLabReconciler) setDeploymentReplica(ctx context.Context, deployment *appsv1.Deployment) error {
+	appLabel, ok := deployment.Labels["app"]
+	if !ok {
+		return nil
+	}
+	matchingLabels := client.MatchingLabels{
+		"app": appLabel,
+	}
+
+	hpaList := &autoscalingv1.HorizontalPodAutoscalerList{}
+	if err := r.List(ctx, hpaList, matchingLabels); err != nil {
+		return err
+	}
+	if len(hpaList.Items) == 0 {
+		return nil
+	}
+
+	replicas := hpaList.Items[0].Status.DesiredReplicas
+	if replicas == 0 {
+		return nil
+	}
+
+	if deployment.Spec.Replicas == nil || *(deployment.Spec.Replicas) != replicas {
+		r.Log.V(1).Info("Changing replica count of deployment with HPA",
+			"deployment", types.NamespacedName{
+				Namespace: deployment.Namespace,
+				Name:      deployment.Name,
+			},
+			"replicas", replicas)
+		deployment.Spec.Replicas = &replicas
+	}
+
+	return nil
 }

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -107,8 +108,15 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	tlsSecretName, err := gitlabctl.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
-	if err != nil || tlsSecretName == "" {
+	var configureCertmanager bool
+	configureCertmanager, err := gitlabctl.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager")
+	if err != nil {
+		configureCertmanager = true
+	}
+
+	tlsSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+
+	if !configureCertmanager && tlsSecretName == "" {
 		if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -212,10 +220,6 @@ func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gi
 	job, err := gitlabctl.SelfSignedCertsJob(adapter)
 	if err != nil {
 		return err
-	}
-
-	if job == nil {
-		return nil
 	}
 
 	return r.runJobAndWait(ctx, adapter, job)
@@ -551,6 +555,60 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 	return
 }
 
+func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) (created, updated bool, err error) {
+	created = false
+	updated = false
+	err = nil
+
+	if templateObject == nil {
+		r.Log.Info("Controller is not able to delete managed resources. This is a known issue",
+			"gitlab", adapter.Reference())
+	}
+
+	key := client.ObjectKeyFromObject(templateObject)
+
+	logger := r.Log.WithValues(
+		"gitlab", adapter.Reference(),
+		"type", fmt.Sprintf("%T", templateObject),
+		"reference", key)
+
+	logger.V(2).Info("Setting controller reference")
+	if err = controllerutil.SetControllerReference(adapter.Resource(), templateObject, r.Scheme); err != nil {
+		return
+	}
+
+	existing := templateObject.DeepCopyObject().(client.Object)
+
+	if err = r.Get(ctx, key, existing); err != nil {
+		if !errors.IsNotFound(err) {
+			return
+		}
+
+		err = r.Create(ctx, existing)
+		created = err == nil
+		if err == nil {
+			logger.V(1).Info("createOrUpdate result", "result", "created")
+			created = true
+		}
+		return
+	}
+
+	if err == nil {
+		templateObject.SetResourceVersion(existing.GetResourceVersion())
+		err = r.Update(ctx, templateObject)
+		if err != nil {
+			logger.Error(err, "unable to update object", "object", templateObject)
+			return
+		}
+		updated = true
+		return
+	}
+
+	logger.V(1).Info("createOrUpdate result", "result", "updated")
+
+	return
+}
+
 func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	cm := internal.MinioScriptConfigMap(adapter)
 	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
@@ -585,13 +643,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 		return err
 	}
 
-	// Only deploy the minio service and statefulset for development builds
 	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
-		ing := internal.MinioIngress(adapter)
-		if _, err := r.createOrPatch(ctx, ing, adapter); err != nil {
-			return err
-		}
-
 		svc := internal.MinioService(adapter)
 		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
@@ -693,6 +745,8 @@ func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter git
 }
 
 func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
+
 	var ingresses []*extensionsv1beta1.Ingress
 	gitlab := gitlabctl.WebserviceIngress(adapter)
 	registry := gitlabctl.RegistryIngress(adapter)
@@ -702,9 +756,42 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabc
 		registry,
 	)
 
+	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
+		ingresses = append(ingresses, internal.MinioIngress(adapter))
+	}
+
+	// For each ingress:
+	// - If it does not exist: create it.
+	// - If it does exist and does not have an ACME path: patch it.
 	for _, ingress := range ingresses {
-		if _, err := r.createOrPatch(ctx, ingress, adapter); err != nil {
+		found := &extensionsv1beta1.Ingress{}
+		err := r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: adapter.Namespace()}, found)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				logger.V(1).Info("creating ingress", "ingress", ingress.Name)
+				return r.Create(ctx, ingress)
+			}
+
 			return err
+		}
+
+		// If resource is an Ingress and has an ACME challenge path, skip the patch.
+		// This ensures that CertManager can add a path to existing ingresses for the ACME challenge without
+		// the Operator immediately removing it before the challenge can be completed.
+		// TODO: refactor this check so the GitLab Operator can still patch the Ingress when an ACME challenge
+		// path exists. This may require an update to the mutate function.
+		doPatch := true
+		for _, path := range found.Spec.Rules[0].IngressRuleValue.HTTP.Paths {
+			if acme, _ := regexp.MatchString("/.well-known/acme-challenge/+", path.Path); acme {
+				logger.V(1).Info("ingress contains ACME challenge path, skipping patch for now", "ingress", found.Name)
+				doPatch = false
+			}
+		}
+
+		if doPatch {
+			if _, err := r.createOrPatch(ctx, ingress, adapter); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -716,7 +803,7 @@ func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context,
 
 	issuer := internal.CertificateIssuer(adapter)
 
-	_, err := r.createOrPatch(ctx, issuer, adapter)
+	_, _, err := r.createOrUpdate(ctx, issuer, adapter)
 	return err
 }
 

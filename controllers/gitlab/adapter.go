@@ -162,7 +162,8 @@ global:
       app.kubernetes.io/managed-by: gitlab-operator
   imagePullPolicy: IfNotPresent
   ingress:
-    configureCertmanager: false
+    annotations:
+      $GlobalIngressAnnotations
   minio:
     enabled: false
   registry:
@@ -245,6 +246,18 @@ func (a *populatingAdapter) Values() helm.Values {
 func (a *populatingAdapter) populateValues() {
 	a.reference = fmt.Sprintf("%s.%s", a.resource.Name, a.resource.Namespace)
 
+	configureCertmanager, err := GetBoolValue(a.Values(), "global.ingress.configureCertmanager")
+	if err != nil {
+		a.values.SetValue("global.ingress.configureCertmanager", true)
+	}
+
+	globalIngressAnnotations := "{}"
+	if configureCertmanager {
+		issuerAnnotation := fmt.Sprintf("cert-manager.io/issuer: %s-issuer", a.ReleaseName())
+		acmeAnnotation := "acme.cert-manager.io/http01-edit-in-place: \"true\""
+		globalIngressAnnotations = fmt.Sprintf("%s\n      %s", issuerAnnotation, acmeAnnotation)
+	}
+
 	valuesToUse := strings.NewReplacer(
 		"$ReleaseName", a.ReleaseName(),
 		"$LocalUser", settings.LocalUser,
@@ -253,6 +266,7 @@ func (a *populatingAdapter) populateValues() {
 		"$AppConfigConnectionSecretName", settings.AppConfigConnectionSecretName,
 		"$RegistryConnectionSecretName", settings.RegistryConnectionSecretName,
 		"$TaskRunnerConnectionSecretName", settings.TaskRunnerConnectionSecretName,
+		"$GlobalIngressAnnotations", globalIngressAnnotations,
 	).Replace(defaultValues)
 
 	a.values.AddFromYAML([]byte(valuesToUse))

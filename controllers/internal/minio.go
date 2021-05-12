@@ -229,12 +229,39 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 		"nginx.ingress.kubernetes.io/proxy-request-buffering": "off",
 	}
 
-	url := getMinioURL(adapter)
-
-	tlsSecretName, err := gitlab.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
-	if err != nil || tlsSecretName == "" {
-		tlsSecretName = fmt.Sprintf("%s-wildcard-tls", adapter.ReleaseName())
+	var configureCertmanager bool
+	configureCertmanager, err = gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager")
+	if err != nil {
+		configureCertmanager = true
 	}
+
+	// TODO: Instead of manually redefining these CertManager annotations that are specified in
+	// controllers/gitlab/adapter.go, get the global ingress annotations from the values and inject
+	// them here (note: this would likely require a new 'GetMapValue' method).
+	if configureCertmanager {
+		annotations["cert-manager.io/issuer"] = fmt.Sprintf("%s-issuer", adapter.ReleaseName())
+		annotations["acme.cert-manager.io/http01-edit-in-place"] = "true"
+	}
+
+	minioIngressTLSSecretName, _ := gitlab.GetStringValue(adapter.Values(), "minio.ingress.tls.secretName")
+	globalIngressTLSSecretName, _ := gitlab.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+	wildcardIngressTLSSecretName := fmt.Sprintf("%s-wildcard-tls", adapter.ReleaseName())
+	certmanagerIngressTLSSecretName := fmt.Sprintf("%s-minio-tls", adapter.ReleaseName())
+
+	// To determine the secret name, copy the 'minio.tlsSecret' template logic until MinIO generated resources are removed.
+	// https://gitlab.com/gitlab-org/charts/gitlab/blob/8bc9d9e5f883e6d750cc957d4c1c67e65a9222df/charts/minio/templates/_helpers.tpl#L41-54
+	var tlsSecretName string
+	if minioIngressTLSSecretName != "" {
+		tlsSecretName = minioIngressTLSSecretName
+	} else if globalIngressTLSSecretName != "" {
+		tlsSecretName = globalIngressTLSSecretName
+	} else if configureCertmanager {
+		tlsSecretName = certmanagerIngressTLSSecretName
+	} else {
+		tlsSecretName = wildcardIngressTLSSecretName
+	}
+
+	url := getMinioURL(adapter)
 
 	return &extensionsv1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{

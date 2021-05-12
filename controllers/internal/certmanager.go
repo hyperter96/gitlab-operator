@@ -19,12 +19,13 @@ const (
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource
 func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.IssuerConfig {
 
-	useCertIssuer, err := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager")
+	var configureCertmanager bool
+	configureCertmanager, err := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager")
 	if err != nil {
-		useCertIssuer = true
+		configureCertmanager = true
 	}
 
-	if useCertIssuer {
+	if configureCertmanager {
 		ingressClass := specIngressClass
 
 		email, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.email")
@@ -32,10 +33,15 @@ func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.I
 			email = specCertIssuerEmail
 		}
 
+		server, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.server")
+		if err != nil || server == "" {
+			server = specCertIssuerServer
+		}
+
 		return certmanagerv1alpha2.IssuerConfig{
 			ACME: &acmev1alpha2.ACMEIssuer{
 				Email:  email,
-				Server: specCertIssuerServer,
+				Server: server,
 				PrivateKey: certmetav1.SecretKeySelector{
 					LocalObjectReference: certmetav1.LocalObjectReference{
 						Name: fmt.Sprintf("%s-acme-key", adapter.ReleaseName()),

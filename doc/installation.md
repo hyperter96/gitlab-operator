@@ -41,22 +41,53 @@ These steps normally are handled by OLM, the Operator Lifecycle Manager, once an
 
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
-5. Deploy a GitLab instance
+5. Create a GitLab custom resource (CR)
+
+   Create a new file to specify settings for an instance of GitLab. Name it something like `mygitlab.yaml`.
+
+   Here is an example of the content to put in this file:
+
+   ```yaml
+   apiVersion: apps.gitlab.com/v1beta1
+   kind: GitLab
+   metadata:
+     name: example
+   spec:
+     chart:
+       version: "X.Y.Z" # select a version from the CHART_VERSIONS file in the root of this project
+       values:
+         global:
+           hosts:
+             domain: example.com # use a real domain here
+           ingress:
+             class: nginx # ensure this matches the ingress class defined within the NGINX ingress controller
+             configureCertmanager: true
+         certmanager-issuer:
+           email: youremail@example.com # use your real email address here
+   ```
+
+6. Deploy a GitLab instance
 
    ```
-   $ DOMAIN=mydomain.com make deploy_sample_cr
+   $ kubectl -n gitlab-system apply -f mygitlab.yaml
    ```
 
-   This command injects the relevant values into `config/samples/apps_v1beta1_gitlab.yaml`, and then applies the custom resource.
+   This command sends your GitLab CR up to the cluster for the GitLab Operator to reconcile. You can watch the progress by tailing the logs from the controller pod:
 
-6. Clean up
+   ```
+   $  kubectl -n gitlab-system logs deployment/gitlab-controller-manager -c manager -f
+   ```
+
+   When the CR is reconciled, you can access GitLab in your browser at `https://gitlab.example.com`.
+
+7. Clean up
 
    The operator does not delete the persistent volume claims that hold the stateful data when a GitLab instance is deleted. Therefore, remember to delete any lingering volumes.
 
    When deleting the Operator, the namespace where it is installed (`gitlab-system` by default) will not be deleted automatically. This is to ensure persistent volumes are not lost unintentionally.
 
    ```
-   $ make delete_sample_cr
+   $ kubectl -n gitlab-system delete -f mygitlab.yaml
    $ make delete_operator
    $ make uninstall_crds
    $ make uninstall_required_operators

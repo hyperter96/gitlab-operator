@@ -121,8 +121,11 @@ var _ = Describe("GitLab controller", func() {
 		When("Both Jobs succeed", func() {
 			releaseName := "jobs-succeeded"
 
+			chartValues := helm.EmptyValues()
+			chartValues.SetValue("global.ingress.configureCertmanager", false)
+
 			BeforeEach(func() {
-				createGitLabResource(releaseName, emptyValues)
+				createGitLabResource(releaseName, chartValues)
 			})
 
 			It("Should create resources for Jobs and continue the reconcile loop", func() {

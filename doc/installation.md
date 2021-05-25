@@ -1,39 +1,72 @@
-# Installing operator from source
+# Installation
 
-This document describes how to deploy the GitLab operator via manifests in your Kubernetes or Openshift cluster.
+This document describes how to deploy the GitLab operator via manifests in your Kubernetes or OpenShift cluster.
 
-These steps normally are handled by OLM, the Operator Lifecycle Manager, once an operator is bundle published. However, to test the most recent operator images, users may need to install the operator using the deployment manifests available in the operator repository.
+If using OpenShift, these steps normally are handled by OLM (the Operator Lifecycle Manager) once an operator is bundle published. However, to test the most recent operator images, users may need to install the operator using the deployment manifests available in the operator repository.
 
-## Requirements
+## Prerequisites
 
-0. Create an OpenShift cluster, see [openshift-cluster-setup.md](openshift-cluster-setup.md).
+1. [Create or use an existing Kubernetes or OpenShift cluster](#cluster)
+2. Install pre-requisite services and software
+    - [Ingress controller](#ingress-controller)
+    - [Certificate manager](#tls-certificates)
+    - [Metrics server](#metrics)
+3. [Configure Domain Name Services](#configure-domain-name-services)
 
-1. Clone the GitLab operator repository to your local system
+### Cluster
+
+#### Kubernetes
+
+To create a traditional Kubernetes cluster, consider using [official tooling](https://kubernetes.io/docs/tasks/tools/) or your preferred method of installation.
+
+#### OpenShift
+
+To create an OpenShift cluster, see the [OpenShift cluster setup docs](openshift-cluster-setup.md).
+
+### Ingress controller
+
+An ingress controller is required to provide external access to the application and secure communication between components.
+
+We recommend [NGINX Ingress](https://docs.nginx.com/nginx-ingress-controller/installation/) by NGINX Inc. to deploy an Ingress Controller. Follow the relevant instructions in the link based on your platform and preferred tooling.
+
+Take note of the ingress class value for later (it typically defaults to `nginx`).
+
+### TLS certificates
+
+We recommend [Cert Manager](https://cert-manauer.io/docs/installation/) to create certificates used to secure the GitLab and Registry URLs. Follow the relevant instructions in the link based on your platform and preferred tooling.
+
+### Metrics
+
+#### Kubernetes
+
+Install the [metrics server](https://github.com/kubernetes-sigs/metrics-server#installation) so the HorizontalPodAutoscalers can retrieve pod metrics.
+
+#### OpenShift
+
+OpenShift ships with [Prometheus Adapter](https://docs.openshift.com/container-platform/4.6/monitoring/understanding-the-monitoring-stack.html#default-monitoring-components_understanding-the-monitoring-stack) by default, so there is no manual action required here.
+
+### Configure Domain Name Services
+
+You will need an internet-accessible domain to which you can add a DNS record.
+
+See our [networking and DNS documentation](https://docs.gitlab.com/charts/installation/deployment.html#networking-and-dns) for more details on connecting your domain to the GitLab components. You will use the configuration mentioned in this section when defining your GitLab custom resource (CR).
+
+## Installing the GitLab Operator
+
+1. Clone the GitLab operator repository to your local system.
 
     ```
     $ git clone https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator.git
     $ cd gitlab-operator
     ```
 
-2. Ensure the operators it depends on are present. These operators can be installed via the in-cluster OperatorHub or via Make:
-
-   ```
-   $ make install_required_operators
-   ```
-
-   The GitLab operator uses the following operators:
-   * the `Nginx Ingress Operator` by Nginx Inc. to deploy and Ingress Controller. This should be deployed from operatorhub.io if using Kubernetes or the embedded Operator Hub on OpenShift environments
-
-   * the `Cert Manager operator` to create certificates used to secure the GitLab and Registry urls. Once this operator has been installed, create a cert-manager instance. Use default "cert-manager" for the Name field, the Labels field can be blank.
-
-
-3. Deploy the CRDs(Custom Resource Definitions) for the resources managed by the operator
+2. Deploy the CRDs (Custom Resource Definitions) for the resources managed by the GitLab Operator.
 
     ```
     $ make install_crds
     ```
 
-4. Deploy the operator
+3. Deploy the GitLab Operator.
 
     ```
     $ make deploy_operator
@@ -41,9 +74,9 @@ These steps normally are handled by OLM, the Operator Lifecycle Manager, once an
 
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
-5. Create a GitLab custom resource (CR)
+4. Create a GitLab custom resource (CR).
 
-   Create a new file to specify settings for an instance of GitLab. Name it something like `mygitlab.yaml`.
+   Create a new file named something like `mygitlab.yaml`.
 
    Here is an example of the content to put in this file:
 
@@ -66,7 +99,9 @@ These steps normally are handled by OLM, the Operator Lifecycle Manager, once an
            email: youremail@example.com # use your real email address here
    ```
 
-6. Deploy a GitLab instance
+   For more details on configuration options to use under `spec.chart.values`, see our [GitLab Helm Chart documentation](https://docs.gitlab.com/charts).
+
+5. Deploy a GitLab instance using your new GitLab CR.
 
    ```
    $ kubectl -n gitlab-system apply -f mygitlab.yaml
@@ -78,17 +113,41 @@ These steps normally are handled by OLM, the Operator Lifecycle Manager, once an
    $  kubectl -n gitlab-system logs deployment/gitlab-controller-manager -c manager -f
    ```
 
-   When the CR is reconciled, you can access GitLab in your browser at `https://gitlab.example.com`.
-
-7. Clean up
-
-   The operator does not delete the persistent volume claims that hold the stateful data when a GitLab instance is deleted. Therefore, remember to delete any lingering volumes.
-
-   When deleting the Operator, the namespace where it is installed (`gitlab-system` by default) will not be deleted automatically. This is to ensure persistent volumes are not lost unintentionally.
+   You can also list GitLab resources and check their status:
 
    ```
-   $ kubectl -n gitlab-system delete -f mygitlab.yaml
-   $ make delete_operator
-   $ make uninstall_crds
-   $ make uninstall_required_operators
+   $ kubectl get gitlabs -n gitlab-system
    ```
+
+   When the CR is reconciled (the status of the GitLab resource will be `RUNNING`), you can access GitLab in your browser at `https://gitlab.example.com`.
+
+## Uninstall the GitLab Operator
+
+Follow the steps below to remove the GitLab Operator and its associated resources.
+
+Items to note prior to uninstalling the operator:
+
+- The operator does not delete the Persistent Volume Claims or Secrets when a GitLab instance is deleted.
+- When deleting the Operator, the namespace where it is installed (`gitlab-system` by default) will not be deleted automatically. This is to ensure persistent volumes are not lost unintentionally.
+
+### Uninstall an instance of GitLab
+
+```
+$ kubectl -n gitlab-system delete -f mygitlab.yaml
+```
+
+This will remove the GitLab instance, and all associated objects except for (PVCs as noted above).
+
+### Uninstall the GitLab Operator
+
+```
+$ make delete_operator
+```
+
+This will delete the Operator's resources, including the running Deployment. It will not delete objects associated with a GitLab instance.
+
+### Uninstall CRDs
+
+```
+$ make uninstall_crds
+```

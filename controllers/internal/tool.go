@@ -55,19 +55,19 @@ func ResourceQuantity(request string) resource.Quantity {
 	return resource.MustParse(request)
 }
 
-// IsPrometheusSupported checks for Prometheus API endpoint
-func IsPrometheusSupported() bool {
+// IsGroupVersionSupported checks for API endpoint for given Group and Version
+func IsGroupVersionSupported(group, version string) bool {
 	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		fmt.Printf("Unable to acquire k8s client: %v", err)
 	}
 
-	servicemonGV := schema.GroupVersion{
-		Group:   "monitoring.coreos.com",
-		Version: "v1",
+	groupVersion := schema.GroupVersion{
+		Group:   group,
+		Version: version,
 	}
 
-	if err := discovery.ServerSupportsVersion(client, servicemonGV); err != nil {
+	if err := discovery.ServerSupportsVersion(client, groupVersion); err != nil {
 		return false
 	}
 

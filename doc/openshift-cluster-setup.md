@@ -28,7 +28,7 @@ Once the Service Account is created, generate a JSON key and save it as `gcloud.
 
 ## Create your OpenShift cluster
 
-Run `./scripts/create_cluster.sh` to create your OpenShift cluster in Google Cloud.
+Run `./scripts/create_openshift_cluster.sh` to create your OpenShift cluster in Google Cloud.
 This will be a 6 node cluster with 3 control plane (master) nodes and 3 worker nodes. This takes around 40 minutes. Follow the instructions at the end of the console output to connect to the cluster.
 
 Once created, you should be able to see your cluster registered here: https://cloud.redhat.com/openshift/. All installation logs and metadata will be stored in the `install-$CLUSTER_NAME/` directory in this repository. This folder is gitignored.
@@ -57,7 +57,7 @@ The variables `CLUSTER_NAME` and `BASE_DOMAIN` are combined to build the domain 
 
 ## Destroy your OpenShift cluster
 
-Run `./scripts/destroy_cluster.sh` to destroy your OpenShift cluster in Google Cloud. This takes around 4 minutes.
+Run `./scripts/destroy_openshift_cluster.sh` to destroy your OpenShift cluster in Google Cloud. This takes around 4 minutes.
 
 ### Configuration Options
 

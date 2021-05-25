@@ -16,15 +16,6 @@ The Operator only expects one instance of these components at this time.
 
 Related: [#128](https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/128)
 
-### Installation assumes an OpenShift environment
-
-Portions of the documenation, scripts, and code assume an OpenShift environment.
-The plan is for the GitLab Operator to be supported on both OpenShift and "vanilla"
-Kubernetes environments.
-
-Progress toward proper support for "vanilla" Kubernetes environments can be tracked
-in [#119](https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/119).
-
 ### Certain components not supported
 
 Below is a list of unsupported components:

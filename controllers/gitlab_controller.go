@@ -163,7 +163,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if internal.IsPrometheusSupported() {
+	if internal.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
 		// Deploy a prometheus service monitor
 		if err := r.reconcileServiceMonitor(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
@@ -179,7 +179,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 // SetupWithManager configures the custom resource watched resources
 func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	builder := ctrl.NewControllerManagedBy(mgr).
 		For(&gitlabv1beta1.GitLab{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
@@ -188,11 +188,19 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&batchv1.Job{}).
-		Owns(&extensionsv1beta1.Ingress{}).
-		Owns(&monitoringv1.ServiceMonitor{}).
-		Owns(&certmanagerv1alpha2.Issuer{}).
-		Owns(&certmanagerv1alpha2.Certificate{}).
-		Complete(r)
+		Owns(&extensionsv1beta1.Ingress{})
+
+	if internal.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
+		builder.Owns(&monitoringv1.ServiceMonitor{})
+	}
+
+	if internal.IsGroupVersionSupported("cert-manager.io", "v1alpha2") {
+		builder.
+			Owns(&certmanagerv1alpha2.Issuer{}).
+			Owns(&certmanagerv1alpha2.Certificate{})
+	}
+
+	return builder.Complete(r)
 }
 
 func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {

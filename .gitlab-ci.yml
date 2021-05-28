@@ -20,6 +20,10 @@ stages:
   - cleanup
   - certification
 
+include:
+  - template: Dependency-Scanning.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
 .if_push_to_redhat: &if_push_to_redhat
   if: '$PUSH_TO_REDHAT == "true" '
 
@@ -201,3 +205,7 @@ certification_upload:
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
   script:
     - ruby scripts/push_to_redhat.rb "${CI_COMMIT_REF_NAME}"
+
+secret_detection:
+  variables:
+    SECRET_DETECTION_HISTORIC_SCAN: "true"

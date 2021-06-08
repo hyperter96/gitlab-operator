@@ -88,20 +88,20 @@ delete_operator: manifests kustomize
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-# Deploy sample GitLab custom resource to cluster
-deploy_sample_cr: kustomize
-	cd config/samples && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	$(KUSTOMIZE) build config/samples \
+# Deploy test GitLab custom resource to cluster
+deploy_test_cr: kustomize
+	cd config/test && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
+	$(KUSTOMIZE) build config/test \
 		| sed "s/CHART_VERSION/${CHART_VERSION}/g" \
 		| sed "s/DOMAIN/${DOMAIN}/g" \
 		| sed "s/HOSTSUFFIX/${HOSTSUFFIX}/g" \
 		| sed "s/TLSSECRETNAME/${TLSSECRETNAME}/g" \
 		| kubectl apply -f -
 
-# Delete the sample GitLab custom resource from cluster
-delete_sample_cr: kustomize
-	cd config/samples && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	$(KUSTOMIZE) build config/samples | kubectl delete -f -
+# Delete the test GitLab custom resource from cluster
+delete_test_cr: kustomize
+	cd config/test && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
+	$(KUSTOMIZE) build config/test | kubectl delete -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
@@ -113,7 +113,7 @@ restore_kustomize_files:
     config/default/kustomization.yaml \
     config/manager/kustomization.yaml \
     config/rbac/kustomization.yaml \
-    config/samples/kustomization.yaml \
+    config/test/kustomization.yaml \
     config/webhook/kustomization.yaml
 
 # Run go fmt against code

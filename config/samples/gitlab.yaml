@@ -1,0 +1,16 @@
+apiVersion: apps.gitlab.com/v1beta1
+kind: GitLab
+metadata:
+  name: example
+spec:
+  chart:
+    version: "X.Y.Z" # select a version from the CHART_VERSIONS file in the root of this project
+    values:  # see https://docs.gitlab.com/charts for configuration options
+      global:
+        hosts:
+          domain: example.com # use a real domain here
+        ingress:
+          class: nginx # ensure this matches the ingress class defined within the NGINX ingress controller
+          configureCertmanager: true
+      certmanager-issuer:
+        email: youremail@example.com # use your real email address here

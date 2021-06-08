@@ -53,8 +53,8 @@ $ tree -dL 2 .
 │   ├── prometheus
 │   ├── rbac
 │   ├── samples
-│   ├── samples_other
 │   ├── scorecard
+|   ├── test
 │   └── webhook
 ├── controllers
 │   ├── backup
@@ -76,7 +76,8 @@ $ tree -dL 2 .
   * The `controllers` directory contains the controller implementations for the GitLab and GitLab Backup controllers.
   * The `api` directory contains the API resource definitions for the GitLab and GLBackup resources owned by the operator. The API definitions are grouped by their API version.
     The `*_types.go` file inside `api/<api_version>` contains spec definitions and markers used to generate the Custom Resource Definitions and Cluster Service Version file used by OLM.
-  * The `config/samples` directory contains examples of the GitLab and GLBackup definitions.
+  * The `config/samples` directory contains an example manifest for the GitLab Custom Resource.
+  * The `config/test` directory contains a parametrized GitLab definition used for running integration tests.
   * The `config/rbac` directory contains the roles, role bindings, and service accounts needed for the operator to run. The roles should be updated through RBAC(Role Based Access Control) [markers](https://book.kubebuilder.io/reference/markers/rbac.html) inside your controllers.
 
     An example is shown below:

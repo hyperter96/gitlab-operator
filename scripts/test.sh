@@ -76,7 +76,7 @@ verify_operator_is_running() {
 
 install_gitlab_custom_resource() {
   echo 'Installing GitLab custom resource'
-  make deploy_sample_cr
+  make deploy_test_cr
 }
 
 copy_certificate() {

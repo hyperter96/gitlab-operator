@@ -1,0 +1,27 @@
+stages:
+  - sync
+
+.sync:
+  # Use the official docker image.
+  image:
+    name: quay.io/skopeo/stable
+    entrypoint: [""]
+  stage: sync
+  retry: 1
+  script:
+    - skopeo sync --all --src docker --dest docker --dest-creds $CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD $SOURCE $CI_REGISTRY_IMAGE
+
+sync_root:
+  extends: .sync
+  variables:
+    SOURCE: registry.gitlab.com/gitlab-org/cloud-native/relocation-temp/gitlab-operator
+
+sync_bundle:
+  extends: .sync
+  variables:
+    SOURCE: registry.gitlab.com/gitlab-org/cloud-native/relocation-temp/bundle
+
+sync_operator_bundle:
+  extends: .sync
+  variables:
+    SOURCE: registry.gitlab.com/gitlab-org/cloud-native/relocation-temp/gitlab-operator-bundle

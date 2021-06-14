@@ -145,7 +145,7 @@ build_bundle_image:
 functional_tests:
   extends: .cache
   stage: functional_test
-  script: 
+  script:
      - CLEANUP="no" ./scripts/test.sh
      - echo "ROOT_PASSWORD=$(kubectl -n $NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> functional_tests.env
      - echo "GITLAB_VERSION=$(kubectl -n $NAMESPACE exec -ti $(kubectl -n $NAMESPACE get pods | grep task-runner | awk '{print $1}') cat /srv/gitlab/VERSION)" >> functional_tests.env
@@ -166,7 +166,7 @@ qa:
     QA_ARTIFACTS_DIR: $CI_PROJECT_DIR
     EE_LICENSE: $GITLAB_QA_EE_LICENSE
     QA_OPTIONS: "--tag smoke"
-    QA_EXCLUDE_SPECS: "--exclude-pattern '**/*over_ssh_spec.rb'" # Remove when https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/58 closed 
+    QA_EXCLUDE_SPECS: "--exclude-pattern '**/*over_ssh_spec.rb'" # Remove when https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/58 closed
   script:
     - echo $QA_ENVIRONMENT_URL $GITLAB_VERSION
     - gem install gitlab-qa

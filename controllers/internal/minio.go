@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	yaml "gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

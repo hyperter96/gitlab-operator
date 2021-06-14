@@ -25,7 +25,7 @@ metadata:
     createdAt: "2020-03-11T13:29:00Z"
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-    repository: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator
+    repository: https://gitlab.com/gitlab-org/cloud-native/gitlab-operator
   name: gitlab-operator.v0.2.0
   namespace: placeholder
 spec:
@@ -408,7 +408,7 @@ spec:
                 - --enable-leader-election
                 command:
                 - /manager
-                image: registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator:latest
+                image: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator:latest
                 name: manager
                 ports:
                 - containerPort: 9443

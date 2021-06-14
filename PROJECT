@@ -1,7 +1,7 @@
 domain: gitlab.com
 layout: go.kubebuilder.io/v2
 projectName: gitlab-operator
-repo: gitlab.com/gitlab-org/gl-openshift/gitlab-operator
+repo: gitlab.com/gitlab-org/cloud-native/gitlab-operator
 resources:
 - group: apps
   kind: GitLab

@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	"github.com/Masterminds/semver"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

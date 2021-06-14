@@ -3,7 +3,7 @@ package gitlab
 import (
 	"fmt"
 
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 // GetBoolValue returns the value of the specified key as boolean.

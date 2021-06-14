@@ -1,8 +1,8 @@
-[![Go Report Card](https://goreportcard.com/badge/gitlab.com/gitlab-org/gl-openshift/gitlab-operator "Go Report Card")](https://goreportcard.com/report/gitlab.com/gitlab-org/gl-openshift/gitlab-operator)
+[![Go Report Card](https://goreportcard.com/badge/gitlab.com/gitlab-org/cloud-native/gitlab-operator "Go Report Card")](https://goreportcard.com/report/gitlab.com/gitlab-org/cloud-native/gitlab-operator)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-[![Go Reference](https://pkg.go.dev/badge/gitlab.com/gitlab-org/gl-openshift/gitlab-operator.svg)](https://pkg.go.dev/gitlab.com/gitlab-org/gl-openshift/gitlab-operator)
+[![Go Reference](https://pkg.go.dev/badge/gitlab.com/gitlab-org/cloud-native/gitlab-operator.svg)](https://pkg.go.dev/gitlab.com/gitlab-org/cloud-native/gitlab-operator)
 
 # GitLab Operator
 
@@ -16,7 +16,7 @@ While new and still actively being developed, the operator aims to:
 - aggregate and visualize metrics using Prometheus and Grafana
 - setup auto-scaling
 
-Note that this does not include the GitLab Runner. For more inforation, see the [GitLab Runner Operator repository](https://gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator).
+Note that this does not include the GitLab Runner. For more inforation, see the [GitLab Runner Operator repository](https://gitlab.com/gitlab-org/cloud-native/gitlab-runner-operator).
 
 ## Documentation
 

@@ -34,9 +34,9 @@ import (
 	// miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	routev1 "github.com/openshift/api/route/v1"
 
-	appsv1beta1 "gitlab.com/gitlab-org/gl-openshift/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
+	appsv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	// +kubebuilder:scaffold:imports
 )
 

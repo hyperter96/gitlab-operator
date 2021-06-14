@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )

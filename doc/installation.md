@@ -56,7 +56,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 1. Clone the GitLab operator repository to your local system.
 
     ```
-    $ git clone https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator.git
+    $ git clone https://gitlab.com/gitlab-org/cloud-native/gitlab-operator.git
     $ cd gitlab-operator
     ```
 

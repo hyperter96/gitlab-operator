@@ -5,7 +5,7 @@ Below are instructions to upgrade the GitLab Operator.
 ## Step 1: Identify the desired version of the Operator
 
 To use a released version, the tags will look something like `vX.Y.Z-betaN`. See our
-[tags](https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/tags) for the full list.
+[tags](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/tags) for the full list.
 
 If you wish to use a development version, you can find the commit on `master` that you'd like to use,
 and copy the first 8 characters of that commit SHA. This aligns with the tag we apply to each
@@ -38,5 +38,5 @@ Operator pod will start to shut down, giving up its leader status. When this hap
 If the new version of the Operator contains updated logic, you should see it start taking action on the resources in the namespace.
 
 Keep an eye on the logs from the new Operator pod. If you notice any errors, check our
-[issue tracker](https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues) to see if the issue is known. If not,
+[issue tracker](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues) to see if the issue is known. If not,
 open a new issue.

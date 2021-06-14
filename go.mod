@@ -1,4 +1,4 @@
-module gitlab.com/gitlab-org/gl-openshift/gitlab-operator
+module gitlab.com/gitlab-org/cloud-native/gitlab-operator
 
 go 1.14
 

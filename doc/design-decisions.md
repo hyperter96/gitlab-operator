@@ -24,18 +24,18 @@ several hurdles to overcome and achieve matching the version numbers.
 
 - Operator needs to support a greater feature parity with GitLab Helm chart
 - Come to consensus on single operator or splitting into application and
-  Runner operators. Issue: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/30
+  Runner operators. Issue: https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/30
 - Proper handling of AnyUID in GitLab application containers. Issue:
-  https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/11
+  https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/11
 - Decide on the level of namespace scoping that the operator will be capable of.
-  Issue: https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/31
+  Issue: https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/31
 
 The version of the operator shall follow semantic versioning during development
 until the feature set is sufficient to support the GitLab application
 lifecycle through the operator. At which point the version will be bumped
 to be in sync with the GitLab application version.
 
-Further information can be found in https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/5
+Further information can be found in https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/5
 
 ## GitLab application versions supported
 

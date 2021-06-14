@@ -6,7 +6,7 @@ import (
 	acmev1alpha2 "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	certmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	"gitlab.com/gitlab-org/gl-openshift/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

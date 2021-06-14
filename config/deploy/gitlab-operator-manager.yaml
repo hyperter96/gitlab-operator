@@ -21,7 +21,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: registry.gitlab.com/gitlab-org/gl-openshift/gitlab-operator:latest
+        image: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator:latest
         name: manager
         ports:
         - containerPort: 9443

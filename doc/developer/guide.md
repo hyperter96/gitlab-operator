@@ -25,7 +25,7 @@ To setup your system for development of the operator, follow the steps below:
 3. Clone the `gitlab-operator` repository into your GOPATH.
 
    ```shell
-   $ git clone git@gitlab.com:gitlab-org/gl-openshift/gitlab-operator.git
+   $ git clone git@gitlab.com:gitlab-org/cloud-native/gitlab-operator.git
    ```
 
 ## Project structure

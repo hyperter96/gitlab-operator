@@ -9,7 +9,7 @@ linters-settings:
   goimports:
     # Expects local packages to be listed separately from third party
     # packages in the `imports` block.
-    local-prefixes: gitlab.com/gitlab-org/gl-openshift/gitlab-operator
+    local-prefixes: gitlab.com/gitlab-org/cloud-native/gitlab-operator
 
 whitespace:
   multi-if: true   # Enforces newlines (or comments) after every multi-line if statement

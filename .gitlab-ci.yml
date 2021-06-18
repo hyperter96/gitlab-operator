@@ -166,7 +166,7 @@ qa:
     QA_ARTIFACTS_DIR: $CI_PROJECT_DIR
     EE_LICENSE: $GITLAB_QA_EE_LICENSE
     QA_OPTIONS: "--tag smoke"
-    QA_EXCLUDE_SPECS: "--exclude-pattern '**/*over_ssh_spec.rb'" # Remove when https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/58 closed
+    QA_EXCLUDE_SPECS: "--exclude-pattern '**/*over_ssh_spec.rb'" # Remove when https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/58 closed
   script:
     - echo $QA_ENVIRONMENT_URL $GITLAB_VERSION
     - gem install gitlab-qa
@@ -186,11 +186,11 @@ qa:
 cleanup:
   extends: .cache
   stage: cleanup
-  script: CLEANUP="only" ./scripts/test.sh
-  rules:
-    - <<: *skip_if_release_tag
-    - if: '$CI_COMMIT_BRANCH'
-      when: always
+  variables:
+    DEBUG: "yes"
+    CLEANUP: "only"
+  script: ./scripts/test.sh
+  when: always
 
 certification_upload:
   stage: certification

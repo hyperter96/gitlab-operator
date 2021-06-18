@@ -6,6 +6,7 @@ NAMESPACE="${NAMESPACE:-gitlab-system}"
 CLEANUP="${CLEANUP:-yes}"
 HOSTSUFFIX="${HOSTSUFFIX:-${NAMESPACE}}"
 DOMAIN="${DOMAIN:-example.com}"
+DEBUG="${DEBUG:-off}"
 
 finish() {
   local exitcode=$?
@@ -106,9 +107,33 @@ verify_gitlab_is_running() {
 
 cleanup() {
   echo 'Cleaning up test resources'
-  kubectl delete namespace "$NAMESPACE"
-  kubectl get clusterrolebindings -o=name | grep $NAMESPACE | xargs kubectl delete
-  kubectl get validatingwebhookconfiguration -o name | grep $NAMESPACE | xargs kubectl delete
+  signal_failure=0
+
+  # Turn off exit immediately if command fails so debug out can get generated
+  set +e
+
+  kubectl delete ns "$NAMESPACE"
+  if [[ $? -ne 0 ]]; then
+    signal_failure=1
+  fi
+
+  results=$(kubectl get clusterrolebindings -o=name | grep $NAMESPACE)
+  [[ "$DEBUG" != "off" ]] && printf "** kubectl get clusterrolebinding results\n$results\n-----"
+  echo "$results" | xargs kubectl delete
+
+  results=$(kubectl get validatingwebhookconfiguration -o name | grep $NAMESPACE)
+  [[ "$DEBUG" != "off" ]] && printf "** kubectl get validatingwebhookconfiguration results\n$results\n-----"
+  echo "$results" | xargs kubectl delete
+  if [[ $? -ne 0 ]]; then
+    signal_failure=1
+  fi
+
+  if [[ $signal_failure -eq 1 ]]; then
+    exit 1
+  fi
+
+  # Turn back on to exit immediately
+  set -e
 }
 
 wait_until_exists() {

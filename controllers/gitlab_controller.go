@@ -104,12 +104,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	var configureCertmanager bool
-	configureCertmanager, err := gitlabctl.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager")
-	if err != nil {
-		configureCertmanager = true
-	}
-
+	configureCertmanager, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true)
 	tlsSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
 
 	if !configureCertmanager && tlsSecretName == "" {
@@ -220,6 +215,10 @@ func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gi
 	job, err := gitlabctl.SelfSignedCertsJob(adapter)
 	if err != nil {
 		return err
+	}
+
+	if job == nil {
+		return fmt.Errorf("self-signed certificate job skipped, not needed per configuration: %s", adapter.Reference())
 	}
 
 	return r.runJobAndWait(ctx, adapter, job)
@@ -433,6 +432,7 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gi
 	statefulsets = append(statefulsets, postgres, redis, gitaly)
 
 	for _, statefulset := range statefulsets {
+		r.annotateSecretsChecksum(ctx, adapter, &statefulset.Spec.Template)
 		if _, err := r.createOrPatch(ctx, statefulset, adapter); err != nil {
 			return err
 		}
@@ -651,6 +651,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 
 		// deploy minio
 		minio := internal.MinioStatefulSet(adapter)
+		r.annotateSecretsChecksum(ctx, adapter, &minio.Spec.Template)
 		_, err := r.createOrPatch(ctx, minio, adapter)
 		return err
 	}
@@ -691,6 +692,7 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	exporter := gitlabctl.ExporterDeployment(adapter)
 
+	r.annotateSecretsChecksum(ctx, adapter, &exporter.Spec.Template)
 	_, err := r.createOrPatch(ctx, exporter, adapter)
 
 	return err
@@ -703,6 +705,7 @@ func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, ad
 		return err
 	}
 
+	r.annotateSecretsChecksum(ctx, adapter, &webservice.Spec.Template)
 	_, err := r.createOrPatch(ctx, webservice, adapter)
 
 	return err
@@ -715,6 +718,7 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adap
 		return err
 	}
 
+	r.annotateSecretsChecksum(ctx, adapter, &registry.Spec.Template)
 	_, err := r.createOrPatch(ctx, registry, adapter)
 
 	return err
@@ -727,6 +731,7 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 		return err
 	}
 
+	r.annotateSecretsChecksum(ctx, adapter, &shell.Spec.Template)
 	_, err := r.createOrPatch(ctx, shell, adapter)
 
 	return err
@@ -739,6 +744,7 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapt
 		return err
 	}
 
+	r.annotateSecretsChecksum(ctx, adapter, &sidekiq.Spec.Template)
 	_, err := r.createOrPatch(ctx, sidekiq, adapter)
 
 	return err
@@ -747,6 +753,7 @@ func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapt
 func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	tasker := gitlabctl.TaskRunnerDeployment(adapter)
 
+	r.annotateSecretsChecksum(ctx, adapter, &tasker.Spec.Template)
 	_, err := r.createOrPatch(ctx, tasker, adapter)
 
 	return err
@@ -925,6 +932,31 @@ func (r *GitLabReconciler) setDeploymentReplica(ctx context.Context, deployment 
 			},
 			"replicas", replicas)
 		deployment.Spec.Replicas = &replicas
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template *corev1.PodTemplateSpec) error {
+	secretsInfo := internal.PopulateAttachedSecrets(*template)
+	for secretName, secretKeys := range secretsInfo {
+		secret := &corev1.Secret{}
+		lookupKey := types.NamespacedName{Name: secretName, Namespace: adapter.Namespace()}
+		if err := r.Get(ctx, lookupKey, secret); err != nil {
+			if errors.IsNotFound(err) {
+				// Skip this Secret. Do not overreact to it being missing.
+				continue
+			}
+			return err
+		}
+		hash := internal.SecretChecksum(*secret, secretKeys)
+		if hash == "" {
+			continue
+		}
+		if template.ObjectMeta.Annotations == nil {
+			template.ObjectMeta.Annotations = map[string]string{}
+		}
+		template.ObjectMeta.Annotations[fmt.Sprintf("checksum/secret-%s", secretName)] = hash
 	}
 
 	return nil

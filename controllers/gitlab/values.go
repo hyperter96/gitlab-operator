@@ -8,19 +8,24 @@ import (
 
 // GetBoolValue returns the value of the specified key as boolean.
 // Returns error if the key is not boolean.
-func GetBoolValue(values helm.Values, key string) (bool, error) {
+func GetBoolValue(values helm.Values, key string, defaults ...bool) (bool, error) {
+	retVal := false
+	if len(defaults) > 0 {
+		retVal = defaults[0]
+	}
+
 	x, err := values.GetValue(key)
 	if err != nil {
-		return false, err
+		return retVal, err
 	}
 
 	if x == nil {
-		return false, nil
+		return retVal, nil
 	}
 
 	b, ok := x.(bool)
 	if !ok {
-		return false, fmt.Errorf("Key %s is not a boolean value", key)
+		return retVal, fmt.Errorf("key %s is not a boolean value", key)
 	}
 
 	return b, nil
@@ -28,19 +33,24 @@ func GetBoolValue(values helm.Values, key string) (bool, error) {
 
 // GetStringValue returns the value of the specified key as string.
 // Returns error if the key is not string.
-func GetStringValue(values helm.Values, key string) (string, error) {
+func GetStringValue(values helm.Values, key string, defaults ...string) (string, error) {
+	retVal := ""
+	if len(defaults) > 0 {
+		retVal = defaults[0]
+	}
+
 	x, err := values.GetValue(key)
 	if err != nil {
-		return "", err
+		return retVal, err
 	}
 
 	if x == nil {
-		return "", nil
+		return retVal, nil
 	}
 
 	s, ok := x.(string)
 	if !ok {
-		return "", fmt.Errorf("Key %s is not a string value", key)
+		return retVal, fmt.Errorf("key %s is not a string value", key)
 	}
 
 	return s, nil

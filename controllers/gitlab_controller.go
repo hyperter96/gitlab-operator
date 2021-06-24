@@ -125,6 +125,12 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	if configureGitaly, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.gitaly.enabled", true); configureGitaly {
+		if err := r.reconcileGitaly(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -296,7 +302,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
 	taskRunner := gitlabctl.TaskRunnerConfigMap(adapter)
-	gitaly := gitlabctl.GitalyConfigMap(adapter)
 	exporter := gitlabctl.ExporterConfigMaps(adapter)
 	webservice := gitlabctl.WebserviceConfigMaps(adapter)
 	migration := gitlabctl.MigrationsConfigMap(adapter)
@@ -306,7 +311,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	registry := gitlabctl.RegistryConfigMap(adapter)
 
 	configmaps = append(configmaps,
-		gitaly,
 		registry,
 		taskRunner,
 		migration,
@@ -425,11 +429,10 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gi
 
 	var statefulsets []*appsv1.StatefulSet
 
-	gitaly := gitlabctl.GitalyStatefulSet(adapter)
 	redis := gitlabctl.RedisStatefulSet(adapter)
 	postgres := gitlabctl.PostgresStatefulSet(adapter)
 
-	statefulsets = append(statefulsets, postgres, redis, gitaly)
+	statefulsets = append(statefulsets, postgres, redis)
 
 	for _, statefulset := range statefulsets {
 		r.annotateSecretsChecksum(ctx, adapter, &statefulset.Spec.Template)
@@ -609,6 +612,28 @@ func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject cl
 	return
 }
 
+func (r *GitLabReconciler) reconcileGitaly(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	// ConfigMap
+	cm := gitlabctl.GitalyConfigMap(adapter)
+	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+		return err
+	}
+
+	// Service
+	svc := gitlabctl.GitalyService(adapter)
+	if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
+		return err
+	}
+
+	// StatefulSet
+	ss := gitlabctl.GitalyStatefulSet(adapter)
+	if _, err := r.createOrPatch(ctx, ss, adapter); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	cm := internal.MinioScriptConfigMap(adapter)
 	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
@@ -663,7 +688,6 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 	var services []*corev1.Service
 
 	shell := gitlabctl.ShellService(adapter)
-	gitaly := gitlabctl.GitalyService(adapter)
 	exporter := gitlabctl.ExporterService(adapter)
 	webservice := gitlabctl.WebserviceService(adapter)
 	redis := gitlabctl.RedisServices(adapter)
@@ -671,7 +695,6 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 	registry := gitlabctl.RegistryService(adapter)
 
 	services = append(services,
-		gitaly,
 		registry,
 		webservice,
 		shell,
@@ -896,9 +919,21 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 }
 
 func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	return r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) &&
-		r.isEndpointReady(ctx, adapter.ReleaseName()+"-gitaly", adapter) &&
-		r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter)
+	if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) {
+		return false
+	}
+
+	if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter) {
+		return false
+	}
+
+	if configureGitaly, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.gitaly.enabled", true); configureGitaly {
+		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-gitaly", adapter) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // If a Deployment has an HPA attached to it consult its Status to set the replica count.

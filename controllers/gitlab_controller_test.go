@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 
@@ -203,4 +204,90 @@ var _ = Describe("GitLab controller", func() {
 			})
 		})
 	})
+
+	Context("Gitaly", func() {
+		When("Bundled Gitaly is disabled", func() {
+			releaseName := "gitaly-disabled"
+			cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			serviceName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := helm.EmptyValues()
+			values := `
+global:
+  gitaly:
+    enabled: false
+    external:
+    - name: default
+      hostname: gitaly.external.com
+`
+			chartValues.AddFromYAML([]byte(values))
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should not create Gitaly resources and continue the reconcile loop", func() {
+				By("Checking Gitaly Service does not exist")
+				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking Gitaly StatefulSet does not exist")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.Deployment{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking Gitaly ConfigMap does not exist")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
+		When("Bundled Gitaly is enabled", func() {
+			releaseName := "gitaly-enabled"
+			cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			serviceName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := helm.EmptyValues()
+			chartValues.SetValue("global.gitaly.enabled", true)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should create Gitaly resources and continue the reconcile loop", func() {
+				By("Checking Gitaly Service exists")
+				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Gitaly StatefulSet exists")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Gitaly ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+	})
 })
+
+func processSharedSecretsJob(releaseName string) {
+	sharedSecretQuery := appLabels(releaseName, gitlabctl.SharedSecretsComponentName)
+
+	By("Manipulating the Shared secrets Job to succeed")
+	Eventually(updateJobStatusPromise(sharedSecretQuery, true),
+		PollTimeout, PollInterval).Should(Succeed())
+}

@@ -33,7 +33,7 @@ Take note of the ingress class value for later (it typically defaults to `nginx`
 
 ### TLS certificates
 
-We recommend [Cert Manager](https://cert-manauer.io/docs/installation/) to create certificates used to secure the GitLab and Registry URLs. Follow the relevant instructions in the link based on your platform and preferred tooling.
+We recommend [Cert Manager](https://cert-manager.io/docs/installation/) to create certificates used to secure the GitLab and Registry URLs. Follow the relevant instructions in the link based on your platform and preferred tooling.
 
 ### Metrics
 

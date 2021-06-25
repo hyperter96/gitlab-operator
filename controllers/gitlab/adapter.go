@@ -3,6 +3,7 @@ package gitlab
 import (
 	"fmt"
 	"hash/fnv"
+	"strconv"
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
@@ -124,6 +125,8 @@ registry:
   storage:
     secret: $RegistryConnectionSecretName
     key: config
+    redirect:
+      disable: $RegistryMinioRedirect
 
 shared-secrets:
   serviceAccount:
@@ -246,10 +249,8 @@ func (a *populatingAdapter) Values() helm.Values {
 func (a *populatingAdapter) populateValues() {
 	a.reference = fmt.Sprintf("%s.%s", a.resource.Name, a.resource.Namespace)
 
-	configureCertmanager, err := GetBoolValue(a.Values(), "global.ingress.configureCertmanager")
-	if err != nil {
-		a.values.SetValue("global.ingress.configureCertmanager", true)
-	}
+	configureCertmanager, _ := GetBoolValue(a.Values(), "global.ingress.configureCertmanager", true)
+	minioRedirect, _ := GetBoolValue(a.values, "registry.minio.redirect", false)
 
 	globalIngressAnnotations := "{}"
 	if configureCertmanager {
@@ -265,6 +266,7 @@ func (a *populatingAdapter) populateValues() {
 		"$ManagerServiceAccount", settings.ManagerServiceAccount,
 		"$AppConfigConnectionSecretName", settings.AppConfigConnectionSecretName,
 		"$RegistryConnectionSecretName", settings.RegistryConnectionSecretName,
+		"$RegistryMinioRedirect", strconv.FormatBool(!minioRedirect),
 		"$TaskRunnerConnectionSecretName", settings.TaskRunnerConnectionSecretName,
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
 	).Replace(defaultValues)

@@ -362,13 +362,20 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 
 	data := minioSecret.Data
 
+	minioEndpoint := options.ObjectStore.Endpoint
+	minioRedirect, _ := gitlab.GetBoolValue(adapter.Values(), "registry.minio.redirect", false)
+	if minioRedirect {
+		// We can always assume it is HTTPS.
+		minioEndpoint = fmt.Sprintf("https://%s", getMinioURL(adapter))
+	}
+
 	connectionInfo := map[string]map[string]string{
 		"s3": {
 			"bucket":         settings.RegistryBucket,
 			"accesskey":      string(data["accesskey"]),
 			"secretkey":      string(data["secretkey"]),
 			"region":         settings.Region,
-			"regionendpoint": options.ObjectStore.Endpoint,
+			"regionendpoint": minioEndpoint,
 			"v4auth":         "true",
 			"path_style":     "true",
 		},

@@ -20,6 +20,7 @@ spec:
         - /manager
         args:
         - --enable-leader-election
+        - --zap-devel=true
         image: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator:latest
         name: manager
         ports:

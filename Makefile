@@ -78,6 +78,7 @@ suffix_webhook_names: kustomize
 deploy_operator: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator=${IMG}:${TAG}
 	cd config/manager && $(KUSTOMIZE) edit add patch --path patches/deployment_always_pull_image.yaml
+	cd config/manager && $(KUSTOMIZE) edit add patch --path patches/use_development_logger.yaml
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	kubectl create namespace ${NAMESPACE} || true
 	kubectl label namespace ${NAMESPACE} control-plane=controller-manager || true

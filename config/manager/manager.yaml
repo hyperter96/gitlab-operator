@@ -19,8 +19,8 @@ spec:
       - command:
         - /manager
         args:
+        - --metrics-addr=127.0.0.1:8080
         - --enable-leader-election
-        - --zap-devel=true
         image: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator:latest
         name: manager
         ports:

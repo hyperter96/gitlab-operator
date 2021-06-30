@@ -54,14 +54,6 @@ func getMinioURL(adapter gitlab.CustomResourceAdapter) string {
 	return fmt.Sprintf("minio.%s", domain)
 }
 
-func domainNameOnly(url string) string {
-	if strings.Contains(url, "://") {
-		return strings.Split(url, "://")[1]
-	}
-
-	return url
-}
-
 func getName(cr, component string) string {
 	return strings.Join([]string{cr, component}, "-")
 }

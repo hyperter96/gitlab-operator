@@ -66,13 +66,21 @@ func init() {
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+
+	flag.StringVar(&metricsAddr, "metrics-addr", ":8080",
+		"The address the metric endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
+		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+
+	// Add the zap logger flag set to the CLI.
+	opts := zap.Options{}
+	opts.BindFlags(flag.CommandLine)
+
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+	logger := zap.New(zap.UseFlagOptions(&opts))
+
+	ctrl.SetLogger(logger)
 
 	operatorScope := "namespace"
 	watchedNamespace, err := getWatchedNamespace()

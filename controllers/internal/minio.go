@@ -229,11 +229,7 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 		"nginx.ingress.kubernetes.io/proxy-request-buffering": "off",
 	}
 
-	var configureCertmanager bool
-	configureCertmanager, err = gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager")
-	if err != nil {
-		configureCertmanager = true
-	}
+	configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true)
 
 	// TODO: Instead of manually redefining these CertManager annotations that are specified in
 	// controllers/gitlab/adapter.go, get the global ingress annotations from the values and inject

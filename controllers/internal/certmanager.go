@@ -19,13 +19,7 @@ const (
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource
 func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.IssuerConfig {
 
-	var configureCertmanager bool
-	configureCertmanager, err := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager")
-	if err != nil {
-		configureCertmanager = true
-	}
-
-	if configureCertmanager {
+	if configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true); configureCertmanager {
 		ingressClass := specIngressClass
 
 		email, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.email")

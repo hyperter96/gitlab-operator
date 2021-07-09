@@ -55,9 +55,9 @@ changes in functionality are reflected appropriately in the Operator logic.
 
 ## Dependency on other external components
 
-The Helm charts include charts for `cert-manager` and `nginx-ingress`.
-In contrast, the Operator does not deploy these components and therefore
-requires them to be installed separately.
+The Helm charts include a chart for `cert-manager`.
+In contrast, the Operator does not deploy this component and therefore
+requires it to be installed separately.
 
 This keeps the codebase focused on GitLab functionality, and ensures that
-the Operator is not tied to specific certificates or ingress managers.
+the Operator is not tied to specific certificate managers.

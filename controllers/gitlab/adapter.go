@@ -198,6 +198,15 @@ postgresql:
   securityContext:
     runAsUser: $LocalUser
     fsGroup: $LocalUser
+
+nginx-ingress:
+  rbac:
+    create: false
+  serviceAccount:
+    name: $NGINXServiceAccount
+  defaultBackend:
+    serviceAccount:
+      name: $AppServiceAccount
 `
 
 // NewCustomResourceAdapter returns a new adapter for the provided GitLab instance.
@@ -269,6 +278,7 @@ func (a *populatingAdapter) populateValues() {
 		"$RegistryMinioRedirect", strconv.FormatBool(!minioRedirect),
 		"$TaskRunnerConnectionSecretName", settings.TaskRunnerConnectionSecretName,
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
+		"$NGINXServiceAccount", settings.NGINXServiceAccount,
 	).Replace(defaultValues)
 
 	a.values.AddFromYAML([]byte(valuesToUse))

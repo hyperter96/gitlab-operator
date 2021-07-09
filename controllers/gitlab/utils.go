@@ -37,6 +37,9 @@ const (
 
 	// PostgresComponentName is the common name of PostgreSQL.
 	PostgresComponentName = "postgresql"
+
+	// NGINXComponentName is the common name of NGINX Ingress.
+	NGINXComponentName = "nginx-ingress"
 )
 
 func updateCommonLabels(releaseName, componentName string, labels map[string]string) {

@@ -206,6 +206,40 @@ var _ = Describe("GitLab controller", func() {
 	})
 
 	Context("Gitaly", func() {
+		When("Bundled Gitaly is enabled", func() {
+			releaseName := "gitaly-enabled"
+			cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			serviceName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := helm.EmptyValues()
+			chartValues.SetValue("global.gitaly.enabled", true)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should create Gitaly resources and continue the reconcile loop", func() {
+				By("Checking Gitaly Service exists")
+				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Gitaly StatefulSet exists")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Gitaly ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
 		When("Bundled Gitaly is disabled", func() {
 			releaseName := "gitaly-disabled"
 			cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
@@ -235,7 +269,7 @@ global:
 					PollTimeout, PollInterval).ShouldNot(Succeed())
 
 				By("Checking Gitaly StatefulSet does not exist")
-				Eventually(getObjectPromise(statefulSetName, &appsv1.Deployment{}),
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
 					PollTimeout, PollInterval).ShouldNot(Succeed())
 
 				By("Checking Gitaly ConfigMap does not exist")
@@ -247,33 +281,76 @@ global:
 					PollTimeout, PollInterval).Should(Succeed())
 			})
 		})
+	})
 
-		When("Bundled Gitaly is enabled", func() {
-			releaseName := "gitaly-enabled"
-			cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
-			serviceName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
-			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
+	Context("Bundled NGINX with SSH support", func() {
+		When("Bundled NGINX is disabled", func() {
+			releaseName := "nginx-disabled"
+			tcpCfgMapName := fmt.Sprintf("%s-%s-tcp", releaseName, gitlabctl.NGINXComponentName)
+			controllerServiceName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
+			controllerDeploymentName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
+			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-default-backend", releaseName, gitlabctl.NGINXComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := helm.EmptyValues()
-			chartValues.SetValue("global.gitaly.enabled", true)
+			chartValues.SetValue("nginx-ingress.enabled", false)
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
 				processSharedSecretsJob(releaseName)
 			})
 
-			It("Should create Gitaly resources and continue the reconcile loop", func() {
-				By("Checking Gitaly Service exists")
-				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+			It("Should not create NGINX resources and continue the reconcile loop", func() {
+				By("Checking NGINX Controller Service does not exist")
+				Eventually(getObjectPromise(controllerServiceName, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking NGINX Controller Deployment does not exist")
+				Eventually(getObjectPromise(controllerDeploymentName, &appsv1.Deployment{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking NGINX Default Backend Deployment does not exist")
+				Eventually(getObjectPromise(defaultBackendDeploymentName, &appsv1.Deployment{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking NGINX TCP ConfigMap from GitLab Shell does not exist")
+				Eventually(getObjectPromise(tcpCfgMapName, &corev1.ConfigMap{}),
 					PollTimeout, PollInterval).Should(Succeed())
 
-				By("Checking Gitaly StatefulSet exists")
-				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
+		When("Bundled NGINX is enabled", func() {
+			releaseName := "nginx-enabled"
+			tcpCfgMapName := fmt.Sprintf("%s-%s-tcp", releaseName, gitlabctl.NGINXComponentName)
+			controllerServiceName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
+			controllerDeploymentName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
+			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-default-backend", releaseName, gitlabctl.NGINXComponentName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, helm.EmptyValues())
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should create NGINX resources by default and continue the reconcile loop", func() {
+				By("Checking NGINX Controller Service exists")
+				Eventually(getObjectPromise(controllerServiceName, &corev1.Service{}),
 					PollTimeout, PollInterval).Should(Succeed())
 
-				By("Checking Gitaly ConfigMap exists")
-				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+				By("Checking NGINX Controller Deployment exists")
+				Eventually(getObjectPromise(controllerDeploymentName, &appsv1.Deployment{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking NGINX Default Backend Deployment exists")
+				Eventually(getObjectPromise(defaultBackendDeploymentName, &appsv1.Deployment{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking NGINX TCP ConfigMap from GitLab Shell exists")
+				Eventually(getObjectPromise(tcpCfgMapName, &corev1.ConfigMap{}),
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")

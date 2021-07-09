@@ -113,6 +113,12 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
+	if configureNGINX, _ := gitlabctl.GetBoolValue(adapter.Values(), "nginx-ingress.enabled", true); configureNGINX {
+		if err := r.reconcileNGINX(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	if err := r.reconcileConfigMaps(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -294,6 +300,31 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.
 	}
 
 	return result
+}
+
+func (r *GitLabReconciler) reconcileNGINX(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	// ConfigMaps
+	for _, cm := range gitlabctl.NGINXConfigMaps(adapter) {
+		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+			return err
+		}
+	}
+
+	// Services
+	for _, svc := range gitlabctl.NGINXServices(adapter) {
+		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
+			return err
+		}
+	}
+
+	// Deployments
+	for _, dep := range gitlabctl.NGINXDeployments(adapter) {
+		if _, err := r.createOrPatch(ctx, dep, adapter); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 //	Reconciler for all ConfigMaps come below

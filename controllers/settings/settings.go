@@ -21,6 +21,11 @@ var (
 	// variable to change it.
 	AppServiceAccount = "gitlab-app"
 
+	// NGINXServiceAccount is the name of the ServiceAccount that is used by NGINX.
+	// The default value is "gitlab-nginx-ingress". Use NGINX_SERVICE_ACCOUNT environment
+	// variable to change it.
+	NGINXServiceAccount = "gitlab-nginx-ingress"
+
 	// HealthProbeBindAddress returns the address for hosting health probes.
 	HealthProbeBindAddress = ":6060"
 
@@ -45,6 +50,7 @@ const (
 	envHelmChartsDirectory   = "HELM_CHARTS"
 	envManagerServiceAccount = "GITLAB_MANAGER_SERVICE_ACCOUNT"
 	envAppServiceAccount     = "GITLAB_APP_SERVICE_ACCOUNT"
+	envNGINXServiceAccount   = "NGINX_SERVICE_ACCOUNT"
 )
 
 // Load reads Operator settings from environment variables.
@@ -62,5 +68,10 @@ func Load() {
 	appServiceAccount := os.Getenv(envAppServiceAccount)
 	if appServiceAccount != "" {
 		AppServiceAccount = appServiceAccount
+	}
+
+	nginxServiceAccount := os.Getenv(envNGINXServiceAccount)
+	if nginxServiceAccount != "" {
+		NGINXServiceAccount = nginxServiceAccount
 	}
 }

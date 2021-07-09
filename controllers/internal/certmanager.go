@@ -13,15 +13,12 @@ import (
 const (
 	specCertIssuerEmail  = "admin@example.com"
 	specCertIssuerServer = "https://acme-v02.api.letsencrypt.org/directory"
-	specIngressClass     = "nginx"
 )
 
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource
 func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.IssuerConfig {
 
 	if configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true); configureCertmanager {
-		ingressClass := specIngressClass
-
 		email, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.email")
 		if err != nil || email == "" {
 			email = specCertIssuerEmail
@@ -30,6 +27,11 @@ func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.I
 		server, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.server")
 		if err != nil || server == "" {
 			server = specCertIssuerServer
+		}
+
+		ingressClass, err := gitlab.GetStringValue(adapter.Values(), "global.ingress.class")
+		if err != nil || server == "" {
+			ingressClass = fmt.Sprintf("%s-nginx", adapter.ReleaseName())
 		}
 
 		return certmanagerv1alpha2.IssuerConfig{

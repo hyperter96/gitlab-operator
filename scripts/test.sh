@@ -43,14 +43,6 @@ install_required_operators() {
   echo 'Installing required operators'  # See https://www.itix.fr/blog/install-operator-openshift-cli/
   make install_required_operators
 
-  # nginx-ingress
-  wait_until_exists "crd/nginxingresscontrollers.k8s.nginx.org"
-  kubectl wait --for=condition=Established crd/nginxingresscontrollers.k8s.nginx.org
-  wait_until_exists "deployment/nginx-ingress-operator" "default"
-  kubectl wait --for=condition=Available -n default deployment/nginx-ingress-operator
-  wait_until_exists "deployment/nginx-ingress-controller" "default"
-  kubectl wait --for=condition=Available -n default deployment/nginx-ingress-controller
-
   # cert-manager
   wait_until_exists "crd/certmanagers.operator.cert-manager.io"
   kubectl wait --for=condition=Established crd/certmanagers.operator.cert-manager.io

@@ -30,10 +30,13 @@ func ShellConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), GitLabShellComponentName))
 	sshdCfgMap := template.Query().ConfigMapByName(
 		fmt.Sprintf("%s-%s-sshd", adapter.ReleaseName(), GitLabShellComponentName))
+	tcpCfgMap := template.Query().ConfigMapByName(
+		fmt.Sprintf("%s-nginx-ingress-tcp", adapter.ReleaseName()))
 
 	result := []*corev1.ConfigMap{
 		shellCfgMap,
 		sshdCfgMap,
+		tcpCfgMap,
 	}
 
 	return result

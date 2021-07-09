@@ -27,9 +27,11 @@ To create an OpenShift cluster, see the [OpenShift cluster setup docs](openshift
 
 An ingress controller is required to provide external access to the application and secure communication between components.
 
-We recommend [NGINX Ingress](https://docs.nginx.com/nginx-ingress-controller/installation/) by NGINX Inc. to deploy an Ingress Controller. Follow the relevant instructions in the link based on your platform and preferred tooling.
+The GitLab Operator will deploy our [forked NGINX chart from the GitLab Helm Chart](https://docs.gitlab.com/charts/charts/nginx/) by default.
 
-Take note of the ingress class value for later (it typically defaults to `nginx`).
+If you prefer to use an external ingress controller, we recommend [NGINX Ingress](https://kubernetes.github.io/ingress-nginx/deploy/) by the Kubernetes community to deploy an Ingress Controller. Follow the relevant instructions in the link based on your platform and preferred tooling. Take note of the ingress class value for later (it typically defaults to `nginx`).
+
+When configuring the GitLab CR, be sure to set `nginx-ingress.enabled=false` to disable the NGINX objects from the GitLab Helm Chart.
 
 ### TLS certificates
 
@@ -105,7 +107,6 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
            hosts:
              domain: example.com # use a real domain here
            ingress:
-             class: nginx # ensure this matches the ingress class defined within the NGINX ingress controller
              configureCertmanager: true
          certmanager-issuer:
            email: youremail@example.com # use your real email address here

@@ -12,6 +12,7 @@ spec:
           domain: DOMAIN
           hostSuffix: HOSTSUFFIX
         ingress:
+          # Use the CI's NGINX ingress controller
           class: nginx
           tls:
             secretName: TLSSECRETNAME
@@ -21,3 +22,6 @@ spec:
         gitaly:
           metrics:
             enabled: false
+      # Disable the bundled NGINX since we're using CI's NGINX ingress controller
+      nginx-ingress:
+        enabled: false

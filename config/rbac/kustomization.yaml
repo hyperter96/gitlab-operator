@@ -15,6 +15,13 @@ resources:
 - custom/gitlab_role.yaml
 - custom/gitlab_service_account.yaml
 - custom/manager_service_account.yaml
+# Build NGINX RBAC SCC, service account, role, and rolebindings
+# TODO: only create the SCC objects if target platform is OpenShift.
+# https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/187
+- nginx_scc.yaml
+- nginx_controller_service_account.yaml
+- nginx_controller_role.yaml
+- nginx_controller_role_binding.yaml
 
 configurations:
 - kustomizeconfig.yaml

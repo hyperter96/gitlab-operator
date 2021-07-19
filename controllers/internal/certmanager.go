@@ -30,7 +30,7 @@ func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.I
 		}
 
 		ingressClass, err := gitlab.GetStringValue(adapter.Values(), "global.ingress.class")
-		if err != nil || server == "" {
+		if err != nil || ingressClass == "" {
 			ingressClass = fmt.Sprintf("%s-nginx", adapter.ReleaseName())
 		}
 

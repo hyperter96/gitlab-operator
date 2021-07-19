@@ -6,6 +6,9 @@
 # GitLab chart. These charts are then baked into the operator
 # container image when the Dockerfile is processed.
 
+HELM="bin/helm"
+GITLAB_CHART="gitlab/gitlab"
+
 scripts_dir="$(dirname "$0")"
 . "${scripts_dir}/add_gitlab_repo.sh"
 
@@ -15,8 +18,3 @@ for version in $(cat CHART_VERSIONS); do
     echo "Fetching ${GITLAB_CHART}-${version}"
     $HELM fetch "${GITLAB_CHART}" --version "${version}" --destination ./charts/
 done
-
-# Clean up helm binary. Not needed any longer
-if [ $HELM != "helm" ]; then
-  rm $HELM
-fi

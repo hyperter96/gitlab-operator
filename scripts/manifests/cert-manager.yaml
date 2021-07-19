@@ -1,0 +1,50 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitlab-dns-credentials
+  namespace: default
+type: Opaque
+data:
+  credentials.json: 'GOOGLE_CREDENTIALS'
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: gcloud-dns01-wildcard
+  namespace: default
+spec:
+  acme:
+    email: jplum@gitlab.com
+    preferredChain: ""
+    privateKeySecretRef:
+      name: gcloud-dns01-wildcard-issuer
+    server: https://acme-v02.api.letsencrypt.org/directory
+    solvers:
+    - dns01:
+        cloudDNS:
+          project: GCP_PROJECT_ID
+          serviceAccountSecretRef:
+            key: credentials.json
+            name: gitlab-dns-credentials
+      selector:
+        dnsNames:
+        - apps.CLUSTER_NAME.BASE_DOMAIN
+        - '*.apps.CLUSTER_NAME.BASE_DOMAIN'
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-gitlab-ci
+  namespace: default
+spec:
+  commonName: apps.CLUSTER_NAME.BASE_DOMAIN
+  dnsNames:
+  - apps.CLUSTER_NAME.BASE_DOMAIN
+  - '*.apps.CLUSTER_NAME.BASE_DOMAIN'
+  issuerRef:
+    kind: ClusterIssuer
+    name: gcloud-dns01-wildcard
+  secretName: gitlab-ci-tls

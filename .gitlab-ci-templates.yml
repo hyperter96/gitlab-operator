@@ -1,0 +1,46 @@
+.cache:
+  variables:
+    GOPATH: "${CI_PROJECT_DIR}/.go"
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+      - .go/pkg/mod/
+    when: 'always'
+
+.functional_tests:
+  extends: .cache
+  script:
+  - CLEANUP="no" ./scripts/test.sh
+  - echo "ROOT_PASSWORD=$(kubectl -n $NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> functional_tests.env
+  - echo "GITLAB_VERSION=$(kubectl -n $NAMESPACE exec -ti $(kubectl -n $NAMESPACE get pods | grep task-runner | awk '{print $1}') cat /srv/gitlab/VERSION)" >> functional_tests.env
+  artifacts:
+    reports:
+      dotenv: functional_tests.env
+
+.qa:
+  image: registry.gitlab.com/gitlab-org/gitlab-omnibus-builder/ruby_docker
+  stage: qa
+  services:
+  - docker:dind
+  variables:
+    QA_ARTIFACTS_DIR: $CI_PROJECT_DIR
+    EE_LICENSE: $GITLAB_QA_EE_LICENSE
+    QA_OPTIONS: "--tag smoke"
+    QA_EXCLUDE_SPECS: "--exclude-pattern '**/*over_ssh_spec.rb'" # Remove when https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/58 closed
+  script:
+    - echo $QA_ENVIRONMENT_URL $GITLAB_VERSION
+    - gem install gitlab-qa
+    - SIGNUP_DISABLED=true QA_DEBUG=true GITLAB_USERNAME=root GITLAB_PASSWORD=$ROOT_PASSWORD GITLAB_ADMIN_USERNAME=root GITLAB_ADMIN_PASSWORD=$ROOT_PASSWORD gitlab-qa Test::Instance::Any EE:$GITLAB_VERSION $QA_ENVIRONMENT_URL -- $QA_OPTIONS $QA_EXCLUDE_SPECS
+  artifacts:
+    when: on_failure
+    expire_in: 7d
+    paths:
+    - ./gitlab-qa-run-*
+  allow_failure: true
+
+.functional_tests_cleanup:
+  variables:
+    DEBUG: "yes"
+    CLEANUP: "only"
+  script: ./scripts/test.sh
+  when: always

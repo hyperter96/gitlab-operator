@@ -1,5 +1,13 @@
 # Generated manager Golang binary
 bin/manager
+# Downloaded openshift binaries
+bin/oc-*
+bin/openshift-install-*
+bin/helm
+# Temporary directory for unpacking cluster binaries
+tmp-cluster/
+
+.DS_Store
 # Created by https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 ### Emacs ###
 # -*- mode: gitignore; -*-

@@ -8,13 +8,11 @@ Currently, the Operator deploys an in-cluster instance of MinIO. This instance m
 
 Related: [#137](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/137)
 
-### Multiple instances of Webservice, Sidekiq, or Gitaly are not supported
+### Multiple instances of Webservice not supported on OpenShift
 
-In the GitLab Helm chart, multiple instances of Webservice, Sidekiq, and Gitaly are supported.
+Multiple Webservice instances are problematic on OpenShift. The Ingresses report "All hosts are taken by other resources" when using NGINX Ingress Operator.
 
-The Operator only expects one instance of these components at this time.
-
-Related: [#128](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/128)
+Related: [#160](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/160)
 
 ### Certain components not supported
 

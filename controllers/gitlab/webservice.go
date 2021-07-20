@@ -6,14 +6,16 @@ import (
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 )
 
-// WebserviceDeployment returns the Deployment for the Webservice component.
-func WebserviceDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+// WebserviceDeployments returns the Deployments for the Webservice component.
+func WebserviceDeployments(adapter CustomResourceAdapter) []*appsv1.Deployment {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().DeploymentByComponent(WebserviceComponentName)
+	result := template.Query().DeploymentsByLabels(map[string]string{
+		"app": WebserviceComponentName,
+	})
 
 	return result
 }
@@ -32,26 +34,30 @@ func WebserviceConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 	return result
 }
 
-// WebserviceService returns the Service for the Webservice component.
-func WebserviceService(adapter CustomResourceAdapter) *corev1.Service {
+// WebserviceServices returns the Services for the Webservice component.
+func WebserviceServices(adapter CustomResourceAdapter) []*corev1.Service {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().ServiceByComponent(WebserviceComponentName)
+	result := template.Query().ServicesByLabels(map[string]string{
+		"app": WebserviceComponentName,
+	})
 
 	return result
 }
 
-// WebserviceIngress returns the Ingress for the Webservice component.
-func WebserviceIngress(adapter CustomResourceAdapter) *extensionsv1beta1.Ingress {
+// WebserviceIngresses returns the Ingresses for the Webservice component.
+func WebserviceIngresses(adapter CustomResourceAdapter) []*extensionsv1beta1.Ingress {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().IngressByComponent(WebserviceComponentName)
+	result := template.Query().IngressesByLabels(map[string]string{
+		"app": WebserviceComponentName,
+	})
 
 	return result
 }

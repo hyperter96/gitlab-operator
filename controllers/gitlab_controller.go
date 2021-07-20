@@ -157,11 +157,11 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if err := r.reconcileDeployments(ctx, adapter); err != nil {
+	if err := r.setupAutoscaling(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.setupAutoscaling(ctx, adapter); err != nil {
+	if err := r.reconcileDeployments(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -429,7 +429,7 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabc
 
 func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 
-	if err := r.reconcileWebserviceDeployment(ctx, adapter); err != nil {
+	if err := r.reconcileWebserviceDeployments(ctx, adapter); err != nil {
 		return err
 	}
 
@@ -437,7 +437,7 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 		return err
 	}
 
-	if err := r.reconcileSidekiqDeployment(ctx, adapter); err != nil {
+	if err := r.reconcileSidekiqDeployments(ctx, adapter); err != nil {
 		return err
 	}
 
@@ -720,19 +720,19 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 
 	shell := gitlabctl.ShellService(adapter)
 	exporter := gitlabctl.ExporterService(adapter)
-	webservice := gitlabctl.WebserviceService(adapter)
+	webservice := gitlabctl.WebserviceServices(adapter)
 	redis := gitlabctl.RedisServices(adapter)
 	postgres := gitlabctl.PostgresServices(adapter)
 	registry := gitlabctl.RegistryService(adapter)
 
 	services = append(services,
 		registry,
-		webservice,
 		shell,
 		exporter,
 	)
 	services = append(services, redis...)
 	services = append(services, postgres...)
+	services = append(services, webservice...)
 
 	for _, svc := range services {
 		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
@@ -752,17 +752,27 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 	return err
 }
 
-func (r *GitLabReconciler) reconcileWebserviceDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	webservice := gitlabctl.WebserviceDeployment(adapter)
+func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
 
-	if err := r.setDeploymentReplica(ctx, webservice); err != nil {
-		return err
+	webservices := gitlabctl.WebserviceDeployments(adapter)
+
+	if internal.IsOpenshift() && len(webservices) > 1 {
+		logger.V(2).Info("Multiple Webservice Ingresses detected, which is not supported on OpenShift when using NGINX Ingress Operator. See https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/160")
 	}
 
-	r.annotateSecretsChecksum(ctx, adapter, &webservice.Spec.Template)
-	_, err := r.createOrPatch(ctx, webservice, adapter)
+	for _, webservice := range webservices {
+		if err := r.setDeploymentReplica(ctx, webservice); err != nil {
+			return err
+		}
 
-	return err
+		r.annotateSecretsChecksum(ctx, adapter, &webservice.Spec.Template)
+		if _, err := r.createOrPatch(ctx, webservice, adapter); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
@@ -791,17 +801,21 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 	return err
 }
 
-func (r *GitLabReconciler) reconcileSidekiqDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	sidekiq := gitlabctl.SidekiqDeployment(adapter)
+func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	sidekiqs := gitlabctl.SidekiqDeployments(adapter)
 
-	if err := r.setDeploymentReplica(ctx, sidekiq); err != nil {
-		return err
+	for _, sidekiq := range sidekiqs {
+		if err := r.setDeploymentReplica(ctx, sidekiq); err != nil {
+			return err
+		}
+
+		r.annotateSecretsChecksum(ctx, adapter, &sidekiq.Spec.Template)
+		if _, err := r.createOrPatch(ctx, sidekiq, adapter); err != nil {
+			return err
+		}
 	}
 
-	r.annotateSecretsChecksum(ctx, adapter, &sidekiq.Spec.Template)
-	_, err := r.createOrPatch(ctx, sidekiq, adapter)
-
-	return err
+	return nil
 }
 
 func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
@@ -825,13 +839,11 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabc
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
 
 	var ingresses []*extensionsv1beta1.Ingress
-	gitlab := gitlabctl.WebserviceIngress(adapter)
+	gitlab := gitlabctl.WebserviceIngresses(adapter)
 	registry := gitlabctl.RegistryIngress(adapter)
 
-	ingresses = append(ingresses,
-		gitlab,
-		registry,
-	)
+	ingresses = append(ingresses, registry)
+	ingresses = append(ingresses, gitlab...)
 
 	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
 		ingresses = append(ingresses, internal.MinioIngress(adapter))
@@ -969,23 +981,18 @@ func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitl
 
 // If a Deployment has an HPA attached to it consult its Status to set the replica count.
 func (r *GitLabReconciler) setDeploymentReplica(ctx context.Context, deployment *appsv1.Deployment) error {
-	appLabel, ok := deployment.Labels["app"]
-	if !ok {
-		return nil
-	}
-	matchingLabels := client.MatchingLabels{
-		"app": appLabel,
-	}
 
-	hpaList := &autoscalingv1.HorizontalPodAutoscalerList{}
-	if err := r.List(ctx, hpaList, matchingLabels); err != nil {
+	// Get the Deployment's HPA so we can check the desired number of replicas.
+	// Finds the Deployment's HPA using the Deployment's name (since they are defined the same way in the Helm chart).
+	hpa := &autoscalingv1.HorizontalPodAutoscaler{}
+	if err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, hpa); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
-	if len(hpaList.Items) == 0 {
-		return nil
-	}
 
-	replicas := hpaList.Items[0].Status.DesiredReplicas
+	replicas := hpa.Status.DesiredReplicas
 	if replicas == 0 {
 		return nil
 	}
@@ -997,6 +1004,7 @@ func (r *GitLabReconciler) setDeploymentReplica(ctx context.Context, deployment 
 				Name:      deployment.Name,
 			},
 			"replicas", replicas)
+
 		deployment.Spec.Replicas = &replicas
 	}
 

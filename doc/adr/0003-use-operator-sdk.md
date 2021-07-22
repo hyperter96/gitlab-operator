@@ -1,4 +1,4 @@
-# 3. use operator-sdk
+# 3. Use operator-sdk
 
 Date: 2021-07-09
 

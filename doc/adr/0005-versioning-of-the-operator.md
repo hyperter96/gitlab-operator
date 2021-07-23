@@ -22,7 +22,6 @@ several hurdles to overcome and achieve matching the version numbers.
 - Decide on the level of namespace scoping that the operator will be capable of.
   Issue: https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/31
 
-
 ## Decision
 
 The version of the operator shall follow semantic versioning during development

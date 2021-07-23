@@ -19,7 +19,6 @@ field from the GitLab CR to create a template similar to the output of `helm tem
 The Operator will query this template for objects to deploy based on the configuration provided in the
 CR values.
 
-
 ## Consequences
 
 This means the Operator is effectively a wrapper around the GitLab Chart,

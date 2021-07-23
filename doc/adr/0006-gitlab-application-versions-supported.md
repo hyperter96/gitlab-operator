@@ -23,8 +23,6 @@ The Operator specifies the supported versions of the chart in the
 
 The goal is to support the three latest minor versions of the
 [GitLab Chart](https://gitlab.com/gitlab-org/charts/gitlab).
-
-
 ## Consequences
 
 When new versions of the GitLab Chart are released, the CHART_VERSIONS file

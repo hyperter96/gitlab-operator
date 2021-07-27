@@ -20,4 +20,3 @@ requires it to be installed separately.
 
 This keeps the codebase focused on GitLab functionality, and ensures that
 the Operator is not tied to specific certificate managers.
-

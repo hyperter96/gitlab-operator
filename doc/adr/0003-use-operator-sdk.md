@@ -1,6 +1,6 @@
 # 3. Use operator-sdk
 
-Date: 2021-07-09
+Date: 2020-06-11
 
 ## Status
 

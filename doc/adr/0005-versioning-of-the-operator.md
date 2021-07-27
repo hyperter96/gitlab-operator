@@ -1,6 +1,6 @@
 # 5. Versioning of the operator
 
-Date: 2021-07-09
+Date: 2020-11-03
 
 ## Status
 

@@ -1,6 +1,6 @@
 # 7. Dependency on other external components
 
-Date: 2021-07-09
+Date: 2020-12-01
 
 ## Status
 

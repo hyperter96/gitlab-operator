@@ -338,20 +338,23 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	migration := gitlabctl.MigrationsConfigMap(adapter)
 	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
 	redis := gitlabctl.RedisConfigMaps(adapter)
-	postgres := gitlabctl.PostgresConfigMap(adapter)
 	registry := gitlabctl.RegistryConfigMap(adapter)
 
 	configmaps = append(configmaps,
 		registry,
 		taskRunner,
 		migration,
-		postgres,
 	)
 	configmaps = append(configmaps, shell...)
 	configmaps = append(configmaps, exporter...)
 	configmaps = append(configmaps, webservice...)
 	configmaps = append(configmaps, sidekiq...)
 	configmaps = append(configmaps, redis...)
+
+	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
+		postgres := gitlabctl.PostgresConfigMap(adapter)
+		configmaps = append(configmaps, postgres)
+	}
 
 	for _, cm := range configmaps {
 		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
@@ -383,8 +386,6 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 
 	gitlab := internal.ExporterServiceMonitor(adapter.Resource())
 
-	postgres := internal.PostgresqlServiceMonitor(adapter.Resource())
-
 	redis := internal.RedisServiceMonitor(adapter.Resource())
 
 	workhorse := internal.WebserviceServiceMonitor(adapter.Resource())
@@ -392,10 +393,14 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	servicemonitors = append(servicemonitors,
 		gitlab,
 		gitaly,
-		postgres,
 		redis,
 		workhorse,
 	)
+
+	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
+		postgres := internal.PostgresqlServiceMonitor(adapter.Resource())
+		servicemonitors = append(servicemonitors, postgres)
+	}
 
 	for _, sm := range servicemonitors {
 		if _, err := r.createOrPatch(ctx, sm, adapter); err != nil {
@@ -461,9 +466,27 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gi
 	var statefulsets []*appsv1.StatefulSet
 
 	redis := gitlabctl.RedisStatefulSet(adapter)
-	postgres := gitlabctl.PostgresStatefulSet(adapter)
+	statefulsets = append(statefulsets, redis)
 
-	statefulsets = append(statefulsets, postgres, redis)
+	configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true)
+	if configurePostgreSQL {
+		postgres := gitlabctl.PostgresStatefulSet(adapter)
+		statefulsets = append(statefulsets, postgres)
+	} else {
+		// Ensure that the PostgreSQL password Secret was created.
+		pgSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.psql.password.secret")
+		if err := r.ensureSecret(ctx, adapter, pgSecretName); err != nil {
+			return err
+		}
+
+		// If set, ensure that the PostgreSQL SSL Secret was created.
+		pgSecretNameSSL, _ := gitlabctl.GetStringValue(adapter.Values(), "global.psql.ssl.secret", "unset")
+		if pgSecretNameSSL != "unset" {
+			if err := r.ensureSecret(ctx, adapter, pgSecretNameSSL); err != nil {
+				return err
+			}
+		}
+	}
 
 	for _, statefulset := range statefulsets {
 		r.annotateSecretsChecksum(ctx, adapter, &statefulset.Spec.Template)
@@ -722,7 +745,6 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 	exporter := gitlabctl.ExporterService(adapter)
 	webservice := gitlabctl.WebserviceServices(adapter)
 	redis := gitlabctl.RedisServices(adapter)
-	postgres := gitlabctl.PostgresServices(adapter)
 	registry := gitlabctl.RegistryService(adapter)
 
 	services = append(services,
@@ -731,8 +753,12 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 		exporter,
 	)
 	services = append(services, redis...)
-	services = append(services, postgres...)
 	services = append(services, webservice...)
+
+	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
+		postgres := gitlabctl.PostgresServices(adapter)
+		services = append(services, postgres...)
+	}
 
 	for _, svc := range services {
 		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
@@ -962,8 +988,10 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 }
 
 func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) {
-		return false
+	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
+		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) {
+			return false
+		}
 	}
 
 	if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter) {
@@ -1031,6 +1059,21 @@ func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter 
 			template.ObjectMeta.Annotations = map[string]string{}
 		}
 		template.ObjectMeta.Annotations[fmt.Sprintf("checksum/secret-%s", secretName)] = hash
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) ensureSecret(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, secretName string) error {
+	secret := &corev1.Secret{}
+	lookupKey := types.NamespacedName{Name: secretName, Namespace: adapter.Namespace()}
+	err := r.Get(ctx, lookupKey, secret)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return fmt.Errorf("Secret '%s' not found", lookupKey)
+		}
+
+		return err
 	}
 
 	return nil

@@ -283,6 +283,96 @@ global:
 		})
 	})
 
+	Context("PostgreSQL", func() {
+		When("Bundled PostgreSQL is disabled", func() {
+			releaseName := "postgresql-disabled"
+			cfgMapName := fmt.Sprintf("%s-%s-init-db", releaseName, gitlabctl.PostgresComponentName)
+			metricsServiceName := fmt.Sprintf("%s-%s-metrics", releaseName, gitlabctl.PostgresComponentName)
+			headlessServiceName := fmt.Sprintf("%s-%s-headless", releaseName, gitlabctl.PostgresComponentName)
+			serviceName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
+			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := helm.EmptyValues()
+			chartValues.SetValue("postgresql.install", false)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should not create PostgreSQL resources and continue the reconcile loop", func() {
+				By("Checking PostgreSQL Metrics Service does not exist")
+				Eventually(getObjectPromise(metricsServiceName, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking PostgreSQL Headless Service does not exist")
+				Eventually(getObjectPromise(headlessServiceName, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking PostgreSQL Service does not exist")
+				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking PostgreSQL StatefulSet does not exist")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking PostgreSQL ConfigMap does not exist")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
+		When("Bundled PostgreSQL is enabled", func() {
+			releaseName := "postgresql-enabled"
+			cfgMapName := fmt.Sprintf("%s-%s-init-db", releaseName, gitlabctl.PostgresComponentName)
+			metricsServiceName := fmt.Sprintf("%s-%s-metrics", releaseName, gitlabctl.PostgresComponentName)
+			headlessServiceName := fmt.Sprintf("%s-%s-headless", releaseName, gitlabctl.PostgresComponentName)
+			serviceName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
+			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := helm.EmptyValues()
+			chartValues.SetValue("postgresql.install", true)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should create PostgreSQL resources and continue the reconcile loop", func() {
+				By("Checking PostgreSQL Metrics Service exists")
+				Eventually(getObjectPromise(metricsServiceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking PostgreSQL Headless Service exists")
+				Eventually(getObjectPromise(headlessServiceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking PostgreSQL Service exists")
+				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking PostgreSQL StatefulSet exists")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking PostgreSQL ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+	})
+
 	Context("Bundled NGINX with SSH support", func() {
 		When("Bundled NGINX is disabled", func() {
 			releaseName := "nginx-disabled"

@@ -13,7 +13,9 @@ Operator depends on external components. We need to define how are we going to a
 ## Decision
 
 The Helm charts include a chart for `cert-manager`.
-In contrast, the Operator does not deploy this component and therefore requires it to be installed separately following advise from [best practices](https://sdk.operatorframework.io/docs/best-practices/best-practices/#development)
+In contrast, the Operator does not deploy this component and therefore requires it to be installed separately following advise from [best practices](https://sdk.operatorframework.io/docs/best-practices/best-practices/#development):
+
+> An Operator should manage a single type of application, essentially following the UNIX principle: do one thing and do it well.
 
 ## Consequences
 

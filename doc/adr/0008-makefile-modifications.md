@@ -1,6 +1,6 @@
 # 8. Makefile modifications
 
-Date: 2021-07-29
+Date: 2021-07-27
 
 ## Status
 
@@ -14,6 +14,8 @@ behaviour of existing `Makefile`. One of the options could be maintenance of sep
 ## Decision
 
 It has been decided to maintain single `Makefile` with all of the original scaffolding and our changes for the time being for simplicity. 
+
+See also discussion in [merge request 181](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/merge_requests/181#note_635709947)
 
 ## Consequences
 

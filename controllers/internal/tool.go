@@ -121,7 +121,7 @@ func KubernetesConfig() KubeConfig {
 func (k KubeConfig) NewKubernetesClient() (*kubernetes.Clientset, error) {
 	conf := k.Config
 	if err := k.Error; err != nil {
-		fmt.Printf("Error getting cluster config: %v", err)
+		panic(fmt.Sprintf("Error getting cluster config: %v", err))
 	}
 
 	return kubernetes.NewForConfig(conf)

@@ -62,13 +62,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
     $ cd gitlab-operator
     ```
 
-2. Install operator dependencies.
-
-    ```
-    $ make install_required_operators
-    ```
-
-3. Deploy the CRDs (Custom Resource Definitions) for the resources managed by the GitLab Operator.
+2. Deploy the CRDs (Custom Resource Definitions) for the resources managed by the GitLab Operator.
 
     ```
     $ make install_crds
@@ -86,7 +80,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
     export GOPROXY="https://proxy.golang.org/"
     ```
 
-4. Deploy the GitLab Operator.
+3. Deploy the GitLab Operator.
 
     ```
     $ make deploy_operator
@@ -94,7 +88,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
-5. Create a GitLab custom resource (CR).
+4. Create a GitLab custom resource (CR).
 
    Create a new file named something like `mygitlab.yaml`.
 
@@ -120,7 +114,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 
    For more details on configuration options to use under `spec.chart.values`, see our [GitLab Helm Chart documentation](https://docs.gitlab.com/charts).
 
-6. Deploy a GitLab instance using your new GitLab CR.
+5. Deploy a GitLab instance using your new GitLab CR.
 
    ```
    $ kubectl -n gitlab-system apply -f mygitlab.yaml

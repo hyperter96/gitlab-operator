@@ -12,6 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
@@ -373,6 +374,204 @@ global:
 		})
 	})
 
+	Context("Redis", func() {
+		When("Bundled Redis is disabled", func() {
+			releaseName := "redis-disabled"
+			cfgMapNameScripts := fmt.Sprintf("%s-scripts", releaseName)
+			cfgMapNameHealth := fmt.Sprintf("%s-health", releaseName)
+			cfgMapName := fmt.Sprintf("%s", releaseName)
+			serviceNameHeadless := fmt.Sprintf("%s-headless", releaseName)
+			serviceNameMetrics := fmt.Sprintf("%s-metrics", releaseName)
+			serviceNameMaster := fmt.Sprintf("%s-master", releaseName)
+			statefulSetName := fmt.Sprintf("%s-master", releaseName)
+			nextCfgMapName := fmt.Sprintf("%s", releaseName)
+
+			chartValues := helm.EmptyValues()
+			values := `
+redis:
+	install: false
+global:
+  redis:
+	  host: redis.example.com
+			`
+			chartValues.AddFromYAML([]byte(values))
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should not create Redis resources and continue the reconcile loop", func() {
+				By("Checking Redis Scripts ConfigMap does not exist")
+				Eventually(getObjectPromise(cfgMapNameScripts, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking Redis Health ConfigMap does not exist")
+				Eventually(getObjectPromise(cfgMapNameHealth, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking Redis ConfigMap does not exist")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking PostgreSQL Headless Service does not exist")
+				Eventually(getObjectPromise(serviceNameHeadless, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking Redis Metrics Service does not exist")
+				Eventually(getObjectPromise(serviceNameMetrics, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking Redis Master Service does not exist")
+				Eventually(getObjectPromise(serviceNameMaster, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking Redis StatefulSet does not exist")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
+		When("Bundled Redis is enabled", func() {
+			releaseName := "redis-enabled"
+			cfgMapNameScripts := fmt.Sprintf("%s-scripts", releaseName)
+			cfgMapNameHealth := fmt.Sprintf("%s-health", releaseName)
+			cfgMapName := fmt.Sprintf("%s", releaseName)
+			serviceNameHeadless := fmt.Sprintf("%s-headless", releaseName)
+			serviceNameMetrics := fmt.Sprintf("%s-metrics", releaseName)
+			serviceNameMaster := fmt.Sprintf("%s-master", releaseName)
+			statefulSetName := fmt.Sprintf("%s-master", releaseName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := helm.EmptyValues()
+			chartValues.SetValue("redis.install", true)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should create Redis resources and continue the reconcile loop", func() {
+				By("Checking Redis Scripts ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapNameScripts, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis Health ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapNameHealth, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis Headless Service exists")
+				Eventually(getObjectPromise(serviceNameHeadless, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis Metrics Service exists")
+				Eventually(getObjectPromise(serviceNameMetrics, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis Master Service exists")
+				Eventually(getObjectPromise(serviceNameMaster, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis StatefulSet exists")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
+		When("External Redis has subqueue with no Secret created", func() {
+			releaseName := "redis-subqueues-no-secret"
+
+			chartValues := helm.EmptyValues()
+			values := `
+redis:
+  install: false
+global:
+  redis:
+    host: redis.example
+    port: 9001
+    password:
+      enabled: true
+      secret: custom-redis-secret
+      key: redis-password
+    cache:
+      host: cache.redis.example
+      password:
+        enabled: true
+        secret: custom-cache-secret
+        key: cache-password
+`
+			chartValues.AddFromYAML([]byte(values))
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should stop when Secret does not exist", func() {
+				By("Confirming no StatefulSets are created due to missing secrets")
+				Eventually(getObjectPromise(fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName), &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+			})
+		})
+
+		When("External Redis has subqueue with Secret created", func() {
+			releaseName := "redis-subqueues-with-secret"
+
+			chartValues := helm.EmptyValues()
+			values := `
+redis:
+  install: false
+global:
+  redis:
+    host: redis.example
+    port: 9001
+    password:
+      enabled: true
+      secret: custom-redis-secret
+      key: redis-password
+    cache:
+      host: cache.redis.example
+      password:
+        enabled: true
+        secret: custom-cache-secret
+        key: cache-password
+`
+			chartValues.AddFromYAML([]byte(values))
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should proceed when Secret does exist", func() {
+				cacheSecret := newSecret("custom-cache-secret", Namespace, "cache-password", "foo")
+				redisSecret := newSecret("custom-redis-secret", Namespace, "redis-password", "foo")
+
+				By("Creating global Redis Secret")
+				Expect(createObject(redisSecret, false)).Should(Succeed())
+
+				By("Creating Cache Redis Secret")
+				Expect(createObject(cacheSecret, false)).Should(Succeed())
+
+				By("Confirming that StatefulSet is created")
+				Eventually(getObjectPromise(fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName), &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+	})
+
 	Context("Bundled NGINX with SSH support", func() {
 		When("Bundled NGINX is disabled", func() {
 			releaseName := "nginx-disabled"
@@ -457,4 +656,16 @@ func processSharedSecretsJob(releaseName string) {
 	By("Manipulating the Shared secrets Job to succeed")
 	Eventually(updateJobStatusPromise(sharedSecretQuery, true),
 		PollTimeout, PollInterval).Should(Succeed())
+}
+
+func newSecret(name, namespace, key, value string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			key: []byte(value),
+		},
+	}
 }

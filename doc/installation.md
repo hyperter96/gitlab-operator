@@ -88,6 +88,9 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
+    Note: by default, the Operator will only watch the namespace where it is deployed. If you would like it to watch at the cluster scope,
+    modify [config/manager/kustomization.yaml](../config/manager/kustomization.yaml) by commenting out the `namesapce_scope.yaml` patch.
+
 4. Create a GitLab custom resource (CR).
 
    Create a new file named something like `mygitlab.yaml`.

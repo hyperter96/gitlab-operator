@@ -17,8 +17,8 @@ limitations under the License.
 package main
 
 import (
-	"errors"
 	"flag"
+	"fmt"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -83,19 +83,21 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	operatorScope := "namespace"
-	watchedNamespace, err := getWatchedNamespace()
+	watchNamespace, err := getWatchNamespace()
 	if err != nil {
 		operatorScope = "cluster"
+		setupLog.Info("unable to get WATCH_NAMESPACE, " +
+			"the manager will watch and manage resources in all namespaces")
 	}
-
 	setupLog.Info("setting operator scope", "scope", operatorScope)
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "852d23b0.gitlab.com",
-		Namespace:              watchedNamespace,
+		Namespace:              watchNamespace,
 		HealthProbeBindAddress: settings.HealthProbeBindAddress,
 		ReadinessEndpointName:  settings.ReadinessEndpointName,
 		LivenessEndpointName:   settings.LivenessEndpointName,
@@ -137,11 +139,16 @@ func main() {
 	}
 }
 
-func getWatchedNamespace() (string, error) {
-	ns, ok := os.LookupEnv("WATCH_NAMESPACE")
-	if !ok {
-		return "", errors.New("WATCH_NAMESPACE env required")
-	}
+// getWatchNamespace returns the Namespace the operator should be watching for changes
+func getWatchNamespace() (string, error) {
+	// WatchNamespaceEnvVar is the constant for env variable WATCH_NAMESPACE
+	// which specifies the Namespace to watch.
+	// An empty value means the operator is running with cluster scope.
+	var watchNamespaceEnvVar = "WATCH_NAMESPACE"
 
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s not set", watchNamespaceEnvVar)
+	}
 	return ns, nil
 }

@@ -6,3 +6,8 @@ images:
 - name: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
   newName: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
   newTag: latest
+patchesStrategicMerge:
+# Ensures that the Operator only watches the namespace
+# in which it is deployed. Comment out this patch to enable
+# cluster-wide scope.
+- patches/namespace_scope.yaml

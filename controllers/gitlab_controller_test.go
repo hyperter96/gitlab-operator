@@ -22,6 +22,8 @@ import (
 
 var _ = Describe("GitLab controller", func() {
 
+	fmt.Println("testing with chart version", getChartVersion())
+
 	BeforeEach(func() {
 		os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "1")
 	})

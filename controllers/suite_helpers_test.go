@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,10 +21,18 @@ import (
 )
 
 var (
-	ctx          = context.Background()
-	chartVersion = gitlab.AvailableChartVersions()[0]
-	emptyValues  = helm.EmptyValues()
+	ctx         = context.Background()
+	emptyValues = helm.EmptyValues()
 )
+
+func getChartVersion() string {
+	version, found := os.LookupEnv("CHART_VERSION")
+	if !found {
+		version = gitlab.AvailableChartVersions()[0]
+	}
+
+	return version
+}
 
 func newGitLab(releaseName string, chartValues helm.Values) *gitlabv1beta1.GitLab {
 	return &gitlabv1beta1.GitLab{
@@ -37,7 +46,7 @@ func newGitLab(releaseName string, chartValues helm.Values) *gitlabv1beta1.GitLa
 		},
 		Spec: gitlabv1beta1.GitLabSpec{
 			Chart: gitlabv1beta1.GitLabChartSpec{
-				Version: chartVersion,
+				Version: getChartVersion(),
 				Values: gitlabv1beta1.ChartValues{
 					Object: chartValues.AsMap(),
 				},

@@ -19,14 +19,11 @@ import (
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	routev1 "github.com/openshift/api/route/v1"
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 var (
-	ChartVersion string
-
 	cfg       *rest.Config
 	k8sClient client.Client
 	testEnv   *envtest.Environment
@@ -49,8 +46,6 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func(done Done) {
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
-
-	ChartVersion = gitlab.AvailableChartVersions()[0]
 
 	By("Bootstrapping test environment")
 	testEnv = &envtest.Environment{

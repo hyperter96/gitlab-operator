@@ -71,6 +71,7 @@ lint_code:
     GITLAB_OPERATOR_ASSETS: "${CI_PROJECT_DIR}/hack/assets"
   before_script:
     - mkdir coverage
+    - export CHART_VERSION=$(sed -n ${VERSION_INDEX}p CHART_VERSIONS)
   rules:
     - <<: *skip_if_release_tag
     - if: '$CI_COMMIT_BRANCH'
@@ -78,10 +79,16 @@ lint_code:
 unit_tests:
   extends: .test_job
   script: /go/bin/ginkgo -skip 'controller' -cover -outputdir=coverage ./...
+  parallel:
+    matrix:
+      - VERSION_INDEX: ["1", "2", "3"]
 
 slow_unit_tests:
   extends: .test_job
   script: /go/bin/ginkgo -focus 'controller' -cover -outputdir=coverage ./...
+  parallel:
+    matrix:
+      - VERSION_INDEX: ["1", "2", "3"]
 
 .docker_build_job:
   extends: .cache

@@ -42,6 +42,11 @@ const (
 	NGINXComponentName = "nginx-ingress"
 )
 
+// RedisSubqueues is the array of possible Redis subqueues.
+func RedisSubqueues() [5]string {
+	return [5]string{"cache", "sharedState", "queues", "actioncable", "traceChunks"}
+}
+
 func updateCommonLabels(releaseName, componentName string, labels map[string]string) {
 	labels["app.kubernetes.io/name"] = releaseName
 	labels["app.kubernetes.io/instance"] = fmt.Sprintf("%s-%s", releaseName, componentName)

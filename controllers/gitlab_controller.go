@@ -337,7 +337,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	webservice := gitlabctl.WebserviceConfigMaps(adapter)
 	migration := gitlabctl.MigrationsConfigMap(adapter)
 	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
-	redis := gitlabctl.RedisConfigMaps(adapter)
 	registry := gitlabctl.RegistryConfigMap(adapter)
 
 	configmaps = append(configmaps,
@@ -349,7 +348,11 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	configmaps = append(configmaps, exporter...)
 	configmaps = append(configmaps, webservice...)
 	configmaps = append(configmaps, sidekiq...)
-	configmaps = append(configmaps, redis...)
+
+	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
+		redis := gitlabctl.RedisConfigMaps(adapter)
+		configmaps = append(configmaps, redis...)
+	}
 
 	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
 		postgres := gitlabctl.PostgresConfigMap(adapter)
@@ -386,16 +389,18 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 
 	gitlab := internal.ExporterServiceMonitor(adapter.Resource())
 
-	redis := internal.RedisServiceMonitor(adapter.Resource())
-
 	workhorse := internal.WebserviceServiceMonitor(adapter.Resource())
 
 	servicemonitors = append(servicemonitors,
 		gitlab,
 		gitaly,
-		redis,
 		workhorse,
 	)
+
+	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
+		redis := internal.RedisServiceMonitor(adapter.Resource())
+		servicemonitors = append(servicemonitors, redis)
+	}
 
 	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
 		postgres := internal.PostgresqlServiceMonitor(adapter.Resource())
@@ -465,11 +470,38 @@ func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gi
 
 	var statefulsets []*appsv1.StatefulSet
 
-	redis := gitlabctl.RedisStatefulSet(adapter)
-	statefulsets = append(statefulsets, redis)
+	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
+		redis := gitlabctl.RedisStatefulSet(adapter)
+		statefulsets = append(statefulsets, redis)
+	} else {
+		defaultRedisSecretName, err := gitlabctl.GetStringValue(adapter.Values(), "global.redis.password.secret")
+		if err != nil || defaultRedisSecretName == "" {
+			defaultRedisSecretName = fmt.Sprintf("%s-%s-secret", adapter.ReleaseName(), gitlabctl.RedisComponentName)
+		}
 
-	configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true)
-	if configurePostgreSQL {
+		// If external Redis global password is enabled, ensure it was created.
+		if redisSecretEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.redis.password.enabled", true); redisSecretEnabled {
+			redisSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.redis.password.secret", defaultRedisSecretName)
+			if err := r.ensureSecret(ctx, adapter, redisSecretName); err != nil {
+				return err
+			}
+		}
+
+		// If any of the sub-queues and configured, ensure relevant Secrets are created if enabled.
+		for _, subqueue := range gitlabctl.RedisSubqueues() {
+			if _, err := gitlabctl.GetStringValue(adapter.Values(), fmt.Sprintf("global.redis.%s.host", subqueue)); err == nil {
+				// Subqueue is configured. Ensure its password was created.
+				if passwordEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), fmt.Sprintf("global.redis.%s.password.enabled", subqueue), true); passwordEnabled {
+					subqueueSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), fmt.Sprintf("global.redis.%s.password.secret", subqueue), defaultRedisSecretName)
+					if err := r.ensureSecret(ctx, adapter, subqueueSecretName); err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
 		postgres := gitlabctl.PostgresStatefulSet(adapter)
 		statefulsets = append(statefulsets, postgres)
 	} else {
@@ -744,7 +776,6 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 	shell := gitlabctl.ShellService(adapter)
 	exporter := gitlabctl.ExporterService(adapter)
 	webservice := gitlabctl.WebserviceServices(adapter)
-	redis := gitlabctl.RedisServices(adapter)
 	registry := gitlabctl.RegistryService(adapter)
 
 	services = append(services,
@@ -752,8 +783,12 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 		shell,
 		exporter,
 	)
-	services = append(services, redis...)
 	services = append(services, webservice...)
+
+	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
+		redis := gitlabctl.RedisServices(adapter)
+		services = append(services, redis...)
+	}
 
 	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
 		postgres := gitlabctl.PostgresServices(adapter)
@@ -994,8 +1029,10 @@ func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitl
 		}
 	}
 
-	if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter) {
-		return false
+	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
+		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter) {
+			return false
+		}
 	}
 
 	if configureGitaly, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.gitaly.enabled", true); configureGitaly {

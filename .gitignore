@@ -93,3 +93,6 @@ helm
 !helm/
 *.coverprofile
 *.log
+
+.build/
+.install/

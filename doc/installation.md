@@ -62,10 +62,10 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
     $ cd gitlab-operator
     ```
 
-2. Deploy the CRDs (Custom Resource Definitions) for the resources managed by the GitLab Operator.
+2. Build CRDs and Operator manifests:
 
     ```
-    $ make install_crds
+    $ make build_operator
     ```
 
    Note: in some cases, you may run into issues resolving dependencies and see an error message such as:
@@ -83,7 +83,8 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 3. Deploy the GitLab Operator.
 
     ```
-    $ make deploy_operator
+    $ kubectl create namespace gitlab-system
+    $ kubectl apply -f .build/operator.yaml
     ```
 
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
@@ -136,6 +137,16 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
    ```
 
    When the CR is reconciled (the status of the GitLab resource will be `RUNNING`), you can access GitLab in your browser at `https://gitlab.example.com`.
+
+## Cleanup
+
+Certain operations like file removal under `config/` directory may not trigger rebuild/redeploy, in which cases one should employ:
+
+```shell
+make clean
+```
+
+This will remove all of the build artifacts and the install record.
 
 ## Uninstall the GitLab Operator
 

@@ -1,3 +1,5 @@
+KUSTOMIZE ?= kustomize
+KUBECTL ?= kubectl
 # Current Operator version
 VERSION ?= 0.2.0
 # Default bundle image tag
@@ -10,6 +12,8 @@ ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
+
+KUSTOMIZE_FILES=$(shell find config -type f -name \*.yaml)
 
 # Image URL to use all building/pushing image targets
 IMG ?= registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
@@ -52,19 +56,35 @@ run: generate fmt vet manifests
 
 # Install required operators into a cluster
 install_required_operators:
-	kubectl apply -f scripts/manifests/
+	$(KUBECTL) apply -f scripts/manifests/
 
 # Uninstalls required operators from the cluster
 uninstall_required_operators:
-	kubectl delete -f scripts/manifests/
+	$(KUBECTL) delete -f scripts/manifests/
+
+.build:
+	mkdir .build
+
+# Build CRDs
+.build/crds.yaml: .build manifests kustomize $(KUSTOMIZE_FILES)
+	$(KUSTOMIZE) build config/crd > $@
+
+build_crds: .build/crds.yaml
+
+.install:
+	mkdir .install
+
+.install/crds.yaml: .build/crds.yaml .install
+	$(KUBECTL) apply -f $<
+	touch $@
 
 # Install CRDs into a cluster
-install_crds: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+install_crds: .install/crds.yaml 
 
 # Uninstall CRDs from a cluster
-uninstall_crds: manifests kustomize
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+uninstall_crds: manifests kustomize build_crds
+	$(KUBECTL) delete -f .build/crds.yaml
+	rm .install/crds.yaml
 
 # Suffix operator clusterrolebinding names so they can be installed in parallel
 suffix_clusterrolebinding_names: kustomize
@@ -74,20 +94,25 @@ suffix_clusterrolebinding_names: kustomize
 suffix_webhook_names: kustomize
 	cd config/webhook && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
 
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy_operator: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator=${IMG}:${TAG}
-	cd config/manager && $(KUSTOMIZE) edit add patch --path patches/deployment_always_pull_image.yaml
-	cd config/manager && $(KUSTOMIZE) edit add patch --path patches/use_development_logger.yaml
+.build/operator.yaml: .build $(KUSTOMIZE_FILES)
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	kubectl create namespace ${NAMESPACE} || true
-	kubectl label namespace ${NAMESPACE} control-plane=controller-manager || true
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/default > $@
+
+build_operator: .build/operator.yaml
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+.install/operator.yaml: .build/operator.yaml .install
+	$(KUBECTL) create namespace ${NAMESPACE} || true
+	$(KUBECTL) label namespace ${NAMESPACE} control-plane=controller-manager || true
+	$(KUBECTL) apply -f $<
+	touch $@
+
+deploy_operator: .install/operator.yaml
 
 # Delete controller from the configured Kubernetes cluster
-delete_operator: manifests kustomize
-	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+delete_operator: manifests kustomize .build/operator.yaml
+	$(KUBECTL) delete -f .build/operator.yaml
+	rm .install/operator.yaml
 
 # Deploy test GitLab custom resource to cluster
 deploy_test_cr: kustomize
@@ -169,6 +194,10 @@ KUSTOMIZE=$(GOBIN)/kustomize
 else
 KUSTOMIZE=$(shell which kustomize)
 endif
+
+.PHONY: clean 
+clean:
+	rm -rf .build .install
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle

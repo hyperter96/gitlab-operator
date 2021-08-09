@@ -32,6 +32,7 @@ main() {
 
   echo 'Starting test'
   install_crds
+  create_namespace
   install_gitlab_operator
   verify_operator_is_running
   install_gitlab_custom_resource
@@ -49,6 +50,10 @@ main() {
 #   kubectl wait --for=condition=Initialized -n default certmanager/cert-manager
 #   kubectl wait --for=condition=Available -n default deployment/cert-manager-webhook
 # }
+
+create_namespace() {
+  kubectl get namespace ${NAMESPACE} > /dev/null 2>&1 || kubectl create namespace ${NAMESPACE}
+}
 
 install_crds() {
   echo 'Installing operator CRDs'

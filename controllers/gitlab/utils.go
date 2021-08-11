@@ -5,6 +5,9 @@ import (
 )
 
 const (
+	// GitlabComponentName is the com mon name of GitLab.
+	GitLabComponentName = "gitlab"
+
 	// GitLabShellComponentName is the common name of GitLab Shell.
 	GitLabShellComponentName = "gitlab-shell"
 

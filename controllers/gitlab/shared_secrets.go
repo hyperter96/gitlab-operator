@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -25,7 +26,8 @@ func SharedSecretsConfigMap(adapter CustomResourceAdapter) (*corev1.ConfigMap, e
 		return nil, err
 	}
 
-	cfgMap := template.Query().ConfigMapByComponent(SharedSecretsComponentName)
+	cfgMapName := fmt.Sprintf("%s-%s", adapter.ReleaseName(), SharedSecretsComponentName)
+	cfgMap := template.Query().ConfigMapByName(cfgMapName)
 
 	return cfgMap, nil
 }
@@ -39,11 +41,12 @@ func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 	}
 
 	jobs := template.Query().JobsByLabels(map[string]string{
-		"app": SharedSecretsComponentName,
+		"app": GitLabComponentName,
 	})
 
+	namePrefix := fmt.Sprintf("%s-%s", adapter.ReleaseName(), SharedSecretsComponentName)
 	for _, j := range jobs {
-		if !strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
+		if strings.Contains(j.ObjectMeta.Name, namePrefix) {
 			return j, nil
 		}
 	}
@@ -59,7 +62,7 @@ func SelfSignedCertsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 	}
 
 	jobs := template.Query().JobsByLabels(map[string]string{
-		"app": SharedSecretsComponentName,
+		"app": GitLabComponentName,
 	})
 
 	for _, j := range jobs {

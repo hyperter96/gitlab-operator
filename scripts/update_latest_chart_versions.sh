@@ -3,6 +3,8 @@
 # Collects the last 3 minor versions of the GitLab chart and prints them to stdout.
 # Can be used to update the CHART_VERSIONS file.
 
+GITLAB_CHART="gitlab/gitlab"
+
 scripts_dir="$(dirname "$0")"
 . "${scripts_dir}/add_gitlab_repo.sh"
 

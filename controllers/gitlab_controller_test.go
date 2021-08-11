@@ -69,7 +69,7 @@ var _ = Describe("GitLab controller", func() {
 			releaseName := "cr-spec-changes"
 			chartValues := helm.EmptyValues()
 			cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
-			sharedSecretQuery := appLabels(releaseName, gitlabctl.SharedSecretsComponentName)
+			sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
 
 			createGitLabResource(releaseName, chartValues)
 
@@ -134,7 +134,7 @@ var _ = Describe("GitLab controller", func() {
 
 			It("Should create resources for Jobs and continue the reconcile loop", func() {
 				cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
-				sharedSecretQuery := appLabels(releaseName, gitlabctl.SharedSecretsComponentName)
+				sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
 				gitlabShellQuery := appLabels(releaseName, gitlabctl.GitLabShellComponentName)
 
 				By("Checking ServiceAccount exists for Shared secrets Job")
@@ -152,7 +152,7 @@ var _ = Describe("GitLab controller", func() {
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Checking the Self signed certificates Job is created")
-				Eventually(listObjectsPromise(sharedSecretQuery, &batchv1.JobList{}, 2),
+				Eventually(listObjectsPromise(sharedSecretQuery, &batchv1.JobList{}, 1),
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Manipulating the Self signed certificates Job to succeed")
@@ -173,7 +173,7 @@ var _ = Describe("GitLab controller", func() {
 			})
 
 			It("Should fail the reconcile loop", func() {
-				sharedSecretQuery := appLabels(releaseName, gitlabctl.SharedSecretsComponentName)
+				sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
 				gitlabShellQuery := appLabels(releaseName, gitlabctl.GitLabShellComponentName)
 
 				By("Manipulating the Job to fail")
@@ -195,7 +195,7 @@ var _ = Describe("GitLab controller", func() {
 
 			It("Should fail the reconcile loop", func() {
 				gitlabShellQuery := appLabels(releaseName, gitlabctl.GitLabShellComponentName)
-				sharedSecretQuery := appLabels(releaseName, gitlabctl.SharedSecretsComponentName)
+				sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
 
 				By("Checking Shared secrets Job is created")
 				Eventually(listObjectsPromise(sharedSecretQuery, &batchv1.JobList{}, 1),
@@ -653,7 +653,7 @@ global:
 })
 
 func processSharedSecretsJob(releaseName string) {
-	sharedSecretQuery := appLabels(releaseName, gitlabctl.SharedSecretsComponentName)
+	sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
 
 	By("Manipulating the Shared secrets Job to succeed")
 	Eventually(updateJobStatusPromise(sharedSecretQuery, true),

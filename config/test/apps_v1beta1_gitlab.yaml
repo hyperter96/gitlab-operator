@@ -7,13 +7,14 @@ spec:
   chart:
     version: CHART_VERSION
     values:
+      certmanager:
+        install: false
       global:
         hosts:
           domain: DOMAIN
           hostSuffix: HOSTSUFFIX
         ingress:
-          # Use the CI's NGINX ingress controller
-          class: nginx
+          configureCertmanager: false
           tls:
             secretName: TLSSECRETNAME
       # TODO: properly set TargetPort for Gitaly metrics service port,
@@ -22,6 +23,3 @@ spec:
         gitaly:
           metrics:
             enabled: false
-      # Disable the bundled NGINX since we're using CI's NGINX ingress controller
-      nginx-ingress:
-        enabled: false

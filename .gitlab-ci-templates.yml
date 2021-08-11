@@ -26,7 +26,6 @@
     QA_ARTIFACTS_DIR: $CI_PROJECT_DIR
     EE_LICENSE: $GITLAB_QA_EE_LICENSE
     QA_OPTIONS: "--tag smoke"
-    QA_EXCLUDE_SPECS: "--exclude-pattern '**/*over_ssh_spec.rb'" # Remove when https://gitlab.com/gitlab-org/gl-openshift/gitlab-operator/-/issues/58 closed
   script:
     - echo $QA_ENVIRONMENT_URL $GITLAB_VERSION
     - gem install gitlab-qa

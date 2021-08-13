@@ -40,17 +40,6 @@ main() {
   verify_gitlab_is_running
 }
 
-# install_required_operators() {
-#   echo 'Installing required operators'  # See https://www.itix.fr/blog/install-operator-openshift-cli/
-#   make install_required_operators
-
-#   # cert-manager
-#   wait_until_exists "crd/certmanagers.operator.cert-manager.io"
-#   kubectl wait --for=condition=Established crd/certmanagers.operator.cert-manager.io
-#   kubectl wait --for=condition=Initialized -n default certmanager/cert-manager
-#   kubectl wait --for=condition=Available -n default deployment/cert-manager-webhook
-# }
-
 create_namespace() {
   kubectl get namespace ${NAMESPACE} > /dev/null 2>&1 || kubectl create namespace ${NAMESPACE}
 }

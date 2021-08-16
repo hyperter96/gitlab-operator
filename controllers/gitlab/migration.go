@@ -40,6 +40,7 @@ func MigrationsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 	}
 
 	result := template.Query().JobByComponent(MigrationsComponentName)
+	result.Name = nameWithHashSuffix(result.Name, adapter, 3)
 
 	return result, nil
 }

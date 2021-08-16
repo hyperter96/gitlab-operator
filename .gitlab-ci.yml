@@ -18,6 +18,7 @@ stages:
   - qa
   - cleanup
   - certification
+  - report
 
 .if_push_to_redhat: &if_push_to_redhat
   if: '$PUSH_TO_REDHAT == "true" '
@@ -219,3 +220,11 @@ certification_upload:
 secret_detection:
   variables:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
+
+issue-bot:
+  stage: report
+  image: registry.gitlab.com/gitlab-org/distribution/issue-bot:latest
+  script: /issue-bot
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: on_failure

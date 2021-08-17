@@ -21,10 +21,10 @@ LOG_LEVEL="${LOG_LEVEL:-info}"
 INSTALL_DIR="install-${CLUSTER_NAME}"
 TOOL_DIR="bin"
 TMP_DIR="tmp-cluster"
-HELM="bin/helm"
 
 main() {
   export GOOGLE_CREDENTIALS  # needed for openshift-install to see them
+  local scripts_dir="$(dirname "$0")"
 
   if [ -d "$INSTALL_DIR" ]; then
     echo "$INSTALL_DIR exists, skipping cluster creation"
@@ -33,7 +33,8 @@ main() {
     render_config_file
     create_cluster
   fi
-  install_certmanager
+
+  . "${scripts_dir}/install_certmanager.sh" 'openshift'
 }
 
 verify_requirements() {
@@ -62,33 +63,6 @@ create_cluster() {
   echo "Creating cluster '$CLUSTER_NAME'"
   $TOOL_DIR/openshift-install-$CLUSTER_VERSION create cluster \
     --dir "$INSTALL_DIR" --log-level "$LOG_LEVEL"
-}
-
-install_certmanager() {
-  echo 'Installing cert-manager'
-
-  local scripts_dir="$(dirname "$0")"
-
-  . "${scripts_dir}/install_helm.sh"
-
-  $HELM repo list | grep -q '^jetstack' || $HELM repo add jetstack https://charts.jetstack.io
-  $HELM repo update
-
-  $HELM upgrade --install \
-    cert-manager-helm jetstack/cert-manager \
-    --namespace default \
-    --version v1.1.0 \
-    --values scripts/manifests/cert-manager-values.yaml
-
-  local google_credentials_json="$(echo $GOOGLE_CREDENTIALS | base64)"
-
-  template_data="$(cat scripts/manifests/cert-manager.yaml)"
-  template_data="$(echo "${template_data//GOOGLE_CREDENTIALS/$google_credentials_json}")"
-  template_data="$(echo "${template_data//GCP_PROJECT_ID/$GCP_PROJECT_ID}")"
-  template_data="$(echo "${template_data//CLUSTER_NAME/$CLUSTER_NAME}")"
-  template_data="$(echo "${template_data//BASE_DOMAIN/$BASE_DOMAIN}")"
-
-  echo "$template_data" | KUBECONFIG="${INSTALL_DIR}/auth/kubeconfig" kubectl apply -f -
 }
 
 _verify_installed() {

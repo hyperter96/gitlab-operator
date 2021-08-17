@@ -36,7 +36,6 @@ volumes:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: system:openshift:scc:nginx-ingress-scc
 rules:
 - apiGroups:
@@ -51,7 +50,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  creationTimestamp: null
   name: system:openshift:scc:nginx-ingress-scc
   namespace: default
 roleRef:

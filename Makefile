@@ -31,6 +31,9 @@ HOSTSUFFIX ?= ""
 # TLS secret name to use for `global.ingress.tls.secretName`
 TLSSECRETNAME ?= ""
 
+# Platform for operator deployment, kubernetes or openshift
+PLATFORM ?= kubernetes
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -71,7 +74,7 @@ build_crds: .build/crds.yaml
 	touch $@
 
 # Install CRDs into a cluster
-install_crds: .install/crds.yaml 
+install_crds: .install/crds.yaml
 
 # Uninstall CRDs from a cluster
 uninstall_crds: manifests kustomize build_crds
@@ -85,6 +88,20 @@ suffix_clusterrolebinding_names: kustomize
 # Suffix operator webhooks names so they can be installed in parallel
 suffix_webhook_names: kustomize
 	cd config/webhook && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
+
+.build/openshift_resources.yaml: .build $(KUSTOMIZE_FILES)
+	cd config/openshift && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
+	$(KUSTOMIZE) build config/openshift > $@
+
+build_openshift_resources: .build/openshift_resources.yaml
+
+.install/openshift_resources.yaml: .build/openshift_resources.yaml .install
+	$(KUBECTL) create namespace ${NAMESPACE} || true
+	$(KUBECTL) label namespace ${NAMESPACE} control-plane=controller-manager || true
+	$(KUBECTL) apply -f $<
+	touch $@
+
+deploy_openshift_resources: .install/openshift_resources.yaml
 
 .build/operator.yaml: .build $(KUSTOMIZE_FILES)
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
@@ -131,6 +148,7 @@ restore_kustomize_files:
 	git checkout -q \
     config/default/kustomization.yaml \
     config/manager/kustomization.yaml \
+    config/openshift/kustomization.yaml \
     config/rbac/kustomization.yaml \
     config/test/kustomization.yaml \
     config/webhook/kustomization.yaml
@@ -188,7 +206,7 @@ else
 KUSTOMIZE=$(shell which kustomize)
 endif
 
-.PHONY: clean 
+.PHONY: clean
 clean:
 	rm -rf .build .install
 

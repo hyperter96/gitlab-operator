@@ -1,0 +1,27 @@
+namePrefix:
+- path: metadata/name
+  kind: ClusterRole
+- path: metadata/name
+  kind: ClusterRoleBinding
+- path: subjects/name
+  kind: RoleBinding
+- path: metadata/name
+  kind: RoleBinding
+- path: metadata/name
+  kind: SecurityContextConstraints
+
+# ensures that SCC in Role matches SCC name with prefix.
+nameReference:
+  - kind: SecurityContextConstraints
+    fieldSpecs:
+      - path: rules/resourceNames
+        kind: Role
+      - path: rules/resourceNames
+        kind: ClusterRole
+
+namespace:
+- kind: RoleBinding
+  group: rbac.authorization.k8s.io
+  version: v1
+  path: subjects/namespace
+  create: false

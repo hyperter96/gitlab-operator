@@ -54,14 +54,6 @@ manager: generate fmt vet
 run: generate fmt vet manifests
 	go run ./main.go
 
-# Install required operators into a cluster
-install_required_operators:
-	$(KUBECTL) apply -f scripts/manifests/
-
-# Uninstalls required operators from the cluster
-uninstall_required_operators:
-	$(KUBECTL) delete -f scripts/manifests/
-
 .build:
 	mkdir .build
 

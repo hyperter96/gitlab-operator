@@ -466,6 +466,10 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 		}
 	}
 
+	if err := r.reconcileMailroomDeployment(ctx, adapter); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -841,6 +845,15 @@ func (r *GitLabReconciler) reconcileGitLabPagesDeployment(ctx context.Context, a
 	}
 
 	_, err := r.createOrPatch(ctx, pages, adapter)
+
+	return err
+}
+
+func (r *GitLabReconciler) reconcileMailroomDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	mailroom := gitlabctl.MailroomDeployment(adapter)
+
+	r.annotateSecretsChecksum(ctx, adapter, &mailroom.Spec.Template)
+	_, err := r.createOrPatch(ctx, mailroom, adapter)
 
 	return err
 }

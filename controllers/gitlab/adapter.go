@@ -112,7 +112,12 @@ gitlab:
     securityContext:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
+  mailroom:
+    common:
 
+    securityContext:
+      runAsUser: $LocalUser
+      fsGroup: $LocalUser
 registry:
   common:
     labels:

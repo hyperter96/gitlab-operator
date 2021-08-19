@@ -108,8 +108,3 @@ func SharedSecretsJobTimeout() time.Duration {
 	}
 	return SharedSecretsJobDefaultTimeout
 }
-
-// SharedSecretsJobWaitPeriod returns the wait time next check of shared secrets job status.
-func SharedSecretsJobWaitPeriod(timeout, elapsed time.Duration) time.Duration {
-	return time.Duration(timeout / 100)
-}

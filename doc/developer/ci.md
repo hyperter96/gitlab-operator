@@ -19,3 +19,12 @@ See [doc/doc/openshift-cluster-setup.md](../doc/openshift-cluster-setup.md) for 
 - For our `4.7` OpenShift Cluster: `CLUSTER_VERSION=4.7 ENVIRONMENT=openshift GOOGLE_APPLICATION_CREDENTIALS=gitlab-operator-ci-gcloud-externaldns.json ./ci/scripts/install_external_dns.sh`
 
 Note: `gitlab-operator-ci-gcloud-externaldns.json` is a file containing the credentials for the external-dns ServiceAccount created in GCP. You can find this credentials file in 1Password by searching for `externaldns` in the `Cloud Native` vault.
+
+## Configuration
+
+### Job timeouts
+
+Note: timeouts for Jobs can be configured. If the timeout is reached, then the GitLab Controller will return an error that the Job could not be completed in time.
+
+To configure these, modify the values under `spec.template.spec.containers[0].env` in
+[config/manager/manager.yaml](../../config/manager/manager.yaml).

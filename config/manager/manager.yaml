@@ -26,6 +26,11 @@ spec:
         ports:
           - name: health-port
             containerPort: 6060
+        # env:
+        # - name: GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT
+        #   value: 300
+        # - name: GITLAB_OPERATOR_MIGRATIONS_JOB_TIMEOUT
+        #   value: 300
         livenessProbe:
           httpGet:
             path: /liveness

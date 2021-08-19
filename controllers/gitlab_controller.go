@@ -220,7 +220,7 @@ func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitl
 		return err
 	}
 
-	return r.runJobAndWait(ctx, adapter, job)
+	return r.runJobAndWait(ctx, adapter, job, gitlabctl.SharedSecretsJobTimeout())
 }
 
 func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
@@ -233,10 +233,10 @@ func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gi
 		return fmt.Errorf("self-signed certificate job skipped, not needed per configuration: %s", adapter.Reference())
 	}
 
-	return r.runJobAndWait(ctx, adapter, job)
+	return r.runJobAndWait(ctx, adapter, job, gitlabctl.SharedSecretsJobTimeout())
 }
 
-func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job) error {
+func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job, timeout time.Duration) error {
 
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
 
@@ -246,8 +246,7 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.
 	}
 
 	elapsed := time.Duration(0)
-	timeout := gitlabctl.SharedSecretsJobTimeout()
-	waitPeriod := gitlabctl.SharedSecretsJobWaitPeriod(timeout, elapsed)
+	waitPeriod := time.Duration(timeout / 100)
 	lookupKey := types.NamespacedName{
 		Name:      job.Name,
 		Namespace: job.Namespace,
@@ -376,9 +375,6 @@ func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter gitlabctl.
 		return err
 	}
 
-	// migration := gitlabctl.MigrationsJob(cr)
-	// return r.createOrPatch(migration, cr)
-
 	return r.runMigrationsJob(ctx, adapter)
 }
 
@@ -430,11 +426,7 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabc
 		return err
 	}
 
-	if _, err := r.createOrPatch(ctx, migrations, adapter); err != nil {
-		return err
-	}
-
-	return nil
+	return r.runJobAndWait(ctx, adapter, migrations, gitlabctl.MigrationsJobTimeout())
 }
 
 func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {

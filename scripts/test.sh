@@ -7,6 +7,7 @@ CLEANUP="${CLEANUP:-yes}"
 HOSTSUFFIX="${HOSTSUFFIX:-${TESTS_NAMESPACE}}"
 DOMAIN="${DOMAIN:-example.com}"
 DEBUG="${DEBUG:-off}"
+KUBECTL_WAIT_TIMEOUT_SECONDS=${KUBECTL_WAIT_TIMEOUT_SECONDS:-"600s"}
 
 export IMG TAG NAMESPACE=${TESTS_NAMESPACE}
 
@@ -85,12 +86,17 @@ verify_gitlab_is_running() {
     echo "statefulset/$statefulset ok"
   done
 
-  deployments=(gitlab-gitlab-exporter gitlab-gitlab-shell gitlab-registry gitlab-sidekiq-all-in-1-v1 gitlab-task-runner gitlab-webservice-default gitlab-ingress-controller)
-  wait_until_exists "deployment/${deployments[0]}"
-  kubectl -n "$TESTS_NAMESPACE" wait --timeout=600s --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
+  echo 'Waiting for Migrations...'
+  sleep 5
+  kubectl -n "$TESTS_NAMESPACE" wait --timeout="${KUBECTL_WAIT_TIMEOUT_SECONDS}" --for condition=Complete job -l app=migrations
 
-  echo 'Testing GitLab endpoint'
-  curl -fIL "https://gitlab-$HOSTSUFFIX.$DOMAIN"
+  echo 'Waiting for Deployments...'
+  sleep 5
+  kubectl -n "$TESTS_NAMESPACE" wait --timeout="${KUBECTL_WAIT_TIMEOUT_SECONDS}" --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
+
+  echo 'Testing GitLab endpoint...'
+  sleep 5
+  curl -fIL --retry 3 "https://gitlab-$HOSTSUFFIX.$DOMAIN"
 }
 
 cleanup() {

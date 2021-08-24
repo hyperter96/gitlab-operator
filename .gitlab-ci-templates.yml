@@ -1,3 +1,11 @@
+
+.if_release_tag: &if_release_tag
+  if: '$CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+(-(rc|RC|beta)\d*)?$/'
+
+.skip_if_release_tag: &skip_if_release_tag
+  <<: *if_release_tag
+  when: never
+
 .cache:
   variables:
     GOPATH: "${CI_PROJECT_DIR}/.go"
@@ -11,9 +19,13 @@
   extends: .cache
   script:
   - CLEANUP="no" ./scripts/test.sh
-  - echo "ROOT_PASSWORD=$(kubectl -n $NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> functional_tests.env
-  - echo "GITLAB_VERSION=$(kubectl -n $NAMESPACE exec -ti $(kubectl -n $NAMESPACE get pods | grep task-runner | awk '{print $1}') cat /srv/gitlab/VERSION)" >> functional_tests.env
+  - echo "ROOT_PASSWORD=$(kubectl -n $TESTS_NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> functional_tests.env
+  - echo "GITLAB_VERSION=$(kubectl -n $TESTS_NAMESPACE exec -ti $(kubectl -n $TESTS_NAMESPACE get pods | grep task-runner | awk '{print $1}') cat /srv/gitlab/VERSION)" >> functional_tests.env
   artifacts:
+    paths:
+      #NOTE: this will affect following Jobs providing manifest crafted to be deployed into tests.
+      #      where this may backfire is if we push "publish" to happen *after* tests.
+      - .build/operator.yaml
     reports:
       dotenv: functional_tests.env
 
@@ -46,4 +58,7 @@
     DEBUG: "yes"
     CLEANUP: "only"
   script: ./scripts/test.sh
-  when: always
+  rules:
+    - <<: *skip_if_release_tag
+    - if: '$CI_COMMIT_BRANCH'
+      when: always

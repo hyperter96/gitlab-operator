@@ -55,36 +55,20 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 
 ## Installing the GitLab Operator
 
-1. Clone the GitLab operator repository to your local system.
+1. Deploy the GitLab Operator.
 
     ```
-    $ git clone https://gitlab.com/gitlab-org/cloud-native/gitlab-operator.git
-    $ cd gitlab-operator
-    ```
-
-2. Build CRDs and Operator manifests:
-
-    ```
-    $ make build_operator
-    ```
-
-   Note: in some cases, you may run into issues resolving dependencies and see an error message such as:
-
-    ```
-    go get: github.com/openshift/api@v3.9.0+incompatible: invalid version: unknown revision v3.9.0
-    ```
-
-   To address this, configure `GOPROXY` as mentioned [in this issue](https://github.com/openshift/api/issues/456#issuecomment-576842590):
-
-    ```bash
-    export GOPROXY="https://proxy.golang.org/"
-    ```
-
-3. Deploy the GitLab Operator.
-
-    ```
+    $ GL_OPERATOR_VERSION=0.0.1
     $ kubectl create namespace gitlab-system
-    $ kubectl apply -f .build/operator.yaml
+    $ kubectl apply -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${GL_OPERATOR_VERSION}.yaml
+    ```
+    
+    or more verbose (note double quotes):
+
+    ```
+    $ GL_OPERATOR_VERSION=0.0.1
+    $ kubectl create namespace gitlab-system
+    $ kubectl apply -f "https://gitlab.com/api/v4/projects/gitlab-org%2Fcloud-native%2Fgitlab-operator/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${GL_OPERATOR_VERSION}.yaml"
     ```
 
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
@@ -92,7 +76,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
     Note: by default, the Operator will only watch the namespace where it is deployed. If you would like it to watch at the cluster scope,
     modify [config/manager/kustomization.yaml](../config/manager/kustomization.yaml) by commenting out the `namesapce_scope.yaml` patch.
 
-4. Create a GitLab custom resource (CR).
+2. Create a GitLab custom resource (CR).
 
    Create a new file named something like `mygitlab.yaml`.
 
@@ -118,7 +102,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 
    For more details on configuration options to use under `spec.chart.values`, see our [GitLab Helm Chart documentation](https://docs.gitlab.com/charts).
 
-5. Deploy a GitLab instance using your new GitLab CR.
+3. Deploy a GitLab instance using your new GitLab CR.
 
    ```
    $ kubectl -n gitlab-system apply -f mygitlab.yaml
@@ -137,16 +121,6 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
    ```
 
    When the CR is reconciled (the status of the GitLab resource will be `RUNNING`), you can access GitLab in your browser at `https://gitlab.example.com`.
-
-## Cleanup
-
-Certain operations like file removal under `config/` directory may not trigger rebuild/redeploy, in which cases one should employ:
-
-```shell
-make clean
-```
-
-This will remove all of the build artifacts and the install record.
 
 ## Uninstall the GitLab Operator
 
@@ -167,14 +141,18 @@ This will remove the GitLab instance, and all associated objects except for (PVC
 
 ### Uninstall the GitLab Operator
 
-```
-$ make delete_operator
-```
-
-This will delete the Operator's resources, including the running Deployment. It will not delete objects associated with a GitLab instance.
-
-### Uninstall CRDs
 
 ```
-$ make uninstall_crds
+$ GL_OPERATOR_VERSION=0.0.1
+$ kubectl delete -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${GL_OPERATOR_VERSION}.yaml
 ```
+
+More verbose version of above is (note double quotes):
+
+```
+$ GL_OPERATOR_VERSION=0.0.1
+$ kubectl delete -f "https://gitlab.com/api/v4/projects/gitlab-org%2Fcloud-native%2Fgitlab-operator/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${GL_OPERATOR_VERSION}.yaml"
+```
+
+
+This will delete the Operator's resources, including the running Deployment of the Operator. This **will not** delete objects associated with a GitLab instance.

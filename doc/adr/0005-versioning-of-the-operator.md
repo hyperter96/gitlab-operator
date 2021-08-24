@@ -8,6 +8,8 @@ Accepted
 
 Related [6. GitLab application versions supported](0006-gitlab-application-versions-supported.md)
 
+Relates to [9. version tagging](0009-version-tagging.md)
+
 ## Context
 
 The intention is to version the operator matching the version number as the

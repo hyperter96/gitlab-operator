@@ -2,11 +2,13 @@
 
 # Functional test that verifies the GitLab operator and CR install without error
 
-NAMESPACE="${NAMESPACE:-gitlab-system}"
+TESTS_NAMESPACE="${TESTS_NAMESPACE:-gitlab-system}"
 CLEANUP="${CLEANUP:-yes}"
-HOSTSUFFIX="${HOSTSUFFIX:-${NAMESPACE}}"
+HOSTSUFFIX="${HOSTSUFFIX:-${TESTS_NAMESPACE}}"
 DOMAIN="${DOMAIN:-example.com}"
 DEBUG="${DEBUG:-off}"
+
+export IMG TAG NAMESPACE=${TESTS_NAMESPACE}
 
 finish() {
   local exitcode=$?
@@ -16,7 +18,7 @@ finish() {
   if [ $exitcode -ne 0 ]; then
     echo "!!!ERROR!!!"
     echo "deployment/gitlab-controller-manager logs"
-    kubectl -n "$NAMESPACE" logs deployment/gitlab-controller-manager -c manager || true
+    kubectl -n "$TESTS_NAMESPACE" logs deployment/gitlab-controller-manager -c manager || true
   fi
 
   if [ "$CLEANUP" = "yes" ]; then
@@ -41,7 +43,7 @@ main() {
 }
 
 create_namespace() {
-  kubectl get namespace ${NAMESPACE} > /dev/null 2>&1 || kubectl create namespace ${NAMESPACE}
+  kubectl get namespace ${TESTS_NAMESPACE} > /dev/null 2>&1 || kubectl create namespace ${TESTS_NAMESPACE}
 }
 
 install_crds() {
@@ -58,7 +60,7 @@ install_gitlab_operator() {
 
 verify_operator_is_running() {
   echo 'Verifying that operator is running'
-  kubectl wait --for=condition=Available -n "$NAMESPACE" deployment/gitlab-controller-manager
+  kubectl wait --for=condition=Available -n "$TESTS_NAMESPACE" deployment/gitlab-controller-manager
 }
 
 install_gitlab_custom_resource() {
@@ -70,7 +72,7 @@ copy_certificate() {
   echo 'Copying certificate to namespace'
   kubectl get secret -n default gitlab-ci-tls -o yaml \
     | yq eval 'del(.metadata.["namespace","resourceVersion","uid","annotations","creationTimestamp","selfLink","managedFields"])' - \
-    | kubectl apply -n "$NAMESPACE" -f -
+    | kubectl apply -n "$TESTS_NAMESPACE" -f -
 }
 
 verify_gitlab_is_running() {
@@ -79,13 +81,13 @@ verify_gitlab_is_running() {
   statefulsets=(gitlab-gitaly gitlab-redis-master gitlab-minio gitlab-postgresql)
   wait_until_exists "statefulset/${statefulsets[0]}"
   for statefulset in "${statefulsets[@]}"; do
-    kubectl -n "$NAMESPACE" rollout status -w --timeout 120s "statefulset/$statefulset"
+    kubectl -n "$TESTS_NAMESPACE" rollout status -w --timeout 120s "statefulset/$statefulset"
     echo "statefulset/$statefulset ok"
   done
 
   deployments=(gitlab-gitlab-exporter gitlab-gitlab-shell gitlab-registry gitlab-sidekiq-all-in-1-v1 gitlab-task-runner gitlab-webservice-default gitlab-ingress-controller)
   wait_until_exists "deployment/${deployments[0]}"
-  kubectl -n "$NAMESPACE" wait --timeout=600s --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
+  kubectl -n "$TESTS_NAMESPACE" wait --timeout=600s --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
 
   echo 'Testing GitLab endpoint'
   curl -fIL "https://gitlab-$HOSTSUFFIX.$DOMAIN"
@@ -98,16 +100,16 @@ cleanup() {
   # Turn off exit immediately if command fails so debug out can get generated
   set +e
 
-  kubectl delete ns "$NAMESPACE"
+  kubectl delete ns "$TESTS_NAMESPACE"
   if [[ $? -ne 0 ]]; then
     signal_failure=1
   fi
 
-  results=$(kubectl get clusterrolebindings -o=name | grep $NAMESPACE)
+  results=$(kubectl get clusterrolebindings -o=name | grep $TESTS_NAMESPACE)
   [[ "$DEBUG" != "off" ]] && printf "** kubectl get clusterrolebinding results\n$results\n-----"
   echo "$results" | xargs kubectl delete
 
-  results=$(kubectl get validatingwebhookconfiguration -o name | grep $NAMESPACE)
+  results=$(kubectl get validatingwebhookconfiguration -o name | grep $TESTS_NAMESPACE)
   [[ "$DEBUG" != "off" ]] && printf "** kubectl get validatingwebhookconfiguration results\n$results\n-----"
   echo "$results" | xargs kubectl delete
   if [[ $? -ne 0 ]]; then
@@ -124,7 +126,7 @@ cleanup() {
 
 wait_until_exists() {
   local resource="$1"
-  local namespace="${2:-$NAMESPACE}"
+  local namespace="${2:-$TESTS_NAMESPACE}"
   local maxattempts="${3:-60}"
   local attempts=0
   local output

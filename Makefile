@@ -88,6 +88,7 @@ suffix_webhook_names: kustomize
 
 .build/operator.yaml: .build $(KUSTOMIZE_FILES)
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
+	cd config/manager && $(KUSTOMIZE) edit set image $(IMG)=$(IMG):$(TAG)
 	$(KUSTOMIZE) build config/default > $@
 
 build_operator: .build/operator.yaml
@@ -149,11 +150,11 @@ generate: controller-gen
 # Build the docker image
 docker-build: test # Pending https://github.com/kubernetes-sigs/kubebuilder/pull/1626
 	mkdir -p .go/pkg/mod # for builds outside of CI, this cache directory won't exit
-	podman build . -t ${IMG}
+	podman build . -t $(IMG):$(TAG)
 
 # Push the docker image
 docker-push:
-	podman push ${IMG}
+	podman push $(IMG):$(TAG)
 
 # find or download controller-gen
 # download controller-gen if necessary
@@ -195,7 +196,7 @@ clean:
 .PHONY: bundle
 bundle: manifests
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image ${IMG}=${IMG}:${TAG}
+	cd config/manager && $(KUSTOMIZE) edit set image $(IMG)=$(IMG):$(TAG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 

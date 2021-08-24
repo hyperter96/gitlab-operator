@@ -2,17 +2,27 @@ image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-
 
 variables:
   # Configuration of K8s
-  NAMESPACE: "n${CI_COMMIT_SHORT_SHA}"
-  TAG: "${CI_COMMIT_SHORT_SHA}"
+  # Namespace within which to run tests
+  TESTS_NAMESPACE: "n${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_ID}"
+  # Namespace built into default manifest
+  NAMESPACE: "gitlab-system"
+  TAG: ${CI_COMMIT_SHORT_SHA}
+  IMG: ${CI_REGISTRY_IMAGE}
   HOSTSUFFIX: "n${CI_COMMIT_SHORT_SHA}"
   TLSSECRETNAME: "gitlab-ci-tls"
   # docker configuration
   DOCKER_DRIVER: overlay2
   DOCKER_HOST: tcp://docker:2375
+  # API endpoint: /projects/:id/packages/generic/:package_name/:package_version
+  RELEASE_VERSION: "${CI_COMMIT_TAG}"
+  MANIFEST_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}/gitlab-operator-${CI_COMMIT_TAG}.yaml"
+  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}"
 
 stages:
   - prepare
+  - build
   - test
+  - publish
   - release
   - functional_test
   - qa
@@ -22,17 +32,9 @@ stages:
 
 .if_push_to_redhat: &if_push_to_redhat
   if: '$PUSH_TO_REDHAT == "true" '
-
-.if_release_tag: &if_release_tag
-  if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|RC|beta)\d*)?$/'
-
-.skip_if_release_tag: &skip_if_release_tag
-  <<: *if_release_tag
-  when: never
-
-.skip_always: &skip_always
-  if: '$CI_COMMIT_TAG == $CI_COMMIT_TAG'
-  when: never
+  #TODO at the moment publishing is broken due to changes in RH API
+  # so we'll let things fail until it is fixed
+  allow_failure: true
 
 include:
   - template: Dependency-Scanning.gitlab-ci.yml
@@ -48,6 +50,9 @@ pull_charts:
   artifacts:
     paths:
       - charts/
+  rules:
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
 
 lint_code:
   extends: .cache
@@ -61,7 +66,7 @@ lint_code:
       - gl-code-quality-report.json
   allow_failure: true
   rules:
-    - <<: *skip_if_release_tag
+    - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
 .test_job:
@@ -74,7 +79,7 @@ lint_code:
     - mkdir coverage
     - export CHART_VERSION=$(sed -n ${VERSION_INDEX}p CHART_VERSIONS)
   rules:
-    - <<: *skip_if_release_tag
+    - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
 unit_tests:
@@ -123,7 +128,7 @@ build_tag_image:
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   rules:
-    - <<: *if_release_tag
+    - !reference [.if_release_tag]
 
 build_latest_image:
   extends: .docker_build_job
@@ -151,12 +156,12 @@ functional_tests_4_6:
   extends: .functional_tests
   stage: functional_test
   before_script:
-  - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
+    - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
   variables:
     DOMAIN: apps.ocp-ci-4623.k8s-ft.win
   rules:
-  - <<: *skip_if_release_tag
-  - if: '$CI_COMMIT_BRANCH'
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
 
 functional_tests_4_7:
   extends: .functional_tests
@@ -166,8 +171,8 @@ functional_tests_4_7:
   variables:
     DOMAIN: apps.ocp-ci-4717.k8s-ft.win
   rules:
-  - <<: *skip_if_release_tag
-  - if: '$CI_COMMIT_BRANCH'
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
 
 qa_4_6:
   extends: .qa
@@ -178,7 +183,7 @@ qa_4_6:
   dependencies:
     - functional_tests_4_6
   rules:
-    - <<: *skip_if_release_tag
+    - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
 qa_4_7:
@@ -190,20 +195,20 @@ qa_4_7:
   dependencies:
     - functional_tests_4_7
   rules:
-    - <<: *skip_if_release_tag
+    - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
 functional_tests_cleanup_4_6:
   extends: .functional_tests_cleanup
   stage: cleanup
   before_script:
-  - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
+    - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
 
 functional_tests_cleanup_4_7:
   extends: .functional_tests_cleanup
   stage: cleanup
   before_script:
-  - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
+    - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
 
 certification_upload:
   stage: certification
@@ -211,7 +216,7 @@ certification_upload:
   services:
     - docker:dind
   rules:
-    - <<: *if_release_tag
+    - !reference [.if_release_tag]
     - <<: *if_push_to_redhat
   retry: 1
   before_script:
@@ -222,6 +227,43 @@ certification_upload:
 secret_detection:
   variables:
     SECRET_DETECTION_HISTORIC_SCAN: "true"
+
+build_manifest:
+  stage: build
+  script: make build_operator
+  artifacts:
+    untracked: false
+    expire_in: 30 days
+    paths:
+      - .build/operator.yaml
+
+upload_manifest:
+  stage: publish
+  image: curlimages/curl:latest
+  rules:
+    - !reference [.if_release_tag]
+  script:
+    - |
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        --upload-file .build/operator.yaml \
+        ${MANIFEST_URL}?status=default
+
+publish_release:
+  # Caution, as of 2021-02-02 these assets links require a login, see:
+  # https://gitlab.com/gitlab-org/gitlab/-/issues/299384
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - !reference [.if_release_tag]
+  script: echo "Releasing $CI_COMMIT_TAG from ${MANIFEST_URL}"
+  release:
+      name: "Release $CI_COMMIT_TAG"
+      tag_name: "$CI_COMMIT_TAG"
+      description: "$CI_COMMIT_TAG"
+      assets:
+        links:
+          - name: "gitlab-operator.yaml"
+            url: "${MANIFEST_URL}"
 
 issue-bot:
   stage: report

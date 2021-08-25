@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"fmt"
+	"strings"
 )
 
 const (
@@ -56,4 +57,14 @@ func updateCommonLabels(releaseName, componentName string, labels map[string]str
 	labels["app.kubernetes.io/component"] = componentName
 	labels["app.kubernetes.io/part-of"] = "gitlab"
 	labels["app.kubernetes.io/managed-by"] = "gitlab-operator"
+}
+
+func nameWithHashSuffix(name string, adapter CustomResourceAdapter, n int) string {
+	suffix := adapter.Hash()[:n]
+
+	if strings.HasSuffix(name, suffix) {
+		return name
+	}
+
+	return fmt.Sprintf("%s-%s", name, suffix)
 }

@@ -159,6 +159,7 @@ functional_tests_4_6:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
   variables:
     DOMAIN: apps.ocp-ci-4623.k8s-ft.win
+    PLATFORM: openshift
   rules:
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
@@ -167,9 +168,22 @@ functional_tests_4_7:
   extends: .functional_tests
   stage: functional_test
   before_script:
-  - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
+    - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
   variables:
     DOMAIN: apps.ocp-ci-4717.k8s-ft.win
+    PLATFORM: openshift
+  rules:
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
+
+functional_tests_gke:
+  extends: .functional_tests
+  stage: functional_test
+  before_script:
+    - export KUBECONFIG="$KUBECONFIG_GKE"
+  variables:
+    DOMAIN: gitlab-operator.k8s-ft.win
+    PLATFORM: kubernetes
   rules:
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
@@ -198,6 +212,18 @@ qa_4_7:
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
+qa_gke:
+  extends: .qa
+  stage: qa
+  variables:
+    DOMAIN: gitlab-operator.k8s-ft.win
+    QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
+  dependencies:
+    - functional_tests_gke
+  rules:
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
+
 functional_tests_cleanup_4_6:
   extends: .functional_tests_cleanup
   stage: cleanup
@@ -209,6 +235,12 @@ functional_tests_cleanup_4_7:
   stage: cleanup
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
+
+functional_tests_cleanup_gke:
+  extends: .functional_tests_cleanup
+  stage: cleanup
+  before_script:
+    - export KUBECONFIG="$KUBECONFIG_GKE"
 
 certification_upload:
   stage: certification

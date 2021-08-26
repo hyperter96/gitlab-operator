@@ -2,10 +2,9 @@
 
 ## OpenShift CI clusters
 
-We have created OpenShift clusters in GKE that are used for acceptance tests, including QA suite.
+We manage OpenShift clusters in Google Cloud that are used for acceptance tests, including QA suite.
 
-kubeconfig files for connecting to these clusters are stored in 1Password, cloud-native vault.
-Search for `ocp-ci`.
+kubeconfig files for connecting to these clusters are stored in the 1Password cloud-native vault. Search for `ocp-ci`.
 
 CI clusters have been launched with `scripts/create_openshift_cluster.sh` in this project. CI variables named `KUBECONFIG_OCP_4_7` allow scripts to connect to clusters as kubeadmin. `4_7` refers to the major and minor version of the targeted OpenShift cluster.
 
@@ -13,13 +12,13 @@ See [doc/doc/openshift-cluster-setup.md](../doc/openshift-cluster-setup.md) for 
 
 ### Scaling OpenShift clusters
 
-OpenShift clusters use `machineset`s to pool resources. Default deployment has 4 `machineset`s out of which 2 are utilized. 
+OpenShift clusters use `machineset`s to pool resources. Default deployment has 4 `machineset`s out of which 2 are utilized.
 We retain that approach and scale 2 active `machineset`s to 2 nodes.
 
 Following [OpenShift scaling documentation](https://docs.openshift.com/container-platform/4.7/scalability_and_performance/recommended-cluster-scaling-practices.html) :
 
 ```shell
-$ export KUBECONFIG=~/work/ocp/kubeconfig_4_7 
+$ export KUBECONFIG=~/work/ocp/kubeconfig_4_7
 $ oc get machinesets -n openshift-machine-api
 NAME                         DESIRED   CURRENT   READY   AVAILABLE   AGE
 ocp-ci-4717-abcde-worker-a   1         1         1       1           59d
@@ -92,6 +91,67 @@ ocp-ci-4717-abcde-worker-c-5gq6r.c.cloud-native-123456.internal   Ready    worke
 - For our `4.7` OpenShift Cluster: `CLUSTER_VERSION=4.7 ENVIRONMENT=openshift GOOGLE_APPLICATION_CREDENTIALS=gitlab-operator-ci-gcloud-externaldns.json ./ci/scripts/install_external_dns.sh`
 
 Note: `gitlab-operator-ci-gcloud-externaldns.json` is a file containing the credentials for the external-dns ServiceAccount created in GCP. You can find this credentials file in 1Password by searching for `externaldns` in the `Cloud Native` vault.
+
+## Configuration
+
+### Job timeouts
+
+Note: timeouts for Jobs can be configured. If the timeout is reached, then the GitLab Controller will return an error that the Job could not be completed in time.
+
+To configure these, modify the values under `spec.template.spec.containers[0].env` in
+[config/manager/manager.yaml](../../config/manager/manager.yaml).
+
+## Kubernetes CI clusters
+
+We manage Kubernetes clusters in Google Cloud using GKE. These clusters are used to run the same acceptance tests that run on the OpenShift CI clusters.
+
+Clusters are created using `charts/gitlab`'s [gke_bootstrap_script.sh script](https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/scripts/gke_bootstrap_script.sh).
+
+```sh
+$ CLUSTER_NAME='gitlab-operator' \
+  PROJECT='cloud-native-182609' \
+  REGION='europe-west3' \
+  ZONE_EXTENSION='a' \
+  USE_STATIC_IP='false' \
+  EXTRA_CREATE_ARGS='' \
+  ./scripts/gke_bootstrap_script.sh up
+```
+
+`demo/.kube/config` is generated and can be used to connect to the cluster with `kubectl` or `k9s` for development.
+
+We then connect the cluster endpoint IP address by creating a new Cloud DNS record set.
+
+```sh
+$ ENDPOINT="$(gcloud container clusters describe gitlab-operator --zone europe-west3-a --format='value(endpoint)')"
+
+$ gcloud dns record-sets create gitlab-operator.k8s-ft.win. \
+  --rrdatas=$ENDPOINT --type A --ttl 60 --zone k8s-ftw
+```
+
+Once the cluster is created and connected with DNS, we run the `./scripts/install_certmanager` script to set up Letsencrypt TLS certificate.
+
+```sh
+$ KUBECONFIG=demo/.kube/config \
+  CLUSTER_NAME=gitlab-operator \
+  BASE_DOMAIN=k8s-ft.win \
+  GCP_PROJECT_ID=cloud-native-182609 \
+  ./scripts/install_certmanager.sh 'kubernetes'
+```
+
+Once wildcard certificates have been issued for the cluster's domain, the cluster is ready to run tests.
+
+For CI clusters, we create a service account in Google Cloud, following the steps in [Google Cloud's authentication docs](https://cloud.google.com/kubernetes-engine/docs/how-to/api-server-authentication#environments-without-gcloud). This allows us to generate CI variables `KUBECONFIG_GKE` and `GOOGLE_APPLICATION_CREDENTIALS` for this project. We have scripted this, see [scripts/create_gcloud_sa_kubeconfig.sh](../../scripts/create_gcloud_sa_kubeconfig.sh). These kubeconfigconfig files are saved in the 1Password cloud-native vault. Search the vault for `gitlab-operator`.
+
+### Scaling Kubernetes clusters
+
+We [use the gcloud CLI to add or remove worker nodes from a GKE cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/resizing-a-cluster#gcloud). The Google Cloud web UI may also be used.
+
+For example, scaling the gitlab-operator CI cluster to 4 nodes:
+
+```shell
+$ gcloud container clusters resize \
+  gitlab-operator --num-nodes 4
+```
 
 ## Configuration
 

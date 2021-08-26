@@ -96,3 +96,6 @@ helm
 
 .build/
 .install/
+# Google Service Account
+gsa-key.json
+gsa-kubeconfig.yaml

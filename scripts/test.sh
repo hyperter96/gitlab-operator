@@ -10,6 +10,7 @@ DEBUG="${DEBUG:-off}"
 KUBECTL_WAIT_TIMEOUT_SECONDS=${KUBECTL_WAIT_TIMEOUT_SECONDS:-"600s"}
 
 export IMG TAG NAMESPACE=${TESTS_NAMESPACE}
+PLATFORM="${PLATFORM:-kubernetes}"
 
 finish() {
   local exitcode=$?
@@ -38,8 +39,8 @@ main() {
   create_namespace
   install_gitlab_operator
   verify_operator_is_running
-  install_gitlab_custom_resource
   copy_certificate
+  install_gitlab_custom_resource
   verify_gitlab_is_running
 }
 
@@ -56,6 +57,9 @@ install_gitlab_operator() {
   echo 'Installing GitLab operator'
   make suffix_clusterrolebinding_names
   make suffix_webhook_names
+  if [ "$PLATFORM" == "openshift" ]; then
+    make deploy_openshift_resources
+  fi
   make deploy_operator
 }
 
@@ -94,9 +98,10 @@ verify_gitlab_is_running() {
   sleep 5
   kubectl -n "$TESTS_NAMESPACE" wait --timeout="${KUBECTL_WAIT_TIMEOUT_SECONDS}" --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
 
-  echo 'Testing GitLab endpoint...'
+  local endpoint="https://gitlab-$HOSTSUFFIX.$DOMAIN"
+  echo "Testing GitLab endpoint: $endpoint"
   sleep 5
-  curl -fIL --retry 3 "https://gitlab-$HOSTSUFFIX.$DOMAIN"
+  curl --retry 5 --retry-delay 10 -fIL "$endpoint"
 }
 
 cleanup() {

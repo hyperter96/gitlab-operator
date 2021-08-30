@@ -16,9 +16,11 @@ func (q *cachingQuery) ConfigMapByName(name string) *corev1.ConfigMap {
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertConfigMaps(objects)
 		},
 	)
@@ -28,6 +30,7 @@ func (q *cachingQuery) ConfigMapByName(name string) *corev1.ConfigMap {
 	if len(configMaps) == 0 {
 		return nil
 	}
+
 	return configMaps[0]
 }
 
@@ -42,12 +45,15 @@ func (q *cachingQuery) ConfigMapsByLabels(labels map[string]string) []*corev1.Co
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertConfigMaps(objects)
 		},
 	)
+
 	return result.([]*corev1.ConfigMap)
 }
 
@@ -59,6 +65,7 @@ func (q *cachingQuery) ConfigMapByComponent(component string) *corev1.ConfigMap 
 	if len(configMaps) == 0 {
 		return nil
 	}
+
 	return configMaps[0]
 }
 
@@ -67,5 +74,6 @@ func unsafeConvertConfigMaps(objects []runtime.Object) []*corev1.ConfigMap {
 	for i, o := range objects {
 		configMaps[i] = o.(*corev1.ConfigMap)
 	}
+
 	return configMaps
 }

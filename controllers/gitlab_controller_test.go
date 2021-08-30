@@ -37,8 +37,8 @@ var _ = Describe("GitLab controller", func() {
 			releaseName := "crd-testing"
 
 			chartValues := helm.EmptyValues()
-			chartValues.SetValue("global.hosts.domain", "mydomain.com")
-			chartValues.SetValue("certmanager-issuer.email", "me@mydomain.com")
+			_ = chartValues.SetValue("global.hosts.domain", "mydomain.com")
+			_ = chartValues.SetValue("certmanager-issuer.email", "me@mydomain.com")
 
 			By("Creating a new GitLab resource")
 			Expect(createObject(newGitLab(releaseName, chartValues), true)).Should(Succeed())
@@ -77,8 +77,8 @@ var _ = Describe("GitLab controller", func() {
 			Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
 				PollTimeout, PollInterval).Should(Succeed())
 
-			chartValues.SetValue("shared-secrets.env", "test")
-			chartValues.SetValue("shared-secrets.annotations", map[string]string{
+			_ = chartValues.SetValue("shared-secrets.env", "test")
+			_ = chartValues.SetValue("shared-secrets.annotations", map[string]string{
 				"foo": "FOO",
 				"bar": "BAR",
 			})
@@ -126,7 +126,7 @@ var _ = Describe("GitLab controller", func() {
 			releaseName := "jobs-succeeded"
 
 			chartValues := helm.EmptyValues()
-			chartValues.SetValue("global.ingress.configureCertmanager", false)
+			_ = chartValues.SetValue("global.ingress.configureCertmanager", false)
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -217,7 +217,7 @@ var _ = Describe("GitLab controller", func() {
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := helm.EmptyValues()
-			chartValues.SetValue("global.gitaly.enabled", true)
+			_ = chartValues.SetValue("global.gitaly.enabled", true)
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -259,7 +259,7 @@ global:
     - name: default
       hostname: gitaly.external.com
 `
-			chartValues.AddFromYAML([]byte(values))
+			_ = chartValues.AddFromYAML([]byte(values))
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -297,7 +297,7 @@ global:
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := helm.EmptyValues()
-			chartValues.SetValue("postgresql.install", false)
+			_ = chartValues.SetValue("postgresql.install", false)
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -341,7 +341,7 @@ global:
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := helm.EmptyValues()
-			chartValues.SetValue("postgresql.install", true)
+			_ = chartValues.SetValue("postgresql.install", true)
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -381,12 +381,12 @@ global:
 			releaseName := "redis-disabled"
 			cfgMapNameScripts := fmt.Sprintf("%s-scripts", releaseName)
 			cfgMapNameHealth := fmt.Sprintf("%s-health", releaseName)
-			cfgMapName := fmt.Sprintf("%s", releaseName)
+			cfgMapName := releaseName
 			serviceNameHeadless := fmt.Sprintf("%s-headless", releaseName)
 			serviceNameMetrics := fmt.Sprintf("%s-metrics", releaseName)
 			serviceNameMaster := fmt.Sprintf("%s-master", releaseName)
 			statefulSetName := fmt.Sprintf("%s-master", releaseName)
-			nextCfgMapName := fmt.Sprintf("%s", releaseName)
+			nextCfgMapName := releaseName
 
 			chartValues := helm.EmptyValues()
 			values := `
@@ -396,7 +396,7 @@ global:
   redis:
 	  host: redis.example.com
 			`
-			chartValues.AddFromYAML([]byte(values))
+			_ = chartValues.AddFromYAML([]byte(values))
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -442,7 +442,7 @@ global:
 			releaseName := "redis-enabled"
 			cfgMapNameScripts := fmt.Sprintf("%s-scripts", releaseName)
 			cfgMapNameHealth := fmt.Sprintf("%s-health", releaseName)
-			cfgMapName := fmt.Sprintf("%s", releaseName)
+			cfgMapName := releaseName
 			serviceNameHeadless := fmt.Sprintf("%s-headless", releaseName)
 			serviceNameMetrics := fmt.Sprintf("%s-metrics", releaseName)
 			serviceNameMaster := fmt.Sprintf("%s-master", releaseName)
@@ -450,7 +450,7 @@ global:
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := helm.EmptyValues()
-			chartValues.SetValue("redis.install", true)
+			_ = chartValues.SetValue("redis.install", true)
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -514,7 +514,7 @@ global:
         secret: custom-cache-secret
         key: cache-password
 `
-			chartValues.AddFromYAML([]byte(values))
+			_ = chartValues.AddFromYAML([]byte(values))
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -550,7 +550,7 @@ global:
         secret: custom-cache-secret
         key: cache-password
 `
-			chartValues.AddFromYAML([]byte(values))
+			_ = chartValues.AddFromYAML([]byte(values))
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)
@@ -584,7 +584,7 @@ global:
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := helm.EmptyValues()
-			chartValues.SetValue("nginx-ingress.enabled", false)
+			_ = chartValues.SetValue("nginx-ingress.enabled", false)
 
 			BeforeEach(func() {
 				createGitLabResource(releaseName, chartValues)

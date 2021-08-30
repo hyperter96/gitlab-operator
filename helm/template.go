@@ -48,10 +48,10 @@ type Template interface {
 	Query() Query
 }
 
-// ObjectSelector represents a boolean expression for selecting objects
+// ObjectSelector represents a boolean expression for selecting objects.
 type ObjectSelector = func(runtime.Object) bool
 
-// ObjectEditor represents a method for editing objects
+// ObjectEditor represents a method for editing objects.
 type ObjectEditor = func(runtime.Object) error
 
 type mutableTemplate struct {
@@ -70,6 +70,7 @@ func newMutableTemplate(releaseName, namespace string) *mutableTemplate {
 		warnings:    []error{},
 	}
 	template.query = newQuery(template)
+
 	return template
 }
 
@@ -91,11 +92,13 @@ func (t *mutableTemplate) Objects() []runtime.Object {
 
 func (t *mutableTemplate) GetObjects(selector ObjectSelector) ([]runtime.Object, error) {
 	result := []runtime.Object{}
+
 	for i := 0; i < len(t.objects); i++ {
 		if selector(t.objects[i]) {
 			result = append(result, t.objects[i])
 		}
 	}
+
 	return result, nil
 }
 
@@ -107,6 +110,7 @@ func (t *mutableTemplate) AddObject(object runtime.Object) error {
 
 func (t *mutableTemplate) DeleteObjects(selector ObjectSelector) (int, error) {
 	count := 0
+
 	for i := 0; i < len(t.objects); i++ {
 		if selector(t.objects[i]) {
 			t.objects = append(t.objects[:i], t.objects[i+1:]...)
@@ -114,6 +118,7 @@ func (t *mutableTemplate) DeleteObjects(selector ObjectSelector) (int, error) {
 			i--
 		}
 	}
+
 	return count, nil
 }
 
@@ -122,24 +127,29 @@ func (t *mutableTemplate) ReplaceObject(selector ObjectSelector, object runtime.
 		if selector(t.objects[i]) {
 			old := t.objects[i]
 			t.objects[i] = object
+
 			return old, nil
 		}
 	}
+
 	return nil, nil
 }
 
 func (t *mutableTemplate) EditObjects(editor ObjectEditor) (int, error) {
 	count := 0
+
 	for i := 0; i < len(t.objects); i++ {
 		err := editor(t.objects[i])
 		if err != nil {
 			if IsTypeMistmatchError(err) {
 				continue
 			}
+
 			return count, err
 		}
 		count++
 	}
+
 	return count, nil
 }
 

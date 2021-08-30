@@ -6,8 +6,9 @@ import (
 	acmev1alpha2 "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	certmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 )
 
 const (
@@ -15,9 +16,8 @@ const (
 	specCertIssuerServer = "https://acme-v02.api.letsencrypt.org/directory"
 )
 
-// GetIssuerConfig gets the ACME issuer to use from GitLab resource
+// GetIssuerConfig gets the ACME issuer to use from GitLab resource.
 func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.IssuerConfig {
-
 	if configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true); configureCertmanager {
 		email, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.email")
 		if err != nil || email == "" {
@@ -62,7 +62,7 @@ func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.I
 	}
 }
 
-// CertificateIssuer create a certificate generator
+// CertificateIssuer create a certificate generator.
 func CertificateIssuer(adapter gitlab.CustomResourceAdapter) *certmanagerv1alpha2.Issuer {
 	labels := Label(adapter.ReleaseName(), "issuer", GitlabType)
 
@@ -81,7 +81,7 @@ func CertificateIssuer(adapter gitlab.CustomResourceAdapter) *certmanagerv1alpha
 }
 
 // EndpointTLS informs which services require
-// to be secured using generated TLS certificates
+// to be secured using generated TLS certificates.
 type EndpointTLS struct {
 	gitlab   bool
 	registry bool
@@ -89,9 +89,8 @@ type EndpointTLS struct {
 }
 
 // RequiresCertManagerCertificate function returns true an administrator
-// did not provide a TLS ceritificate for an endpoint
+// did not provide a TLS ceritificate for an endpoint.
 func RequiresCertManagerCertificate(adapter gitlab.CustomResourceAdapter) EndpointTLS {
-
 	// This implies that Operator can only consume wildcard certificate and individual certificate
 	// per service will be ignored.
 	tlsSecretName, _ := gitlab.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
@@ -103,25 +102,25 @@ func RequiresCertManagerCertificate(adapter gitlab.CustomResourceAdapter) Endpoi
 }
 
 // GitLab returns true if GitLab endpoint requires
-// a cert-manager provisioned certificate
+// a cert-manager provisioned certificate.
 func (ep EndpointTLS) GitLab() bool {
 	return ep.gitlab
 }
 
 // Registry returns true if Registry endpoint requires
-// a cert-manager provisioned certificate
+// a cert-manager provisioned certificate.
 func (ep EndpointTLS) Registry() bool {
 	return ep.registry
 }
 
 // Minio returns true if Minio endpoint requires
-// a cert-manager provisioned certificate
+// a cert-manager provisioned certificate.
 func (ep EndpointTLS) Minio() bool {
 	return ep.minio
 }
 
 // Any returns true if any ingress requires
-// a cert-manager certificate
+// a cert-manager certificate.
 func (ep EndpointTLS) Any() bool {
 	return ep.gitlab || ep.registry || ep.minio
 }

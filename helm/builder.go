@@ -49,6 +49,7 @@ type Builder interface {
 // NewBuilder creates a new builder interface for Helm template.
 func NewBuilder(chart string) Builder {
 	envSettings := cli.New()
+
 	return &defaultBuilder{
 		envSettings:   envSettings,
 		chart:         chart,
@@ -151,7 +152,6 @@ func (b *defaultBuilder) Render(values Values) (Template, error) {
 	release, err := client.Run(chartRequested, values.AsMap())
 	if err != nil {
 		return nil, err
-
 	}
 
 	manifests := releaseutil.SplitManifests(release.Manifest)

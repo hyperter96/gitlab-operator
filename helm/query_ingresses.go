@@ -16,12 +16,15 @@ func (q *cachingQuery) IngressesByLabels(labels map[string]string) []*extensions
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertIngresses(objects)
 		},
 	)
+
 	return result.([]*extensionsv1beta1.Ingress)
 }
 
@@ -32,6 +35,7 @@ func (q *cachingQuery) IngressByComponent(component string) *extensionsv1beta1.I
 	if len(ingresses) == 0 {
 		return nil
 	}
+
 	return ingresses[0]
 }
 
@@ -40,5 +44,6 @@ func unsafeConvertIngresses(objects []runtime.Object) []*extensionsv1beta1.Ingre
 	for i, o := range objects {
 		ingresses[i] = o.(*extensionsv1beta1.Ingress)
 	}
+
 	return ingresses
 }

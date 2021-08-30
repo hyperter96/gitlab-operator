@@ -13,6 +13,7 @@ func ExporterService(adapter CustomResourceAdapter) *corev1.Service {
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
+
 	result := template.Query().ServiceByComponent(GitLabExporterComponentName)
 
 	return result

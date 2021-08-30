@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"regexp"
 	"strings"
 	"time"
-
-	"encoding/base64"
 
 	"crypto/sha256"
 	"encoding/json"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-// Label function returns uniform labels for resources
+// Label function returns uniform labels for resources.
 func Label(resource, component, resourceType string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":       resource,
@@ -42,20 +38,12 @@ func Label(resource, component, resourceType string) map[string]string {
 	}
 }
 
-// ResourceLabels type encapsulates map[string]string
-type ResourceLabels map[string]string
-
-// GetName returns the name of resource based on instance label
-func (l ResourceLabels) GetName() string {
-	return l["app.kubernetes.io/instance"]
-}
-
-// ResourceQuantity returns quantity requested for resource
+// ResourceQuantity returns quantity requested for resource.
 func ResourceQuantity(request string) resource.Quantity {
 	return resource.MustParse(request)
 }
 
-// IsGroupVersionSupported checks for API endpoint for given Group and Version
+// IsGroupVersionSupported checks for API endpoint for given Group and Version.
 func IsGroupVersionSupported(group, version string) bool {
 	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
@@ -75,7 +63,7 @@ func IsGroupVersionSupported(group, version string) bool {
 }
 
 // IsOpenshift check if API has the API route.openshift.io/v1,
-// then it is considered an openshift environment
+// then it is considered an openshift environment.
 func IsOpenshift() bool {
 	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
@@ -94,13 +82,13 @@ func IsOpenshift() bool {
 	return true
 }
 
-// KubeConfig returns kubernetes client configuration
+// KubeConfig returns kubernetes client configuration.
 type KubeConfig struct {
 	Config *rest.Config
 	Error  error
 }
 
-// KubernetesConfig returns kubernetes client config
+// KubernetesConfig returns kubernetes client config.
 func KubernetesConfig() KubeConfig {
 	config, err := config.GetConfig()
 	if err != nil {
@@ -116,10 +104,10 @@ func KubernetesConfig() KubeConfig {
 	}
 }
 
-// NewKubernetesClient returns a client that can be
-// used to interact with the kubernetes api
+// NewKubernetesClient returns a client that can be used to interact with the kubernetes api.
 func (k KubeConfig) NewKubernetesClient() (*kubernetes.Clientset, error) {
 	conf := k.Config
+
 	if err := k.Error; err != nil {
 		panic(fmt.Sprintf("Error getting cluster config: %v", err))
 	}
@@ -127,7 +115,7 @@ func (k KubeConfig) NewKubernetesClient() (*kubernetes.Clientset, error) {
 	return kubernetes.NewForConfig(conf)
 }
 
-// GetSecretValue returns the value for a key from an existing secret
+// GetSecretValue returns the value for a key from an existing secret.
 func GetSecretValue(client client.Client, namespace, secret, key string) (string, error) {
 	target := &corev1.Secret{}
 
@@ -135,36 +123,22 @@ func GetSecretValue(client client.Client, namespace, secret, key string) (string
 	if err != nil {
 		return "", err
 	}
+
 	return string(target.Data[key]), err
 }
 
-// ReadConfig returns contents of file as string
+// ReadConfig returns contents of file as string.
 func ReadConfig(filename string) string {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		// log.Error(err, "Error reading %s", filename)
 		fmt.Printf("Error reading %s: %v", filename, err)
 	}
+
 	return string(content)
 }
 
-// RemoveEmptyLines removes empty lines from block string
-func RemoveEmptyLines(block string) string {
-	re, err := regexp.Compile("\n\n")
-	if err != nil {
-		fmt.Printf("Error building pattern: %v", err)
-	}
-
-	return re.ReplaceAllString(block, "\n")
-}
-
-// EncodeString accepts strings and returns a base64 encoded string
-func EncodeString(message string) string {
-	return base64.StdEncoding.EncodeToString([]byte(message))
-}
-
-// Password creates an password string based
-// on the password options provided
+// Password creates an password string based on the password options provided.
 func Password(options PasswordOptions) string {
 	password := make([]byte, options.Length)
 	charset := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890")
@@ -175,6 +149,7 @@ func Password(options PasswordOptions) string {
 		charset = append(charset, special...)
 	}
 
+	//nolint:gosec // This will go away with #137, which will remove Minio objects from the controller.
 	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for i := range password {
@@ -184,20 +159,7 @@ func Password(options PasswordOptions) string {
 	return string(password)
 }
 
-// IsEmailAddress evaluates a string and returns true
-// if a valid email address.
-// False is otherwise returned
-func IsEmailAddress(email string) bool {
-	re := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.-]+\.[a-z.]{2,4}$`)
-	return re.MatchString(email)
-}
-
-// IsPodRunning function tells user if pod is running
-func IsPodRunning(pod *corev1.Pod) bool {
-	return pod.Status.Phase == "Running"
-}
-
-// SecretData gets a secret by name and returns its data
+// SecretData gets a secret by name and returns its data.
 func SecretData(name, namespace string) (map[string]string, error) {
 	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
@@ -212,7 +174,7 @@ func SecretData(name, namespace string) (map[string]string, error) {
 	return secret.StringData, nil
 }
 
-// ConfigMapData returns data contained in a configmap
+// ConfigMapData returns data contained in a configmap.
 func ConfigMapData(name, namespace string) (map[string]string, error) {
 	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
@@ -227,29 +189,10 @@ func ConfigMapData(name, namespace string) (map[string]string, error) {
 	return cm.Data, nil
 }
 
-// IsMinioAvailable checks if Minio API provided
-// by minio operator is present
-func IsMinioAvailable() bool {
-	client, err := KubernetesConfig().NewKubernetesClient()
-	if err != nil {
-		fmt.Printf("Unable to get kubernetes client: %v", err)
-	}
-
-	routeGV := schema.GroupVersion{
-		Group:   "miniooperator.min.io",
-		Version: "v1beta1",
-	}
-
-	if err := discovery.ServerSupportsVersion(client, routeGV); err != nil {
-		return false
-	}
-
-	return true
-}
-
-// GetDeploymentPods returns the pods that belong to a given deployment
+// GetDeploymentPods returns the pods that belong to a given deployment.
 func GetDeploymentPods(kclient client.Client, name, namespace string) (result []corev1.Pod, err error) {
 	deployment := &appsv1.Deployment{}
+
 	err = kclient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, deployment)
 	if err != nil && errors.IsNotFound(err) {
 		return result, err
@@ -268,15 +211,13 @@ func GetDeploymentPods(kclient client.Client, name, namespace string) (result []
 		return []corev1.Pod{}, err
 	}
 
-	for _, pod := range pods.Items {
-		result = append(result, pod)
-	}
+	result = append(result, pods.Items...)
 
 	return result, err
 }
 
 // ConfigMapWithHash updates configmap with
-// annotation containing a SHA256 hash of its data
+// annotation containing a SHA256 hash of its data.
 func ConfigMapWithHash(cm *corev1.ConfigMap) {
 	jdata, err := json.Marshal(cm.Data)
 	if err != nil {
@@ -290,8 +231,7 @@ func ConfigMapWithHash(cm *corev1.ConfigMap) {
 	}
 }
 
-// DeploymentConfigMaps returns a
-// list of configmaps used in a deployment
+// DeploymentConfigMaps returns a list of configmaps used in a deployment.
 func DeploymentConfigMaps(deploy *appsv1.Deployment) []string {
 	cms := []string{}
 
@@ -308,7 +248,6 @@ func DeploymentConfigMaps(deploy *appsv1.Deployment) []string {
 	}
 
 	for _, vol := range deploy.Spec.Template.Spec.Volumes {
-
 		if vol.VolumeSource.ConfigMap != nil {
 			cms = append(cms, vol.VolumeSource.ConfigMap.LocalObjectReference.Name)
 		}
@@ -323,15 +262,4 @@ func DeploymentConfigMaps(deploy *appsv1.Deployment) []string {
 	}
 
 	return cms
-}
-
-func GetLabelSet(cr *gitlabv1beta1.GitLab) labels.Set {
-	webLabels := Label(cr.Name, "webservice", GitlabType)
-
-	unwantedKeys := []string{"app.kubernetes.io/component", "app.kubernetes.io/instance"}
-	for _, key := range unwantedKeys {
-		delete(webLabels, key)
-	}
-
-	return labels.Set(webLabels)
 }

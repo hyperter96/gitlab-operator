@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GitLabSpec defines the desired state of GitLab
+// GitLabSpec defines the desired state of GitLab.
 type GitLabSpec struct {
 	// The specification of GitLab Chart that is used to deploy the instance.
 	Chart GitLabChartSpec `json:"chart,omitempty"`
@@ -42,7 +42,7 @@ type GitLabChartSpec struct {
 	Values ChartValues `json:"values,omitempty"`
 }
 
-// Unstructured values for rendering GitLab Chart
+// Unstructured values for rendering GitLab Chart.
 // +k8s:deepcopy-gen=false
 type ChartValues struct {
 	// Object is a JSON compatible map with string, float, int, bool, []interface{}, or
@@ -74,7 +74,7 @@ func (u *ChartValues) DeepCopyInto(out *ChartValues) {
 	out.Object = runtime.DeepCopyJSON(u.Object)
 }
 
-// GitLabStatus defines the observed state of GitLab
+// GitLabStatus defines the observed state of GitLab.
 type GitLabStatus struct {
 	Phase string `json:"phase,omitempty"`
 	Stage string `json:"stage,omitempty"`
@@ -87,21 +87,22 @@ type GitLabStatus struct {
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab"
 // +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Pod,v1,""},{Deployment,v1,""},{StatefulSet,v1,""},{PersistentVolumeClaim,v1,""}}
 
-// GitLab is a complete DevOps platform, delivered in a single application
+// GitLab is a complete DevOps platform, delivered in a single application.
 type GitLab struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Specification of the desired behavior of a GitLab instance
+	// Specification of the desired behavior of a GitLab instance.
 	Spec GitLabSpec `json:"spec,omitempty"`
+
 	// Most recently observed status of the GitLab instance.
-	// It is read-only to the user
+	// It is read-only to the user.
 	Status GitLabStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// GitLabList contains a list of GitLab
+// GitLabList contains a list of GitLab.
 type GitLabList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

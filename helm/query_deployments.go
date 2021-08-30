@@ -16,9 +16,11 @@ func (q *cachingQuery) DeploymentByName(name string) *appsv1.Deployment {
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertDeployments(objects)
 		},
 	)
@@ -28,6 +30,7 @@ func (q *cachingQuery) DeploymentByName(name string) *appsv1.Deployment {
 	if len(deployments) == 0 {
 		return nil
 	}
+
 	return deployments[0]
 }
 
@@ -42,12 +45,15 @@ func (q *cachingQuery) DeploymentsByLabels(labels map[string]string) []*appsv1.D
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertDeployments(objects)
 		},
 	)
+
 	return result.([]*appsv1.Deployment)
 }
 
@@ -55,9 +61,11 @@ func (q *cachingQuery) DeploymentByComponent(component string) *appsv1.Deploymen
 	deployments := q.DeploymentsByLabels(map[string]string{
 		appLabel: component,
 	})
+
 	if len(deployments) == 0 {
 		return nil
 	}
+
 	return deployments[0]
 }
 
@@ -66,5 +74,6 @@ func unsafeConvertDeployments(objects []runtime.Object) []*appsv1.Deployment {
 	for i, o := range objects {
 		deployments[i] = o.(*appsv1.Deployment)
 	}
+
 	return deployments
 }

@@ -11,8 +11,7 @@ import (
 func ShellDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 	template, err := GetTemplate(adapter)
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	return template.Query().DeploymentByComponent(GitLabShellComponentName)
@@ -22,8 +21,7 @@ func ShellDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 func ShellConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 	template, err := GetTemplate(adapter)
 	if err != nil {
-		return []*corev1.ConfigMap{}
-		/* WARNING: This should return an error instead. */
+		return []*corev1.ConfigMap{} // WARNING: This should return an error instead.
 	}
 
 	shellCfgMap := template.Query().ConfigMapByName(
@@ -46,8 +44,7 @@ func ShellConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 func ShellService(adapter CustomResourceAdapter) *corev1.Service {
 	template, err := GetTemplate(adapter)
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	result := template.Query().ServiceByComponent(GitLabShellComponentName)

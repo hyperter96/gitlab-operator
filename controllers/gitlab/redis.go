@@ -27,8 +27,7 @@ func RedisConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 func RedisServices(adapter CustomResourceAdapter) []*corev1.Service {
 	template, err := GetTemplate(adapter)
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	results := template.Query().ServicesByLabels(map[string]string{
@@ -46,8 +45,7 @@ func RedisServices(adapter CustomResourceAdapter) []*corev1.Service {
 func RedisStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
 	template, err := GetTemplate(adapter)
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	result := template.Query().StatefulSetByComponent(RedisComponentName)

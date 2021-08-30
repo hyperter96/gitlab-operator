@@ -5,29 +5,28 @@ import (
 	"reflect"
 
 	"github.com/prometheus/common/log"
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
-	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
+	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 )
 
-// EndpointMembers returns a list of members
+// EndpointMembers returns a list of members.
 var EndpointMembers []string
 
 func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-
 	lookupKey := types.NamespacedName{Namespace: adapter.Namespace(), Name: adapter.ReleaseName()}
 
 	r.Log.V(1).Info("Updating GitLab resource status", "resource", lookupKey)
 
 	// get current Gitlab resource
 	gitlab := &gitlabv1beta1.GitLab{}
-	err := r.Get(ctx, lookupKey, gitlab)
-	if err != nil {
+	if err := r.Get(ctx, lookupKey, gitlab); err != nil {
 		return err
 	}
 
@@ -47,13 +46,9 @@ func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter gi
 		}
 
 		if len(pods) > 0 {
+			// gitlab.Status.HealthCheck = getReadinessStatus(ctx, adapter) // Temporarily disabled
 			gitlab.Status.Phase = "Running"
 			gitlab.Status.Stage = ""
-
-			// Temporarily disabled.
-			/*
-				gitlab.Status.HealthCheck = getReadinessStatus(ctx, adapter)
-			*/
 		}
 	}
 
@@ -99,7 +94,7 @@ func getReadinessStatus(ctx context.Context, adapter gitlabctl.CustomResourceAda
 }
 */
 
-// ReadinessStatus shows status of Gitlab services
+// ReadinessStatus shows status of Gitlab services.
 type ReadinessStatus struct {
 	// Returns status of Gitlab rails app
 	WorkhorseStatus string `json:"status,omitempty"`
@@ -110,7 +105,7 @@ type ReadinessStatus struct {
 }
 
 // ServiceStatus shows status of a Gitlab
-// dependent service .e.g. Postgres, Redis, Gitaly
+// dependent service .e.g. Postgres, Redis, Gitaly.
 type ServiceStatus struct {
 	Status string `json:"status,omitempty"`
 }
@@ -143,16 +138,18 @@ func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter gitla
 
 	postgres := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{Namespace: adapter.Namespace(), Name: labels["app.kubernetes.io/instance"]}, postgres)
+
 	return !reflect.DeepEqual(*postgres, appsv1.Deployment{}) || !errors.IsNotFound(err)
 }
 
 func (r *GitLabReconciler) isWebserviceDeployed(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
 	webservice := &appsv1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: adapter.ReleaseName() + "-webservice-default", Namespace: adapter.Namespace()}, webservice)
+
 	return !reflect.DeepEqual(*webservice, appsv1.Deployment{}) || !errors.IsNotFound(err)
 }
 
-// setGitlabStatus sets status of custom resource
+// setGitlabStatus sets status of custom resource.
 func (r *GitLabReconciler) setGitlabStatus(ctx context.Context, object client.Object) error {
 	return r.Status().Update(ctx, object)
 }
@@ -161,8 +158,7 @@ func (r *GitLabReconciler) getEndpointMembers(ctx context.Context, adapter gitla
 	members := []string{}
 
 	ep := &corev1.Endpoints{}
-	err := r.Get(ctx, types.NamespacedName{Name: endpoint, Namespace: adapter.Namespace()}, ep)
-	if err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: endpoint, Namespace: adapter.Namespace()}, ep); err != nil {
 		log.Error(err, "Error getting endpoints")
 	}
 

@@ -9,9 +9,10 @@ import (
 	"sync"
 
 	"github.com/Masterminds/semver"
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var (
@@ -30,7 +31,6 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 	entry := store.lookup(adapter.Reference())
 	if entry != nil {
 		if entry.hash == adapter.Hash() {
-
 			logger.V(2).Info("Retrieving the cached template")
 
 			return entry.template, nil
@@ -48,7 +48,6 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 
 	template, err := buildTemplate(adapter)
 	if err != nil {
-
 		logger.Error(err, "Failed to render the template")
 
 		return nil, err
@@ -86,7 +85,7 @@ func AvailableChartVersions() []string {
 
 	re := regexp.MustCompile(`gitlab\-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\.tgz`)
 
-	filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
 		submatches := re.FindStringSubmatch(info.Name())
 
 		if len(submatches) > 1 {
@@ -148,6 +147,7 @@ func (s *internalTemplateStore) update(reference string, entry *digestedTemplate
 	}
 
 	s.inventory[reference] = entry
+
 	return entry
 }
 

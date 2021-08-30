@@ -22,11 +22,11 @@ func TaskRunnerDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 // TaskRunnerConfigMap returns the ConfigMaps of the Task Runner component.
 func TaskRunnerConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	var result *corev1.ConfigMap
+
 	template, err := GetTemplate(adapter)
 
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	result = template.Query().ConfigMapByName(

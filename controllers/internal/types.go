@@ -8,65 +8,66 @@ import (
 )
 
 const (
-	// GitlabType represents resource of type Gitlab
+	// GitlabType represents resource of type Gitlab.
 	GitlabType = "gitlab"
 )
 
 var (
-	// ConfigMapDefaultMode for configmap projected volume
+	// ConfigMapDefaultMode for configmap projected volume.
 	ConfigMapDefaultMode int32 = 420
 
-	// ExecutableDefaultMode for configmap projected volume
+	// ExecutableDefaultMode for configmap projected volume.
 	ExecutableDefaultMode int32 = 493
 
-	// ProjectedVolumeDefaultMode for projected volume
+	// ProjectedVolumeDefaultMode for projected volume.
 	ProjectedVolumeDefaultMode int32 = 256
 
-	// SecretDefaultMode for secret projected volume
+	// SecretDefaultMode for secret projected volume.
 	SecretDefaultMode int32 = 288
 )
 
 // PasswordOptions provides parameters to be
-// used when generating passwords
+// used when generating passwords.
 type PasswordOptions struct {
-	// Length defines desired password length
+	// Length defines desired password length.
 	Length int
+
 	// EnableSpecialCharacters adds special characters
-	// to generated passwords
+	// to generated passwords.
 	EnableSpecialChars bool
 }
 
 // ConfigurationOptions holds options used to configure the different
-// GitLab components
+// GitLab components.
 type ConfigurationOptions struct {
 	// ObjectStore defines object that describes values
-	// for the S3 compatible storage service
+	// for the S3 compatible storage service.
 	ObjectStore ObjectStoreOptions
 }
 
 // ObjectStoreOptions defines properties for
-// the S3 storage used by GitLab
+// the S3 storage used by GitLab.
 type ObjectStoreOptions struct {
 	// URL defines address for development
-	// S3 storage service
+	// S3 storage service.
 	URL string
 
 	// Endpoint defines the URL the API endpoint
-	// including the protocol
+	// including the protocol.
 	Endpoint string
 
 	// Credentials is the name of the secret
-	// that contains the 'accesskey' and 'secretkey'
+	// that contains the 'accesskey' and 'secretkey'.
 	Credentials string
 
 	// Capacity of the volume to be used by the development
-	// minio instance
+	// minio instance.
 	Capacity string
 }
 
 // SystemBuildOptions retrieves options from the Gitlab custom resource
 // and uses them to build configuration options used to deploy
-// the Gitlab instance
+// the Gitlab instance.
 func SystemBuildOptions(adapter gitlab.CustomResourceAdapter) ConfigurationOptions {
 	objectStoreEnabled, _ := gitlab.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled")
 	objectStoreHost, _ := gitlab.GetStringValue(adapter.Values(), "global.hosts.minio.name")
@@ -106,4 +107,8 @@ func SystemBuildOptions(adapter gitlab.CustomResourceAdapter) ConfigurationOptio
 	}
 
 	return options
+}
+
+func getName(cr, component string) string {
+	return strings.Join([]string{cr, component}, "-")
 }

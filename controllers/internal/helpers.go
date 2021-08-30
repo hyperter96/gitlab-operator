@@ -8,7 +8,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// PopulateAttachedSecrets populates all the Secrets that are attached to a ReplicaSet
+// PopulateAttachedSecrets populates all the Secrets that are attached to a ReplicaSet.
+// nolint:nestif,gocognit // This function is a bit complicated, but breaking it up may not increase legibility.
 func PopulateAttachedSecrets(template v1.PodTemplateSpec) map[string]map[string]struct{} {
 	result := map[string]map[string]struct{}{}
 
@@ -20,6 +21,7 @@ func PopulateAttachedSecrets(template v1.PodTemplateSpec) map[string]map[string]
 				bucket = map[string]struct{}{}
 				result[v.Secret.SecretName] = bucket
 			}
+
 			if len(v.Secret.Items) == 0 {
 				bucket["*"] = struct{}{}
 			} else {
@@ -57,33 +59,41 @@ func PopulateAttachedSecrets(template v1.PodTemplateSpec) map[string]map[string]
 	allContainers := make([]v1.Container, len(template.Spec.InitContainers)+len(template.Spec.Containers))
 	allContainers = append(allContainers, template.Spec.InitContainers...)
 	allContainers = append(allContainers, template.Spec.Containers...)
+
 	for _, c := range allContainers {
 		for _, e := range c.Env {
 			if e.ValueFrom == nil || e.ValueFrom.SecretKeyRef == nil {
 				continue
 			}
+
 			bucket := result[e.ValueFrom.SecretKeyRef.Name]
 			if bucket == nil {
 				bucket = map[string]struct{}{}
 				result[e.ValueFrom.SecretKeyRef.Name] = bucket
 			}
+
 			if _, ok := bucket[e.ValueFrom.SecretKeyRef.Key]; ok {
 				continue
 			}
+
 			bucket[e.ValueFrom.SecretKeyRef.Key] = struct{}{}
 		}
+
 		for _, e := range c.EnvFrom {
 			if e.SecretRef == nil {
 				continue
 			}
+
 			bucket := result[e.SecretRef.Name]
 			if bucket == nil {
 				bucket = map[string]struct{}{}
 				result[e.SecretRef.Name] = bucket
 			}
+
 			if _, ok := bucket["*"]; ok {
 				continue
 			}
+
 			bucket["*"] = struct{}{}
 		}
 	}
@@ -97,10 +107,12 @@ func SecretChecksum(secret v1.Secret, keys map[string]struct{}) string {
 	for k := range secret.Data {
 		ks = append(ks, k)
 	}
+
 	sort.Strings(ks)
 
 	hash := sha256.New()
 	_, useAny := keys["*"]
+
 	for i := range ks {
 		_, useItem := keys[ks[i]]
 		if useAny || useItem {
@@ -109,5 +121,6 @@ func SecretChecksum(secret v1.Secret, keys map[string]struct{}) string {
 			}
 		}
 	}
+
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }

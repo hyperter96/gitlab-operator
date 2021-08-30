@@ -50,6 +50,7 @@ func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 			return j, nil
 		}
 	}
+
 	return nil, nil
 }
 
@@ -70,16 +71,17 @@ func SelfSignedCertsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 			return j, nil
 		}
 	}
+
 	return nil, nil
 }
 
 // SharedSecretsResources returns Kubernetes resources for running shared secrets job.
 func SharedSecretsResources(adapter CustomResourceAdapter) (*corev1.ConfigMap, *batchv1.Job, error) {
-
 	cfgMap, err := SharedSecretsConfigMap(adapter)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	if cfgMap == nil {
 		return nil, nil,
 			errors.NewNotFound(schema.ParseGroupResource("configmaps"), SharedSecretsComponentName)
@@ -89,6 +91,7 @@ func SharedSecretsResources(adapter CustomResourceAdapter) (*corev1.ConfigMap, *
 	if err != nil {
 		return nil, nil, err
 	}
+
 	if job == nil {
 		return nil, nil,
 			errors.NewNotFound(schema.ParseGroupResource("jobs.batch"), SharedSecretsComponentName)
@@ -106,5 +109,6 @@ func SharedSecretsJobTimeout() time.Duration {
 			return time.Duration(i) * time.Second
 		}
 	}
+
 	return SharedSecretsJobDefaultTimeout
 }

@@ -40,16 +40,13 @@ linters:
     - errcheck
     - gosimple
     - govet
-    - ineffassign
     - staticcheck
     - structcheck
     - typecheck
     - unused
     - varcheck
     # Disabled by default, but desired for this project
-    - golint
     - unconvert
-    - dupl
     - goconst
     - gocyclo
     - gocognit
@@ -61,19 +58,22 @@ linters:
     - dogsled
     - nakedret
     - godox
-    - funlen
     - whitespace
     - wsl
     - godot
-    - testpackage
     - nestif
     - exhaustive
     - nolintlint
     - gosec
-    - interfacer
   disable:
+    - testpackage
+    - dupl
+    - funlen
+    - golint
+    - interfacer
     - maligned
     - prealloc
+    - ineffassign
 
   # Independently from option `exclude` we use default exclude patterns,
   # it can be disabled by this option. To list all

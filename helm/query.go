@@ -134,6 +134,7 @@ func (q *cachingQuery) readCache(key string) interface{} {
 	if result, ok := q.cache[key]; ok {
 		return result
 	}
+
 	return nil
 }
 
@@ -172,6 +173,7 @@ func matchLabels(oLabels, qLabels map[string]string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -179,5 +181,6 @@ func cacheBackdoor(q Query) *map[string]interface{} {
 	if cq, ok := (q).(*cachingQuery); ok {
 		return &cq.cache
 	}
+
 	return nil
 }

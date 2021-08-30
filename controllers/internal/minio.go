@@ -5,17 +5,22 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	yaml "gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 )
 
-// MinioSecret returns secret containing Minio accesskey and secretkey
+var (
+	localUser int64 = 1000
+)
+
+// MinioSecret returns secret containing Minio accesskey and secretkey.
 func MinioSecret(adapter gitlab.CustomResourceAdapter) *corev1.Secret {
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 	options := SystemBuildOptions(adapter)
@@ -35,7 +40,7 @@ func MinioSecret(adapter gitlab.CustomResourceAdapter) *corev1.Secret {
 	return minio
 }
 
-// MinioStatefulSet return Minio statefulset
+// MinioStatefulSet return Minio statefulset.
 func MinioStatefulSet(adapter gitlab.CustomResourceAdapter) *appsv1.StatefulSet {
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 	options := SystemBuildOptions(adapter)
@@ -194,7 +199,7 @@ func MinioStatefulSet(adapter gitlab.CustomResourceAdapter) *appsv1.StatefulSet 
 	return minio
 }
 
-// MinioScriptConfigMap returns scripts used to configure Minio
+// MinioScriptConfigMap returns scripts used to configure Minio.
 func MinioScriptConfigMap(adapter gitlab.CustomResourceAdapter) *corev1.ConfigMap {
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 
@@ -231,9 +236,6 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 
 	configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true)
 
-	// TODO: Instead of manually redefining these CertManager annotations that are specified in
-	// controllers/gitlab/adapter.go, get the global ingress annotations from the values and inject
-	// them here (note: this would likely require a new 'GetMapValue' method).
 	if configureCertmanager {
 		annotations["cert-manager.io/issuer"] = fmt.Sprintf("%s-issuer", adapter.ReleaseName())
 		annotations["acme.cert-manager.io/http01-edit-in-place"] = "true"
@@ -295,7 +297,7 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 	}
 }
 
-// MinioService returns service that exposes Minio
+// MinioService returns service that exposes Minio.
 func MinioService(adapter gitlab.CustomResourceAdapter) *corev1.Service {
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 
@@ -360,6 +362,7 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 
 	minioEndpoint := options.ObjectStore.Endpoint
 	minioRedirect, _ := gitlab.GetBoolValue(adapter.Values(), "registry.minio.redirect", false)
+
 	if minioRedirect {
 		// We can always assume it is HTTPS.
 		minioEndpoint = fmt.Sprintf("https://%s", getMinioURL(adapter))
@@ -425,4 +428,20 @@ website_endpoint = https://%s
 	}
 
 	return secret
+}
+
+func getMinioURL(adapter gitlab.CustomResourceAdapter) string {
+	name, _ := gitlab.GetStringValue(adapter.Values(), "global.hosts.minio.name")
+	if name != "" {
+		return name
+	}
+
+	hostSuffix, _ := gitlab.GetStringValue(adapter.Values(), "global.hosts.hostSuffix")
+	domain, _ := gitlab.GetStringValue(adapter.Values(), "global.hosts.domain", "example.com")
+
+	if hostSuffix != "" {
+		return fmt.Sprintf("minio-%s.%s", hostSuffix, domain)
+	}
+
+	return fmt.Sprintf("minio.%s", domain)
 }

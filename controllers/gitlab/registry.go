@@ -14,6 +14,7 @@ func RegistryService(adapter CustomResourceAdapter) *corev1.Service {
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
+
 	result := template.Query().ServiceByComponent(RegistryComponentName)
 
 	return result
@@ -50,6 +51,7 @@ func RegistryIngress(adapter CustomResourceAdapter) *extensionsv1beta1.Ingress {
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
+
 	result := template.Query().IngressByComponent(RegistryComponentName)
 
 	return result

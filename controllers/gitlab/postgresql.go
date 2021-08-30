@@ -11,8 +11,7 @@ import (
 func PostgresServices(adapter CustomResourceAdapter) []*corev1.Service {
 	template, err := GetTemplate(adapter)
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	results := template.Query().ServicesByLabels(map[string]string{
@@ -34,8 +33,7 @@ func PostgresServices(adapter CustomResourceAdapter) []*corev1.Service {
 func PostgresStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
 	template, err := GetTemplate(adapter)
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	result := template.Query().StatefulSetByComponent(PostgresComponentName)

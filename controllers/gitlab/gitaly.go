@@ -7,12 +7,10 @@ import (
 
 // GitalyStatefulSet returns the StatefulSet of Gitaly component.
 func GitalyStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
-
 	template, err := GetTemplate(adapter)
 
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	result := template.Query().StatefulSetByComponent(GitalyComponentName)
@@ -25,8 +23,7 @@ func GitalyConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	template, err := GetTemplate(adapter)
 
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	result := template.Query().ConfigMapByComponent(GitalyComponentName)
@@ -39,8 +36,7 @@ func GitalyService(adapter CustomResourceAdapter) *corev1.Service {
 	template, err := GetTemplate(adapter)
 
 	if err != nil {
-		return nil
-		/* WARNING: This should return an error instead. */
+		return nil // WARNING: This should return an error instead.
 	}
 
 	result := template.Query().ServiceByComponent(GitalyComponentName)

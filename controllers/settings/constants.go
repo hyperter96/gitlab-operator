@@ -17,5 +17,5 @@ const (
 	RegistryConnectionSecretName = "registry-storage"
 
 	// TaskRunnerConnectionSecretName .
-	TaskRunnerConnectionSecretName = "s3cmd-config"
+	TaskRunnerConnectionSecretName = "s3cmd-config" // nolint:gosec
 )

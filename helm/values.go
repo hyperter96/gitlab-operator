@@ -72,6 +72,7 @@ func (v *plainValues) AddValue(key, value string) error {
 	if err := strvals.ParseInto(fmt.Sprintf("%s=%s", key, value), v.container); err != nil {
 		return errors.Wrapf(err, "failed to parse value assignment: %s=%s", key, value)
 	}
+
 	return nil
 }
 
@@ -79,6 +80,7 @@ func (v *plainValues) AddStringValue(key, value string) error {
 	if err := strvals.ParseIntoString(fmt.Sprintf("%s=%s", key, value), v.container); err != nil {
 		return errors.Wrapf(err, "failed to parse string value assignment: %s=%s", key, value)
 	}
+
 	return nil
 }
 
@@ -87,9 +89,11 @@ func (v *plainValues) AddFileValue(key, filePath string) error {
 		fileContent, err := ioutil.ReadFile(string(r))
 		return string(fileContent), err
 	}
+
 	if err := strvals.ParseIntoFile(fmt.Sprintf("%s=%s", key, filePath), v.container, reader); err != nil {
 		return errors.Wrapf(err, "failed to parse file value assignment: %s=%s", key, filePath)
 	}
+
 	return nil
 }
 
@@ -121,6 +125,7 @@ func (v *plainValues) AddFromYAML(yamlContent []byte) error {
 func (v *plainValues) GetValue(key string) (interface{}, error) {
 	cursor := v.container
 	elements := []string{}
+
 	if key != "" {
 		elements = strings.Split(key, ".")
 	}
@@ -176,6 +181,7 @@ func (v *plainValues) SetValue(key string, value interface{}) error {
 	}
 
 	cursor[elements[len(elements)-1]] = value
+
 	return nil
 }
 
@@ -184,6 +190,7 @@ func mergeMaps(a, b map[string]interface{}) map[string]interface{} {
 	for k, v := range a {
 		out[k] = v
 	}
+
 	for k, v := range b {
 		if v, ok := v.(map[string]interface{}); ok {
 			if bv, ok := out[k]; ok {
@@ -193,7 +200,9 @@ func mergeMaps(a, b map[string]interface{}) map[string]interface{} {
 				}
 			}
 		}
+
 		out[k] = v
 	}
+
 	return out
 }

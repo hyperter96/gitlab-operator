@@ -18,11 +18,11 @@ const (
 // MigrationsConfigMap returns the ConfigMaps of Migrations component.
 func MigrationsConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	var result *corev1.ConfigMap
+
 	template, err := GetTemplate(adapter)
 
 	if err != nil {
-		return result
-		/* WARNING: This should return an error instead. */
+		return result // WARNING: This should return an error instead.
 	}
 
 	result = template.Query().ConfigMapByName(
@@ -53,5 +53,6 @@ func MigrationsJobTimeout() time.Duration {
 			return time.Duration(i) * time.Second
 		}
 	}
+
 	return MigrationsJobDefaultTimeout
 }

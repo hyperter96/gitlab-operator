@@ -16,9 +16,11 @@ func (q *cachingQuery) JobByName(name string) *batchv1.Job {
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertJobs(objects)
 		},
 	)
@@ -28,6 +30,7 @@ func (q *cachingQuery) JobByName(name string) *batchv1.Job {
 	if len(jobs) == 0 {
 		return nil
 	}
+
 	return jobs[0]
 }
 
@@ -42,12 +45,15 @@ func (q *cachingQuery) JobsByLabels(labels map[string]string) []*batchv1.Job {
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertJobs(objects)
 		},
 	)
+
 	return result.([]*batchv1.Job)
 }
 
@@ -59,6 +65,7 @@ func (q *cachingQuery) JobByComponent(component string) *batchv1.Job {
 	if len(jobs) == 0 {
 		return nil
 	}
+
 	return jobs[0]
 }
 
@@ -67,5 +74,6 @@ func unsafeConvertJobs(objects []runtime.Object) []*batchv1.Job {
 	for i, o := range objects {
 		jobs[i] = o.(*batchv1.Job)
 	}
+
 	return jobs
 }

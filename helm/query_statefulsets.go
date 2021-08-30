@@ -16,9 +16,11 @@ func (q *cachingQuery) StatefulSetByName(name string) *appsv1.StatefulSet {
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertStatefulSets(objects)
 		},
 	)
@@ -28,6 +30,7 @@ func (q *cachingQuery) StatefulSetByName(name string) *appsv1.StatefulSet {
 	if len(statefulSets) == 0 {
 		return nil
 	}
+
 	return statefulSets[0]
 }
 
@@ -42,12 +45,15 @@ func (q *cachingQuery) StatefulSetsByLabels(labels map[string]string) []*appsv1.
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertStatefulSets(objects)
 		},
 	)
+
 	return result.([]*appsv1.StatefulSet)
 }
 
@@ -58,6 +64,7 @@ func (q *cachingQuery) StatefulSetByComponent(component string) *appsv1.Stateful
 	if len(statefulSets) == 0 {
 		return nil
 	}
+
 	return statefulSets[0]
 }
 
@@ -66,5 +73,6 @@ func unsafeConvertStatefulSets(objects []runtime.Object) []*appsv1.StatefulSet {
 	for i, o := range objects {
 		statefulSets[i] = o.(*appsv1.StatefulSet)
 	}
+
 	return statefulSets
 }

@@ -16,9 +16,11 @@ func (q *cachingQuery) ServiceByName(name string) *corev1.Service {
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertServices(objects)
 		},
 	)
@@ -28,6 +30,7 @@ func (q *cachingQuery) ServiceByName(name string) *corev1.Service {
 	if len(services) == 0 {
 		return nil
 	}
+
 	return services[0]
 }
 
@@ -42,12 +45,15 @@ func (q *cachingQuery) ServicesByLabels(labels map[string]string) []*corev1.Serv
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertServices(objects)
 		},
 	)
+
 	return result.([]*corev1.Service)
 }
 
@@ -58,6 +64,7 @@ func (q *cachingQuery) ServiceByComponent(component string) *corev1.Service {
 	if len(services) == 0 {
 		return nil
 	}
+
 	return services[0]
 }
 
@@ -66,5 +73,6 @@ func unsafeConvertServices(objects []runtime.Object) []*corev1.Service {
 	for i, o := range objects {
 		services[i] = o.(*corev1.Service)
 	}
+
 	return services
 }

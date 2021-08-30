@@ -23,14 +23,17 @@ func (q *cachingQuery) ObjectByKindAndName(kindArg, name string) runtime.Object 
 		objName, err := accessor.Name(obj)
 		return err == nil && objName == name
 	})
+
 	if len(objects) == 0 {
 		return nil
 	}
+
 	return objects[0]
 }
 
 func (q *cachingQuery) ObjectsByKindAndLabels(kindArg string, labels map[string]string) []runtime.Object {
 	key := q.cacheKey(anything, fmt.Sprintf("%s?", kindArg), labels)
+
 	return q.queryObjectsWithKindArg(key, kindArg, func(obj runtime.Object) bool {
 		objLabels, err := accessor.Labels(obj)
 		return err == nil && matchLabels(objLabels, labels)
@@ -46,14 +49,16 @@ func (q *cachingQuery) queryObjectsWithKindArg(key, kindArg string, selector Obj
 					return matchParsedKindArg(obj, gvk, &gk) && selector(obj)
 				},
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return objects
 		},
 	)
-	return result.([]runtime.Object)
 
+	return result.([]runtime.Object)
 }
 
 func matchParsedKindArg(object runtime.Object, qGVK *schema.GroupVersionKind, qGK *schema.GroupKind) bool {

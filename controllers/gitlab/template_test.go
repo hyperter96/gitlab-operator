@@ -6,15 +6,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 )
 
 var (
 	chartVersions = AvailableChartVersions()
-	chartValues   = helm.EmptyValues()
 	namespace     = os.Getenv("HELM_NAMESPACE")
 )
 

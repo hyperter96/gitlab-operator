@@ -1,13 +1,14 @@
 package internal
 
 import (
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 )
 
-// BucketCreationJob creates the buckets used by GitLab
+// BucketCreationJob creates the buckets used by GitLab.
 func BucketCreationJob(adapter gitlab.CustomResourceAdapter) *batchv1.Job {
 	labels := Label(adapter.ReleaseName(), "bucket", GitlabType)
 	options := SystemBuildOptions(adapter)
@@ -69,6 +70,7 @@ func BucketCreationJob(adapter gitlab.CustomResourceAdapter) *batchv1.Job {
 	})
 
 	var mcUser int64
+
 	buckets.Spec.Template.Spec.ServiceAccountName = settings.AppServiceAccount
 	buckets.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &mcUser,

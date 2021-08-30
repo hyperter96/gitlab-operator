@@ -8,9 +8,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 var (
@@ -60,6 +61,7 @@ func createObject(obj client.Object, ignoreAlreadyExists bool) error {
 	if errors.IsAlreadyExists(err) && ignoreAlreadyExists {
 		err = nil
 	}
+
 	return err
 }
 
@@ -68,9 +70,11 @@ func updateObject(obj client.Object, mutate func(client.Object) error) error {
 	if err := k8sClient.Get(ctx, key, obj); err != nil {
 		return err
 	}
+
 	if err := mutate(obj); err != nil {
 		return err
 	}
+
 	return k8sClient.Update(ctx, obj)
 }
 
@@ -79,6 +83,7 @@ func getObject(name string, obj client.Object) error {
 		Name:      name,
 		Namespace: Namespace,
 	}
+
 	return k8sClient.Get(ctx, lookupKey, obj)
 }
 
@@ -111,29 +116,33 @@ func listObjectsPromise(query string, obj client.ObjectList, expectedSize int) f
 		if err := listObjects(query, obj); err != nil {
 			return err
 		}
+
 		switch l := obj.(type) {
 		case *batchv1.JobList:
 			if len(l.Items) < expectedSize {
 				return fmt.Errorf("Only %d Jobs found with [%s]", expectedSize, query)
 			}
 		}
+
 		return nil
 	}
 }
 
-func deleteObject(name string, obj client.Object, ignoreNotExistis bool) error {
+func deleteObject(name string, obj client.Object) error {
 	if err := getObject(name, obj); err != nil {
 		if errors.IsNotFound(err) {
 			err = nil
 		}
+
 		return err
 	}
+
 	return k8sClient.Delete(ctx, obj)
 }
 
 func deleteObjectPromise(name string, obj client.Object) func() error {
 	return func() error {
-		return deleteObject(name, obj, true)
+		return deleteObject(name, obj)
 	}
 }
 
@@ -143,6 +152,7 @@ func listConfigMapsPromise(query string) func() []corev1.ConfigMap {
 		if err := listObjects(query, createdCfgMaps); err != nil {
 			return nil
 		}
+
 		return createdCfgMaps.Items
 	}
 }
@@ -160,6 +170,7 @@ func updateJobStatusPromise(query string, success bool) func() error {
 		}
 
 		for _, j := range createdJobs.Items {
+			j := j
 			if success {
 				j.Status.Succeeded = 1
 				j.Status.Failed = 0
@@ -167,6 +178,7 @@ func updateJobStatusPromise(query string, success bool) func() error {
 				j.Status.Succeeded = 0
 				j.Status.Failed = 1
 			}
+
 			if err := k8sClient.Status().Update(ctx, &j); err != nil {
 				return err
 			}
@@ -178,10 +190,6 @@ func updateJobStatusPromise(query string, success bool) func() error {
 
 func appLabels(releaseName, appName string) string {
 	return fmt.Sprintf("release=%s,app=%s", releaseName, appName)
-}
-
-func componentLabels(releaseName, componentName string) string {
-	return fmt.Sprintf("release=%s,app.kubernetes.io/component=%s", releaseName, componentName)
 }
 
 func createGitLabResource(releaseName string, chartValues helm.Values) {

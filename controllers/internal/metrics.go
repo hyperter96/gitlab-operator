@@ -2,14 +2,14 @@ package internal
 
 import (
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 )
 
-// PrometheusCluster returns a prometheus cluster object
-// TODO: receive replicas from user input
+// PrometheusCluster returns a prometheus cluster object.
 func PrometheusCluster(cr *gitlabv1beta1.GitLab) *monitoringv1.Prometheus {
 	labels := Label(cr.Name, "prometheus", GitlabType)
 
@@ -38,7 +38,7 @@ func PrometheusCluster(cr *gitlabv1beta1.GitLab) *monitoringv1.Prometheus {
 	}
 }
 
-// ExposePrometheusCluster creates a service for Prometheus
+// ExposePrometheusCluster creates a service for Prometheus.
 func ExposePrometheusCluster(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	labels := Label(cr.Name, "prometheus", GitlabType)
 
@@ -64,7 +64,7 @@ func ExposePrometheusCluster(cr *gitlabv1beta1.GitLab) *corev1.Service {
 	}
 }
 
-// ExporterServiceMonitor returns the GitLab exporter service monitor
+// ExporterServiceMonitor returns the GitLab exporter service monitor.
 func ExporterServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
 	labels := Label(cr.Name, "gitlab-exporter", GitlabType)
 
@@ -86,10 +86,9 @@ func ExporterServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonit
 			},
 		},
 	}
-
 }
 
-// WebserviceServiceMonitor returns the Webservice service monitor
+// WebserviceServiceMonitor returns the Webservice service monitor.
 func WebserviceServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
 	labels := Label(cr.Name, "webservice", GitlabType)
 
@@ -111,10 +110,9 @@ func WebserviceServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMon
 			},
 		},
 	}
-
 }
 
-// PostgresqlServiceMonitor returns the Postgres service monitor
+// PostgresqlServiceMonitor returns the Postgres service monitor.
 func PostgresqlServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
 	labels := Label(cr.Name, "postgresql", GitlabType)
 
@@ -136,10 +134,9 @@ func PostgresqlServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMon
 			},
 		},
 	}
-
 }
 
-// RedisServiceMonitor returns the Redis service monitor
+// RedisServiceMonitor returns the Redis service monitor.
 func RedisServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
 	labels := Label(cr.Name, "redis", GitlabType)
 
@@ -163,7 +160,7 @@ func RedisServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor 
 	}
 }
 
-// GitalyServiceMonitor returns the Gitaly service monitor
+// GitalyServiceMonitor returns the Gitaly service monitor.
 func GitalyServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
 	labels := Label(cr.Name, "gitaly", GitlabType)
 
@@ -185,5 +182,4 @@ func GitalyServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor
 			},
 		},
 	}
-
 }

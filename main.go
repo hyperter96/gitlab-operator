@@ -31,7 +31,6 @@ import (
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 
-	// miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	routev1 "github.com/openshift/api/route/v1"
 
 	appsv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
@@ -45,6 +44,7 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+//nolint:wsl
 func init() {
 	settings.Load()
 
@@ -58,14 +58,14 @@ func init() {
 
 	utilruntime.Must(routev1.AddToScheme(scheme))
 
-	// utilruntime.Must(miniov1.AddToScheme(scheme))
-
 	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
+	var (
+		metricsAddr          string
+		enableLeaderElection bool
+	)
 
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080",
 		"The address the metric endpoint binds to.")
@@ -83,12 +83,15 @@ func main() {
 	ctrl.SetLogger(logger)
 
 	operatorScope := "namespace"
+
 	watchNamespace, err := getWatchNamespace()
 	if err != nil {
 		operatorScope = "cluster"
+
 		setupLog.Info("unable to get WATCH_NAMESPACE, " +
 			"the manager will watch and manage resources in all namespaces")
 	}
+
 	setupLog.Info("setting operator scope", "scope", operatorScope)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -107,8 +110,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr.AddHealthzCheck("healthz", settings.HealthzCheck)
-	mgr.AddReadyzCheck("readyz", settings.ReadyzCheck)
+	if err := mgr.AddHealthzCheck("healthz", settings.HealthzCheck); err != nil {
+		setupLog.Info("unable to configure healthcheck", err)
+	}
+
+	if err := mgr.AddReadyzCheck("readyz", settings.ReadyzCheck); err != nil {
+		setupLog.Info("unable to configure readiness check")
+	}
 
 	if err = (&controllers.GitLabReconciler{
 		Client: mgr.GetClient(),
@@ -118,6 +126,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "GitLab")
 		os.Exit(1)
 	}
+
 	if err = (&appsv1beta1.GitLab{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "GitLab")
 		os.Exit(1)
@@ -125,21 +134,20 @@ func main() {
 	// +kubebuilder:scaffold:builder
 
 	// Report Operator as "alive" to probe.
-	// TODO: put more thought into when the Operator should report liveness.
 	settings.AliveStatus = nil
 
 	// Report Operator as "ready" to probe.
-	// TODO: put more thought into when the Operator should report readiness.
 	settings.ReadyStatus = nil
 
 	setupLog.Info("starting manager")
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
 
-// getWatchNamespace returns the Namespace the operator should be watching for changes
+// getWatchNamespace returns the Namespace the operator should be watching for changes.
 func getWatchNamespace() (string, error) {
 	// WatchNamespaceEnvVar is the constant for env variable WATCH_NAMESPACE
 	// which specifies the Namespace to watch.
@@ -150,5 +158,6 @@ func getWatchNamespace() (string, error) {
 	if !found {
 		return "", fmt.Errorf("%s not set", watchNamespaceEnvVar)
 	}
+
 	return ns, nil
 }

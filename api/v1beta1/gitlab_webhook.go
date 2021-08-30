@@ -28,7 +28,7 @@ import (
 // log is for logging in this package.
 var gitlablog = logf.Log.WithName("gitlab-resource")
 
-// SetupWebhookWithManager adds webhook to the controller runtime Manager
+// SetupWebhookWithManager adds webhook to the controller runtime Manager.
 func (r *GitLab) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -39,7 +39,7 @@ func (r *GitLab) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.Validator = &GitLab{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *GitLab) ValidateCreate() error {
 	gitlablog.Info("validate create", "name", r.Name)
 
@@ -50,14 +50,14 @@ func (r *GitLab) ValidateCreate() error {
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *GitLab) ValidateUpdate(old runtime.Object) error {
 	gitlablog.Info("validate update", "name", r.Name)
 
 	return nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
 func (r *GitLab) ValidateDelete() error {
 	gitlablog.Info("validate delete", "name", r.Name)
 

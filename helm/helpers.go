@@ -178,6 +178,7 @@ func NewConfigMapSelector(delegate func(*corev1.ConfigMap) bool) ObjectSelector 
 		if ok {
 			return delegate(configMap)
 		}
+
 		return false
 	}
 }
@@ -189,6 +190,7 @@ func NewClusterRoleSelector(delegate func(*rbacv1.ClusterRole) bool) ObjectSelec
 		if ok {
 			return delegate(clusterRole)
 		}
+
 		return false
 	}
 }
@@ -200,6 +202,7 @@ func NewClusterRoleBindingSelector(delegate func(*rbacv1.ClusterRoleBinding) boo
 		if ok {
 			return delegate(clusterRoleBinding)
 		}
+
 		return false
 	}
 }
@@ -211,6 +214,7 @@ func NewCronJobSelector(delegate func(*batchv1beta1.CronJob) bool) ObjectSelecto
 		if ok {
 			return delegate(cronJob)
 		}
+
 		return false
 	}
 }
@@ -222,6 +226,7 @@ func NewDaemonSetSelector(delegate func(*appsv1.DaemonSet) bool) ObjectSelector 
 		if ok {
 			return delegate(daemonSet)
 		}
+
 		return false
 	}
 }
@@ -233,6 +238,7 @@ func NewDeploymentSelector(delegate func(*appsv1.Deployment) bool) ObjectSelecto
 		if ok {
 			return delegate(deployment)
 		}
+
 		return false
 	}
 }
@@ -244,6 +250,7 @@ func NewHorizontalPodAutoscalerSelector(delegate func(*autoscalingv2beta1.Horizo
 		if ok {
 			return delegate(hpa)
 		}
+
 		return false
 	}
 }
@@ -255,6 +262,7 @@ func NewIngressSelector(delegate func(*extensionsv1beta1.Ingress) bool) ObjectSe
 		if ok {
 			return delegate(ingress)
 		}
+
 		return false
 	}
 }
@@ -266,6 +274,7 @@ func NewJobSelector(delegate func(*batchv1.Job) bool) ObjectSelector {
 		if ok {
 			return delegate(job)
 		}
+
 		return false
 	}
 }
@@ -277,6 +286,7 @@ func NewNetworkPolicySelector(delegate func(*networkingv1.NetworkPolicy) bool) O
 		if ok {
 			return delegate(networkPolicy)
 		}
+
 		return false
 	}
 }
@@ -288,6 +298,7 @@ func NewPersistentVolumeSelector(delegate func(*corev1.PersistentVolume) bool) O
 		if ok {
 			return delegate(persistentVolume)
 		}
+
 		return false
 	}
 }
@@ -299,6 +310,7 @@ func NewPersistentVolumeClaimSelector(delegate func(*corev1.PersistentVolumeClai
 		if ok {
 			return delegate(pvc)
 		}
+
 		return false
 	}
 }
@@ -310,6 +322,7 @@ func NewPodSelector(delegate func(*corev1.Pod) bool) ObjectSelector {
 		if ok {
 			return delegate(pod)
 		}
+
 		return false
 	}
 }
@@ -321,6 +334,7 @@ func NewPodDisruptionBudgetSelector(delegate func(*policyv1beta1.PodDisruptionBu
 		if ok {
 			return delegate(pdb)
 		}
+
 		return false
 	}
 }
@@ -332,6 +346,7 @@ func NewRoleSelector(delegate func(*rbacv1.Role) bool) ObjectSelector {
 		if ok {
 			return delegate(role)
 		}
+
 		return false
 	}
 }
@@ -343,6 +358,7 @@ func NewRoleBindingSelector(delegate func(*rbacv1.RoleBinding) bool) ObjectSelec
 		if ok {
 			return delegate(roleBinding)
 		}
+
 		return false
 	}
 }
@@ -354,6 +370,7 @@ func NewSecretSelector(delegate func(*corev1.Secret) bool) ObjectSelector {
 		if ok {
 			return delegate(secret)
 		}
+
 		return false
 	}
 }
@@ -365,6 +382,7 @@ func NewServiceSelector(delegate func(*corev1.Service) bool) ObjectSelector {
 		if ok {
 			return delegate(service)
 		}
+
 		return false
 	}
 }
@@ -376,6 +394,7 @@ func NewServiceAccountSelector(delegate func(*corev1.ServiceAccount) bool) Objec
 		if ok {
 			return delegate(serviceAccount)
 		}
+
 		return false
 	}
 }
@@ -387,6 +406,7 @@ func NewStatefulSetSelector(delegate func(*appsv1.StatefulSet) bool) ObjectSelec
 		if ok {
 			return delegate(statefulSet)
 		}
+
 		return false
 	}
 }
@@ -398,6 +418,7 @@ func NewConfigMapEditor(delegate func(*corev1.ConfigMap) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(corev1.ConfigMap{}, o)
 		}
+
 		return delegate(configMap)
 	}
 }
@@ -409,6 +430,7 @@ func NewClusterRoleEditor(delegate func(*rbacv1.ClusterRole) error) ObjectEditor
 		if !ok {
 			return newTypeMistmatchError(rbacv1.ClusterRole{}, o)
 		}
+
 		return delegate(clusterRole)
 	}
 }
@@ -420,6 +442,7 @@ func NewClusterRoleBindingEditor(delegate func(*rbacv1.ClusterRoleBinding) error
 		if !ok {
 			return newTypeMistmatchError(rbacv1.ClusterRoleBinding{}, o)
 		}
+
 		return delegate(clusterRoleBinding)
 	}
 }
@@ -431,6 +454,7 @@ func NewCronJobEditor(delegate func(*batchv1beta1.CronJob) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(batchv1beta1.CronJob{}, o)
 		}
+
 		return delegate(cronJob)
 	}
 }
@@ -442,6 +466,7 @@ func NewDaemonSetEditor(delegate func(*appsv1.DaemonSet) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(appsv1.DaemonSet{}, o)
 		}
+
 		return delegate(daemonSet)
 	}
 }
@@ -453,6 +478,7 @@ func NewDeploymentEditor(delegate func(*appsv1.Deployment) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(appsv1.Deployment{}, o)
 		}
+
 		return delegate(deployment)
 	}
 }
@@ -464,6 +490,7 @@ func NewHorizontalPodAutoscalerEditor(delegate func(*autoscalingv2beta1.Horizont
 		if !ok {
 			return newTypeMistmatchError(autoscalingv2beta1.HorizontalPodAutoscaler{}, o)
 		}
+
 		return delegate(hpa)
 	}
 }
@@ -475,6 +502,7 @@ func NewIngressEditor(delegate func(*extensionsv1beta1.Ingress) error) ObjectEdi
 		if !ok {
 			return newTypeMistmatchError(extensionsv1beta1.Ingress{}, o)
 		}
+
 		return delegate(ingress)
 	}
 }
@@ -486,6 +514,7 @@ func NewJobEditor(delegate func(*batchv1.Job) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(batchv1.Job{}, o)
 		}
+
 		return delegate(job)
 	}
 }
@@ -497,6 +526,7 @@ func NewNetworkPolicyEditor(delegate func(*networkingv1.NetworkPolicy) error) Ob
 		if !ok {
 			return newTypeMistmatchError(networkingv1.NetworkPolicy{}, o)
 		}
+
 		return delegate(networkPolicy)
 	}
 }
@@ -508,6 +538,7 @@ func NewPersistentVolumeEditor(delegate func(*corev1.PersistentVolume) error) Ob
 		if !ok {
 			return newTypeMistmatchError(corev1.PersistentVolume{}, o)
 		}
+
 		return delegate(persistentVolume)
 	}
 }
@@ -519,6 +550,7 @@ func NewPersistentVolumeClaimEditor(delegate func(*corev1.PersistentVolumeClaim)
 		if !ok {
 			return newTypeMistmatchError(corev1.PersistentVolumeClaim{}, o)
 		}
+
 		return delegate(pvc)
 	}
 }
@@ -530,6 +562,7 @@ func NewPodEditor(delegate func(*corev1.Pod) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(corev1.Pod{}, o)
 		}
+
 		return delegate(pod)
 	}
 }
@@ -541,6 +574,7 @@ func NewPodDisruptionBudgetEditor(delegate func(*policyv1beta1.PodDisruptionBudg
 		if !ok {
 			return newTypeMistmatchError(policyv1beta1.PodDisruptionBudget{}, o)
 		}
+
 		return delegate(pdb)
 	}
 }
@@ -552,6 +586,7 @@ func NewRoleEditor(delegate func(*rbacv1.Role) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(rbacv1.Role{}, o)
 		}
+
 		return delegate(role)
 	}
 }
@@ -563,6 +598,7 @@ func NewRoleBindingEditor(delegate func(*rbacv1.RoleBinding) error) ObjectEditor
 		if !ok {
 			return newTypeMistmatchError(rbacv1.RoleBinding{}, o)
 		}
+
 		return delegate(roleBinding)
 	}
 }
@@ -574,6 +610,7 @@ func NewSecretEditor(delegate func(*corev1.Secret) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(corev1.Secret{}, o)
 		}
+
 		return delegate(secret)
 	}
 }
@@ -585,6 +622,7 @@ func NewServiceEditor(delegate func(*corev1.Service) error) ObjectEditor {
 		if !ok {
 			return newTypeMistmatchError(corev1.Service{}, o)
 		}
+
 		return delegate(service)
 	}
 }
@@ -596,6 +634,7 @@ func NewServiceAccountEditor(delegate func(*corev1.ServiceAccount) error) Object
 		if !ok {
 			return newTypeMistmatchError(corev1.ServiceAccount{}, o)
 		}
+
 		return delegate(serviceAccount)
 	}
 }
@@ -607,6 +646,7 @@ func NewStatefulSetEditor(delegate func(*appsv1.StatefulSet) error) ObjectEditor
 		if !ok {
 			return newTypeMistmatchError(appsv1.StatefulSet{}, o)
 		}
+
 		return delegate(statefulSet)
 	}
 }

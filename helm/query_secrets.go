@@ -16,9 +16,11 @@ func (q *cachingQuery) SecretByName(name string) *corev1.Secret {
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertSecrets(objects)
 		},
 	)
@@ -28,6 +30,7 @@ func (q *cachingQuery) SecretByName(name string) *corev1.Secret {
 	if len(secrets) == 0 {
 		return nil
 	}
+
 	return secrets[0]
 }
 
@@ -42,12 +45,15 @@ func (q *cachingQuery) SecretsByLabels(labels map[string]string) []*corev1.Secre
 					},
 				),
 			)
+
 			if err != nil {
 				return nil
 			}
+
 			return unsafeConvertSecrets(objects)
 		},
 	)
+
 	return result.([]*corev1.Secret)
 }
 
@@ -56,5 +62,6 @@ func unsafeConvertSecrets(objects []runtime.Object) []*corev1.Secret {
 	for i, o := range objects {
 		secrets[i] = o.(*corev1.Secret)
 	}
+
 	return secrets
 }

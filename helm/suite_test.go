@@ -20,7 +20,7 @@ func loadTemplate() (Template, error) {
 	}
 
 	values := EmptyValues()
-	values.AddFromFile(valuesPath)
+	_ = values.AddFromFile(valuesPath)
 
 	template, err := NewBuilder(chartPath).Render(values)
 

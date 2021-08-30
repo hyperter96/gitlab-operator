@@ -46,7 +46,6 @@ type CustomResourceAdapter interface {
 	Values() helm.Values
 }
 
-//TODO: Use go:embed instead
 var defaultValues string = `
 certmanager:
   install: false
@@ -217,6 +216,7 @@ func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapte
 	}
 	result.populateValues()
 	result.hashValues()
+
 	return result
 }
 
@@ -262,6 +262,7 @@ func (a *populatingAdapter) populateValues() {
 	minioRedirect, _ := GetBoolValue(a.values, "registry.minio.redirect", false)
 
 	globalIngressAnnotations := "{}"
+
 	if configureCertmanager {
 		issuerAnnotation := fmt.Sprintf("cert-manager.io/issuer: %s-issuer", a.ReleaseName())
 		acmeAnnotation := "acme.cert-manager.io/http01-edit-in-place: \"true\""
@@ -281,11 +282,11 @@ func (a *populatingAdapter) populateValues() {
 		"$NGINXServiceAccount", settings.NGINXServiceAccount,
 	).Replace(defaultValues)
 
-	a.values.AddFromYAML([]byte(valuesToUse))
+	_ = a.values.AddFromYAML([]byte(valuesToUse))
 
 	email, err := GetStringValue(a.Values(), "certmanager-issuer.email")
 	if err != nil || email == "" {
-		a.values.SetValue("certmanager-issuer.email", "admin@example.com")
+		_ = a.values.SetValue("certmanager-issuer.email", "admin@example.com")
 	}
 }
 

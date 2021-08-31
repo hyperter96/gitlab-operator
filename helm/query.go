@@ -104,13 +104,14 @@ func newQuery(t Template) Query {
 const (
 	anything = "*"
 
-	gvkDeployment  = "Deployment.v1.apps"
-	gvkStatefulSet = "StatefulSet.v1.apps"
-	gvkJob         = "Job.v1.batch"
-	gvkConfigMap   = "ConfigMap.v1.core"
-	gvkSecret      = "Secret.v1.core"
-	gvkService     = "Service.v1.core"
-	gvkIngress     = "Ingress.v1beta1.extensions"
+	gvkDeployment              = "Deployment.v1.apps"
+	gvkStatefulSet             = "StatefulSet.v1.apps"
+	gvkJob                     = "Job.v1.batch"
+	gvkConfigMap               = "ConfigMap.v1.core"
+	gvkSecret                  = "Secret.v1.core"
+	gvkService                 = "Service.v1.core"
+	gvkIngress                 = "Ingress.v1beta1.extensions"
+	gvkHorizontalPodAutoscaler = "HorizontalPodAutoscaler.v1.autoscaling"
 
 	appLabel = "app"
 )

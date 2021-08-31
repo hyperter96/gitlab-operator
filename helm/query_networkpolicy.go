@@ -2,7 +2,7 @@ package helm
 
 import (
 	corev1 "k8s.io/api/core/v1"
-  networkpolicyv1 "k8s.io/api/networking.k8s.io/v1"
+  networkpolicyv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 

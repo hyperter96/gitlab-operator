@@ -112,7 +112,7 @@ const (
 	gvkService                 = "Service.v1.core"
 	gvkIngress                 = "Ingress.v1beta1.extensions"
 	gvkHorizontalPodAutoscaler = "HorizontalPodAutoscaler.v1.autoscaling"
-	gvkNetworkPolicy					 = "NetworkPolicy.v1.networking.k8s.io"
+	gvkNetworkPolicy					 = "NetworkPolicy.v1.networking"
 
 	appLabel = "app"
 )

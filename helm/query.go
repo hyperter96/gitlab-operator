@@ -5,9 +5,11 @@ import (
 	"sync"
 
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkpolicyv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -85,6 +87,24 @@ type Query interface {
 
 	// IngressByComponent returns the INgress for a specific component.
 	IngressByComponent(component string) *extensionsv1beta1.Ingress
+
+	// HPAByName returns the HPA with the specified name.
+	HPAByName(name string) *autoscalingv1.HorizontalPodAutoscaler
+
+	// HPAByLabels lists all HPAs that match the labels.
+	HPAByLabels(labels map[string]string) []*autoscalingv1.HorizontalPodAutoscaler
+
+	// HPAByComponent returns the HPA for a specific component.
+	HPAByComponent(component string) *autoscalingv1.HorizontalPodAutoscaler
+
+	// NetworkPolicyByName returns the NetworkPolicy with the specified name.
+	NetworkPolicyByName(name string) *networkpolicyv1.NetworkPolicy
+
+	// NetworkPolicyByLabels lists all NetworkPolicy that match the labels.
+	NetworkPolicyByLabels(labels map[string]string) []*networkpolicyv1.NetworkPolicy
+
+	// NetworkPolicyByComponent returns the NetworkPolicy for a specific component.
+	NetworkPolicyByComponent(component string) *networkpolicyv1.NetworkPolicy
 }
 
 type cachingQuery struct {

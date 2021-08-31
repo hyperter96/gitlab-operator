@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func (q *cachingQuery) HpaByName(name string) *autoscalingv1.HorizontalPodAutoscaler {
+func (q *cachingQuery) HPAByName(name string) *autoscalingv1.HorizontalPodAutoscaler {
 	key := q.cacheKey(name, gvkHorizontalPodAutoscaler, nil)
 	result := q.runQuery(key,
 		func() interface{} {
@@ -20,7 +20,7 @@ func (q *cachingQuery) HpaByName(name string) *autoscalingv1.HorizontalPodAutosc
 			if err != nil {
 				return nil
 			}
-			return unsafeConvertHpas(objects)
+			return unsafeConvertHPAs(objects)
 		},
 	)
 
@@ -32,7 +32,7 @@ func (q *cachingQuery) HpaByName(name string) *autoscalingv1.HorizontalPodAutosc
 	return services[0]
 }
 
-func (q *cachingQuery) HpaByLabels(labels map[string]string) []*autoscalingv1.HorizontalPodAutoscaler {
+func (q *cachingQuery) HPAByLabels(labels map[string]string) []*autoscalingv1.HorizontalPodAutoscaler {
 	key := q.cacheKey(anything, gvkHorizontalPodAutoscaler, labels)
 	result := q.runQuery(key,
 		func() interface{} {
@@ -46,13 +46,13 @@ func (q *cachingQuery) HpaByLabels(labels map[string]string) []*autoscalingv1.Ho
 			if err != nil {
 				return nil
 			}
-			return unsafeConvertHpas(objects)
+			return unsafeConvertHPAs(objects)
 		},
 	)
 	return result.([]*autoscalingv1.HorizontalPodAutoscaler)
 }
 
-func (q *cachingQuery) HpaByComponent(component string) *autoscalingv1.HorizontalPodAutoscaler {
+func (q *cachingQuery) HPAByComponent(component string) *autoscalingv1.HorizontalPodAutoscaler {
 	hpas := q.HpaByLabels(map[string]string{
 		appLabel: component,
 	})
@@ -62,7 +62,7 @@ func (q *cachingQuery) HpaByComponent(component string) *autoscalingv1.Horizonta
 	return hpas[0]
 }
 
-func unsafeConvertHpas(objects []runtime.Object) []*autoscalingv1.HorizontalPodAutoscaler {
+func unsafeConvertHPAs(objects []runtime.Object) []*autoscalingv1.HorizontalPodAutoscaler {
 	hpas := make([]*autoscalingv1.HorizontalPodAutoscaler, len(objects))
 	for i, o := range objects {
 		hpas[i] = o.(*autoscalingv1.HorizontalPodAutoscaler)

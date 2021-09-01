@@ -105,6 +105,15 @@ type Query interface {
 
 	// NetworkPolicyByComponent returns the NetworkPolicy for a specific component.
 	NetworkPolicyByComponent(component string) *networkpolicyv1.NetworkPolicy
+
+	// ServiceAccountByName returns the ServiceAccount with the specified name.
+	ServiceAccountByName(name string) *corev1.ServiceAccount
+
+	// ServiceAccountByLabels lists all ServiceAccount that match the labels.
+	ServiceAccountByLabels(labels map[string]string) []*corev1.ServiceAccount
+
+	// ServiceAccountByComponent returns the ServiceAccount for a specific component.
+	ServiceAccountByComponent(component string) *corewv1.ServiceAccount
 }
 
 type cachingQuery struct {
@@ -133,6 +142,7 @@ const (
 	gvkIngress                 = "Ingress.v1beta1.extensions"
 	gvkHorizontalPodAutoscaler = "HorizontalPodAutoscaler.v1.autoscaling"
 	gvkNetworkPolicy					 = "NetworkPolicy.v1.networking"
+	gvkServiceAccount					 = "ServiceAccount.v1.core"
 
 	appLabel = "app"
 )

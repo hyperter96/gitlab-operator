@@ -1,7 +1,6 @@
 package helm
 
 import (
-	corev1 "k8s.io/api/core/v1"
   networkpolicyv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -24,12 +23,12 @@ func (q *cachingQuery) NetworkPolicyByName(name string) *networkpolicyv1.Network
 		},
 	)
 
-	services := result.([]*networkpolicyv1.NetworkPolicy)
+	policies := result.([]*networkpolicyv1.NetworkPolicy)
 
-	if len(services) == 0 {
+	if len(policies) == 0 {
 		return nil
 	}
-	return services[0]
+	return policies[0]
 }
 
 func (q *cachingQuery) NetworkPolicyByLabels(labels map[string]string) []*networkpolicyv1.NetworkPolicy {
@@ -53,19 +52,19 @@ func (q *cachingQuery) NetworkPolicyByLabels(labels map[string]string) []*networ
 }
 
 func (q *cachingQuery) NetworkPolicyByComponent(component string) *networkpolicyv1.NetworkPolicy {
-	networkPolicies := q.NetworkPolicyByLabels(map[string]string{
+	policies := q.NetworkPolicyByLabels(map[string]string{
 		appLabel: component,
 	})
-	if len(networkPolicies) == 0 {
+	if len(policies) == 0 {
 		return nil
 	}
-	return networkPolicies[0]
+	return policies[0]
 }
 
 func unsafeConvertNetworkPolicies(objects []runtime.Object) []*networkpolicyv1.NetworkPolicy {
-	networkPolicies := make([]*networkpolicyv1.NetworkPolicy, len(objects))
+	policies := make([]*networkpolicyv1.NetworkPolicy, len(objects))
 	for i, o := range objects {
-		networkPolicies[i] = o.(*networkpolicyv1.NetworkPolicy)
+		policies[i] = o.(*networkpolicyv1.NetworkPolicy)
 	}
-	return networkPolicies
+	return policies
 }

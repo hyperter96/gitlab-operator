@@ -1,7 +1,6 @@
 package helm
 
 import (
-	corev1 "k8s.io/api/core/v1"
   autoscalingv1 "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	appsv1 "k8s.io/api/apps/v1"
-	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -89,13 +89,13 @@ type Query interface {
 	IngressByComponent(component string) *extensionsv1beta1.Ingress
 
 	// HPAByName returns the HPA with the specified name.
-	HPAByName(name string) *autoscalingv1.HorizontalPodAutoscaler
+	HPAByName(name string) *autoscalingv2beta1.HorizontalPodAutoscaler
 
 	// HPAByLabels lists all HPAs that match the labels.
-	HPAByLabels(labels map[string]string) []*autoscalingv1.HorizontalPodAutoscaler
+	HPAByLabels(labels map[string]string) []*autoscalingv2beta1.HorizontalPodAutoscaler
 
 	// HPAByComponent returns the HPA for a specific component.
-	HPAByComponent(component string) *autoscalingv1.HorizontalPodAutoscaler
+	HPAByComponent(component string) *autoscalingv2beta1.HorizontalPodAutoscaler
 
 	// NetworkPolicyByName returns the NetworkPolicy with the specified name.
 	NetworkPolicyByName(name string) *networkpolicyv1.NetworkPolicy
@@ -113,7 +113,7 @@ type Query interface {
 	ServiceAccountByLabels(labels map[string]string) []*corev1.ServiceAccount
 
 	// ServiceAccountByComponent returns the ServiceAccount for a specific component.
-	ServiceAccountByComponent(component string) *corewv1.ServiceAccount
+	ServiceAccountByComponent(component string) *corev1.ServiceAccount
 }
 
 type cachingQuery struct {
@@ -140,9 +140,9 @@ const (
 	gvkSecret                  = "Secret.v1.core"
 	gvkService                 = "Service.v1.core"
 	gvkIngress                 = "Ingress.v1beta1.extensions"
-	gvkHorizontalPodAutoscaler = "HorizontalPodAutoscaler.v1.autoscaling"
-	gvkNetworkPolicy					 = "NetworkPolicy.v1.networking"
-	gvkServiceAccount					 = "ServiceAccount.v1.core"
+	gvkHorizontalPodAutoscaler = "HorizontalPodAutoscaler.v2beta1.autoscaling"
+	gvkNetworkPolicy           = "NetworkPolicy.v1.networking"
+	gvkServiceAccount          = "ServiceAccount.v1.core"
 
 	appLabel = "app"
 )

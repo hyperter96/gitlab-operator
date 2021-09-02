@@ -1,17 +1,17 @@
 package helm
 
 import (
-  autoscalingv1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func (q *cachingQuery) HPAByName(name string) *autoscalingv1.HorizontalPodAutoscaler {
+func (q *cachingQuery) HPAByName(name string) *autoscalingv2beta1.HorizontalPodAutoscaler {
 	key := q.cacheKey(name, gvkHorizontalPodAutoscaler, nil)
 	result := q.runQuery(key,
 		func() interface{} {
 			objects, err := q.template.GetObjects(
 				NewHorizontalPodAutoscalerSelector(
-					func(d *autoscalingv1.HorizontalPodAutoscaler) bool {
+					func(d *autoscalingv2beta1.HorizontalPodAutoscaler) bool {
 						return d.ObjectMeta.Name == name
 					},
 				),
@@ -23,7 +23,7 @@ func (q *cachingQuery) HPAByName(name string) *autoscalingv1.HorizontalPodAutosc
 		},
 	)
 
-	services := result.([]*autoscalingv1.HorizontalPodAutoscaler)
+	services := result.([]*autoscalingv2beta1.HorizontalPodAutoscaler)
 
 	if len(services) == 0 {
 		return nil
@@ -31,13 +31,13 @@ func (q *cachingQuery) HPAByName(name string) *autoscalingv1.HorizontalPodAutosc
 	return services[0]
 }
 
-func (q *cachingQuery) HPAByLabels(labels map[string]string) []*autoscalingv1.HorizontalPodAutoscaler {
+func (q *cachingQuery) HPAByLabels(labels map[string]string) []*autoscalingv2beta1.HorizontalPodAutoscaler {
 	key := q.cacheKey(anything, gvkHorizontalPodAutoscaler, labels)
 	result := q.runQuery(key,
 		func() interface{} {
 			objects, err := q.template.GetObjects(
 				NewHorizontalPodAutoscalerSelector(
-					func(d *autoscalingv1.HorizontalPodAutoscaler) bool {
+					func(d *autoscalingv2beta1.HorizontalPodAutoscaler) bool {
 						return matchLabels(d.ObjectMeta.Labels, labels)
 					},
 				),
@@ -48,11 +48,11 @@ func (q *cachingQuery) HPAByLabels(labels map[string]string) []*autoscalingv1.Ho
 			return unsafeConvertHPAs(objects)
 		},
 	)
-	return result.([]*autoscalingv1.HorizontalPodAutoscaler)
+	return result.([]*autoscalingv2beta1.HorizontalPodAutoscaler)
 }
 
-func (q *cachingQuery) HPAByComponent(component string) *autoscalingv1.HorizontalPodAutoscaler {
-	hpas := q.HpaByLabels(map[string]string{
+func (q *cachingQuery) HPAByComponent(component string) *autoscalingv2beta1.HorizontalPodAutoscaler {
+	hpas := q.HPAByLabels(map[string]string{
 		appLabel: component,
 	})
 	if len(hpas) == 0 {
@@ -61,10 +61,10 @@ func (q *cachingQuery) HPAByComponent(component string) *autoscalingv1.Horizonta
 	return hpas[0]
 }
 
-func unsafeConvertHPAs(objects []runtime.Object) []*autoscalingv1.HorizontalPodAutoscaler {
-	hpas := make([]*autoscalingv1.HorizontalPodAutoscaler, len(objects))
+func unsafeConvertHPAs(objects []runtime.Object) []*autoscalingv2beta1.HorizontalPodAutoscaler {
+	hpas := make([]*autoscalingv2beta1.HorizontalPodAutoscaler, len(objects))
 	for i, o := range objects {
-		hpas[i] = o.(*autoscalingv1.HorizontalPodAutoscaler)
+		hpas[i] = o.(*autoscalingv2beta1.HorizontalPodAutoscaler)
 	}
 	return hpas
 }

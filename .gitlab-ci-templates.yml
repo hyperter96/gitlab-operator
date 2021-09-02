@@ -15,19 +15,25 @@
       - .go/pkg/mod/
     when: 'always'
 
-.functional_tests:
+.review_template:
   extends: .cache
+  stage: review
+  variables:
+    CLEANUP: "no"
   script:
-  - CLEANUP="no" ./scripts/test.sh
-  - echo "ROOT_PASSWORD=$(kubectl -n $TESTS_NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> functional_tests.env
-  - echo "GITLAB_VERSION=$(kubectl -n $TESTS_NAMESPACE exec -ti $(kubectl -n $TESTS_NAMESPACE get pods | grep task-runner | awk '{print $1}') cat /srv/gitlab/VERSION)" >> functional_tests.env
+  - ./scripts/test.sh
+  - echo "ROOT_PASSWORD=$(kubectl -n $TESTS_NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> review.env
+  - echo "GITLAB_VERSION=$(kubectl -n $TESTS_NAMESPACE exec -ti $(kubectl -n $TESTS_NAMESPACE get pods | grep task-runner | awk '{print $1}') cat /srv/gitlab/VERSION)" >> review.env
   artifacts:
     paths:
       #NOTE: this will affect following Jobs providing manifest crafted to be deployed into tests.
       #      where this may backfire is if we push "publish" to happen *after* tests.
       - .build/operator.yaml
     reports:
-      dotenv: functional_tests.env
+      dotenv: review.env
+  rules:
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
 
 .qa:
   image: registry.gitlab.com/gitlab-org/gitlab-omnibus-builder/ruby_docker
@@ -53,12 +59,14 @@
   allow_failure: true
   parallel: 2
 
-.functional_tests_cleanup:
+.stop_review_template:
+  stage: cleanup
   variables:
     DEBUG: "yes"
     CLEANUP: "only"
   script: ./scripts/test.sh
+  allow_failure: true
   rules:
     - <<: *skip_if_release_tag
     - if: '$CI_COMMIT_BRANCH'
-      when: always
+      when: manual

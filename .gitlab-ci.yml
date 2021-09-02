@@ -3,7 +3,10 @@ image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-
 variables:
   # Configuration of K8s
   # Namespace within which to run tests
-  TESTS_NAMESPACE: "n${CI_COMMIT_SHORT_SHA}-${CI_PIPELINE_ID}"
+  TESTS_NAMESPACE: "n${CI_COMMIT_SHORT_SHA}"
+  DOMAIN_OPENSHIFT_4_6: "apps.ocp-ci-4623.k8s-ft.win"
+  DOMAIN_OPENSHIFT_4_7: "apps.ocp-ci-4717.k8s-ft.win"
+  DOMAIN_GKE: "gitlab-operator.k8s-ft.win"
   # Namespace built into default manifest
   NAMESPACE: "gitlab-system"
   TAG: ${CI_COMMIT_SHORT_SHA}
@@ -24,7 +27,7 @@ stages:
   - test
   - publish
   - release
-  - functional_test
+  - review
   - qa
   - cleanup
   - certification
@@ -151,41 +154,47 @@ build_bundle_image:
     changes:
       - bundle/**/*
 
-functional_tests_4_6:
-  extends: .functional_tests
-  stage: functional_test
+review_4_6:
+  extends: .review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_6
+    PLATFORM: openshift
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
-  variables:
-    DOMAIN: apps.ocp-ci-4623.k8s-ft.win
-    PLATFORM: openshift
-  rules:
-    - !reference [.skip_if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
+  environment:
+    name: openshift_4_6/$CI_COMMIT_REF_NAME
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_6
+    on_stop: stop_review_openshift_4_6
+    auto_stop_in: 4 days
+  resource_group: "openshift_4_6/${CI_COMMIT_REF_NAME}"
 
-functional_tests_4_7:
-  extends: .functional_tests
-  stage: functional_test
+review_4_7:
+  extends: .review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_7
+    PLATFORM: openshift
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
-  variables:
-    DOMAIN: apps.ocp-ci-4717.k8s-ft.win
-    PLATFORM: openshift
-  rules:
-    - !reference [.skip_if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
+  environment:
+    name: openshift_4_7/$CI_COMMIT_REF_NAME
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_7
+    on_stop: stop_review_openshift_4_7
+    auto_stop_in: 4 days
+  resource_group: "openshift_4_7/${CI_COMMIT_REF_NAME}"
 
-functional_tests_gke:
-  extends: .functional_tests
-  stage: functional_test
+review_gke:
+  extends: .review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE
+    PLATFORM: kubernetes
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
-  variables:
-    DOMAIN: gitlab-operator.k8s-ft.win
-    PLATFORM: kubernetes
-  rules:
-    - !reference [.skip_if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
+  environment:
+    name: gke/$CI_COMMIT_REF_NAME
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
+    on_stop: stop_review_gke
+    auto_stop_in: 4 days
+  resource_group: "gke/${CI_COMMIT_REF_NAME}"
 
 qa_4_6:
   extends: .qa
@@ -194,7 +203,7 @@ qa_4_6:
     DOMAIN: apps.ocp-ci-4623.k8s-ft.win
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   dependencies:
-    - functional_tests_4_6
+    - review_4_6
   rules:
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
@@ -206,7 +215,7 @@ qa_4_7:
     DOMAIN: apps.ocp-ci-4717.k8s-ft.win
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   dependencies:
-    - functional_tests_4_7
+    - review_4_7
   rules:
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
@@ -215,31 +224,37 @@ qa_gke:
   extends: .qa
   stage: qa
   variables:
-    DOMAIN: gitlab-operator.k8s-ft.win
+    DOMAIN: $DOMAIN_GKE
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   dependencies:
-    - functional_tests_gke
+    - review_gke
   rules:
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
-functional_tests_cleanup_4_6:
-  extends: .functional_tests_cleanup
-  stage: cleanup
+stop_review_openshift_4_6:
+  extends: .stop_review_template
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
+  environment:
+    name: openshift_4_6/$CI_COMMIT_REF_NAME
+    action: stop
 
-functional_tests_cleanup_4_7:
-  extends: .functional_tests_cleanup
-  stage: cleanup
+stop_review_openshift_4_7:
+  extends: .stop_review_template
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
+  environment:
+    name: openshift_4_7/$CI_COMMIT_REF_NAME
+    action: stop
 
-functional_tests_cleanup_gke:
-  extends: .functional_tests_cleanup
-  stage: cleanup
+stop_review_gke:
+  extends: .stop_review_template
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
+  environment:
+    name: gke/$CI_COMMIT_REF_NAME
+    action: stop
 
 certification_upload:
   stage: certification

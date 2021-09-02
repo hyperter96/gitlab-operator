@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	chartVersions = AvailableChartVersions()
-	namespace     = os.Getenv("HELM_NAMESPACE")
+	chartVersions []string    = AvailableChartVersions()
+	chartValues   helm.Values = helm.EmptyValues()
+	namespace     string      = os.Getenv("HELM_NAMESPACE")
 )
 
 var _ = Describe("CustomResourceAdapter", func() {

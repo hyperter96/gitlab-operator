@@ -29,4 +29,4 @@ Cluster-scope can be configured by disabling the WATCH_NAMESPACE patch that we p
 
 The Operator is namespace-scoped by default. CI pipelines will pass more reliably as this change ensures that Operators only reconcile objects within their own namespace.
 
-We are investigating global-scope problems in ISSUELINKTODO with the intention of allowing the Operator to resolve GitLab objects in any namespace. We will update this ADR upon resolving that issue.
+We are investigating global-scope problems in https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/100 with the intention of allowing the Operator to resolve GitLab objects in any namespace. We will update this ADR upon resolving that issue.

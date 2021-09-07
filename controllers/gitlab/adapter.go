@@ -136,6 +136,68 @@ shared-secrets:
     fsGroup: ''
 
 global:
+  appConfig:
+    object_store:
+      enabled: true
+      connection:
+        secret: $AppConfigConnectionSecretName
+        key: connection
+    artifacts:
+      bucket: gitlab-artifacts
+    backups:
+      bucket: gitlab-backups
+      tmpBucket: tmp
+    externalDiffs:
+      bucket: gitlab-mr-diffs
+    lfs:
+      bucket: git-lfs
+    packages:
+      bucket: gitlab-packages
+    pseudonymizer:
+      bucket: gitlab-pseudo
+    uploads:
+      bucket: gitlab-uploads
+    # Mailroom
+    incomingEmail:
+      enabled: false
+      address:
+      host:
+      port: 993
+      ssl: true
+      startTls: false
+      user:
+      password:
+        secret: ""
+        key: password
+      expungeDeleted: false
+      logger:
+        logPath: "/dev/stdout"
+      mailbox: inbox
+      idleTimeout: 60
+      inboxMethod: "imap"
+      clientSecret:
+        key: secret
+      pollInterval: 60
+    serviceDeskEmail:
+      enabled: false
+      address:
+      host:
+      port: 993
+      ssl: true
+      startTls: false
+      user:
+      password:
+        secret: ""
+        key: password
+      expungeDeleted: false
+      logger:
+        logPath: "/dev/stdout"
+      mailbox: inbox
+      idleTimeout: 60
+      inboxMethod: "imap"
+      clientSecret:
+        key: secret
+      pollInterval: 60
   common:
     labels:
       app.kubernetes.io/name: $ReleaseName
@@ -145,6 +207,12 @@ global:
   ingress:
     annotations:
       $GlobalIngressAnnotations
+  minio:
+    enabled: false
+  redis:
+    password: {}
+  registry:
+    bucket: registry
   serviceAccount:
     enabled: true,
     create: false,

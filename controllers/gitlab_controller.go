@@ -79,6 +79,7 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes/custom-host,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile triggers when an event occurs on the watched resource.
 //nolint:gocognit // The complexity of this method will be addressed in #260.
@@ -344,6 +345,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	migration := gitlabctl.MigrationsConfigMap(adapter)
 	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
 	registry := gitlabctl.RegistryConfigMap(adapter)
+	mailroom := gitlabctl.MailroomConfigMap(adapter)
 
 	configmaps = append(configmaps,
 		registry,
@@ -354,6 +356,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	configmaps = append(configmaps, exporter...)
 	configmaps = append(configmaps, webservice...)
 	configmaps = append(configmaps, sidekiq...)
+	configmaps = append(configmaps, mailroom...)
 
 	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
 		redis := gitlabctl.RedisConfigMaps(adapter)
@@ -1037,8 +1040,12 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 		return err
 	}
 
+	// TODO: handle Mailroom ServiceAccount
 	return nil
 }
+
+// TODO: create reconcileNetworkPolicy()
+
 
 func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	template, err := gitlabctl.GetTemplate(adapter)

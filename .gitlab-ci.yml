@@ -27,6 +27,7 @@ stages:
   - test
   - publish
   - release
+  - cluster_tests_approval
   - review
   - qa
   - cleanup
@@ -60,6 +61,7 @@ pull_charts:
 lint_code:
   extends: .cache
   stage: test
+  needs: []
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
   script: golangci-lint run --out-format code-climate | tee gl-code-quality-report.json | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"'
   artifacts:
@@ -74,6 +76,7 @@ lint_code:
 .test_job:
   extends: .cache
   stage: test
+  needs: ["pull_charts"]
   variables:
     HELM_CHARTS: "${CI_PROJECT_DIR}/charts"
     GITLAB_OPERATOR_ASSETS: "${CI_PROJECT_DIR}/hack/assets"
@@ -103,6 +106,7 @@ slow_unit_tests:
 .docker_build_job:
   extends: .cache
   stage: release
+  needs: ["pull_charts"]
   image: docker:latest
   services:
     - docker:dind
@@ -153,6 +157,16 @@ build_bundle_image:
       - master
     changes:
       - bundle/**/*
+
+approve_cluster_tests:
+  stage: cluster_tests_approval
+  image: alpine:latest
+  script: echo "Proceeding to tests in CI clusters..."
+  rules:
+    - !reference [.skip_if_release_tag]
+    - !reference [.skip_if_default_branch]
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
 
 review_4_6:
   extends: .review_template

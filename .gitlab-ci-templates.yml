@@ -5,6 +5,13 @@
   <<: *if_release_tag
   when: never
 
+.if_default_branch: &if_default_branch
+  if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+
+.skip_if_default_branch: &skip_if_default_branch
+  <<: *if_default_branch
+  when: never
+
 .if_stable_branch: &if_stable_branch
   if: '$CI_COMMIT_REF_NAME =~ /^[0-9]+-[0-9]+-stable$/'
 

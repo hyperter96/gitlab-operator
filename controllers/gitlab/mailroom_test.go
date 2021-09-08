@@ -16,7 +16,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 	Context("Mailroom", func() {
 		When("Mailroom is enabled", func() {
 			chartValues := helm.EmptyValues()
-			_ = chartValues.SetValue(globalMailroomEnabled, true)
+			_ = chartValues.SetValue(GlobalMailroomEnabled, true)
 
 			adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
 			template, err := GetTemplate(adapter)
@@ -46,7 +46,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 		When("Mailroom is disabled", func() {
 			chartValues := helm.EmptyValues()
-			_ = chartValues.SetValue(globalMailroomEnabled, false)
+			_ = chartValues.SetValue(GlobalMailroomEnabled, false)
 
 			adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
 			template, err := GetTemplate(adapter)

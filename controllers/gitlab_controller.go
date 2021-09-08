@@ -141,10 +141,14 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if gitlabctl.MinioEnabled(adapter) {
-		if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
+	if configureMailroom, _ := gitlabctl.GetBoolValue(adapter.Values(), gitlabctl.GlobalMailroomEnabled, false); configureMailroom {
+		if err := r.reconcileMailroom(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}
+	}
+
+	if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if internal.RequiresCertManagerCertificate(adapter).Any() {
@@ -345,7 +349,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	migration := gitlabctl.MigrationsConfigMap(adapter)
 	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
 	registry := gitlabctl.RegistryConfigMap(adapter)
-	mailroom := gitlabctl.MailroomConfigMap(adapter)
+	//mailroom := gitlabctl.MailroomConfigMap(adapter)
 
 	configmaps = append(configmaps,
 		registry,
@@ -356,7 +360,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	configmaps = append(configmaps, exporter...)
 	configmaps = append(configmaps, webservice...)
 	configmaps = append(configmaps, sidekiq...)
-	configmaps = append(configmaps, mailroom...)
+	//configmaps = append(configmaps, mailroom...)
 
 	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
 		redis := gitlabctl.RedisConfigMaps(adapter)
@@ -469,9 +473,9 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 		}
 	}
 
-	if err := r.reconcileMailroomDeployment(ctx, adapter); err != nil {
-		return err
-	}
+	// if err := r.reconcileMailroomDeployment(ctx, adapter); err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -852,8 +856,24 @@ func (r *GitLabReconciler) reconcileGitLabPagesDeployment(ctx context.Context, a
 	return err
 }
 
-func (r *GitLabReconciler) reconcileMailroomDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	// Deployment
 	mailroom := gitlabctl.MailroomDeployment(adapter)
+	if _, err := r.createOrPatch(ctx, mailroom, adapter); err != nil {
+		return err
+	}
+
+	// ConfigMap
+	cm := gitlabctl.MailroomConfigMap(adapter)
+	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+		return err
+	}
+
+	// HPA
+	hpa := gitlabctl.MailroomHPA(adapter)
+	if _, err := r.createOrPatch(ctx, hpa, adapter); err != nil {
+		return err
+	}
 
 	r.annotateSecretsChecksum(ctx, adapter, &mailroom.Spec.Template)
 	_, err := r.createOrPatch(ctx, mailroom, adapter)
@@ -1029,15 +1049,14 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 	lookupKey := types.NamespacedName{Name: sa.Name, Namespace: adapter.Namespace()}
 
 	if err := r.Get(ctx, lookupKey, found); err != nil {
+		// gitlab-app ServiceAccount not found
 		if errors.IsNotFound(err) {
 			if err := r.Create(ctx, sa); err != nil {
 				return err
 			}
-
-			return nil
+		} else {
+			return err
 		}
-
-		return err
 	}
 
 	// TODO: handle Mailroom ServiceAccount

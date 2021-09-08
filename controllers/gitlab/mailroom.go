@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	globalMailroomEnabled  = "global.mailroom.enabled"
+	GlobalMailroomEnabled  = "global.mailroom.enabled"
 	mailroomEnabledDefault = false
 )
 
 // MailroomEnabled returns `true` if enabled and `false` if not.
 func MailroomEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), globalMailroomEnabled, mailroomEnabledDefault)
+	enabled, _ := GetBoolValue(adapter.Values(), GlobalMailroomEnabled, mailroomEnabledDefault)
 	return enabled
 }
 
@@ -39,12 +39,10 @@ func MailroomConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 		return nil // WARNING: this should return an error
 	}
 
-	exporterCfgMap := template.Query().ConfigMapByName(
+	mailroomCfgMap := template.Query().ConfigMapByName(
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MailroomComponentName))
 
-	result := []*corev1.ConfigMap{exporterCfgMap}
-
-	return result[0]
+	return mailroomCfgMap
 }
 
 // MailroomHPA returns the HPA for the Mailroom component.
@@ -57,13 +55,11 @@ func MailroomHPA(adapter CustomResourceAdapter) *autoscalingv2beta1.HorizontalPo
 	hpa := template.Query().HPAByName(
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MailroomComponentName))
 
-	result := []*autoscalingv2beta1.HorizontalPodAutoscaler{hpa}
-
-	return result[0]
+	return hpa
 }
 
 // MailroomNetworkPolicy returns the NetworkPolicy for the Mailroom component.
-func MailroomNetworkPolicy(adapter CustomResourceAdapter) []*networkpolicyv1.NetworkPolicy {
+func MailroomNetworkPolicy(adapter CustomResourceAdapter) *networkpolicyv1.NetworkPolicy {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
@@ -72,9 +68,7 @@ func MailroomNetworkPolicy(adapter CustomResourceAdapter) []*networkpolicyv1.Net
 	policy := template.Query().NetworkPolicyByName(
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MailroomComponentName))
 
-	result := []*networkpolicyv1.NetworkPolicy{policy}
-
-	return result
+	return policy
 }
 
 // MailroomServiceAccount returns the ServiceAccount for the Mailroom component.
@@ -87,7 +81,5 @@ func MailroomServiceAccount(adapter CustomResourceAdapter) *corev1.ServiceAccoun
 	account := template.Query().ServiceAccountByName(
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MailroomComponentName))
 
-	result := []*corev1.ServiceAccount{account}
-
-	return result[0]
+	return account
 }

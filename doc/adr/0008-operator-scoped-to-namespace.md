@@ -19,9 +19,9 @@ to be isolated from other releases.
 
 ## Decision
 
-Ultimately we want the Operator to be able to resolve GitLab CRs globally, regardless of namespace. Users should easily be able to toggle between global and namespaced behavior.
+Ultimately we want the Operator to be able to resolve GitLab CRs cluster-wide, in any namespace. Users should easily be able to toggle between cluster-scoped and namespace-scoped behavior.
 
-The Operator supports cluster-scope, but will be scoped to resolve only GitLab CRs deployed to the same the Operator's namespace by default.
+The Operator's current RBAC permissions make it cluster-scoped (via a ClusterRole), but it is configured to only resolve GitLab CRs that are in the same namespace as the Operator itself using the `WATCH_NAMESPACE` variable.
 
 Cluster-scope can be configured by disabling the WATCH_NAMESPACE patch that we provide. This is currently experimental.
 
@@ -29,4 +29,4 @@ Cluster-scope can be configured by disabling the WATCH_NAMESPACE patch that we p
 
 The Operator is namespace-scoped by default. CI pipelines will pass more reliably as this change ensures that Operators only reconcile objects within their own namespace.
 
-We are investigating global-scope problems in https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/100 with the intention of allowing the Operator to resolve GitLab objects in any namespace. We will update this ADR upon resolving that issue.
+We are investigating support for cluster-scope in https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/100 with the intention of allowing the Operator to resolve GitLab objects in any namespace. We will update this ADR upon resolving that issue.

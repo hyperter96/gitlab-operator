@@ -23,7 +23,7 @@ Ultimately we want the Operator to be able to resolve GitLab CRs cluster-wide, i
 
 The Operator's current RBAC permissions make it cluster-scoped (via a ClusterRole), but it is configured to only resolve GitLab CRs that are in the same namespace as the Operator itself using the `WATCH_NAMESPACE` variable.
 
-Cluster-scope can be configured by disabling the WATCH_NAMESPACE patch that we provide. This is currently experimental.
+Cluster-scope can be configured by disabling the `WATCH_NAMESPACE` patch that we provide. This is currently experimental.
 
 ## Consequences
 

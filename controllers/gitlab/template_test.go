@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 var (
@@ -86,5 +87,91 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(chartInfo1.Namespace).To(Equal(namespace))
 		Expect(chartInfo1.Labels["release"]).To(Equal("test"))
 		Expect(chartInfo2.Data["gitlabChartVersion"]).To(Equal(chartVersions[1]))
+	})
+
+	Context("GitLab Pages", func() {
+		When("Pages is enabled", func() {
+			chartValues := helm.EmptyValues()
+			_ = chartValues.SetValue(globalPagesEnabled, true)
+
+			mockGitLab := &gitlabv1beta1.GitLab{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: namespace,
+				},
+				Spec: gitlabv1beta1.GitLabSpec{
+					Chart: gitlabv1beta1.GitLabChartSpec{
+						Version: chartVersions[0],
+						Values: gitlabv1beta1.ChartValues{
+							Object: chartValues.AsMap(),
+						},
+					},
+				},
+			}
+
+			adapter := NewCustomResourceAdapter(mockGitLab)
+			template, err := GetTemplate(adapter)
+
+			enabled := PagesEnabled(adapter)
+			configMap := PagesConfigMap(adapter)
+			service := PagesService(adapter)
+			deployment := PagesDeployment(adapter)
+			ingress := PagesIngress(adapter)
+
+			It("Should render the template", func() {
+				Expect(err).To(BeNil())
+				Expect(template).NotTo(BeNil())
+			})
+
+			It("Should contain Pages resources", func() {
+				Expect(enabled).To(BeTrue())
+				Expect(configMap).NotTo(BeNil())
+				Expect(service).NotTo(BeNil())
+				Expect(deployment).NotTo(BeNil())
+				Expect(ingress).NotTo(BeNil())
+			})
+		})
+
+		When("Pages is disabled", func() {
+			chartValues := helm.EmptyValues()
+			_ = chartValues.SetValue(globalPagesEnabled, false)
+
+			mockGitLab := &gitlabv1beta1.GitLab{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: namespace,
+				},
+				Spec: gitlabv1beta1.GitLabSpec{
+					Chart: gitlabv1beta1.GitLabChartSpec{
+						Version: chartVersions[0],
+						Values: gitlabv1beta1.ChartValues{
+							Object: chartValues.AsMap(),
+						},
+					},
+				},
+			}
+
+			adapter := NewCustomResourceAdapter(mockGitLab)
+			template, err := GetTemplate(adapter)
+
+			enabled := PagesEnabled(adapter)
+			configMap := PagesConfigMap(adapter)
+			service := PagesService(adapter)
+			deployment := PagesDeployment(adapter)
+			ingress := PagesIngress(adapter)
+
+			It("Should render the template", func() {
+				Expect(err).To(BeNil())
+				Expect(template).NotTo(BeNil())
+			})
+
+			It("Should not contain Pages resources", func() {
+				Expect(enabled).To(BeFalse())
+				Expect(configMap).To(BeNil())
+				Expect(service).To(BeNil())
+				Expect(deployment).To(BeNil())
+				Expect(ingress).To(BeNil())
+			})
+		})
 	})
 })

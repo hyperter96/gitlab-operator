@@ -44,6 +44,9 @@ const (
 
 	// NGINXComponentName is the common name of NGINX Ingress.
 	NGINXComponentName = "nginx-ingress"
+
+	// PagesComponentName is the common name of GitLab Pages.
+	PagesComponentName = "gitlab-pages"
 )
 
 // RedisSubqueues is the array of possible Redis subqueues.

@@ -363,6 +363,11 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 		configmaps = append(configmaps, postgres)
 	}
 
+	if gitlabctl.PagesEnabled(adapter) {
+		pages := gitlabctl.PagesConfigMap(adapter)
+		configmaps = append(configmaps, pages)
+	}
+
 	for _, cm := range configmaps {
 		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
@@ -457,6 +462,12 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 
 	if err := r.reconcileGitlabExporterDeployment(ctx, adapter); err != nil {
 		return err
+	}
+
+	if gitlabctl.PagesEnabled(adapter) {
+		if err := r.reconcileGitLabPagesDeployment(ctx, adapter); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -791,6 +802,11 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 		services = append(services, postgres...)
 	}
 
+	if gitlabctl.PagesEnabled(adapter) {
+		pages := gitlabctl.PagesService(adapter)
+		services = append(services, pages)
+	}
+
 	for _, svc := range services {
 		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
@@ -808,6 +824,22 @@ func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context
 	}
 
 	_, err := r.createOrPatch(ctx, exporter, adapter)
+
+	return err
+}
+
+func (r *GitLabReconciler) reconcileGitLabPagesDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	pages := gitlabctl.PagesDeployment(adapter)
+
+	if err := r.setDeploymentReplica(ctx, pages); err != nil {
+		return err
+	}
+
+	if err := r.annotateSecretsChecksum(ctx, adapter, &pages.Spec.Template); err != nil {
+		return err
+	}
+
+	_, err := r.createOrPatch(ctx, pages, adapter)
 
 	return err
 }
@@ -919,6 +951,11 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabc
 
 	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
 		ingresses = append(ingresses, internal.MinioIngress(adapter))
+	}
+
+	if gitlabctl.PagesEnabled(adapter) {
+		pages := gitlabctl.PagesIngress(adapter)
+		ingresses = append(ingresses, pages)
 	}
 
 	// For each ingress:

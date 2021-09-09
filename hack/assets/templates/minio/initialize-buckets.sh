@@ -77,3 +77,4 @@ createBucket tmp none false
 createBucket gitlab-pseudo none false
 createBucket gitlab-mr-diffs none false
 createBucket gitlab-terraform-state none false
+createBucket gitlab-pages none false

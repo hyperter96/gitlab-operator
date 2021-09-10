@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 
@@ -8,7 +9,7 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -36,7 +37,7 @@ func createMockAdapter(namespace string, version string, values helm.Values) Cus
 func dumpTemplate(template helm.Template) string {
 	output := new(strings.Builder)
 
-	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	for _, o := range(template.Objects()) {
 		output.WriteString("---\n")
 		s.Encode(o, output)
@@ -54,6 +55,28 @@ func dumpTemplateToFile(template helm.Template, filename string) error {
 		return err
 	}
 	fh.WriteString(dumpTemplate(template))
+	fh.Close()
+	return nil
+}
+
+// dumpHelmValues() will output the current values that Helm is using
+func dumpHelmValues(values helm.Values) string {
+	// output := new(strings.Builder)
+	// output.WriteString(fmt.Sprintf("%#v", values.AsMap()))
+	// return output.String()
+	output, _ := json.MarshalIndent(values.AsMap(), "", "    ")
+	return string(output)
+}
+
+// dumpHelmValuesToFile() will output the current values to a file
+// Note: the file is written to where the test runs NOT from where the
+//       tests were run from
+func dumpHelmValuesToFile(values helm.Values, filename string) error {
+	fh, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	fh.WriteString(dumpHelmValues(values))
 	fh.Close()
 	return nil
 }

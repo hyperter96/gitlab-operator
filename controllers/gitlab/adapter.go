@@ -157,47 +157,7 @@ global:
       bucket: gitlab-pseudo
     uploads:
       bucket: gitlab-uploads
-    # Mailroom
-    incomingEmail:
-      enabled: false
-      address:
-      host:
-      port: 993
-      ssl: true
-      startTls: false
-      user:
-      password:
-        secret: ""
-        key: password
-      expungeDeleted: false
-      logger:
-        logPath: "/dev/stdout"
-      mailbox: inbox
-      idleTimeout: 60
-      inboxMethod: "imap"
-      clientSecret:
-        key: secret
-      pollInterval: 60
-    serviceDeskEmail:
-      enabled: false
-      address:
-      host:
-      port: 993
-      ssl: true
-      startTls: false
-      user:
-      password:
-        secret: ""
-        key: password
-      expungeDeleted: false
-      logger:
-        logPath: "/dev/stdout"
-      mailbox: inbox
-      idleTimeout: 60
-      inboxMethod: "imap"
-      clientSecret:
-        key: secret
-      pollInterval: 60
+
   common:
     labels:
       app.kubernetes.io/name: $ReleaseName
@@ -209,8 +169,6 @@ global:
       $GlobalIngressAnnotations
   minio:
     enabled: false
-  redis:
-    password: {}
   registry:
     bucket: registry
   serviceAccount:

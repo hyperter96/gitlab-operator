@@ -12,6 +12,7 @@ import (
 const (
 	GitLabMailroomEnabled  = "gitlab.mailroom.enabled"
 	IncomingEmailEnabled   = "global.appConfig.incomingEmail.enabled"
+	IncomingEmailSecret    = "global.appConfig.incomingEmail.password.secret"
 	mailroomEnabledDefault = true
 	incomingEmailDefault   = false
 )
@@ -20,7 +21,9 @@ const (
 func MailroomEnabled(adapter CustomResourceAdapter) bool {
 	mrEnabled, _ := GetBoolValue(adapter.Values(), GitLabMailroomEnabled, mailroomEnabledDefault)
 	imEnabled, _ := GetBoolValue(adapter.Values(), IncomingEmailEnabled, incomingEmailDefault)
-	return mrEnabled && imEnabled
+	emSecret, _ := GetStringValue(adapter.Values(), IncomingEmailSecret, "")
+
+	return mrEnabled && imEnabled && emSecret != ""
 }
 
 // MailroomDeployment returns the Deployment for the Mailroom component.

@@ -18,11 +18,10 @@ var _ = Describe("CustomResourceAdapter", func() {
 			chartValues := helm.EmptyValues()
 			_ = chartValues.SetValue(GitLabMailroomEnabled, true)
 			_ = chartValues.SetValue(IncomingEmailEnabled, true)
+			_ = chartValues.SetValue(IncomingEmailSecret, "secret_value")
 
 			adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
 			template, err := GetTemplate(adapter)
-
-			//dumpTemplate(adapter)
 
 			enabled := MailroomEnabled(adapter)
 			configMap := MailroomConfigMap(adapter)
@@ -40,9 +39,9 @@ var _ = Describe("CustomResourceAdapter", func() {
 				Expect(enabled).To(BeTrue())
 				Expect(deployment).NotTo(BeNil())
 				Expect(configMap).NotTo(BeNil())
-				Expect(hpa).To(BeNil())
+				Expect(hpa).NotTo(BeNil())
 				Expect(networkPolicy).To(BeNil())
-				Expect(serviceAccount).NotTo(BeNil())
+				Expect(serviceAccount).To(BeNil())
 			})
 
 		})

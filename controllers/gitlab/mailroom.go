@@ -10,14 +10,17 @@ import (
 )
 
 const (
-	GlobalMailroomEnabled  = "global.mailroom.enabled"
-	mailroomEnabledDefault = false
+	GitLabMailroomEnabled  = "gitlab.mailroom.enabled"
+	IncomingEmailEnabled   = "global.appConfig.incomingEmail.enabled"
+	mailroomEnabledDefault = true
+	incomingEmailDefault   = false
 )
 
 // MailroomEnabled returns `true` if enabled and `false` if not.
 func MailroomEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), GlobalMailroomEnabled, mailroomEnabledDefault)
-	return enabled
+	mrEnabled, _ := GetBoolValue(adapter.Values(), GitLabMailroomEnabled, mailroomEnabledDefault)
+	imEnabled, _ := GetBoolValue(adapter.Values(), IncomingEmailEnabled, incomingEmailDefault)
+	return mrEnabled && imEnabled
 }
 
 // MailroomDeployment returns the Deployment for the Mailroom component.
@@ -78,6 +81,8 @@ func MailroomServiceAccount(adapter CustomResourceAdapter) *corev1.ServiceAccoun
 		return nil // WARNING: this should return an error
 	}
 
+
+	// TODO: Seems that the Service Account is gitlab-app
 	account := template.Query().ServiceAccountByName(
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MailroomComponentName))
 

@@ -172,8 +172,8 @@ global:
   registry:
     bucket: registry
   serviceAccount:
-    enabled: true,
-    create: false,
+    enabled: true
+    create: false
     name: $AppServiceAccount
 
 redis:

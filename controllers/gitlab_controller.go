@@ -30,6 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -179,11 +180,9 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if err := r.reconcileGitlabStatus(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
-	}
+	result, err := r.reconcileGitlabStatus(ctx, adapter)
 
-	return ctrl.Result{}, nil
+	return result, err
 }
 
 // SetupWithManager configures the custom resource watched resources.
@@ -197,7 +196,8 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&batchv1.Job{}).
-		Owns(&extensionsv1beta1.Ingress{})
+		Owns(&extensionsv1beta1.Ingress{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{})
 
 	if internal.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
@@ -649,7 +649,9 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 		return false, err
 	}
 
-	logger.V(1).Info("createOrPatch result", "result", result)
+	if result != controllerutil.OperationResultNone {
+		logger.V(1).Info("createOrPatch result", "result", result)
+	}
 
 	return true, nil
 }

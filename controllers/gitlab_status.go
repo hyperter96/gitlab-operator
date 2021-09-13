@@ -3,171 +3,84 @@ package controllers
 import (
 	"context"
 	"reflect"
+	"time"
 
-	"github.com/prometheus/common/log"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 )
 
-// EndpointMembers returns a list of members.
-var EndpointMembers []string
-
-func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) (ctrl.Result, error) {
+	waitInterval := 5 * time.Second
+	resultRequeue := ctrl.Result{RequeueAfter: waitInterval}
+	resultNoRequeue := ctrl.Result{}
 	lookupKey := types.NamespacedName{Namespace: adapter.Namespace(), Name: adapter.ReleaseName()}
-
-	r.Log.V(1).Info("Updating GitLab resource status", "resource", lookupKey)
 
 	// get current Gitlab resource
 	gitlab := &gitlabv1beta1.GitLab{}
 	if err := r.Get(ctx, lookupKey, gitlab); err != nil {
-		return err
+		return resultRequeue, err
 	}
 
-	// Check if the postgres statefulset exists
-	if r.isPostgresDeployed(ctx, adapter) && !r.isWebserviceDeployed(ctx, adapter) {
+	result := resultNoRequeue
+
+	if r.isWebserviceRunning(ctx, adapter) {
+		gitlab.Status.Phase = "Running"
+		gitlab.Status.Stage = ""
+	} else {
 		gitlab.Status.Phase = "Initializing"
-		gitlab.Status.Stage = "Waiting for database"
-	}
+		gitlab.Status.Stage = "Gitlab is initializing"
 
-	// Check if the webservice deployment exists
-	if r.isWebserviceDeployed(ctx, adapter) {
-		// Find webservice pod(s)
-		pods := r.getEndpointMembers(ctx, adapter, adapter.ReleaseName()+"-webservice-default")
-		if len(pods) == 0 {
-			gitlab.Status.Phase = "Initializing"
-			gitlab.Status.Stage = "Gitlab is initializing"
-		}
+		r.Log.V(1).Info("webservice not fully running, will wait and retry", "interval", waitInterval)
 
-		if len(pods) > 0 {
-			// gitlab.Status.HealthCheck = getReadinessStatus(ctx, adapter) // Temporarily disabled
-			gitlab.Status.Phase = "Running"
-			gitlab.Status.Stage = ""
-		}
+		result = resultRequeue
 	}
 
 	// Check if the status of the gitlab resource has changed
 	if !reflect.DeepEqual(adapter.Resource().Status, gitlab.Status) {
 		// Update status if the status has changed
 		if err := r.setGitlabStatus(ctx, gitlab); err != nil {
-			return err
+			return resultRequeue, err
 		}
 	}
 
-	return nil
+	return result, nil
 }
 
-// Temporarily disabled.
-/*
-func getReadinessStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) *gitlabv1beta1.HealthCheck {
-	var err error
-	status := &ReadinessStatus{}
+// Same check as used in the deployment utils in upstream Kubernetes
+// https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/deployment/util/deployment_util.go#L722
+func deploymentComplete(deployment *appsv1.Deployment, newStatus *appsv1.DeploymentStatus) bool {
+	return newStatus.UpdatedReplicas == *(deployment.Spec.Replicas) &&
+		newStatus.Replicas == *(deployment.Spec.Replicas) &&
+		newStatus.AvailableReplicas == *(deployment.Spec.Replicas) &&
+		newStatus.ObservedGeneration >= deployment.Generation
+}
 
-	resp, err := http.Get(fmt.Sprintf("http://%s:8181/-/readiness?all=1", adapter.ReleaseName()+"-webservice"))
-	if err != nil {
-		// log.Error(err, "Unable to retrieve status")
-		return nil
-	}
-	defer resp.Body.Close()
+func (r *GitLabReconciler) isWebserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+	running := false
 
-	if resp.StatusCode == http.StatusOK {
-		// Read readiness status response
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			// log.Error(err, "Unable to read status")
-			return nil
+	// confirm that all Webservice deployments are running
+	for _, deployment := range gitlabctl.WebserviceDeployments(adapter) {
+		webservice := &appsv1.Deployment{}
+		key := types.NamespacedName{
+			Name:      deployment.Name,
+			Namespace: adapter.Namespace(),
 		}
 
-		if err = json.Unmarshal(body, status); err != nil {
-			// log.Error(err, "Unable to convert response to struct")
-			return nil
+		err := r.Get(ctx, key, webservice)
+		if err == nil && deploymentComplete(webservice, &webservice.Status) {
+			running = true
 		}
 	}
 
-	return parseStatus(status)
-}
-*/
-
-// ReadinessStatus shows status of Gitlab services.
-type ReadinessStatus struct {
-	// Returns status of Gitlab rails app
-	WorkhorseStatus string `json:"status,omitempty"`
-	// RedisStatus reports status of redis
-	RedisStatus []ServiceStatus `json:"redis_check,omitempty"`
-	// DatabaseStatus reports status of postgres
-	DatabaseStatus []ServiceStatus `json:"db_check,omitempty"`
-}
-
-// ServiceStatus shows status of a Gitlab
-// dependent service .e.g. Postgres, Redis, Gitaly.
-type ServiceStatus struct {
-	Status string `json:"status,omitempty"`
-}
-
-// Temporarily disabled.
-// Retrieve health of a subsystem
-/*
-func parseStatus(status *ReadinessStatus) *gitlabv1beta1.HealthCheck {
-	var result gitlabv1beta1.HealthCheck
-
-	if status.WorkhorseStatus != "" {
-		result.Workhorse = status.WorkhorseStatus
-	}
-	// Get redis status
-	if len(status.RedisStatus) == 1 {
-		result.Redis = status.RedisStatus[0].Status
-	}
-
-	// Get postgresql status
-	if len(status.DatabaseStatus) == 1 {
-		result.Postgres = status.DatabaseStatus[0].Status
-	}
-
-	return &result
-}
-*/
-
-func (r *GitLabReconciler) isPostgresDeployed(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	labels := internal.Label(adapter.ReleaseName(), "postgresql", internal.GitlabType)
-
-	postgres := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: adapter.Namespace(), Name: labels["app.kubernetes.io/instance"]}, postgres)
-
-	return !reflect.DeepEqual(*postgres, appsv1.Deployment{}) || !errors.IsNotFound(err)
-}
-
-func (r *GitLabReconciler) isWebserviceDeployed(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	webservice := &appsv1.Deployment{}
-	err := r.Get(ctx, types.NamespacedName{Name: adapter.ReleaseName() + "-webservice-default", Namespace: adapter.Namespace()}, webservice)
-
-	return !reflect.DeepEqual(*webservice, appsv1.Deployment{}) || !errors.IsNotFound(err)
+	return running
 }
 
 // setGitlabStatus sets status of custom resource.
 func (r *GitLabReconciler) setGitlabStatus(ctx context.Context, object client.Object) error {
 	return r.Status().Update(ctx, object)
-}
-
-func (r *GitLabReconciler) getEndpointMembers(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, endpoint string) []string {
-	members := []string{}
-
-	ep := &corev1.Endpoints{}
-	if err := r.Get(ctx, types.NamespacedName{Name: endpoint, Namespace: adapter.Namespace()}, ep); err != nil {
-		log.Error(err, "Error getting endpoints")
-	}
-
-	for _, subset := range ep.Subsets {
-		// Get members that are ready
-		for _, addr := range subset.Addresses {
-			members = append(members, addr.TargetRef.Name)
-		}
-	}
-
-	return members
 }

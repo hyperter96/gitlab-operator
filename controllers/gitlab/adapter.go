@@ -121,11 +121,6 @@ registry:
   securityContext:
     runAsUser: $LocalUser
     fsGroup: $LocalUser
-  storage:
-    secret: $RegistryConnectionSecretName
-    key: config
-    redirect:
-      disable: $RegistryMinioRedirect
 
 shared-secrets:
   serviceAccount:
@@ -136,27 +131,6 @@ shared-secrets:
     fsGroup: ''
 
 global:
-  appConfig:
-    object_store:
-      enabled: true
-      connection:
-        secret: $AppConfigConnectionSecretName
-        key: connection
-    artifacts:
-      bucket: gitlab-artifacts
-    backups:
-      bucket: gitlab-backups
-      tmpBucket: tmp
-    externalDiffs:
-      bucket: gitlab-mr-diffs
-    lfs:
-      bucket: git-lfs
-    packages:
-      bucket: gitlab-packages
-    pseudonymizer:
-      bucket: gitlab-pseudo
-    uploads:
-      bucket: gitlab-uploads
   common:
     labels:
       app.kubernetes.io/name: $ReleaseName
@@ -166,10 +140,6 @@ global:
   ingress:
     annotations:
       $GlobalIngressAnnotations
-  minio:
-    enabled: false
-  registry:
-    bucket: registry
   serviceAccount:
     enabled: true,
     create: false,
@@ -206,6 +176,42 @@ nginx-ingress:
   defaultBackend:
     serviceAccount:
       name: $AppServiceAccount
+`
+
+var defaultValuesMinio string = `
+global:
+  minio:
+    enabled: false
+  appConfig:
+    object_store:
+      enabled: true
+      connection:
+        secret: $AppConfigConnectionSecretName
+        key: connection
+    artifacts:
+      bucket: gitlab-artifacts
+    backups:
+      bucket: gitlab-backups
+      tmpBucket: tmp
+    externalDiffs:
+      bucket: gitlab-mr-diffs
+    lfs:
+      bucket: git-lfs
+    packages:
+      bucket: gitlab-packages
+    pseudonymizer:
+      bucket: gitlab-pseudo
+    uploads:
+      bucket: gitlab-uploads
+  registry:
+    bucket: registry
+
+registry:
+  storage:
+    secret: $RegistryConnectionSecretName
+    key: config
+    redirect:
+      disable: $RegistryMinioRedirect
 `
 
 // NewCustomResourceAdapter returns a new adapter for the provided GitLab instance.
@@ -259,7 +265,6 @@ func (a *populatingAdapter) populateValues() {
 	a.reference = fmt.Sprintf("%s.%s", a.resource.Name, a.resource.Namespace)
 
 	configureCertmanager, _ := GetBoolValue(a.Values(), "global.ingress.configureCertmanager", true)
-	minioRedirect, _ := GetBoolValue(a.values, "registry.minio.redirect", false)
 
 	globalIngressAnnotations := "{}"
 
@@ -274,15 +279,30 @@ func (a *populatingAdapter) populateValues() {
 		"$LocalUser", settings.LocalUser,
 		"$AppServiceAccount", settings.AppServiceAccount,
 		"$ManagerServiceAccount", settings.ManagerServiceAccount,
-		"$AppConfigConnectionSecretName", settings.AppConfigConnectionSecretName,
-		"$RegistryConnectionSecretName", settings.RegistryConnectionSecretName,
-		"$RegistryMinioRedirect", strconv.FormatBool(!minioRedirect),
 		"$TaskRunnerConnectionSecretName", settings.TaskRunnerConnectionSecretName,
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
 		"$NGINXServiceAccount", settings.NGINXServiceAccount,
 	).Replace(defaultValues)
 
 	_ = a.values.AddFromYAML([]byte(valuesToUse))
+
+	minioEnabled, _ := GetBoolValue(a.Values(), "global.minio.enabled", true)
+	if minioEnabled {
+		minioRedirect, _ := GetBoolValue(a.values, "registry.minio.redirect", false)
+		valuesToUse := strings.NewReplacer(
+			"$AppConfigConnectionSecretName", settings.AppConfigConnectionSecretName,
+			"$RegistryConnectionSecretName", settings.RegistryConnectionSecretName,
+			"$RegistryMinioRedirect", strconv.FormatBool(!minioRedirect),
+		).Replace(defaultValuesMinio)
+
+		_ = a.values.AddFromYAML([]byte(valuesToUse))
+
+		// This is a workaround to account for the fact that our "internal" MinIO is actually
+		// implemented as external object storage, meaning `global.minio.enabled` must be
+		// set to `false`. If `internalMinioEnabled=true`, then our "internal" MinIO objects
+		// will be reconciled, and vice versa.
+		_ = a.values.SetValue(internalMinioEnabled, true)
+	}
 
 	email, err := GetStringValue(a.Values(), "certmanager-issuer.email")
 	if err != nil || email == "" {

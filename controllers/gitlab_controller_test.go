@@ -574,6 +574,98 @@ global:
 		})
 	})
 
+	Context("MinIO", func() {
+		When("Bundled MinIO is enabled", func() {
+			releaseName := "minio-enabled"
+			cfgMapName := fmt.Sprintf("%s-minio-script", releaseName)
+			secretName := fmt.Sprintf("%s-minio-secret", releaseName)
+			serviceName := fmt.Sprintf("%s-minio", releaseName)
+			statefulSetName := fmt.Sprintf("%s-minio", releaseName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := helm.EmptyValues()
+			_ = chartValues.SetValue("global.minio.enabled", true)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+				processMinioBucketsJob(releaseName)
+			})
+
+			It("Should create MinIO resources and continue the reconcile loop", func() {
+				By("Checking MinIO Secret exists")
+				Eventually(getObjectPromise(secretName, &corev1.Secret{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking MinIO Service exists")
+				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking MinIO StatefulSet exists")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking MinIO ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
+		When("Bundled MinIO is disabled", func() {
+			releaseName := "minio-disabled"
+			cfgMapName := fmt.Sprintf("%s-minio-script", releaseName)
+			secretName := fmt.Sprintf("%s-minio-secret", releaseName)
+			serviceName := fmt.Sprintf("%s-minio", releaseName)
+			statefulSetName := fmt.Sprintf("%s-minio", releaseName)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := helm.EmptyValues()
+			values := `
+global:
+  minio:
+    enabled: false
+  appConfig:
+    object_store:
+      enabled: true
+      connection:
+        secret: global-object-storage-secret
+        key: value
+`
+			_ = chartValues.AddFromYAML([]byte(values))
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should not create MinIO resources and continue the reconcile loop", func() {
+				By("Checking MinIO Secret does not exist")
+				Eventually(getObjectPromise(secretName, &corev1.Secret{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking MinIO Service does not exist")
+				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking MinIO StatefulSet does not exist")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking MinIO ConfigMap does not exist")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+	})
+
 	Context("Bundled NGINX with SSH support", func() {
 		When("Bundled NGINX is disabled", func() {
 			releaseName := "nginx-disabled"
@@ -657,6 +749,14 @@ func processSharedSecretsJob(releaseName string) {
 
 	By("Manipulating the Shared secrets Job to succeed")
 	Eventually(updateJobStatusPromise(sharedSecretQuery, true),
+		PollTimeout, PollInterval).Should(Succeed())
+}
+
+func processMinioBucketsJob(releaseName string) {
+	minioQuery := fmt.Sprintf("app.kubernetes.io/instance=%s-%s", releaseName, "bucket")
+
+	By("Manipulating the MinIO buckets Job to succeed")
+	Eventually(updateJobStatusPromise(minioQuery, true),
 		PollTimeout, PollInterval).Should(Succeed())
 }
 

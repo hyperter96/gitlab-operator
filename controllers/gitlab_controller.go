@@ -139,8 +139,10 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+	if gitlabctl.MinioEnabled(adapter) {
+		if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	if internal.RequiresCertManagerCertificate(adapter).Any() {
@@ -378,12 +380,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 }
 
 func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	// initialize buckets once s3 storage is up
-	buckets := internal.BucketCreationJob(adapter)
-	if _, err := r.createOrPatch(ctx, buckets, adapter); err != nil {
-		return err
-	}
-
 	return r.runMigrationsJob(ctx, adapter)
 }
 
@@ -636,7 +632,7 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 	}
 
 	// If Secret and related to MinIO, skip the patch.
-	if existing.GetLabels()["app.kubernetes.io/component"] == "minio" && existing.GetObjectKind().GroupVersionKind().Kind == "Secret" {
+	if existing.GetObjectKind().GroupVersionKind().Kind == "Secret" && existing.GetLabels()["app.kubernetes.io/component"] == "minio" && gitlabctl.MinioEnabled(adapter) {
 		return false, nil
 	}
 
@@ -757,20 +753,23 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 		return err
 	}
 
-	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
-		svc := internal.MinioService(adapter)
-		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
-			return err
-		}
+	svc := internal.MinioService(adapter)
+	if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
+		return err
+	}
 
-		// deploy minio
-		minio := internal.MinioStatefulSet(adapter)
-		if err := r.annotateSecretsChecksum(ctx, adapter, &minio.Spec.Template); err != nil {
-			return err
-		}
+	minio := internal.MinioStatefulSet(adapter)
+	if err := r.annotateSecretsChecksum(ctx, adapter, &minio.Spec.Template); err != nil {
+		return err
+	}
 
-		_, err := r.createOrPatch(ctx, minio, adapter)
+	_, err = r.createOrPatch(ctx, minio, adapter)
+	if err != nil {
+		return err
+	}
 
+	buckets := internal.BucketCreationJob(adapter)
+	if _, err := r.createOrPatch(ctx, buckets, adapter); err != nil {
 		return err
 	}
 
@@ -949,7 +948,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabc
 	ingresses = append(ingresses, registry)
 	ingresses = append(ingresses, gitlab...)
 
-	if minioEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled"); minioEnabled {
+	if gitlabctl.MinioEnabled(adapter) {
 		ingresses = append(ingresses, internal.MinioIngress(adapter))
 	}
 

@@ -139,7 +139,7 @@ build_tag_image:
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   rules:
-    - !reference [.if_release_tag]
+    - !reference [.if_release_tag_on_dev]
 
 build_latest_image:
   extends: .docker_build_job

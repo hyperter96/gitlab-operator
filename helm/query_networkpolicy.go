@@ -69,5 +69,6 @@ func unsafeConvertNetworkPolicies(objects []runtime.Object) []*networkpolicyv1.N
 	for i, o := range objects {
 		policies[i] = o.(*networkpolicyv1.NetworkPolicy)
 	}
+
 	return policies
 }

@@ -13,7 +13,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-
 func createMockAdapter(namespace string, version string, values helm.Values) CustomResourceAdapter {
 	mockGitLab := &gitlabv1beta1.GitLab{
 		ObjectMeta: metav1.ObjectMeta{
@@ -31,6 +30,7 @@ func createMockAdapter(namespace string, version string, values helm.Values) Cus
 	}
 
 	adapter := NewCustomResourceAdapter(mockGitLab)
+
 	return adapter
 }
 
@@ -56,7 +56,9 @@ func dumpTemplateToFile(template helm.Template, filename string) error {  //noli
 	if err != nil {
 		return err
 	}
+
 	_, _ = fh.WriteString(dumpTemplate(template))
+
 	fh.Close()
 
 	return nil
@@ -76,7 +78,9 @@ func dumpHelmValuesToFile(values helm.Values, filename string) error {  //nolint
 	if err != nil {
 		return err
 	}
+
 	_, _ = fh.WriteString(dumpHelmValues(values))
+
 	fh.Close()
 
 	return nil

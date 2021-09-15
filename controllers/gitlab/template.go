@@ -86,7 +86,6 @@ func AvailableChartVersions() []string {
 	re := regexp.MustCompile(`gitlab\-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\.tgz`)
 
 	_ = filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
-		// TODO: Log an error if info set to nil (Unable to find chartsDir)
 		if info != nil {
 			submatches := re.FindStringSubmatch(info.Name())
 
@@ -97,6 +96,8 @@ func AvailableChartVersions() []string {
 				}
 
 				versions = append(versions, semver)
+			} else {
+				templateLogger.V(1).Info("Charts directory (", chartsDir, ") does not exist.")
 			}
 		}
 

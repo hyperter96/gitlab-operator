@@ -69,5 +69,6 @@ func unsafeConvertServiceAccounts(objects []runtime.Object) []*corev1.ServiceAcc
 	for i, o := range objects {
 		accounts[i] = o.(*corev1.ServiceAccount)
 	}
+
 	return accounts
 }

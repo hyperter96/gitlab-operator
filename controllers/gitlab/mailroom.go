@@ -12,7 +12,7 @@ import (
 const (
 	GitLabMailroomEnabled  = "gitlab.mailroom.enabled"
 	IncomingEmailEnabled   = "global.appConfig.incomingEmail.enabled"
-	IncomingEmailSecret    = "global.appConfig.incomingEmail.password.secret"
+	IncomingEmailSecret    = "global.appConfig.incomingEmail.password.secret" //nolint:golint,gosec
 	mailroomEnabledDefault = true
 	incomingEmailDefault   = false
 )

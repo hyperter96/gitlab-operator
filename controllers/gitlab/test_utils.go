@@ -38,7 +38,7 @@ func dumpTemplate(template helm.Template) string {
 	output := new(strings.Builder)
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	for _, o := range(template.Objects()) {
+	for _, o := range template.Objects() {
 		output.WriteString("---\n")
 		s.Encode(o, output)
 	}
@@ -61,9 +61,6 @@ func dumpTemplateToFile(template helm.Template, filename string) error {
 
 // dumpHelmValues() will output the current values that Helm is using
 func dumpHelmValues(values helm.Values) string {
-	// output := new(strings.Builder)
-	// output.WriteString(fmt.Sprintf("%#v", values.AsMap()))
-	// return output.String()
 	output, _ := json.MarshalIndent(values.AsMap(), "", "    ")
 	return string(output)
 }

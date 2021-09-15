@@ -55,7 +55,7 @@ func dumpTemplateToFile(template helm.Template, filename string) error {
 	if err != nil {
 		return err
 	}
-	_ = fh.WriteString(dumpTemplate(template))
+	_, _ = fh.WriteString(dumpTemplate(template))
 	fh.Close()
 	return nil
 }
@@ -74,7 +74,7 @@ func dumpHelmValuesToFile(values helm.Values, filename string) error {
 	if err != nil {
 		return err
 	}
-	_ = fh.WriteString(dumpHelmValues(values))
+	_, _ = fh.WriteString(dumpHelmValues(values))
 	fh.Close()
 	return nil
 }

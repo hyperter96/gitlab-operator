@@ -583,7 +583,7 @@ func mutateObject(source, target client.Object) error {
 	}
 
 	// Merge source into target.
-	if err = mergo.Merge(&dst, src, mergo.WithOverride); err != nil {
+	if err = mergo.Merge(&dst, src, mergo.WithOverride, mergo.WithSliceDeepCopy); err != nil {
 		return err
 	}
 

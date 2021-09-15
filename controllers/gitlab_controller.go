@@ -864,12 +864,6 @@ func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlab
 		return err
 	}
 
-	// HPA
-	hpa := gitlabctl.MailroomHPA(adapter)
-	if _, err := r.createOrPatch(ctx, hpa, adapter); err != nil {
-		return err
-	}
-
 	if err := r.annotateSecretsChecksum(ctx, adapter, &mailroom.Spec.Template); err != nil {
 		return err
 	}

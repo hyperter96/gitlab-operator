@@ -28,6 +28,7 @@ func (q *cachingQuery) HPAByName(name string) *autoscalingv2beta1.HorizontalPodA
 	if len(services) == 0 {
 		return nil
 	}
+
 	return services[0]
 }
 
@@ -48,6 +49,7 @@ func (q *cachingQuery) HPAByLabels(labels map[string]string) []*autoscalingv2bet
 			return unsafeConvertHPAs(objects)
 		},
 	)
+
 	return result.([]*autoscalingv2beta1.HorizontalPodAutoscaler)
 }
 
@@ -58,6 +60,7 @@ func (q *cachingQuery) HPAByComponent(component string) *autoscalingv2beta1.Hori
 	if len(hpas) == 0 {
 		return nil
 	}
+
 	return hpas[0]
 }
 
@@ -66,5 +69,6 @@ func unsafeConvertHPAs(objects []runtime.Object) []*autoscalingv2beta1.Horizonta
 	for i, o := range objects {
 		hpas[i] = o.(*autoscalingv2beta1.HorizontalPodAutoscaler)
 	}
+
 	return hpas
 }

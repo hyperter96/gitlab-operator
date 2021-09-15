@@ -33,47 +33,48 @@ func createMockAdapter(namespace string, version string, values helm.Values) Cus
 	return adapter
 }
 
-// dumpTemplate() will serialize the template and display the YAML for debugging
+// dumpTemplate() will serialize the template and display the YAML for debugging.
 func dumpTemplate(template helm.Template) string {
 	output := new(strings.Builder)
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+
 	for _, o := range template.Objects() {
 		output.WriteString("---\n")
-		s.Encode(o, output)
+		_ = s.Encode(o, output)
 	}
 
 	return output.String()
 }
 
-// dumpTemplateToFile() will output the Helm template to a file
+// dumpTemplateToFile() will output the Helm template to a file.
 // Note: the file is written to where the test runs NOT from where the
-//       tests were run from
+//       tests were run from.
 func dumpTemplateToFile(template helm.Template, filename string) error {
 	fh, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
-	fh.WriteString(dumpTemplate(template))
+	_ = fh.WriteString(dumpTemplate(template))
 	fh.Close()
 	return nil
 }
 
-// dumpHelmValues() will output the current values that Helm is using
+// dumpHelmValues() will output the current values that Helm is using.
 func dumpHelmValues(values helm.Values) string {
 	output, _ := json.MarshalIndent(values.AsMap(), "", "    ")
 	return string(output)
 }
 
-// dumpHelmValuesToFile() will output the current values to a file
+// dumpHelmValuesToFile() will output the current values to a file.
 // Note: the file is written to where the test runs NOT from where the
-//       tests were run from
+//       tests were run from.
 func dumpHelmValuesToFile(values helm.Values, filename string) error {
 	fh, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
-	fh.WriteString(dumpHelmValues(values))
+	_ = fh.WriteString(dumpHelmValues(values))
 	fh.Close()
 	return nil
 }

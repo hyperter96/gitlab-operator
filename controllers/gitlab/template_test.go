@@ -15,7 +15,6 @@ import (
 
 var (
 	chartVersions []string    = AvailableChartVersions()
-	chartValues   helm.Values = helm.EmptyValues()
 	namespace     string      = os.Getenv("HELM_NAMESPACE")
 )
 

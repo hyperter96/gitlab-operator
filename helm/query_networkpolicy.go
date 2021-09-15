@@ -28,6 +28,7 @@ func (q *cachingQuery) NetworkPolicyByName(name string) *networkpolicyv1.Network
 	if len(policies) == 0 {
 		return nil
 	}
+
 	return policies[0]
 }
 
@@ -48,6 +49,7 @@ func (q *cachingQuery) NetworkPolicyByLabels(labels map[string]string) []*networ
 			return unsafeConvertNetworkPolicies(objects)
 		},
 	)
+
 	return result.([]*networkpolicyv1.NetworkPolicy)
 }
 
@@ -58,6 +60,7 @@ func (q *cachingQuery) NetworkPolicyByComponent(component string) *networkpolicy
 	if len(policies) == 0 {
 		return nil
 	}
+
 	return policies[0]
 }
 

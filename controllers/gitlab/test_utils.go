@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+
 func createMockAdapter(namespace string, version string, values helm.Values) CustomResourceAdapter {
 	mockGitLab := &gitlabv1beta1.GitLab{
 		ObjectMeta: metav1.ObjectMeta{
@@ -34,7 +35,7 @@ func createMockAdapter(namespace string, version string, values helm.Values) Cus
 }
 
 // dumpTemplate() will serialize the template and display the YAML for debugging.
-func dumpTemplate(template helm.Template) string {
+func dumpTemplate(template helm.Template) string {  //nolint:golint,unused
 	output := new(strings.Builder)
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
@@ -50,18 +51,19 @@ func dumpTemplate(template helm.Template) string {
 // dumpTemplateToFile() will output the Helm template to a file.
 // Note: the file is written to where the test runs NOT from where the
 //       tests were run from.
-func dumpTemplateToFile(template helm.Template, filename string) error {
+func dumpTemplateToFile(template helm.Template, filename string) error {  //nolint:golint,deadcode
 	fh, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	_, _ = fh.WriteString(dumpTemplate(template))
 	fh.Close()
+
 	return nil
 }
 
 // dumpHelmValues() will output the current values that Helm is using.
-func dumpHelmValues(values helm.Values) string {
+func dumpHelmValues(values helm.Values) string {  //nolint:golint,unused
 	output, _ := json.MarshalIndent(values.AsMap(), "", "    ")
 	return string(output)
 }
@@ -69,12 +71,13 @@ func dumpHelmValues(values helm.Values) string {
 // dumpHelmValuesToFile() will output the current values to a file.
 // Note: the file is written to where the test runs NOT from where the
 //       tests were run from.
-func dumpHelmValuesToFile(values helm.Values, filename string) error {
+func dumpHelmValuesToFile(values helm.Values, filename string) error {  //nolint:golint,deadcode
 	fh, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	_, _ = fh.WriteString(dumpHelmValues(values))
 	fh.Close()
+
 	return nil
 }

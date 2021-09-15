@@ -28,6 +28,7 @@ func (q *cachingQuery) ServiceAccountByName(name string) *corev1.ServiceAccount 
 	if len(accounts) == 0 {
 		return nil
 	}
+
 	return accounts[0]
 }
 
@@ -48,6 +49,7 @@ func (q *cachingQuery) ServiceAccountByLabels(labels map[string]string) []*corev
 			return unsafeConvertServiceAccounts(objects)
 		},
 	)
+
 	return result.([]*corev1.ServiceAccount)
 }
 
@@ -58,6 +60,7 @@ func (q *cachingQuery) ServiceAccountByComponent(component string) *corev1.Servi
 	if len(accounts) == 0 {
 		return nil
 	}
+
 	return accounts[0]
 }
 

@@ -870,7 +870,9 @@ func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlab
 		return err
 	}
 
-	r.annotateSecretsChecksum(ctx, adapter, &mailroom.Spec.Template)
+	if err := r.annotateSecretsChecksum(ctx, adapter, &mailroom.Spec.Template); err != nil {
+		return err
+	}
 	_, err := r.createOrPatch(ctx, mailroom, adapter)
 
 	return err

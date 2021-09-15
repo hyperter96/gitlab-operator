@@ -114,10 +114,13 @@ gitlab:
       fsGroup: $LocalUser
   mailroom:
     common:
-
+    labels:
+      app.kubernetes.io/component: mailroom
+      app.kubernetes.io/instance: $ReleaseName-mailroom
     securityContext:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
+
 registry:
   common:
     labels:
@@ -136,28 +139,6 @@ shared-secrets:
     fsGroup: ''
 
 global:
-  appConfig:
-    object_store:
-      enabled: true
-      connection:
-        secret: $AppConfigConnectionSecretName
-        key: connection
-    artifacts:
-      bucket: gitlab-artifacts
-    backups:
-      bucket: gitlab-backups
-      tmpBucket: tmp
-    externalDiffs:
-      bucket: gitlab-mr-diffs
-    lfs:
-      bucket: git-lfs
-    packages:
-      bucket: gitlab-packages
-    pseudonymizer:
-      bucket: gitlab-pseudo
-    uploads:
-      bucket: gitlab-uploads
-
   common:
     labels:
       app.kubernetes.io/name: $ReleaseName
@@ -167,10 +148,6 @@ global:
   ingress:
     annotations:
       $GlobalIngressAnnotations
-  minio:
-    enabled: false
-  registry:
-    bucket: registry
   serviceAccount:
     enabled: true
     create: false

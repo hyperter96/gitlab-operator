@@ -147,10 +147,6 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
-	}
-
 	if internal.RequiresCertManagerCertificate(adapter).Any() {
 		if err := r.reconcileCertManagerCertificates(ctx, adapter); err != nil {
 			return ctrl.Result{}, err

@@ -14,7 +14,7 @@ import (
 var _ = Describe("CustomResourceAdapter", func() {
 
 	if namespace == "" {
-		namespace = "default"
+		namespace = "default" //nolint:golint,goconst
 	}
 
 	mockGitLab := &gitlabv1beta1.GitLab{

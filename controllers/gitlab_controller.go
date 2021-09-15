@@ -349,7 +349,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	migration := gitlabctl.MigrationsConfigMap(adapter)
 	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
 	registry := gitlabctl.RegistryConfigMap(adapter)
-	//mailroom := gitlabctl.MailroomConfigMap(adapter)
 
 	configmaps = append(configmaps,
 		registry,
@@ -472,10 +471,6 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 			return err
 		}
 	}
-
-	// if err := r.reconcileMailroomDeployment(ctx, adapter); err != nil {
-	// 	return err
-	// }
 
 	return nil
 }

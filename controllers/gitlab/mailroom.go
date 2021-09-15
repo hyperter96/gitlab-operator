@@ -76,16 +76,3 @@ func MailroomNetworkPolicy(adapter CustomResourceAdapter) *networkpolicyv1.Netwo
 
 	return policy
 }
-
-// MailroomServiceAccount returns the ServiceAccount for the Mailroom component.
-func MailroomServiceAccount(adapter CustomResourceAdapter) *corev1.ServiceAccount {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	account := template.Query().ServiceAccountByName(
-		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MailroomComponentName))
-
-	return account
-}

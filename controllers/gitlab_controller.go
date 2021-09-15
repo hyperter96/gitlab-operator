@@ -1059,12 +1059,8 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 		}
 	}
 
-	// TODO: handle Mailroom ServiceAccount
 	return nil
 }
-
-// TODO: create reconcileNetworkPolicy()
-
 
 func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	template, err := gitlabctl.GetTemplate(adapter)

@@ -86,19 +86,15 @@ func AvailableChartVersions() []string {
 	re := regexp.MustCompile(`gitlab\-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\.tgz`)
 
 	_ = filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
-		if info != nil {
-			submatches := re.FindStringSubmatch(info.Name())
+		submatches := re.FindStringSubmatch(info.Name())
 
-			if len(submatches) > 1 {
-				semver, err := semver.NewVersion(submatches[1])
-				if err != nil {
-					return err
-				}
-
-				versions = append(versions, semver)
-			} else {
-				templateLogger.V(1).Info("Charts directory (", chartsDir, ") does not exist.")
+		if len(submatches) > 1 {
+			semver, err := semver.NewVersion(submatches[1])
+			if err != nil {
+				return err
 			}
+
+			versions = append(versions, semver)
 		}
 
 		return nil

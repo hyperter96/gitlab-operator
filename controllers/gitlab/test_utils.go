@@ -27,4 +27,3 @@ func createMockAdapter(namespace string, version string, values helm.Values) Cus
 
 	return adapter
 }
-

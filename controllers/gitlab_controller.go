@@ -142,10 +142,10 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if gitlabctl.MinioEnabled(adapter) {
-    if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
-      return ctrl.Result{}, err
-    }
-  }
+		if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 
 	if gitlabctl.MailroomEnabled(adapter) {
 		if err := r.reconcileMailroom(ctx, adapter); err != nil {

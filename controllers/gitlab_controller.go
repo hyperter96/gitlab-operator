@@ -143,7 +143,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if gitlabctl.MinioEnabled(adapter) {
     if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
-      retrun ctrl.Result{}, err
+      return ctrl.Result{}, err
     }
   }
 

@@ -12,7 +12,5 @@ Related: [#160](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/iss
 
 Below is a list of unsupported components:
 
-- GitLab Shell [#58](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/58) is unable to provide SSH access.
 - Praefect: [#136](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/136)
-- Pages: [#138](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/138)
 - KAS: [#139](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/139)

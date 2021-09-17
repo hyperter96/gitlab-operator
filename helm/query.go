@@ -5,9 +5,11 @@ import (
 	"sync"
 
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkpolicyv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -85,6 +87,33 @@ type Query interface {
 
 	// IngressByComponent returns the INgress for a specific component.
 	IngressByComponent(component string) *extensionsv1beta1.Ingress
+
+	// HPAByName returns the HPA with the specified name.
+	HPAByName(name string) *autoscalingv2beta1.HorizontalPodAutoscaler
+
+	// HPAByLabels lists all HPAs that match the labels.
+	HPAByLabels(labels map[string]string) []*autoscalingv2beta1.HorizontalPodAutoscaler
+
+	// HPAByComponent returns the HPA for a specific component.
+	HPAByComponent(component string) *autoscalingv2beta1.HorizontalPodAutoscaler
+
+	// NetworkPolicyByName returns the NetworkPolicy with the specified name.
+	NetworkPolicyByName(name string) *networkpolicyv1.NetworkPolicy
+
+	// NetworkPolicyByLabels lists all NetworkPolicy that match the labels.
+	NetworkPolicyByLabels(labels map[string]string) []*networkpolicyv1.NetworkPolicy
+
+	// NetworkPolicyByComponent returns the NetworkPolicy for a specific component.
+	NetworkPolicyByComponent(component string) *networkpolicyv1.NetworkPolicy
+
+	// ServiceAccountByName returns the ServiceAccount with the specified name.
+	ServiceAccountByName(name string) *corev1.ServiceAccount
+
+	// ServiceAccountByLabels lists all ServiceAccount that match the labels.
+	ServiceAccountByLabels(labels map[string]string) []*corev1.ServiceAccount
+
+	// ServiceAccountByComponent returns the ServiceAccount for a specific component.
+	ServiceAccountByComponent(component string) *corev1.ServiceAccount
 }
 
 type cachingQuery struct {
@@ -104,13 +133,16 @@ func newQuery(t Template) Query {
 const (
 	anything = "*"
 
-	gvkDeployment  = "Deployment.v1.apps"
-	gvkStatefulSet = "StatefulSet.v1.apps"
-	gvkJob         = "Job.v1.batch"
-	gvkConfigMap   = "ConfigMap.v1.core"
-	gvkSecret      = "Secret.v1.core"
-	gvkService     = "Service.v1.core"
-	gvkIngress     = "Ingress.v1beta1.extensions"
+	gvkDeployment              = "Deployment.v1.apps"
+	gvkStatefulSet             = "StatefulSet.v1.apps"
+	gvkJob                     = "Job.v1.batch"
+	gvkConfigMap               = "ConfigMap.v1.core"
+	gvkSecret                  = "Secret.v1.core"
+	gvkService                 = "Service.v1.core"
+	gvkIngress                 = "Ingress.v1beta1.extensions"
+	gvkHorizontalPodAutoscaler = "HorizontalPodAutoscaler.v2beta1.autoscaling"
+	gvkNetworkPolicy           = "NetworkPolicy.v1.networking"
+	gvkServiceAccount          = "ServiceAccount.v1.core"
 
 	appLabel = "app"
 )

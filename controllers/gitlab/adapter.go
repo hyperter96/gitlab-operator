@@ -112,6 +112,14 @@ gitlab:
     securityContext:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
+  mailroom:
+    common:
+    labels:
+      app.kubernetes.io/component: mailroom
+      app.kubernetes.io/instance: $ReleaseName-mailroom
+    securityContext:
+      runAsUser: $LocalUser
+      fsGroup: $LocalUser
 
 registry:
   common:
@@ -141,8 +149,8 @@ global:
     annotations:
       $GlobalIngressAnnotations
   serviceAccount:
-    enabled: true,
-    create: false,
+    enabled: true
+    create: false
     name: $AppServiceAccount
 
 redis:

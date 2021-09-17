@@ -146,6 +146,12 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
+	if gitlabctl.MailroomEnabled(adapter) {
+		if err := r.reconcileMailroom(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	if internal.RequiresCertManagerCertificate(adapter).Any() {
 		if err := r.reconcileCertManagerCertificates(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
@@ -845,6 +851,28 @@ func (r *GitLabReconciler) reconcileGitLabPagesDeployment(ctx context.Context, a
 	return err
 }
 
+func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	// Deployment
+	mailroom := gitlabctl.MailroomDeployment(adapter)
+	if _, err := r.createOrPatch(ctx, mailroom, adapter); err != nil {
+		return err
+	}
+
+	// ConfigMap
+	cm := gitlabctl.MailroomConfigMap(adapter)
+	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+		return err
+	}
+
+	if err := r.annotateSecretsChecksum(ctx, adapter, &mailroom.Spec.Template); err != nil {
+		return err
+	}
+
+	_, err := r.createOrPatch(ctx, mailroom, adapter)
+
+	return err
+}
+
 func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
 
@@ -1013,15 +1041,14 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 	lookupKey := types.NamespacedName{Name: sa.Name, Namespace: adapter.Namespace()}
 
 	if err := r.Get(ctx, lookupKey, found); err != nil {
+		// gitlab-app ServiceAccount not found
 		if errors.IsNotFound(err) {
 			if err := r.Create(ctx, sa); err != nil {
 				return err
 			}
-
-			return nil
+		} else {
+			return err
 		}
-
-		return err
 	}
 
 	return nil

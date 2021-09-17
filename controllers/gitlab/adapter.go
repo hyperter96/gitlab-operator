@@ -42,6 +42,14 @@ type CustomResourceAdapter interface {
 	// instance.
 	ChartVersion() string
 
+	// StatusVersion returns the version of the GitLab chart that the GitLab
+	// Custom Resource is actively running.
+	StatusVersion() string
+
+	// IsUpgrade returns `true` if StatusVersion is set and is not equal to
+	// ChartVersion. Otherwise, it returns `false`.
+	IsUpgrade() bool
+
 	// Values returns the set of values that will be used the render GitLab chart.
 	Values() helm.Values
 }
@@ -259,6 +267,14 @@ func (a *populatingAdapter) Namespace() string {
 
 func (a *populatingAdapter) ChartVersion() string {
 	return a.resource.Spec.Chart.Version
+}
+
+func (a *populatingAdapter) StatusVersion() string {
+	return a.resource.Status.Version
+}
+
+func (a *populatingAdapter) IsUpgrade() bool {
+	return a.StatusVersion() != "" && a.StatusVersion() != a.ChartVersion()
 }
 
 func (a *populatingAdapter) ReleaseName() string {

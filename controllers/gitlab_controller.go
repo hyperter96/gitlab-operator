@@ -81,7 +81,7 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes/custom-host,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile triggers when an event occurs on the watched resource.
-//nolint:gocognit // The complexity of this method will be addressed in #260.
+//nolint:gocognit,gocyclo,nestif // The complexity of this method will be addressed in #260.
 func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("gitlab", req.NamespacedName)
 
@@ -98,6 +98,9 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
+
+	isUpgrade := adapter.IsUpgrade()
+	log.V(1).Info("version information", "upgrade", isUpgrade, "current version", adapter.StatusVersion(), "desired version", adapter.ChartVersion())
 
 	if err := r.reconcileServiceAccount(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
@@ -164,15 +167,75 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{RequeueAfter: waitInterval}, nil
 	}
 
-	if err := r.reconcileJobs(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+	if isUpgrade {
+		log.Info("reconciling Deployments (Webservice & Sidekiq paused)")
+
+		if err := r.reconcileDeployments(ctx, adapter, true); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.Info("reconciling pre migrations")
+
+		if err := r.runPreMigrations(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.Info("ensuring Sidekiq Deployments are unpaused")
+
+		if err := r.unpauseSidekiqDeployments(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.Info("ensuring Webservice Deployments are unpaused")
+
+		if err := r.unpauseWebserviceDeployments(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.Info("ensuring Sidekiq Deployments are running")
+
+		if !r.sidekiqRunningWithRetry(ctx, adapter) {
+			return ctrl.Result{}, fmt.Errorf("Sidekiq has not started fully")
+		}
+
+		log.Info("ensuring Webservice Deployments are running")
+
+		if !r.webserviceRunningWithRetry(ctx, adapter) {
+			return ctrl.Result{}, fmt.Errorf("Webservice has not started fully")
+		}
+
+		log.Info("reconciling post migrations")
+
+		if err := r.runAllMigrations(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.Info("performing a rolling update on Sidekiq Deployments")
+
+		if err := r.rollingUpdateSidekiqDeployments(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.Info("performing a rolling update on Webservice Deployments")
+
+		if err := r.rollingUpdateWebserviceDeployments(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		log.Info("running all migrations")
+
+		if err := r.runAllMigrations(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		log.Info("reconciling Deployments")
+
+		if err := r.reconcileDeployments(ctx, adapter, false); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	if err := r.setupAutoscaling(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if err := r.reconcileDeployments(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -188,7 +251,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	result, err := r.reconcileGitlabStatus(ctx, adapter)
+	result, err := r.reconcileGitLabStatus(ctx, adapter)
 
 	return result, err
 }
@@ -385,10 +448,6 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileJobs(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.runMigrationsJob(ctx, adapter)
-}
-
 func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
@@ -432,17 +491,39 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	return err
 }
 
-func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, skipPostMigrations bool) error {
 	migrations, err := gitlabctl.MigrationsJob(adapter)
 	if err != nil {
 		return err
 	}
 
-	return r.runJobAndWait(ctx, adapter, migrations, gitlabctl.MigrationsJobTimeout())
+	job := migrations.DeepCopy()
+
+	// If `skipPostMigrations=true`, then:
+	// - Append "-pre" to the Migrations Job name
+	// - Inject environment variable to skip post-deployment migrations.
+	if skipPostMigrations {
+		job.Name = fmt.Sprintf("%s-pre", migrations.Name)
+		for i := range job.Spec.Template.Spec.Containers {
+			job.Spec.Template.Spec.Containers[i].Env = append(
+				job.Spec.Template.Spec.Containers[i].Env,
+				corev1.EnvVar{Name: "SKIP_POST_DEPLOYMENT_MIGRATIONS", Value: "true"})
+		}
+	}
+
+	return r.runJobAndWait(ctx, adapter, job, gitlabctl.MigrationsJobTimeout())
 }
 
-func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if err := r.reconcileWebserviceDeployments(ctx, adapter); err != nil {
+func (r *GitLabReconciler) runPreMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	return r.runMigrationsJob(ctx, adapter, true)
+}
+
+func (r *GitLabReconciler) runAllMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	return r.runMigrationsJob(ctx, adapter, false)
+}
+
+func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pauseRails bool) error {
+	if err := r.reconcileWebserviceDeployments(ctx, adapter, pauseRails); err != nil {
 		return err
 	}
 
@@ -450,7 +531,7 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 		return err
 	}
 
-	if err := r.reconcileSidekiqDeployments(ctx, adapter); err != nil {
+	if err := r.reconcileSidekiqDeployments(ctx, adapter, pauseRails); err != nil {
 		return err
 	}
 
@@ -873,7 +954,7 @@ func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlab
 	return err
 }
 
-func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pause bool) error {
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
 
 	webservices := gitlabctl.WebserviceDeployments(adapter)
@@ -889,6 +970,12 @@ func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, a
 
 		if err := r.annotateSecretsChecksum(ctx, adapter, &webservice.Spec.Template); err != nil {
 			return err
+		}
+
+		if pause {
+			webservice.Spec.Paused = true
+		} else {
+			webservice.Spec.Paused = false
 		}
 
 		if _, err := r.createOrPatch(ctx, webservice, adapter); err != nil {
@@ -931,7 +1018,7 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 	return err
 }
 
-func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pause bool) error {
 	sidekiqs := gitlabctl.SidekiqDeployments(adapter)
 
 	for _, sidekiq := range sidekiqs {
@@ -941,6 +1028,12 @@ func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adap
 
 		if err := r.annotateSecretsChecksum(ctx, adapter, &sidekiq.Spec.Template); err != nil {
 			return err
+		}
+
+		if pause {
+			sidekiq.Spec.Paused = true
+		} else {
+			sidekiq.Spec.Paused = false
 		}
 
 		if _, err := r.createOrPatch(ctx, sidekiq, adapter); err != nil {

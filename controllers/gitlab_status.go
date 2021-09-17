@@ -2,51 +2,37 @@ package controllers
 
 import (
 	"context"
-	"reflect"
+	"fmt"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileGitlabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) (ctrl.Result, error) {
-	waitInterval := 5 * time.Second
-	resultRequeue := ctrl.Result{RequeueAfter: waitInterval}
+func (r *GitLabReconciler) reconcileGitLabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) (ctrl.Result, error) {
+	resultRequeue := ctrl.Result{RequeueAfter: 10 * time.Second}
 	resultNoRequeue := ctrl.Result{}
-	lookupKey := types.NamespacedName{Namespace: adapter.Namespace(), Name: adapter.ReleaseName()}
-
-	// get current Gitlab resource
-	gitlab := &gitlabv1beta1.GitLab{}
-	if err := r.Get(ctx, lookupKey, gitlab); err != nil {
-		return resultRequeue, err
-	}
-
 	result := resultNoRequeue
 
-	if r.isWebserviceRunning(ctx, adapter) {
-		gitlab.Status.Phase = "Running"
-		gitlab.Status.Stage = ""
+	if r.sidekiqAndWebserviceRunning(ctx, adapter) {
+		adapter.Resource().Status.Phase = "Running"
 	} else {
-		gitlab.Status.Phase = "Initializing"
-		gitlab.Status.Stage = "Gitlab is initializing"
-
-		r.Log.V(1).Info("webservice not fully running, will wait and retry", "interval", waitInterval)
-
+		adapter.Resource().Status.Phase = "Preparing"
 		result = resultRequeue
 	}
 
-	// Check if the status of the gitlab resource has changed
-	if !reflect.DeepEqual(adapter.Resource().Status, gitlab.Status) {
-		// Update status if the status has changed
-		if err := r.setGitlabStatus(ctx, gitlab); err != nil {
-			return resultRequeue, err
-		}
+	// Set the version regardless of whether Sidekiq and Webservice are fully running to
+	// ensure we don't trigger the upgrade logic again on the next iteration.
+	adapter.Resource().Status.Version = adapter.ChartVersion()
+
+	if err := r.Status().Update(ctx, adapter.Resource()); err != nil {
+		return result, err
 	}
+
+	time.Sleep(5 * time.Second)
 
 	return result, nil
 }
@@ -60,11 +46,10 @@ func deploymentComplete(deployment *appsv1.Deployment, newStatus *appsv1.Deploym
 		newStatus.ObservedGeneration >= deployment.Generation
 }
 
-func (r *GitLabReconciler) isWebserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	running := false
+func (r *GitLabReconciler) componentRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []*appsv1.Deployment) bool {
+	running := true
 
-	// confirm that all Webservice deployments are running
-	for _, deployment := range gitlabctl.WebserviceDeployments(adapter) {
+	for _, deployment := range deployments {
 		webservice := &appsv1.Deployment{}
 		key := types.NamespacedName{
 			Name:      deployment.Name,
@@ -72,15 +57,87 @@ func (r *GitLabReconciler) isWebserviceRunning(ctx context.Context, adapter gitl
 		}
 
 		err := r.Get(ctx, key, webservice)
-		if err == nil && deploymentComplete(webservice, &webservice.Status) {
-			running = true
+		if err != nil || !deploymentComplete(webservice, &webservice.Status) {
+			running = false
+			break
 		}
 	}
 
 	return running
 }
 
-// setGitlabStatus sets status of custom resource.
-func (r *GitLabReconciler) setGitlabStatus(ctx context.Context, object client.Object) error {
-	return r.Status().Update(ctx, object)
+func (r *GitLabReconciler) sidekiqRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+	return r.componentRunning(ctx, adapter, gitlabctl.SidekiqDeployments(adapter))
+}
+
+func (r *GitLabReconciler) webserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+	return r.componentRunning(ctx, adapter, gitlabctl.WebserviceDeployments(adapter))
+}
+
+func (r *GitLabReconciler) sidekiqAndWebserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+	return r.sidekiqRunning(ctx, adapter) && r.webserviceRunning(ctx, adapter)
+}
+
+func (r *GitLabReconciler) sidekiqRunningWithRetry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+	fn := func() error {
+		if r.sidekiqRunning(ctx, adapter) {
+			return nil
+		}
+
+		return fmt.Errorf("sidekiq not fully running")
+	}
+
+	if err := r.runWithRetry(adapter, fn); err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (r *GitLabReconciler) webserviceRunningWithRetry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+	fn := func() error {
+		if r.webserviceRunning(ctx, adapter) {
+			return nil
+		}
+
+		return fmt.Errorf("webservice not fully running")
+	}
+
+	if err := r.runWithRetry(adapter, fn); err != nil {
+		return false
+	}
+
+	return true
+}
+
+func (r *GitLabReconciler) runWithRetry(adapter gitlabctl.CustomResourceAdapter, fn func() error) error {
+	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
+
+	time.Sleep(5 * time.Second)
+
+	timeout := 0
+
+	for {
+		if timeout > 300 {
+			return fmt.Errorf("timeout was longer than 300 seconds")
+		}
+
+		err := fn()
+
+		if err != nil {
+			logger.V(1).Info(err.Error())
+
+			timeout += 10
+
+			time.Sleep(10 * time.Second)
+
+			continue
+		}
+
+		logger.V(1).Info("check passed, proceeding")
+
+		break
+	}
+
+	return nil
 }

@@ -12,6 +12,9 @@ spec:
   - JSONPath: .status.phase
     name: STATUS
     type: string
+  - JSONPath: .status.version
+    name: VERSION
+    type: string
   group: apps.gitlab.com
   names:
     kind: GitLab
@@ -65,7 +68,7 @@ spec:
           properties:
             phase:
               type: string
-            stage:
+            version:
               type: string
           type: object
       type: object

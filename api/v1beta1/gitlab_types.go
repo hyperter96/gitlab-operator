@@ -76,14 +76,15 @@ func (u *ChartValues) DeepCopyInto(out *ChartValues) {
 
 // GitLabStatus defines the observed state of GitLab.
 type GitLabStatus struct {
-	Phase string `json:"phase,omitempty"`
-	Stage string `json:"stage,omitempty"`
+	Phase   string `json:"phase,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:shortName=gl
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="STATUS",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="VERSION",type=string,JSONPath=`.status.version`
 // +operator-sdk:csv:customresourcedefinitions:displayName="GitLab"
 // +operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""},{Secret,v1,""},{Service,v1,""},{Pod,v1,""},{Deployment,v1,""},{StatefulSet,v1,""},{PersistentVolumeClaim,v1,""}}
 

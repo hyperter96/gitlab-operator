@@ -7,5 +7,6 @@
 - [Openshift cluster setup](openshift-cluster-setup.md): Provides instructions to launch an Openshift cluster
 - [Support for git over SSH](git-over-ssh.md): Documents platform/environment-specific configurations for supporting git over SSH
 - [Installation](installation.md): Provides instructions for installing the GitLab Operator and CustomResource
-- [Upgrades](upgrades.md): Demonstrates how to upgrade the GitLab Operator
+- [Operator upgrades](operator-upgrades.md): Demonstrates how to upgrade the GitLab Operator
+- [GitLab upgrades](gitlab-upgrades.md): Demonstrates how to upgrade the GitLab instance
 - [Developer guide](developer-guide.md): Outlines the project structure and how to contribute

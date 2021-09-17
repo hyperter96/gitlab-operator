@@ -16,4 +16,3 @@ Below is a list of unsupported components:
 - Praefect: [#136](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/136)
 - Pages: [#138](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/138)
 - KAS: [#139](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/139)
-- Mailroom: [#140](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/140)

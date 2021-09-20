@@ -76,6 +76,7 @@
 
 .stop_review_template:
   stage: cleanup
+  needs: [] # if `review` stage fails, still allow this job to be triggered
   variables:
     DEBUG: "yes"
     CLEANUP: "only"

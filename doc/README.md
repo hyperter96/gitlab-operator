@@ -9,4 +9,5 @@
 - [Installation](installation.md): Provides instructions for installing the GitLab Operator and CustomResource
 - [Operator upgrades](operator-upgrades.md): Demonstrates how to upgrade the GitLab Operator
 - [GitLab upgrades](gitlab-upgrades.md): Demonstrates how to upgrade the GitLab instance
+- [Backup and restore](backup-and-restore.md): Documents how to back up and restore GitLab
 - [Developer guide](developer-guide.md): Outlines the project structure and how to contribute

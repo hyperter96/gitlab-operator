@@ -21,7 +21,7 @@ To create a traditional Kubernetes cluster, consider using [official tooling](ht
 
 #### OpenShift
 
-To create an OpenShift cluster, see the [OpenShift cluster setup docs](openshift-cluster-setup.md).
+To create an OpenShift cluster, see the [OpenShift cluster setup docs](openshift-cluster-setup.md) for an example of how to create a _development environment_.
 
 ### Ingress controller
 

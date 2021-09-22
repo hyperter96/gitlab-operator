@@ -2,12 +2,6 @@
 
 Below are known limitations of the GitLab Operator.
 
-### Multiple instances of Webservice not supported on OpenShift
-
-Multiple Webservice instances are problematic on OpenShift. The Ingresses report "All hosts are taken by other resources" when using NGINX Ingress Operator.
-
-Related: [#160](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/160)
-
 ### Certain components not supported
 
 Below is a list of unsupported components:

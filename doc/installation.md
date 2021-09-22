@@ -63,7 +63,15 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
     $ kubectl create namespace gitlab-system
     $ kubectl apply -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
     ```
-    
+
+    or more verbose (note double quotes):
+
+    ```
+    $ GL_OPERATOR_VERSION=0.0.1
+    $ kubectl create namespace gitlab-system
+    $ kubectl apply -f "https://gitlab.com/api/v4/projects/gitlab-org%2Fcloud-native%2Fgitlab-operator/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${GL_OPERATOR_VERSION}.yaml"
+    ```
+
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
     Note: by default, the Operator will only watch the namespace where it is deployed. If you would like it to watch at the cluster scope,
@@ -141,3 +149,7 @@ $ kubectl delete -f https://gitlab.com/api/v4/projects/18899486/packages/generic
 ```
 
 This will delete the Operator's resources, including the running Deployment of the Operator. This **will not** delete objects associated with a GitLab instance.
+
+## Troubleshoot the GitLab Operator
+
+Troubleshooting the Operator can be found in [troubleshooting.md](troubleshooting.md).

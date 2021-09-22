@@ -19,7 +19,7 @@ Please consult the "Prerequisites" section of [installation.md](../installation.
 
 2. Build CRDs and Operator manifests:
 
-    ```
+    ```shell
     $ make build_operator
     ```
 
@@ -37,9 +37,11 @@ Please consult the "Prerequisites" section of [installation.md](../installation.
 
 3. Deploy the GitLab Operator.
 
-    ```
-    $ kubectl create namespace gitlab-system
-    $ make deploy_operator
+    ```shell
+    PLATFORM=kubernetes # or "openshift"
+    kubectl create namespace gitlab-system
+    [ "${PLATFORM}" = "openshift" ] && make deploy_openshift_resources
+    make deploy_operator
     ```
 
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
@@ -75,19 +77,19 @@ Please consult the "Prerequisites" section of [installation.md](../installation.
 
 5. Deploy a GitLab instance using your new GitLab CR.
 
-   ```
+   ```shell
    $ kubectl -n gitlab-system apply -f mygitlab.yaml
    ```
 
    This command sends your GitLab CR up to the cluster for the GitLab Operator to reconcile. You can watch the progress by tailing the logs from the controller pod:
 
-   ```
+   ```shell
    $  kubectl -n gitlab-system logs deployment/gitlab-controller-manager -c manager -f
    ```
 
    You can also list GitLab resources and check their status:
 
-   ```
+   ```shell
    $ kubectl get gitlabs -n gitlab-system
    ```
 
@@ -98,7 +100,7 @@ Please consult the "Prerequisites" section of [installation.md](../installation.
 Certain operations like file removal under `config/` directory may not trigger rebuild/redeploy, in which cases one should employ:
 
 ```shell
-make clean
+$ make clean
 ```
 
 This will remove all of the build artifacts and the install record.

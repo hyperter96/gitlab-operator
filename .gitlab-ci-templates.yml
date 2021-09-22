@@ -85,8 +85,8 @@
   rules:
     - !reference [.skip_if_release_tag]
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-      when: on_success
+      when: manual
     - <<: *if_stable_branch
-      when: on_success
+      when: manual
     - if: '$CI_COMMIT_BRANCH'
       when: manual

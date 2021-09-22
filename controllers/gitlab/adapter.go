@@ -152,7 +152,8 @@ global:
       app.kubernetes.io/name: $ReleaseName
       app.kubernetes.io/part-of: gitlab
       app.kubernetes.io/managed-by: gitlab-operator
-  imagePullPolicy: IfNotPresent
+  image:
+    pullPolicy: IfNotPresent
   ingress:
     annotations:
       $GlobalIngressAnnotations

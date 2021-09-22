@@ -122,3 +122,29 @@ The `Makefile` allows us to customize manage different tasks such as:
 ## Deploying the Operator
 
 For instructions on deploying the operator, see the [installation docs](installation.md).
+
+## Debugging
+
+There have been a couple of functions added to `controllers/gitlab/template_test.go`
+to assist in the development of features and the writing of tests.
+
+- `dumpTemplate(template)`
+- `dumpTemplateToFile(template, filename)`
+- `dumpHelmValues(values)`
+- `dumpHelmValuesToFile(values, filename)`
+
+The `dumpTemplate()` function will take the template object from the GitLab
+adapter and return the rendered YAML of the Helm chart as a string. Since
+the Go test framework will absorb anything written to stdout, the
+`dumpTemplateToFile()` will write the YAML to a file for inspection. It
+is important to note that if just a filename is provided that the file will
+be written to the subdirectory where the test file resides rather than the
+directory where the tests were initiated from. An absolute file path is
+necessary if one desires the file to be written where the tests are
+initiated from.
+
+Similarly the `dumpHelmValues()` will return the YAML representation of the
+Helm values as string. This is can be used to verify that the intended
+values are set at the beginning of any tests. The `dumpHelmValues()` function
+is used to write the YAML to a file for inspection and the filename argument
+has the same limitations as `dumpTemplateToFile()`.

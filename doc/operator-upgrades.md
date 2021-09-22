@@ -4,7 +4,7 @@ Below are instructions to upgrade the GitLab Operator.
 
 ## Step 1: Identify the desired version of the Operator
 
-To use a released version, the tags will look something like `vX.Y.Z-betaN`. See our
+To use a released version, the tags will look something like `X.Y.Z-betaN`. See our
 [tags](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/tags) for the full list.
 
 If you wish to use a development version, you can find the commit on `master` that you'd like to use,

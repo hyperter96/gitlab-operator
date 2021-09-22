@@ -74,8 +74,14 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 
     This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
-    Note: by default, the Operator will only watch the namespace where it is deployed. If you would like it to watch at the cluster scope,
-    modify [config/manager/kustomization.yaml](../config/manager/kustomization.yaml) by commenting out the `namesapce_scope.yaml` patch.
+    By default, the Operator will only watch the namespace where it is deployed.
+    If you'd like it to watch at the cluster scope, then remove the `WATCH_NAMESPACE`
+    environment variable from the Deployment in the manifest under:
+    `spec.template.spec.containers[0].env` and re-run the `kubectl apply` command above.
+
+    NOTE:
+    Running the Operator at the cluster scope is considered experimental.
+    See [issue #100](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/100) for more information.
 
 2. Create a GitLab custom resource (CR).
 
@@ -101,7 +107,8 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
            email: youremail@example.com # use your real email address here
    ```
 
-   For more details on configuration options to use under `spec.chart.values`, see our [GitLab Helm Chart documentation](https://docs.gitlab.com/charts).
+   For more details on configuration options to use under `spec.chart.values`,
+   see the [GitLab Helm Chart documentation](https://docs.gitlab.com/charts/charts).
 
 3. Deploy a GitLab instance using your new GitLab CR.
 

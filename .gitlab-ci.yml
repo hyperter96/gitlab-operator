@@ -187,7 +187,7 @@ review_4_6:
     name: openshift_4_6/$CI_COMMIT_REF_NAME
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_6
     on_stop: stop_review_openshift_4_6
-    auto_stop_in: 4 days
+    auto_stop_in: 1 hour
   resource_group: "openshift_4_6/${CI_COMMIT_REF_NAME}"
 
 review_4_7:
@@ -201,7 +201,7 @@ review_4_7:
     name: openshift_4_7/$CI_COMMIT_REF_NAME
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_7
     on_stop: stop_review_openshift_4_7
-    auto_stop_in: 4 days
+    auto_stop_in: 1 hour
   resource_group: "openshift_4_7/${CI_COMMIT_REF_NAME}"
 
 review_gke:
@@ -215,7 +215,7 @@ review_gke:
     name: gke/$CI_COMMIT_REF_NAME
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
     on_stop: stop_review_gke
-    auto_stop_in: 4 days
+    auto_stop_in: 1 hour
   resource_group: "gke/${CI_COMMIT_REF_NAME}"
 
 qa_4_6:

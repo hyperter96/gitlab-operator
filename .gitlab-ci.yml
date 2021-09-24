@@ -172,6 +172,7 @@ approve_cluster_tests:
   script: echo "Proceeding to tests in CI clusters..."
   rules:
     - !reference [.skip_if_release_tag]
+    - !reference [.skip_if_stable_branch]
     - !reference [.skip_if_default_branch]
     - if: '$CI_COMMIT_BRANCH'
       when: manual
@@ -357,5 +358,7 @@ issue-bot:
   image: registry.gitlab.com/gitlab-org/distribution/issue-bot:latest
   script: /issue-bot
   rules:
+    - !reference [.if_release_tag]
+    - !reference [.if_stable_branch]
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: on_failure

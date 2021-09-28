@@ -77,6 +77,7 @@ lint_code:
     paths:
       - gl-code-quality-report.json
   rules:
+    - !reference [.skip_if_dev_mirror]
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 

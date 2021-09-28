@@ -25,6 +25,13 @@
   <<: *if_stable_branch
   when: never
 
+.if_dev_mirror: &if_dev_mirror
+  if: '$CI_PROJECT_PATH == "gitlab/cloud-native/gitlab-operator"'
+
+.skip_if_dev_mirror: &skip_if_dev_mirror
+  <<: *if_dev_mirror
+  when: never
+
 .cache:
   variables:
     GOPATH: "${CI_PROJECT_DIR}/.go"

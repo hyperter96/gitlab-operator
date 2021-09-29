@@ -50,6 +50,9 @@ const (
 
 	// MailroomComponentName is the common name of Mailroom.
 	MailroomComponentName = "mailroom"
+
+	// KasComponentName is the common name of KAS.
+	KasComponentName = "kas"
 )
 
 // RedisSubqueues is the array of possible Redis subqueues.

@@ -447,6 +447,10 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 		configmaps = append(configmaps, pages)
 	}
 
+	if gitlabctl.KasEnabled(adapter) {
+		configmaps = append(configmaps, gitlabctl.KasConfigMap(adapter))
+	}
+
 	for _, cm := range configmaps {
 		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
@@ -557,6 +561,12 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 
 	if gitlabctl.PagesEnabled(adapter) {
 		if err := r.reconcileGitLabPagesDeployment(ctx, adapter); err != nil {
+			return err
+		}
+	}
+
+	if gitlabctl.KasEnabled(adapter) {
+		if err := r.reconcileKasDeployment(ctx, adapter); err != nil {
 			return err
 		}
 	}
@@ -903,6 +913,10 @@ func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlab
 		services = append(services, pages)
 	}
 
+	if gitlabctl.KasEnabled(adapter) {
+		services = append(services, gitlabctl.KasService(adapter))
+	}
+
 	for _, svc := range services {
 		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
@@ -936,6 +950,22 @@ func (r *GitLabReconciler) reconcileGitLabPagesDeployment(ctx context.Context, a
 	}
 
 	_, err := r.createOrPatch(ctx, pages, adapter)
+
+	return err
+}
+
+func (r *GitLabReconciler) reconcileKasDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	kas := gitlabctl.KasDeployment(adapter)
+
+	if err := r.setDeploymentReplica(ctx, kas); err != nil {
+		return err
+	}
+
+	if err := r.annotateSecretsChecksum(ctx, adapter, &kas.Spec.Template); err != nil {
+		return err
+	}
+
+	_, err := r.createOrPatch(ctx, kas, adapter)
 
 	return err
 }
@@ -1086,6 +1116,10 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabc
 	if gitlabctl.PagesEnabled(adapter) {
 		pages := gitlabctl.PagesIngress(adapter)
 		ingresses = append(ingresses, pages)
+	}
+
+	if gitlabctl.KasEnabled(adapter) {
+		ingresses = append(ingresses, gitlabctl.KasIngress(adapter))
 	}
 
 	// For each ingress:

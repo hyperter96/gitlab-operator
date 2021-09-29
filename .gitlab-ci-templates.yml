@@ -71,7 +71,7 @@
     EE_LICENSE: $GITLAB_QA_EE_LICENSE
     QA_OPTIONS: "--tag smoke"
     KNAPSACK_REPORT_PATH: "knapsack/master_report.json"
-    KNAPSACK_TEST_FILE_PATTERN: "qa/specs/features/**/!(kubernetes_integration_spec).rb" # https://gitlab.com/gitlab-org/charts/gitlab/-/issues/2886
+    KNAPSACK_TEST_FILE_PATTERN: "qa/specs/features/**/*_spec.rb"
     KNAPSACK_GENERATE_REPORT: "true"
   script:
     - echo $QA_ENVIRONMENT_URL $GITLAB_VERSION

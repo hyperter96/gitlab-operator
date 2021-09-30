@@ -178,6 +178,15 @@ approve_cluster_tests:
     - if: '$CI_COMMIT_BRANCH'
       when: manual
 
+create_review_4_6:
+  stage: review
+  script: echo "Creating deployment environment"
+  environment: &environment_4_6
+    name: openshift_4_6/$CI_COMMIT_REF_NAME
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_6
+    on_stop: stop_review_openshift_4_6
+    auto_stop_in: 1 hour
+
 review_4_6:
   extends: .review_template
   variables:
@@ -185,12 +194,18 @@ review_4_6:
     PLATFORM: openshift
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
-  environment:
-    name: openshift_4_6/$CI_COMMIT_REF_NAME
-    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_6
-    on_stop: stop_review_openshift_4_6
-    auto_stop_in: 1 hour
+  needs: ["create_review_4_6"]
+  environment: *environment_4_6
   resource_group: "openshift_4_6/${CI_COMMIT_REF_NAME}"
+
+create_review_4_7:
+  stage: review
+  script: echo "Creating deployment environment"
+  environment: &environment_4_7
+    name: openshift_4_7/$CI_COMMIT_REF_NAME
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_7
+    on_stop: stop_review_openshift_4_7
+    auto_stop_in: 1 hour
 
 review_4_7:
   extends: .review_template
@@ -199,13 +214,19 @@ review_4_7:
     PLATFORM: openshift
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
-  environment:
-    name: openshift_4_7/$CI_COMMIT_REF_NAME
-    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_7
-    on_stop: stop_review_openshift_4_7
-    auto_stop_in: 1 hour
+  needs: ["create_review_4_7"]
+  environment: *environment_4_7
   resource_group: "openshift_4_7/${CI_COMMIT_REF_NAME}"
 
+create_review_gke:
+  stage: review
+  script: echo "Creating deployment environment"
+  environment: &environment_gke
+    name: gke/$CI_COMMIT_REF_NAME
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
+    on_stop: stop_review_gke
+    auto_stop_in: 1 hour
+  
 review_gke:
   extends: .review_template
   variables:
@@ -213,11 +234,8 @@ review_gke:
     PLATFORM: kubernetes
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
-  environment:
-    name: gke/$CI_COMMIT_REF_NAME
-    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
-    on_stop: stop_review_gke
-    auto_stop_in: 1 hour
+  needs: ["create_review_gke"]
+  environment: *environment_gke
   resource_group: "gke/${CI_COMMIT_REF_NAME}"
 
 qa_4_6:

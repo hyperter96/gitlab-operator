@@ -224,7 +224,7 @@ qa_4_6:
   extends: .qa
   stage: qa
   variables:
-    DOMAIN: apps.ocp-ci-4623.k8s-ft.win
+    DOMAIN: $DOMAIN_OPENSHIFT_4_6
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   dependencies:
     - review_4_6
@@ -236,7 +236,7 @@ qa_4_7:
   extends: .qa
   stage: qa
   variables:
-    DOMAIN: apps.ocp-ci-4717.k8s-ft.win
+    DOMAIN: $DOMAIN_OPENSHIFT_4_7
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   dependencies:
     - review_4_7

@@ -16,7 +16,7 @@ kubeconfig files for connecting to these clusters are stored in the 1Password cl
 
 CI clusters have been launched with `scripts/create_openshift_cluster.sh` in this project. CI variables named `KUBECONFIG_OCP_4_7` allow scripts to connect to clusters as kubeadmin. `4_7` refers to the major and minor version of the targeted OpenShift cluster.
 
-See [doc/doc/openshift-cluster-setup.md](../doc/openshift-cluster-setup.md) for instruction on using this script.
+See [OpenShift cluster setup documentation](../openshift-cluster-setup.md) for instruction on using this script.
 
 ### Scaling OpenShift clusters
 

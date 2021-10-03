@@ -16,7 +16,7 @@ While new and still actively being developed, the operator aims to:
 - aggregate and visualize metrics using Prometheus and Grafana
 - setup auto-scaling
 
-Note that this does not include the GitLab Runner. For more inforation, see the [GitLab Runner Operator repository](https://gitlab.com/gitlab-org/cloud-native/gitlab-runner-operator).
+Note that this does not include the GitLab Runner. For more information, see the [GitLab Runner Operator repository](https://gitlab.com/gitlab-org/cloud-native/gitlab-runner-operator).
 
 ## Documentation
 

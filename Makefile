@@ -12,6 +12,7 @@ ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
+BUNDLE_OPTS ?= --extra-service-accounts=gitlab-manager,gitlab-nginx-ingress,gitlab-app
 
 KUSTOMIZE_FILES=$(shell find config -type f -name \*.yaml)
 TEST_CR_FILES=$(shell find config/test -type f -name \*.yaml)
@@ -227,7 +228,7 @@ clean:
 bundle: manifests
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image $(IMG)=$(IMG):$(TAG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_OPS) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.

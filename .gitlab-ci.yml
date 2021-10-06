@@ -120,6 +120,19 @@ slow_unit_tests:
     - docker run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:1.14 go list ./...
   interruptible: false
 
+.podman_build_job:
+  extends: .cache
+  stage: release
+  needs: ["pull_charts"]
+  before_script:
+    #FIXME buildah should be part of gitlab-operator-builder image
+    - apk add --no-cache buildah
+    - sed -i 's#^driver.*$#driver = "vfs"#g' /etc/containers/storage.conf
+    - podman login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    # Update module cache so it can be saved in CI cache (only the dependencies required to build)
+    - podman run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:1.14 go list ./...
+  interruptible: false
+
 build_branch_image:
   extends: .docker_build_job
   script:
@@ -157,12 +170,21 @@ build_latest_image:
     - !reference [.if_default_branch]
 
 build_bundle_image:
-  extends: .docker_build_job
+  extends: .podman_build_job
+  variables:
+    BUNDLE_REGISTRY: ${CI_REGISTRY_IMAGE}/bundle
+    BUNDLE_IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
+    COMPILE_ONLY: "false"
+    DOCKER: "podman"
+    OPM_DOCKER: "podman"
+    OLM_PACKAGE_NAME: "gitlab-operator-kubernetes"
   script:
-    - docker build -t "${CI_REGISTRY_IMAGE}/bundle" -f Dockerfile.bundle .
-    - docker push "${CI_REGISTRY_IMAGE}/bundle"
+    - export OLM_PACKAGE_VERSION=${CI_COMMIT_TAG:-${TAG}}
+    - export OPERATOR_TAG=${CI_COMMIT_TAG:-${TAG}}
+    - export TAG=${CI_COMMIT_TAG:-${TAG}}
+    - scripts/olm_bundle.sh install_operatorsdk install_opm publish
   rules:
-    - !reference [.if_default_branch_with_bundle_changes]
+    - !reference [.if_release_tag]
 
 approve_cluster_tests:
   stage: cluster_tests_approval

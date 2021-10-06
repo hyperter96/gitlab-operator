@@ -94,6 +94,7 @@ helm
 *.coverprofile
 *.log
 
+bundle/
 .build/
 .install/
 # Google Service Account

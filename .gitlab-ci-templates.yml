@@ -62,6 +62,7 @@
     when: 'always'
 
 .create_review_template:
+  extends: .cache
   stage: review
   script: echo "Creating deployment environment"
   rules:

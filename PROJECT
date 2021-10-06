@@ -3,9 +3,12 @@ layout: go.kubebuilder.io/v2
 projectName: gitlab-operator
 repo: gitlab.com/gitlab-org/cloud-native/gitlab-operator
 resources:
-- group: apps
+-
+  controller: true
+  group: apps
   kind: GitLab
+  path: apps.gitlab.com/v1beta1
   version: v1beta1
-version: 3-alpha
+version: "3"
 plugins:
   go.sdk.operatorframework.io/v2-alpha: {}

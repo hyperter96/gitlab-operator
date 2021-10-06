@@ -1,0 +1,66 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# namespace and nameSuffix are currently set from Makefile validators:
+#  `kustomize edit set ...`
+# If you need to modify namespace and/or nameSuffix directly
+# uncomment following lines and provide proper values (namespace 
+# cannot be an empty string, while nameSuffix can):
+# 
+# namespace: ""
+# nameSuffix: ""
+
+# we cannot do proper commonAnnotations... 
+# resorting to full transformers syntax
+# - transformers/annotations.yaml
+transformers:
+- |-
+  kind: AnnotationsTransformer
+  apiVersion: builtin
+  metadata:
+    name: notImportantHere
+  annotations:
+    cert-manager.io/inject-ca-from: $(SERVICE_NAMESPACE)/gitlab-serving-cert
+  fieldSpecs:
+  - kind: ValidatingWebhookConfiguration
+    create: true
+    path: metadata/annotations
+  - kind: CustomResourceDefinition
+    create: true
+    path: metadata/annotations
+
+resources:
+- operator.yaml
+
+# Image name and tag are currently set from the Makefile via
+#   `kustomize edit set ...`
+# If you need to modify the image name and/or tag without using Make,
+# uncomment this section and provide the proper values
+# 
+# images:
+# - name: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
+#   newTag: ""
+
+patchesStrategicMerge:
+- patches/webhook-certificate.yaml
+#TODO make patches remote objects
+# - gitlab.com/gitlab-org/cloud-native/gitlab-operator//config/ci/patches/webhook-certificate.yaml?ref=master
+
+# copy-paste from default/kustomization.yaml
+vars:
+- fieldref:
+    fieldPath: metadata.namespace
+  name: SERVICE_NAMESPACE
+  objref:
+    kind: Service
+    name: gitlab-webhook-service
+    version: v1
+- fieldref: {}
+  name: SERVICE_NAME
+  objref:
+    kind: Service
+    name: gitlab-webhook-service
+    version: v1
+
+configurations:
+- kustomizeconfig.yaml

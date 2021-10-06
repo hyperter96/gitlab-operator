@@ -1,0 +1,14 @@
+# this is the only way at the moment to limit the scope of annotations
+apiVersion: builtin
+kind: AnnotationsTransformer
+metadata:
+  name: notImportantHere
+annotations:
+  cert-manager.io/inject-ca-from: $(SERVICE_NAMESPACE)/gitlab-serving-cert
+fieldSpecs:
+- kind: ValidatingWebhookConfiguration
+  create: true
+  path: metadata/annotations
+- kind: CustomResourceDefinition
+  create: true
+  path: metadata/annotations

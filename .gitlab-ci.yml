@@ -178,6 +178,12 @@ approve_cluster_tests:
     - if: '$CI_COMMIT_BRANCH'
       when: manual
 
+build_review_4_6:
+  extends: .build_review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_6
+    PLATFORM: openshift
+
 create_review_4_6:
   stage: review
   script: echo "Creating deployment environment"
@@ -186,6 +192,8 @@ create_review_4_6:
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_6
     on_stop: stop_review_openshift_4_6
     auto_stop_in: 1 hour
+  needs:
+    - build_review_4_6
 
 review_4_6:
   extends: .review_template
@@ -194,9 +202,18 @@ review_4_6:
     PLATFORM: openshift
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
-  needs: ["create_review_4_6"]
+  needs: 
+    - create_review_4_6
+    # we need build_* dependency to receive appropriate artifacts
+    - build_review_4_6
   environment: *environment_4_6
   resource_group: "openshift_4_6/${CI_COMMIT_REF_NAME}"
+
+build_review_4_7:
+  extends: .build_review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_7
+    PLATFORM: openshift
 
 create_review_4_7:
   stage: review
@@ -206,6 +223,8 @@ create_review_4_7:
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_7
     on_stop: stop_review_openshift_4_7
     auto_stop_in: 1 hour
+  needs:
+    - build_review_4_7
 
 review_4_7:
   extends: .review_template
@@ -214,9 +233,18 @@ review_4_7:
     PLATFORM: openshift
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
-  needs: ["create_review_4_7"]
+  needs: 
+    - create_review_4_7
+    # we need build_* dependency to receive appropriate artifacts
+    - build_review_4_7
   environment: *environment_4_7
   resource_group: "openshift_4_7/${CI_COMMIT_REF_NAME}"
+
+build_review_gke:
+  extends: .build_review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE
+    PLATFORM: kubernetes
 
 create_review_gke:
   stage: review
@@ -226,6 +254,8 @@ create_review_gke:
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
     on_stop: stop_review_gke
     auto_stop_in: 1 hour
+  needs:
+    - build_review_gke
   
 review_gke:
   extends: .review_template
@@ -234,7 +264,10 @@ review_gke:
     PLATFORM: kubernetes
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
-  needs: ["create_review_gke"]
+  needs: 
+    - create_review_gke
+    # we need build_* dependency to receive appropriate artifacts
+    - build_review_gke
   environment: *environment_gke
   resource_group: "gke/${CI_COMMIT_REF_NAME}"
 
@@ -276,27 +309,42 @@ qa_gke:
 
 stop_review_openshift_4_6:
   extends: .stop_review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_6
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
   environment:
     name: openshift_4_6/$CI_COMMIT_REF_NAME
     action: stop
+  needs:
+    - build_review_4_6
+
 
 stop_review_openshift_4_7:
   extends: .stop_review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_7
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
   environment:
     name: openshift_4_7/$CI_COMMIT_REF_NAME
     action: stop
+  needs:
+    - build_review_4_7
+
 
 stop_review_gke:
   extends: .stop_review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
   environment:
     name: gke/$CI_COMMIT_REF_NAME
     action: stop
+  needs:
+    - build_review_gke
+
 
 certification_upload:
   stage: certification
@@ -358,7 +406,7 @@ publish_release:
     - upload_manifest
   rules:
     - !reference [.if_release_tag]
-  script: echo "Releasing $CI_COMMIT_TAG from ${MANIFEST_URL}"
+  script: echo "Releasing $CI_COMMIT_TAG from ${K8S_MANIFEST_URL} and ${OCP_MANIFEST_URL}"
   release:
       name: "Release $CI_COMMIT_TAG"
       tag_name: "$CI_COMMIT_TAG"

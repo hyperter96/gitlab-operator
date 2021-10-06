@@ -6,7 +6,7 @@ TESTS_NAMESPACE="${TESTS_NAMESPACE:-gitlab-system}"
 CLEANUP="${CLEANUP:-yes}"
 HOSTSUFFIX="${HOSTSUFFIX:-${TESTS_NAMESPACE}}"
 DOMAIN="${DOMAIN:-example.com}"
-DEBUG="${DEBUG:-off}"
+DEBUG_CLEANUP="${DEBUG_CLEANUP:-off}"
 KUBECTL_WAIT_TIMEOUT_SECONDS=${KUBECTL_WAIT_TIMEOUT_SECONDS:-"600s"}
 
 export IMG TAG NAMESPACE=${TESTS_NAMESPACE}
@@ -35,9 +35,38 @@ main() {
   [ "$CLEANUP" = "only" ] && { cleanup; exit 0; }
 
   echo 'Starting test'
-  install_crds
+  if [ "${CI}" == "true" ] 
+  then
+    # called from pipeline
+    # all artifacts should be in place
+
+    build_kustomized
+
+    deploy_kustomized
+  else
+    install_crds
+    create_namespace
+    install_gitlab_operator
+    verify_operator_is_running
+    copy_certificate
+    build_gitlab_custom_resource
+    install_gitlab_custom_resource
+    verify_gitlab_is_running
+  fi
+}
+
+build_kustomized(){
+  create_kustomization
+  setup_kustomization
+  compile_kustomization
+  build_gitlab_custom_resource
+}
+
+deploy_kustomized(){
   create_namespace
-  install_gitlab_operator
+  setup_kustomization
+  install_kustomization
+
   verify_operator_is_running
   copy_certificate
   install_gitlab_custom_resource
@@ -49,8 +78,75 @@ create_namespace() {
 }
 
 install_crds() {
+  #TODO Deprecate install_crds
   echo 'Installing operator CRDs'
   make install_crds
+}
+
+create_kustomization() {
+  # create kustomization infrastructure
+  for d in generic openshift
+  do
+    mkdir -p .build/kustomize/${d}
+    cp -r config/ci/* .build/kustomize/${d}/
+    cp .build/operator.yaml .build/kustomize/${d}
+  done
+  cp .build/openshift_resources.yaml .build/kustomize/openshift/
+
+  (
+    cd .build/kustomize/generic
+    kustomize edit set image ${IMG}:${TAG}
+    kustomize edit set namesuffix -- "-${TESTS_NAMESPACE}"
+    kustomize edit set namespace "${TESTS_NAMESPACE}"
+  )
+  (
+    cd .build/kustomize/openshift
+    kustomize edit set image ${IMG}:${TAG}
+    kustomize edit set namesuffix -- "-${TESTS_NAMESPACE}"
+    kustomize edit set namespace "${TESTS_NAMESPACE}"
+    kustomize edit add resource openshift_resources.yaml
+  )
+}
+
+setup_kustomization() {
+  local basedir
+  echo "Setting up environment for kustomize"
+  if [ -n "$1" ]
+  then
+    basedir=$1
+  else
+    basedir=$(pwd)
+  fi
+  DEPLOYMENT_DIR=${basedir}/.install
+  BUILD_DIR=${basedir}/.build
+
+  if [ "${PLATFORM}" == "openshift" ]
+  then
+    MANIFEST_DIR=${basedir}/.build/kustomize/openshift
+  else
+    MANIFEST_DIR=${basedir}/.build/kustomize/generic
+  fi
+  mkdir -p ${DEPLOYMENT_DIR}
+  mkdir -p ${BUILD_DIR}
+}
+
+compile_kustomization() {
+  # Needs to have setup_kustomization to be ran first
+  echo "Compiling kustomize'd manifest"
+  pushd ${MANIFEST_DIR}
+  kustomize build > deployment.yaml
+  set -x
+  cp deployment.yaml ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+  set +x
+  popd
+}
+
+install_kustomization() {
+  echo "Deploying operator"
+  set -x
+  kubectl apply -f ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+  cp ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml ${DEPLOYMENT_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+  set +x
 }
 
 install_gitlab_operator() {
@@ -68,9 +164,21 @@ verify_operator_is_running() {
   kubectl wait --for=condition=Available -n "$TESTS_NAMESPACE" deployment/gitlab-controller-manager
 }
 
+build_gitlab_custom_resource() {
+  echo 'Building GitLab custom resource manifest'
+  make build_test_cr
+  set -x
+  cp .build/test_cr.yaml ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  set +x
+}
+
 install_gitlab_custom_resource() {
+  # requres "build_gitlab_custom_resource" to be ran first
   echo 'Installing GitLab custom resource'
-  make deploy_test_cr
+  set -x
+  kubectl apply -n ${TESTS_NAMESPACE} -f ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  cp ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml ${DEPLOYMENT_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  set +x
 }
 
 copy_certificate() {
@@ -111,18 +219,35 @@ cleanup() {
   # Turn off exit immediately if command fails so debug out can get generated
   set +e
 
-  kubectl delete ns "$TESTS_NAMESPACE"
-  if [[ $? -ne 0 ]]; then
-    signal_failure=1
+  if [ "${CI}" == "true" ]
+  then
+    # make sure we know where manifest is:
+    setup_kustomization
+
+    set -x
+    # delete CR
+    kubectl delete -f ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+    # delete operator resources
+    kubectl delete -f ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+    kubectl delete ns "$TESTS_NAMESPACE"
+    set +x
+  else
+    set -x
+    kubectl delete ns "$TESTS_NAMESPACE"
+    set +x
+    if [[ $? -ne 0 ]]; then
+      signal_failure=1
+    fi
+
+    results=$(kubectl get clusterrolebindings -o=name | grep $TESTS_NAMESPACE)
+    [[ "$DEBUG_CLEANUP" != "off" ]] && printf "** kubectl get clusterrolebinding results\n$results\n-----"
+    echo "$results" | xargs kubectl delete
+
+    results=$(kubectl get validatingwebhookconfiguration -o name | grep $TESTS_NAMESPACE)
+    [[ "$DEBUG_CLEANUP" != "off" ]] && printf "** kubectl get validatingwebhookconfiguration results\n$results\n-----"
+    echo "$results" | xargs kubectl delete
   fi
 
-  results=$(kubectl get clusterrolebindings -o=name | grep $TESTS_NAMESPACE)
-  [[ "$DEBUG" != "off" ]] && printf "** kubectl get clusterrolebinding results\n$results\n-----"
-  echo "$results" | xargs kubectl delete
-
-  results=$(kubectl get validatingwebhookconfiguration -o name | grep $TESTS_NAMESPACE)
-  [[ "$DEBUG" != "off" ]] && printf "** kubectl get validatingwebhookconfiguration results\n$results\n-----"
-  echo "$results" | xargs kubectl delete
   if [[ $? -ne 0 ]]; then
     signal_failure=1
   fi
@@ -165,4 +290,13 @@ wait_until_exists() {
   done
 }
 
-main
+# main
+if [ "$#" -lt 1 ]
+then
+  main
+else
+  for cmd in "$@"
+  do
+    $cmd
+  done
+fi

@@ -29,7 +29,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: GitLab is a complete DevOps platform, delivered in a single application.
+      description: GitLab is a complete DevOps platform, delivered in a single application
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -44,7 +44,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: Specification of the desired behavior of a GitLab instance.
+          description: Specification of the desired behavior of a GitLab instance
           properties:
             chart:
               description: The specification of GitLab Chart that is used to deploy
@@ -63,8 +63,7 @@ spec:
               type: object
           type: object
         status:
-          description: Most recently observed status of the GitLab instance. It is
-            read-only to the user.
+          description: Most recently observed status of the GitLab instance. It is read-only to the user
           properties:
             phase:
               type: string

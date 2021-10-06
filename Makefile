@@ -14,6 +14,7 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 KUSTOMIZE_FILES=$(shell find config -type f -name \*.yaml)
+TEST_CR_FILES=$(shell find config/test -type f -name \*.yaml)
 
 # Image URL to use all building/pushing image targets
 IMG ?= registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
@@ -71,7 +72,7 @@ build_crds: .build/crds.yaml
 
 .install/crds.yaml: .build/crds.yaml .install
 	$(KUBECTL) apply -f $<
-	touch $@
+	cp $< $@
 
 # Install CRDs into a cluster
 install_crds: .install/crds.yaml
@@ -99,7 +100,7 @@ build_openshift_resources: .build/openshift_resources.yaml
 	$(KUBECTL) create namespace ${NAMESPACE} || true
 	$(KUBECTL) label namespace ${NAMESPACE} control-plane=controller-manager || true
 	$(KUBECTL) apply -f $<
-	touch $@
+	cp $< $@
 
 deploy_openshift_resources: .install/openshift_resources.yaml
 
@@ -115,7 +116,7 @@ build_operator: .build/operator.yaml
 	$(KUBECTL) create namespace ${NAMESPACE} || true
 	$(KUBECTL) label namespace ${NAMESPACE} control-plane=controller-manager || true
 	$(KUBECTL) apply -f $<
-	touch $@
+	cp $< $@
 
 deploy_operator: .install/operator.yaml
 
@@ -125,23 +126,34 @@ delete_operator: manifests kustomize .build/operator.yaml
 	rm .install/operator.yaml
 
 # Deploy test GitLab custom resource to cluster
-deploy_test_cr: kustomize
+build_test_cr: .build/test_cr.yaml
+
+.build/test_cr.yaml: $(TEST_CR_FILES)
 	cd config/test && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	$(KUSTOMIZE) build config/test \
 		| sed "s/CHART_VERSION/${CHART_VERSION}/g" \
 		| sed "s/DOMAIN/${DOMAIN}/g" \
 		| sed "s/HOSTSUFFIX/${HOSTSUFFIX}/g" \
-		| sed "s/TLSSECRETNAME/${TLSSECRETNAME}/g" \
-		| kubectl apply -f -
+		| sed "s/TLSSECRETNAME/${TLSSECRETNAME}/g" > $@
+
+# Deploy test GitLab custom resource to cluster
+.install/test_cr.yaml: .build/test_cr.yaml
+	kubectl apply -f $<
+	cp $< $@
+
+deploy_test_cr: .install/test_cr.yaml
 
 # Delete the test GitLab custom resource from cluster
-delete_test_cr: kustomize
-	cd config/test && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	$(KUSTOMIZE) build config/test | kubectl delete -f -
+delete_test_cr: .install/test_cr.yaml
+	kubectl delete -f $<
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
+
+config/crd/bases/apps.gitlab.com_gitlabs.yaml: $(CONTROLLER_GEN)
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+.PHONY: manifests
+manifests: config/crd/bases/apps.gitlab.com_gitlabs.yaml
 
 # Restores files that are modified during operator and CR deploy
 restore_kustomize_files:

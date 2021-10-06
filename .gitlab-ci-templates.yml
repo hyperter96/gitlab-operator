@@ -41,23 +41,48 @@
       - .go/pkg/mod/
     when: 'always'
 
+.build_review_template:
+  extends: .cache
+  stage: review
+  variables:
+    CLEANUP: "no"
+  script:
+  - ls -l .build || true
+  - ./scripts/test.sh build_kustomized
+  artifacts:
+    paths:
+      #NOTE: this will affect following Jobs providing manifest crafted to be deployed into tests.
+      #      where this may backfire is if we push "publish" to happen *after* tests.
+      #NOTE2: we need both .build and .install artifacts for later tear-down jobs as well as troubleshooting
+      - .build/operator.yaml
+      - .build/openshift_resources.yaml
+      - .build/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+      - .build/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  rules:
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
+
 .review_template:
   extends: .cache
   stage: review
   variables:
     CLEANUP: "no"
   script:
-  - ./scripts/test.sh
+  - ls -l .build || true
+  - ls -l .install || true
+  - ./scripts/test.sh deploy_kustomized
   - echo "ROOT_PASSWORD=$(kubectl -n $TESTS_NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> review.env
   - echo "GITLAB_VERSION=$(kubectl -n $TESTS_NAMESPACE exec -ti $(kubectl -n $TESTS_NAMESPACE get pods | grep task-runner | awk '{print $1}') cat /srv/gitlab/VERSION)" >> review.env
-  retry: 1
   artifacts:
     paths:
       #NOTE: this will affect following Jobs providing manifest crafted to be deployed into tests.
       #      where this may backfire is if we push "publish" to happen *after* tests.
-      - .build/operator.yaml
+      #NOTE2: we need both .build and .install artifacts for later tear-down jobs as well as troubleshooting
+      - .install/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+      - .install/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
     reports:
       dotenv: review.env
+  retry: 1
   rules:
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
@@ -90,15 +115,18 @@
   stage: cleanup
   needs: [] # if `review` stage fails, still allow this job to be triggered
   variables:
-    DEBUG: "yes"
+    DEBUG_CLEANUP: "yes"
     CLEANUP: "only"
-  script: ./scripts/test.sh
+  script: 
+    - ls -l .build || true
+    - ls -l .install || true
+    - ./scripts/test.sh cleanup
   allow_failure: true
   rules:
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
     - !reference [.skip_if_release_tag]
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: manual
     - <<: *if_stable_branch
-      when: manual
-    - if: '$CI_COMMIT_BRANCH'
       when: manual

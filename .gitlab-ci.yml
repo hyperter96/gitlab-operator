@@ -62,6 +62,7 @@ pull_charts:
     paths:
       - charts/
   rules:
+    - !reference [.skip_if_docs_branch]
     - !reference [.if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
@@ -79,6 +80,7 @@ lint_code:
   rules:
     - !reference [.skip_if_dev_mirror]
     - !reference [.skip_if_release_tag]
+    - !reference [.skip_if_docs_branch]
     - if: '$CI_COMMIT_BRANCH'
 
 .test_job:
@@ -93,6 +95,7 @@ lint_code:
     - export CHART_VERSION=$(sed -n ${VERSION_INDEX}p CHART_VERSIONS)
   rules:
     - !reference [.skip_if_release_tag]
+    - !reference [.skip_if_docs_branch]
     - if: '$CI_COMMIT_BRANCH'
 
 unit_tests:
@@ -130,10 +133,12 @@ build_branch_image:
     - docker build -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" .
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_SLUG}"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
-  except:
-    refs:
-      - master
-      - tags
+  rules:
+    - !reference [.skip_if_docs_branch]
+    - !reference [.skip_if_default_branch]
+    - !reference [.skip_if_stable_branch]
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
 
 build_tag_image:
   extends: .docker_build_job
@@ -161,17 +166,15 @@ build_bundle_image:
   script:
     - docker build -t "${CI_REGISTRY_IMAGE}/bundle" -f Dockerfile.bundle .
     - docker push "${CI_REGISTRY_IMAGE}/bundle"
-  only:
-    refs:
-      - master
-    changes:
-      - bundle/**/*
+  rules:
+    - !reference [.if_default_branch_with_bundle_changes]
 
 approve_cluster_tests:
   stage: cluster_tests_approval
   image: alpine:latest
   script: echo "Proceeding to tests in CI clusters..."
   rules:
+    - !reference [.skip_if_docs_branch]
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_stable_branch]
     - !reference [.skip_if_default_branch]
@@ -185,8 +188,7 @@ build_review_4_6:
     PLATFORM: openshift
 
 create_review_4_6:
-  stage: review
-  script: echo "Creating deployment environment"
+  extends: .create_review_template
   environment: &environment_4_6
     name: openshift_4_6/$CI_COMMIT_REF_NAME
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_6
@@ -216,8 +218,7 @@ build_review_4_7:
     PLATFORM: openshift
 
 create_review_4_7:
-  stage: review
-  script: echo "Creating deployment environment"
+  extends: .create_review_template
   environment: &environment_4_7
     name: openshift_4_7/$CI_COMMIT_REF_NAME
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_7
@@ -247,8 +248,7 @@ build_review_gke:
     PLATFORM: kubernetes
 
 create_review_gke:
-  stage: review
-  script: echo "Creating deployment environment"
+  extends: .create_review_template
   environment: &environment_gke
     name: gke/$CI_COMMIT_REF_NAME
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
@@ -279,9 +279,6 @@ qa_4_6:
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   dependencies:
     - review_4_6
-  rules:
-    - !reference [.skip_if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
 
 qa_4_7:
   extends: .qa
@@ -291,9 +288,6 @@ qa_4_7:
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   dependencies:
     - review_4_7
-  rules:
-    - !reference [.skip_if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
 
 qa_gke:
   extends: .qa
@@ -303,9 +297,6 @@ qa_gke:
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   dependencies:
     - review_gke
-  rules:
-    - !reference [.skip_if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
 
 stop_review_openshift_4_6:
   extends: .stop_review_template
@@ -375,6 +366,9 @@ build_manifest:
       - .build/operator.yaml
       - .build/operator-openshift.yaml
       - .build/openshift_resources.yaml
+  rules:
+    - !reference [.skip_if_docs_branch]
+    - if: '$CI_COMMIT_BRANCH'
 
 upload_manifest:
   stage: publish

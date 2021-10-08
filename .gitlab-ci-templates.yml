@@ -18,6 +18,11 @@
   <<: *if_default_branch
   when: never
 
+.if_default_branch_with_bundle_changes: &if_default_branch_with_bundle_changes
+  <<: *if_default_branch
+  changes:
+  - bundle/**/*
+
 .if_stable_branch: &if_stable_branch
   if: '$CI_COMMIT_REF_NAME =~ /^[0-9]+-[0-9]+-stable$/'
 
@@ -32,6 +37,13 @@
   <<: *if_dev_mirror
   when: never
 
+.if_docs_branch: &if_docs_branch
+  if: '$CI_COMMIT_REF_NAME =~ /(^docs[\/-].+|.+-docs$)/'
+
+.skip_if_docs_branch: &skip_if_docs_branch
+  <<: *if_docs_branch
+  when: never
+
 .cache:
   variables:
     GOPATH: "${CI_PROJECT_DIR}/.go"
@@ -40,6 +52,14 @@
     paths:
       - .go/pkg/mod/
     when: 'always'
+
+.create_review_template:
+  stage: review
+  script: echo "Creating deployment environment"
+  rules:
+    - !reference [.skip_if_release_tag]
+    - !reference [.skip_if_docs_branch]
+    - if: '$CI_COMMIT_BRANCH'
 
 .build_review_template:
   extends: .cache
@@ -85,6 +105,7 @@
   retry: 1
   rules:
     - !reference [.skip_if_release_tag]
+    - !reference [.skip_if_docs_branch]
     - if: '$CI_COMMIT_BRANCH'
 
 .qa:
@@ -110,6 +131,10 @@
     - ./gitlab-qa-run-*
   allow_failure: true
   parallel: 2
+  rules:
+    - !reference [.skip_if_docs_branch]
+    - !reference [.skip_if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
 
 .stop_review_template:
   stage: cleanup
@@ -126,6 +151,7 @@
     - if: '$CI_COMMIT_BRANCH'
       when: manual
     - !reference [.skip_if_release_tag]
+    - !reference [.skip_if_docs_branch]
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: manual
     - <<: *if_stable_branch

@@ -44,6 +44,14 @@
   <<: *if_docs_branch
   when: never
 
+.manual_if_release_tag: &manual_if_release_tag
+  <<: *if_release_tag
+  when: manual
+
+.manual_if_release_tag_on_dev: &manual_if_release_tag_on_dev
+  <<: *if_release_tag_on_dev
+  when: manual
+
 .cache:
   variables:
     GOPATH: "${CI_PROJECT_DIR}/.go"

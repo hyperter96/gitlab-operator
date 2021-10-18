@@ -104,10 +104,22 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	isUpgrade := adapter.IsUpgrade()
 	log.V(1).Info("version information", "upgrade", isUpgrade, "current version", adapter.StatusVersion(), "desired version", adapter.ChartVersion())
 
+	if err := r.setStatusCondition(ctx, adapter, ConditionInitialized, false, "GitLab is initializing"); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if _, err := gitlabctl.GetTemplate(adapter); err != nil {
 		r.Recorder.Event(adapter.Resource(), "Warning", "ConfigError",
 			fmt.Sprintf("Configuration error detected: %v", err))
 		return ctrl.Result{}, nil // return nil here to prevent further reconcile loops
+	}
+
+	if err := r.setStatusCondition(ctx, adapter, ConditionInitialized, true, "GitLab is initialized"); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.setStatusCondition(ctx, adapter, ConditionAvailable, false, "GitLab is starting but not yet available"); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if err := r.reconcileServiceAccount(ctx, adapter); err != nil {
@@ -176,6 +188,10 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if isUpgrade {
+		if err := r.setStatusCondition(ctx, adapter, ConditionUpgrading, true, fmt.Sprintf("GitLab is upgrading from %s to %s", adapter.StatusVersion(), adapter.ChartVersion())); err != nil {
+			return ctrl.Result{}, err
+		}
+
 		log.Info("reconciling Deployments (Webservice & Sidekiq paused)")
 
 		if err := r.reconcileDeployments(ctx, adapter, true); err != nil {
@@ -230,6 +246,10 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 	} else {
+		if err := r.setStatusCondition(ctx, adapter, ConditionUpgrading, false, "GitLab is not currently upgrading"); err != nil {
+			return ctrl.Result{}, err
+		}
+
 		log.Info("running all migrations")
 
 		if err := r.runAllMigrations(ctx, adapter); err != nil {

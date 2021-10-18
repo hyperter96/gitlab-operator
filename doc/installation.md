@@ -117,10 +117,12 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
    You can also list GitLab resources and check their status:
 
    ```
-   $ kubectl get gitlabs -n gitlab-system
+   $ kubectl -n gitlab-system get gitlab
+   NAME     STATUS   VERSION
+   gitlab   Ready    5.2.4
    ```
 
-   When the CR is reconciled (the status of the GitLab resource will be `RUNNING`), you can access GitLab in your browser at `https://gitlab.example.com`.
+  When the CR is reconciled (the status of the GitLab resource will be `Running`), you can access GitLab in your browser at `https://gitlab.example.com`.
 
 ## Uninstall the GitLab Operator
 

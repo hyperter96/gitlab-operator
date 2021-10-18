@@ -76,8 +76,9 @@ func (u *ChartValues) DeepCopyInto(out *ChartValues) {
 
 // GitLabStatus defines the observed state of GitLab.
 type GitLabStatus struct {
-	Phase   string `json:"phase,omitempty"`
-	Version string `json:"version,omitempty"`
+	Phase      string             `json:"phase,omitempty"`
+	Version    string             `json:"version,omitempty"`
+	Conditions []metav1.Condition `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true

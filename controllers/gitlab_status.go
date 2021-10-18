@@ -6,10 +6,19 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+)
+
+const (
+	ConditionInitialized = "Initialized"
+	ConditionAvailable   = "Available"
+	ConditionUpgrading   = "Upgrading"
 )
 
 func (r *GitLabReconciler) reconcileGitLabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) (ctrl.Result, error) {
@@ -19,6 +28,10 @@ func (r *GitLabReconciler) reconcileGitLabStatus(ctx context.Context, adapter gi
 
 	if r.sidekiqAndWebserviceRunning(ctx, adapter) {
 		adapter.Resource().Status.Phase = "Running"
+
+		if err := r.setStatusCondition(ctx, adapter, ConditionAvailable, true, "GitLab is running and available to accept requests"); err != nil {
+			return result, err
+		}
 	} else {
 		adapter.Resource().Status.Phase = "Preparing"
 		result = resultRequeue
@@ -140,4 +153,21 @@ func (r *GitLabReconciler) runWithRetry(adapter gitlabctl.CustomResourceAdapter,
 	}
 
 	return nil
+}
+
+func (r *GitLabReconciler) setStatusCondition(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, reason string, status bool, message string) error {
+	statusValue := metav1.ConditionFalse
+	if status {
+		statusValue = metav1.ConditionTrue
+	}
+
+	apimeta.SetStatusCondition(&adapter.Resource().Status.Conditions, metav1.Condition{
+		Type:               reason,
+		Status:             statusValue,
+		Reason:             reason,
+		Message:            message,
+		ObservedGeneration: adapter.Resource().Generation,
+	})
+
+	return r.Status().Update(ctx, adapter.Resource())
 }

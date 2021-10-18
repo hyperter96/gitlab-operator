@@ -72,10 +72,18 @@ You will see log entries following the upgrade flow outlined above.
 
 You can also view the GitLab CR status in the cluster:
 
-```
-$ kubectl -n gitlab-system get gitlab/gitlab
-NAME     STATUS    VERSION
-gitlab   Running   5.1.1
+```shell
+$ kubectl -n gitlab-system get gitlab
+NAME     STATUS        VERSION
+gitlab   Preparing     5.2.4
 ```
 
-When the application is ready and upgraded to the new version, you'll see it reflected in the `STATUS` and `VERSION` columns.
+When the application is ready and upgraded to the new version, you'll see it reflected in the `STATUS` column.
+
+```shell
+$ kubectl -n gitlab-system get gitlab
+NAME     STATUS      VERSION
+gitlab   Running     5.2.4
+```
+
+Status conditions on the GitLab object itself present more detailed information about the application.

@@ -100,7 +100,7 @@
   - ls -l .install || true
   - ./scripts/test.sh deploy_kustomized
   - echo "ROOT_PASSWORD=$(kubectl -n $TESTS_NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> review.env
-  - echo "GITLAB_VERSION=$(kubectl -n $TESTS_NAMESPACE exec -ti $(kubectl -n $TESTS_NAMESPACE get pods | grep task-runner | awk '{print $1}') cat /srv/gitlab/VERSION)" >> review.env
+  - echo "GITLAB_VERSION=$(kubectl -n $TESTS_NAMESPACE exec -ti $(kubectl -n $TESTS_NAMESPACE get pods | grep sidekiq | awk '{print $1}') cat /srv/gitlab/VERSION)" >> review.env
   artifacts:
     paths:
       #NOTE: this will affect following Jobs providing manifest crafted to be deployed into tests.

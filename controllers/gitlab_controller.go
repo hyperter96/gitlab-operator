@@ -435,7 +435,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 	var configmaps []*corev1.ConfigMap
 
 	shell := gitlabctl.ShellConfigMaps(adapter)
-	taskRunner := gitlabctl.TaskRunnerConfigMap(adapter)
+	toolbox := gitlabctl.ToolboxConfigMap(adapter)
 	exporter := gitlabctl.ExporterConfigMaps(adapter)
 	webservice := gitlabctl.WebserviceConfigMaps(adapter)
 	migration := gitlabctl.MigrationsConfigMap(adapter)
@@ -444,7 +444,7 @@ func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitl
 
 	configmaps = append(configmaps,
 		registry,
-		taskRunner,
+		toolbox,
 		migration,
 	)
 	configmaps = append(configmaps, shell...)
@@ -571,7 +571,7 @@ func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter git
 		return err
 	}
 
-	if err := r.reconcileTaskRunnerDeployment(ctx, adapter); err != nil {
+	if err := r.reconcileToolboxDeployment(ctx, adapter); err != nil {
 		return err
 	}
 
@@ -875,8 +875,8 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 		return err
 	}
 
-	taskRunnerConnectionSecret := internal.TaskRunnerConnectionSecret(adapter, *secret)
-	if _, err := r.createOrPatch(ctx, taskRunnerConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
+	toolboxConnectionSecret := internal.ToolboxConnectionSecret(adapter, *secret)
+	if _, err := r.createOrPatch(ctx, toolboxConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
 		return err
 	}
 
@@ -1102,14 +1102,14 @@ func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adap
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileTaskRunnerDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	tasker := gitlabctl.TaskRunnerDeployment(adapter)
+func (r *GitLabReconciler) reconcileToolboxDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	toolbox := gitlabctl.ToolboxDeployment(adapter)
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &tasker.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, &toolbox.Spec.Template); err != nil {
 		return err
 	}
 
-	_, err := r.createOrPatch(ctx, tasker, adapter)
+	_, err := r.createOrPatch(ctx, toolbox, adapter)
 
 	return err
 }

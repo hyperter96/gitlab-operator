@@ -3,6 +3,8 @@ package gitlab
 import (
 	"fmt"
 	"strings"
+
+	"github.com/Masterminds/semver"
 )
 
 const (
@@ -11,9 +13,6 @@ const (
 
 	// GitLabShellComponentName is the common name of GitLab Shell.
 	GitLabShellComponentName = "gitlab-shell"
-
-	// TaskRunnerComponentName is the common name of GitLab Task Runner.
-	TaskRunnerComponentName = "task-runner"
 
 	// MigrationsComponentName is the common name of Migrations.
 	MigrationsComponentName = "migrations"
@@ -58,6 +57,22 @@ const (
 // RedisSubqueues is the array of possible Redis subqueues.
 func RedisSubqueues() [5]string {
 	return [5]string{"cache", "sharedState", "queues", "actioncable", "traceChunks"}
+}
+
+// ToolboxComponentName returns the component name for Toolbox depending on the Chart version.
+// If the Chart version is >= 5.4.0, then it returns "toolbox".
+// If the Chart version is < 5.4.0, then it returns "task-runner".
+// When the list of supported Chart versions are all 5.4.0 or newer, this function
+// can be removed and we can use a constant `ToolboxComponentName = "toolbox"`.
+func ToolboxComponentName(adapter CustomResourceAdapter) string {
+	versionWithToolbox, _ := semver.NewConstraint(">= 5.4.0")
+	currentVersion, _ := semver.NewVersion(adapter.ChartVersion())
+
+	if versionWithToolbox.Check(currentVersion) {
+		return "toolbox"
+	}
+
+	return "task-runner"
 }
 
 func updateCommonLabels(releaseName, componentName string, labels map[string]string) {

@@ -392,10 +392,10 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 	return secret, nil
 }
 
-// TaskRunnerConnectionSecret returns secret containing MinIO connection config for `global.task-runner.backups.objectStorage.config.secret`.
-func TaskRunnerConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret corev1.Secret) *corev1.Secret {
+// ToolboxConnectionSecret returns secret containing MinIO connection config for `global.toolbox.backups.objectStorage.config.secret`.
+func ToolboxConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret corev1.Secret) *corev1.Secret {
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
-	secret := GenericSecret(settings.TaskRunnerConnectionSecretName, adapter.Namespace(), labels)
+	secret := GenericSecret(settings.ToolboxConnectionSecretName, adapter.Namespace(), labels)
 	url := getMinioURL(adapter)
 	data := minioSecret.Data
 

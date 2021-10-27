@@ -1,10 +1,10 @@
 # Backup and Restore GitLab
 
-This document outlines how to backup and restore your GitLab instance using Task Runner.
+This document outlines how to backup and restore your GitLab instance using Toolbox.
 
 ## General backup and restore guidance
 
-The Operator deploys the [Task Runner chart](https://docs.gitlab.com/charts/charts/gitlab/task-runner/), meaning
+The Operator deploys the [Toolbox chart](https://docs.gitlab.com/charts/charts/gitlab/toolbox/), meaning
 our existing documentation on how to [backup and restore a GitLab instance](https://docs.gitlab.com/charts/backup-restore/)
 is applicable to the Operator.
 

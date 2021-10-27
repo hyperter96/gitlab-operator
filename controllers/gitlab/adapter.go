@@ -99,16 +99,16 @@ gitlab:
     securityContext:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
-  task-runner:
+  $ToolboxComponentName:
     backups:
       objectStorage:
         config:
-          secret: $TaskRunnerConnectionSecretName
+          secret: $ToolboxConnectionSecretName
           key: config
     common:
       labels:
-        app.kubernetes.io/component: task-runner
-        app.kubernetes.io/instance: $ReleaseName-task-runner
+        app.kubernetes.io/component: $ToolboxComponentName
+        app.kubernetes.io/instance: $ReleaseName-$ToolboxComponentName
     securityContext:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
@@ -304,9 +304,10 @@ func (a *populatingAdapter) populateValues() {
 		"$LocalUser", settings.LocalUser,
 		"$AppServiceAccount", settings.AppServiceAccount,
 		"$ManagerServiceAccount", settings.ManagerServiceAccount,
-		"$TaskRunnerConnectionSecretName", settings.TaskRunnerConnectionSecretName,
+		"$ToolboxConnectionSecretName", settings.ToolboxConnectionSecretName,
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
 		"$NGINXServiceAccount", settings.NGINXServiceAccount,
+		"$ToolboxComponentName", ToolboxComponentName(a),
 	).Replace(defaultValues)
 
 	_ = a.values.AddFromYAML([]byte(valuesToUse))

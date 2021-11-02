@@ -294,7 +294,7 @@ qa_4_6:
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_6
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
-  dependencies:
+  needs:
     - review_4_6
 
 qa_4_7:
@@ -303,7 +303,7 @@ qa_4_7:
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_7
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
-  dependencies:
+  needs:
     - review_4_7
 
 qa_gke:
@@ -312,7 +312,7 @@ qa_gke:
   variables:
     DOMAIN: $DOMAIN_GKE
     QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
-  dependencies:
+  needs:
     - review_gke
 
 stop_review_openshift_4_6:

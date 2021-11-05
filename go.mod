@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-org/cloud-native/gitlab-operator
 
-go 1.14
+go 1.16
 
 require (
 	github.com/Masterminds/semver v1.5.0

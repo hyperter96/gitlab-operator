@@ -12,13 +12,22 @@ import (
 )
 
 const (
-	specCertIssuerEmail  = "admin@example.com"
-	specCertIssuerServer = "https://acme-v02.api.letsencrypt.org/directory"
+	globalIngressConfigureCertmanager = "global.ingress.configureCertmanager"
+	configureCertmanagerDefault       = true
+	specCertIssuerEmail               = "admin@example.com"
+	specCertIssuerServer              = "https://acme-v02.api.letsencrypt.org/directory"
 )
+
+// CertManager returns `true` if CertManager is enabled, and `false` if not.
+func CertManagerEnabled(adapter gitlab.CustomResourceAdapter) bool {
+	configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), globalIngressConfigureCertmanager, configureCertmanagerDefault)
+
+	return configureCertmanager
+}
 
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource.
 func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.IssuerConfig {
-	if configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true); configureCertmanager {
+	if CertManagerEnabled(adapter) {
 		email, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.email")
 		if err != nil || email == "" {
 			email = specCertIssuerEmail

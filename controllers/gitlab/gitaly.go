@@ -5,6 +5,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	GlobalGitalyEnabled  = "global.gitaly.enabled"
+	gitalyEnabledDefault = true
+)
+
+// GitalyEnabled returns `true` if enabled and `false` if not.
+func GitalyEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), GlobalGitalyEnabled, gitalyEnabledDefault)
+
+	return enabled
+}
+
 // GitalyStatefulSet returns the StatefulSet of Gitaly component.
 func GitalyStatefulSet(adapter CustomResourceAdapter) *appsv1.StatefulSet {
 	template, err := GetTemplate(adapter)

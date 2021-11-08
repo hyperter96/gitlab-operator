@@ -7,6 +7,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	gitlabShellEnabled        = "gitlab.gitlab-shell.enabled"
+	gitlabShellEnabledDefault = true
+)
+
+// ShellEnabled returns `true` if enabled, and `false` if not.
+func ShellEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), gitlabShellEnabled, gitlabShellEnabledDefault)
+
+	return enabled
+}
+
 // ShellDeployment returns the Deployment of GitLab Shell component.
 func ShellDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 	template, err := GetTemplate(adapter)

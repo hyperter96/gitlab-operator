@@ -6,6 +6,18 @@ import (
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 )
 
+const (
+	gitlabWebserviceEnabled  = "gitlab.webservice.enabled"
+	webserviceEnabledDefault = true
+)
+
+// WebserviceEnabled returns `true` if Webservice is enabled, and `false` if not.
+func WebserviceEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), gitlabWebserviceEnabled, webserviceEnabledDefault)
+
+	return enabled
+}
+
 // WebserviceDeployments returns the Deployments for the Webservice component.
 func WebserviceDeployments(adapter CustomResourceAdapter) []*appsv1.Deployment {
 	template, err := GetTemplate(adapter)

@@ -8,6 +8,18 @@ import (
 	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 )
 
+const (
+	registryEnabled        = "registry.enabled"
+	registryEnabledDefault = true
+)
+
+// RegistryEnabled returns `true` if the registry is enabled, and `false` if not.
+func RegistryEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), registryEnabled, registryEnabledDefault)
+
+	return enabled
+}
+
 // RegistryService returns the Service of the Registry component.
 func RegistryService(adapter CustomResourceAdapter) *corev1.Service {
 	template, err := GetTemplate(adapter)

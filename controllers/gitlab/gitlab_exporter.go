@@ -7,6 +7,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	gitlabExporterEnabled  = "gitlab.exporter.enabled"
+	exporterEnabledDefault = true
+)
+
+// ExporterEnabled returns `true` if enabled and `false` if not.
+func ExporterEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), gitlabExporterEnabled, exporterEnabledDefault)
+
+	return enabled
+}
+
 // ExporterService returns the Service for the GitLab Exporter component.
 func ExporterService(adapter CustomResourceAdapter) *corev1.Service {
 	template, err := GetTemplate(adapter)

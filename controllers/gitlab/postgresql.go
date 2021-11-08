@@ -7,6 +7,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	postgresInstall        = "postgresql.install"
+	postgresEnabledDefault = true
+)
+
+// PostgresEnabled returns `true` if `PostgreSQL` is enabled, and `false` if not.
+func PostgresEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), postgresInstall, postgresEnabledDefault)
+
+	return enabled
+}
+
 // PostgresServices returns the Services of the Postgres component.
 func PostgresServices(adapter CustomResourceAdapter) []*corev1.Service {
 	template, err := GetTemplate(adapter)

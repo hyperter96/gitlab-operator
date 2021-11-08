@@ -126,11 +126,17 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	if gitlabctl.NGINXEnabled(adapter) {
+		if err := r.reconcileNGINX(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
 	if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	configureCertmanager, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true)
+	configureCertmanager := internal.CertManagerEnabled(adapter)
 	tlsSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
 
 	if !configureCertmanager && tlsSecretName == "" {
@@ -139,25 +145,27 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if configureNGINX, _ := gitlabctl.GetBoolValue(adapter.Values(), "nginx-ingress.enabled", true); configureNGINX {
-		if err := r.reconcileNGINX(ctx, adapter); err != nil {
+	if gitlabctl.PostgresEnabled(adapter) {
+		if err := r.reconcilePostgres(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		if err := r.validateExternalPostgresConfiguration(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	if err := r.reconcileConfigMaps(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+	if gitlabctl.RedisEnabled(adapter) {
+		if err := r.reconcileRedis(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	} else {
+		if err := r.validateExternalRedisConfiguration(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
-	if err := r.reconcileServices(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if err := r.reconcileStatefulSets(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if configureGitaly, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.gitaly.enabled", true); configureGitaly {
+	if gitlabctl.GitalyEnabled(adapter) {
 		if err := r.reconcileGitaly(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -187,6 +195,54 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{RequeueAfter: waitInterval}, nil
 	}
 
+	if gitlabctl.ShellEnabled(adapter) {
+		if err := r.reconcileGitLabShell(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if gitlabctl.RegistryEnabled(adapter) {
+		if err := r.reconcileRegistry(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if gitlabctl.ToolboxEnabled(adapter) {
+		if err := r.reconcileToolbox(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if gitlabctl.ExporterEnabled(adapter) {
+		if err := r.reconcileGitLabExporter(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if gitlabctl.PagesEnabled(adapter) {
+		if err := r.reconcilePages(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if gitlabctl.KasEnabled(adapter) {
+		if err := r.reconcileKas(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if err := r.reconcileMigrationsConfigMap(ctx, adapter); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileSidekiqConfigMaps(ctx, adapter); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if err := r.reconcileWebserviceExceptDeployments(ctx, adapter); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if isUpgrade {
 		if err := r.setStatusCondition(ctx, adapter, ConditionUpgrading, true, fmt.Sprintf("GitLab is upgrading from %s to %s", adapter.StatusVersion(), adapter.ChartVersion())); err != nil {
 			return ctrl.Result{}, err
@@ -194,7 +250,13 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		log.Info("reconciling Deployments (Webservice & Sidekiq paused)")
 
-		if err := r.reconcileDeployments(ctx, adapter, true); err != nil {
+		pauseRails := true
+
+		if err := r.reconcileWebserviceDeployments(ctx, adapter, pauseRails); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if err := r.reconcileSidekiqDeployments(ctx, adapter, pauseRails); err != nil {
 			return ctrl.Result{}, err
 		}
 
@@ -258,17 +320,18 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		log.Info("reconciling Deployments")
 
-		if err := r.reconcileDeployments(ctx, adapter, false); err != nil {
+		pauseRails := false
+
+		if err := r.reconcileWebserviceDeployments(ctx, adapter, pauseRails); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if err := r.reconcileSidekiqDeployments(ctx, adapter, pauseRails); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if err := r.setupAutoscaling(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	// Deploy route is on Openshift, Ingress otherwise
-	if err := r.exposeGitLabInstance(ctx, adapter); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -309,32 +372,6 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return builder.Complete(r)
-}
-
-func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter)
-	if err != nil {
-		return err
-	}
-
-	if _, err := r.createOrPatch(ctx, cfgMap, adapter); err != nil {
-		return err
-	}
-
-	return r.runJobAndWait(ctx, adapter, job, gitlabctl.SharedSecretsJobTimeout())
-}
-
-func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	job, err := gitlabctl.SelfSignedCertsJob(adapter)
-	if err != nil {
-		return err
-	}
-
-	if job == nil {
-		return fmt.Errorf("self-signed certificate job skipped, not needed per configuration: %s", adapter.Reference())
-	}
-
-	return r.runJobAndWait(ctx, adapter, job, gitlabctl.SharedSecretsJobTimeout())
 }
 
 func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job, timeout time.Duration) error {
@@ -405,81 +442,6 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.
 	return result
 }
 
-func (r *GitLabReconciler) reconcileNGINX(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	// ConfigMaps
-	for _, cm := range gitlabctl.NGINXConfigMaps(adapter) {
-		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
-			return err
-		}
-	}
-
-	// Services
-	for _, svc := range gitlabctl.NGINXServices(adapter) {
-		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
-			return err
-		}
-	}
-
-	// Deployments
-	for _, dep := range gitlabctl.NGINXDeployments(adapter) {
-		if _, err := r.createOrPatch(ctx, dep, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-//	Reconciler for all ConfigMaps come below
-func (r *GitLabReconciler) reconcileConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	var configmaps []*corev1.ConfigMap
-
-	shell := gitlabctl.ShellConfigMaps(adapter)
-	toolbox := gitlabctl.ToolboxConfigMap(adapter)
-	exporter := gitlabctl.ExporterConfigMaps(adapter)
-	webservice := gitlabctl.WebserviceConfigMaps(adapter)
-	migration := gitlabctl.MigrationsConfigMap(adapter)
-	sidekiq := gitlabctl.SidekiqConfigMaps(adapter)
-	registry := gitlabctl.RegistryConfigMap(adapter)
-
-	configmaps = append(configmaps,
-		registry,
-		toolbox,
-		migration,
-	)
-	configmaps = append(configmaps, shell...)
-	configmaps = append(configmaps, exporter...)
-	configmaps = append(configmaps, webservice...)
-	configmaps = append(configmaps, sidekiq...)
-
-	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
-		redis := gitlabctl.RedisConfigMaps(adapter)
-		configmaps = append(configmaps, redis...)
-	}
-
-	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
-		postgres := gitlabctl.PostgresConfigMap(adapter)
-		configmaps = append(configmaps, postgres)
-	}
-
-	if gitlabctl.PagesEnabled(adapter) {
-		pages := gitlabctl.PagesConfigMap(adapter)
-		configmaps = append(configmaps, pages)
-	}
-
-	if gitlabctl.KasEnabled(adapter) {
-		configmaps = append(configmaps, gitlabctl.KasConfigMap(adapter))
-	}
-
-	for _, cm := range configmaps {
-		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
@@ -495,12 +457,12 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 		workhorse,
 	)
 
-	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
+	if gitlabctl.RedisEnabled(adapter) {
 		redis := internal.RedisServiceMonitor(adapter.Resource())
 		servicemonitors = append(servicemonitors, redis)
 	}
 
-	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
+	if gitlabctl.PostgresEnabled(adapter) {
 		postgres := internal.PostgresqlServiceMonitor(adapter.Resource())
 		servicemonitors = append(servicemonitors, postgres)
 	}
@@ -521,147 +483,6 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	_, err := r.createOrPatch(ctx, prometheus, adapter)
 
 	return err
-}
-
-func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, skipPostMigrations bool) error {
-	migrations, err := gitlabctl.MigrationsJob(adapter)
-	if err != nil {
-		return err
-	}
-
-	job := migrations.DeepCopy()
-
-	// If `skipPostMigrations=true`, then:
-	// - Append "-pre" to the Migrations Job name
-	// - Inject environment variable to skip post-deployment migrations.
-	if skipPostMigrations {
-		job.Name = fmt.Sprintf("%s-pre", migrations.Name)
-		for i := range job.Spec.Template.Spec.Containers {
-			job.Spec.Template.Spec.Containers[i].Env = append(
-				job.Spec.Template.Spec.Containers[i].Env,
-				corev1.EnvVar{Name: "SKIP_POST_DEPLOYMENT_MIGRATIONS", Value: "true"})
-		}
-	}
-
-	return r.runJobAndWait(ctx, adapter, job, gitlabctl.MigrationsJobTimeout())
-}
-
-func (r *GitLabReconciler) runPreMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.runMigrationsJob(ctx, adapter, true)
-}
-
-func (r *GitLabReconciler) runAllMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.runMigrationsJob(ctx, adapter, false)
-}
-
-func (r *GitLabReconciler) reconcileDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pauseRails bool) error {
-	if err := r.reconcileWebserviceDeployments(ctx, adapter, pauseRails); err != nil {
-		return err
-	}
-
-	if err := r.reconcileShellDeployment(ctx, adapter); err != nil {
-		return err
-	}
-
-	if err := r.reconcileSidekiqDeployments(ctx, adapter, pauseRails); err != nil {
-		return err
-	}
-
-	if err := r.reconcileRegistryDeployment(ctx, adapter); err != nil {
-		return err
-	}
-
-	if err := r.reconcileToolboxDeployment(ctx, adapter); err != nil {
-		return err
-	}
-
-	if err := r.reconcileGitlabExporterDeployment(ctx, adapter); err != nil {
-		return err
-	}
-
-	if gitlabctl.PagesEnabled(adapter) {
-		if err := r.reconcileGitLabPagesDeployment(ctx, adapter); err != nil {
-			return err
-		}
-	}
-
-	if gitlabctl.KasEnabled(adapter) {
-		if err := r.reconcileKasDeployment(ctx, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-//nolint:nestif,gocognit
-// For now, our desire to check Secret existence outweighs the downisde of the complication / nested ifs.
-// This will likely be addressed in #260 when we refactor this `gitlab_controller.go` file into smaller,
-// more focused pieces.
-func (r *GitLabReconciler) reconcileStatefulSets(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	var statefulsets []*appsv1.StatefulSet
-
-	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
-		redis := gitlabctl.RedisStatefulSet(adapter)
-		statefulsets = append(statefulsets, redis)
-	} else {
-		defaultRedisSecretName, err := gitlabctl.GetStringValue(adapter.Values(), "global.redis.password.secret")
-		if err != nil || defaultRedisSecretName == "" {
-			defaultRedisSecretName = fmt.Sprintf("%s-%s-secret", adapter.ReleaseName(), gitlabctl.RedisComponentName)
-		}
-
-		// If external Redis global password is enabled, ensure it was created.
-		if redisSecretEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.redis.password.enabled", true); redisSecretEnabled {
-			redisSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.redis.password.secret", defaultRedisSecretName)
-			if err := r.ensureSecret(ctx, adapter, redisSecretName); err != nil {
-				return err
-			}
-		}
-
-		// If any of the sub-queues and configured, ensure relevant Secrets are created if enabled.
-		for _, subqueue := range gitlabctl.RedisSubqueues() {
-			if _, err := gitlabctl.GetStringValue(adapter.Values(), fmt.Sprintf("global.redis.%s.host", subqueue)); err == nil {
-				// Subqueue is configured. Ensure its password was created.
-				if passwordEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), fmt.Sprintf("global.redis.%s.password.enabled", subqueue), true); passwordEnabled {
-					subqueueSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), fmt.Sprintf("global.redis.%s.password.secret", subqueue), defaultRedisSecretName)
-					if err := r.ensureSecret(ctx, adapter, subqueueSecretName); err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-
-	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
-		postgres := gitlabctl.PostgresStatefulSet(adapter)
-		statefulsets = append(statefulsets, postgres)
-	} else {
-		// Ensure that the PostgreSQL password Secret was created.
-		pgSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.psql.password.secret")
-		if err := r.ensureSecret(ctx, adapter, pgSecretName); err != nil {
-			return err
-		}
-
-		// If set, ensure that the PostgreSQL SSL Secret was created.
-		pgSecretNameSSL, _ := gitlabctl.GetStringValue(adapter.Values(), "global.psql.ssl.secret", "unset")
-		if pgSecretNameSSL != "unset" {
-			if err := r.ensureSecret(ctx, adapter, pgSecretNameSSL); err != nil {
-				return err
-			}
-		}
-	}
-
-	for _, statefulset := range statefulsets {
-		if err := r.annotateSecretsChecksum(ctx, adapter, &statefulset.Spec.Template); err != nil {
-			return err
-		}
-
-		if _, err := r.createOrPatch(ctx, statefulset, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 var ignoreObjectMetaFields = []string{
@@ -824,358 +645,38 @@ func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject cl
 	return false, true, nil
 }
 
-func (r *GitLabReconciler) reconcileGitaly(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	// ConfigMap
-	cm := gitlabctl.GitalyConfigMap(adapter)
-	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
-		return err
-	}
-
-	// Service
-	svc := gitlabctl.GitalyService(adapter)
-	if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
-		return err
-	}
-
-	// StatefulSet
-	ss := gitlabctl.GitalyStatefulSet(adapter)
-	if _, err := r.createOrPatch(ctx, ss, adapter); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	cm := internal.MinioScriptConfigMap(adapter)
-	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
-		return err
-	}
-
-	secret := internal.MinioSecret(adapter)
-	if _, err := r.createOrPatch(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	appConfigSecret, err := internal.AppConfigConnectionSecret(adapter, *secret)
-	if err != nil {
-		return err
-	}
-
-	if _, err := r.createOrPatch(ctx, appConfigSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	registryConnectionSecret, err := internal.RegistryConnectionSecret(adapter, *secret)
-	if err != nil {
-		return err
-	}
-
-	if _, err := r.createOrPatch(ctx, registryConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	toolboxConnectionSecret := internal.ToolboxConnectionSecret(adapter, *secret)
-	if _, err := r.createOrPatch(ctx, toolboxConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	svc := internal.MinioService(adapter)
-	if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
-		return err
-	}
-
-	minio := internal.MinioStatefulSet(adapter)
-	if err := r.annotateSecretsChecksum(ctx, adapter, &minio.Spec.Template); err != nil {
-		return err
-	}
-
-	_, err = r.createOrPatch(ctx, minio, adapter)
-	if err != nil {
-		return err
-	}
-
-	buckets := internal.BucketCreationJob(adapter)
-	if _, err := r.createOrPatch(ctx, buckets, adapter); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *GitLabReconciler) reconcileServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	var services []*corev1.Service
-
-	shell := gitlabctl.ShellService(adapter)
-	exporter := gitlabctl.ExporterService(adapter)
-	webservice := gitlabctl.WebserviceServices(adapter)
-	registry := gitlabctl.RegistryService(adapter)
-
-	services = append(services,
-		registry,
-		shell,
-		exporter,
-	)
-	services = append(services, webservice...)
-
-	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
-		redis := gitlabctl.RedisServices(adapter)
-		services = append(services, redis...)
-	}
-
-	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
-		postgres := gitlabctl.PostgresServices(adapter)
-		services = append(services, postgres...)
-	}
-
-	if gitlabctl.PagesEnabled(adapter) {
-		pages := gitlabctl.PagesService(adapter)
-		services = append(services, pages)
-	}
-
-	if gitlabctl.KasEnabled(adapter) {
-		services = append(services, gitlabctl.KasService(adapter))
-	}
-
-	for _, svc := range services {
-		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *GitLabReconciler) reconcileGitlabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	exporter := gitlabctl.ExporterDeployment(adapter)
-
-	if err := r.annotateSecretsChecksum(ctx, adapter, &exporter.Spec.Template); err != nil {
-		return err
-	}
-
-	_, err := r.createOrPatch(ctx, exporter, adapter)
-
-	return err
-}
-
-func (r *GitLabReconciler) reconcileGitLabPagesDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	pages := gitlabctl.PagesDeployment(adapter)
-
-	if err := r.setDeploymentReplica(ctx, pages); err != nil {
-		return err
-	}
-
-	if err := r.annotateSecretsChecksum(ctx, adapter, &pages.Spec.Template); err != nil {
-		return err
-	}
-
-	_, err := r.createOrPatch(ctx, pages, adapter)
-
-	return err
-}
-
-func (r *GitLabReconciler) reconcileKasDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	kas := gitlabctl.KasDeployment(adapter)
-
-	if err := r.setDeploymentReplica(ctx, kas); err != nil {
-		return err
-	}
-
-	if err := r.annotateSecretsChecksum(ctx, adapter, &kas.Spec.Template); err != nil {
-		return err
-	}
-
-	_, err := r.createOrPatch(ctx, kas, adapter)
-
-	return err
-}
-
-func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	// Deployment
-	mailroom := gitlabctl.MailroomDeployment(adapter)
-	if _, err := r.createOrPatch(ctx, mailroom, adapter); err != nil {
-		return err
-	}
-
-	// ConfigMap
-	cm := gitlabctl.MailroomConfigMap(adapter)
-	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
-		return err
-	}
-
-	if err := r.annotateSecretsChecksum(ctx, adapter, &mailroom.Spec.Template); err != nil {
-		return err
-	}
-
-	_, err := r.createOrPatch(ctx, mailroom, adapter)
-
-	return err
-}
-
-func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pause bool) error {
+func (r *GitLabReconciler) reconcileIngress(ctx context.Context, ingress *extensionsv1beta1.Ingress, adapter gitlabctl.CustomResourceAdapter) error {
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
 
-	webservices := gitlabctl.WebserviceDeployments(adapter)
+	found := &extensionsv1beta1.Ingress{}
+	err := r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: adapter.Namespace()}, found)
 
-	if internal.IsOpenshift() && len(webservices) > 1 {
-		logger.V(2).Info("Multiple Webservice Ingresses detected, which is not supported on OpenShift when using NGINX Ingress Operator. See https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/160")
-	}
-
-	for _, webservice := range webservices {
-		if err := r.setDeploymentReplica(ctx, webservice); err != nil {
-			return err
+	if err != nil {
+		if errors.IsNotFound(err) {
+			logger.V(1).Info("creating ingress", "ingress", ingress.Name)
+			return r.Create(ctx, ingress)
 		}
 
-		if err := r.annotateSecretsChecksum(ctx, adapter, &webservice.Spec.Template); err != nil {
-			return err
-		}
-
-		if pause {
-			webservice.Spec.Paused = true
-		} else {
-			webservice.Spec.Paused = false
-		}
-
-		if _, err := r.createOrPatch(ctx, webservice, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	registry := gitlabctl.RegistryDeployment(adapter)
-
-	if err := r.setDeploymentReplica(ctx, registry); err != nil {
 		return err
 	}
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &registry.Spec.Template); err != nil {
-		return err
+	// If resource is an Ingress and has an ACME challenge path, skip the patch.
+	// This ensures that CertManager can add a path to existing ingresses for the ACME challenge without
+	// the Operator immediately removing it before the challenge can be completed.
+	doPatch := true
+	regex := regexp.MustCompile("/.well-known/acme-challenge/+")
+
+	for _, path := range found.Spec.Rules[0].IngressRuleValue.HTTP.Paths {
+		if regex.MatchString(path.Path) {
+			logger.V(1).Info("ingress contains ACME challenge path, skipping patch for now", "ingress", found.Name)
+
+			doPatch = false
+		}
 	}
 
-	_, err := r.createOrPatch(ctx, registry, adapter)
-
-	return err
-}
-
-func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	shell := gitlabctl.ShellDeployment(adapter)
-
-	if err := r.setDeploymentReplica(ctx, shell); err != nil {
-		return err
-	}
-
-	if err := r.annotateSecretsChecksum(ctx, adapter, &shell.Spec.Template); err != nil {
-		return err
-	}
-
-	_, err := r.createOrPatch(ctx, shell, adapter)
-
-	return err
-}
-
-func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pause bool) error {
-	sidekiqs := gitlabctl.SidekiqDeployments(adapter)
-
-	for _, sidekiq := range sidekiqs {
-		if err := r.setDeploymentReplica(ctx, sidekiq); err != nil {
+	if doPatch {
+		if _, err := r.createOrPatch(ctx, ingress, adapter); err != nil {
 			return err
-		}
-
-		if err := r.annotateSecretsChecksum(ctx, adapter, &sidekiq.Spec.Template); err != nil {
-			return err
-		}
-
-		if pause {
-			sidekiq.Spec.Paused = true
-		} else {
-			sidekiq.Spec.Paused = false
-		}
-
-		if _, err := r.createOrPatch(ctx, sidekiq, adapter); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *GitLabReconciler) reconcileToolboxDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	toolbox := gitlabctl.ToolboxDeployment(adapter)
-
-	if err := r.annotateSecretsChecksum(ctx, adapter, &toolbox.Spec.Template); err != nil {
-		return err
-	}
-
-	_, err := r.createOrPatch(ctx, toolbox, adapter)
-
-	return err
-}
-
-func (r *GitLabReconciler) exposeGitLabInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.reconcileIngress(ctx, adapter)
-}
-
-func (r *GitLabReconciler) reconcileIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
-
-	var ingresses []*extensionsv1beta1.Ingress
-
-	gitlab := gitlabctl.WebserviceIngresses(adapter)
-	registry := gitlabctl.RegistryIngress(adapter)
-
-	ingresses = append(ingresses, registry)
-	ingresses = append(ingresses, gitlab...)
-
-	if gitlabctl.MinioEnabled(adapter) {
-		ingresses = append(ingresses, internal.MinioIngress(adapter))
-	}
-
-	if gitlabctl.PagesEnabled(adapter) {
-		pages := gitlabctl.PagesIngress(adapter)
-		ingresses = append(ingresses, pages)
-	}
-
-	if gitlabctl.KasEnabled(adapter) {
-		ingresses = append(ingresses, gitlabctl.KasIngress(adapter))
-	}
-
-	// For each ingress:
-	// - If it does not exist: create it.
-	// - If it does exist and does not have an ACME path: patch it.
-	for _, ingress := range ingresses {
-		found := &extensionsv1beta1.Ingress{}
-		err := r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: adapter.Namespace()}, found)
-
-		if err != nil {
-			if errors.IsNotFound(err) {
-				logger.V(1).Info("creating ingress", "ingress", ingress.Name)
-				return r.Create(ctx, ingress)
-			}
-
-			return err
-		}
-
-		// If resource is an Ingress and has an ACME challenge path, skip the patch.
-		// This ensures that CertManager can add a path to existing ingresses for the ACME challenge without
-		// the Operator immediately removing it before the challenge can be completed.
-		doPatch := true
-		regex := regexp.MustCompile("/.well-known/acme-challenge/+")
-
-		for _, path := range found.Spec.Rules[0].IngressRuleValue.HTTP.Paths {
-			if regex.MatchString(path.Path) {
-				logger.V(1).Info("ingress contains ACME challenge path, skipping patch for now", "ingress", found.Name)
-
-				doPatch = false
-			}
-		}
-
-		if doPatch {
-			if _, err := r.createOrPatch(ctx, ingress, adapter); err != nil {
-				return err
-			}
 		}
 	}
 
@@ -1242,19 +743,19 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 }
 
 func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	if configurePostgreSQL, _ := gitlabctl.GetBoolValue(adapter.Values(), "postgresql.install", true); configurePostgreSQL {
+	if gitlabctl.PostgresEnabled(adapter) {
 		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) {
 			return false
 		}
 	}
 
-	if configureRedis, _ := gitlabctl.GetBoolValue(adapter.Values(), "redis.install", true); configureRedis {
+	if gitlabctl.RedisEnabled(adapter) {
 		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter) {
 			return false
 		}
 	}
 
-	if configureGitaly, _ := gitlabctl.GetBoolValue(adapter.Values(), "global.gitaly.enabled", true); configureGitaly {
+	if gitlabctl.GitalyEnabled(adapter) {
 		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-gitaly", adapter) {
 			return false
 		}

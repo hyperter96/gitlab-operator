@@ -135,7 +135,7 @@ var _ = Describe("GitLab controller", func() {
 			It("Should create resources for Jobs and continue the reconcile loop", func() {
 				cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 				sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
-				gitlabShellQuery := appLabels(releaseName, gitlabctl.GitLabShellComponentName)
+				postgresQuery := fmt.Sprintf("app.kubernetes.io/instance=%s-%s", releaseName, gitlabctl.PostgresComponentName)
 
 				By("Checking ServiceAccount exists for Shared secrets Job")
 				Eventually(getObjectPromise(settings.AppServiceAccount, &corev1.ServiceAccount{}),
@@ -160,7 +160,7 @@ var _ = Describe("GitLab controller", func() {
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
-				Eventually(listConfigMapsPromise(gitlabShellQuery),
+				Eventually(listConfigMapsPromise(postgresQuery),
 					PollTimeout, PollInterval).ShouldNot(BeEmpty())
 			})
 		})
@@ -669,7 +669,6 @@ global:
 	Context("Bundled NGINX with SSH support", func() {
 		When("Bundled NGINX is disabled", func() {
 			releaseName := "nginx-disabled"
-			tcpCfgMapName := fmt.Sprintf("%s-%s-tcp", releaseName, gitlabctl.NGINXComponentName)
 			controllerServiceName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
 			controllerDeploymentName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
 			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-default-backend", releaseName, gitlabctl.NGINXComponentName)
@@ -696,10 +695,6 @@ global:
 				Eventually(getObjectPromise(defaultBackendDeploymentName, &appsv1.Deployment{}),
 					PollTimeout, PollInterval).ShouldNot(Succeed())
 
-				By("Checking NGINX TCP ConfigMap from GitLab Shell does not exist")
-				Eventually(getObjectPromise(tcpCfgMapName, &corev1.ConfigMap{}),
-					PollTimeout, PollInterval).Should(Succeed())
-
 				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
 				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
 					PollTimeout, PollInterval).Should(Succeed())
@@ -708,7 +703,6 @@ global:
 
 		When("Bundled NGINX is enabled", func() {
 			releaseName := "nginx-enabled"
-			tcpCfgMapName := fmt.Sprintf("%s-%s-tcp", releaseName, gitlabctl.NGINXComponentName)
 			controllerServiceName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
 			controllerDeploymentName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
 			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-default-backend", releaseName, gitlabctl.NGINXComponentName)
@@ -730,10 +724,6 @@ global:
 
 				By("Checking NGINX Default Backend Deployment exists")
 				Eventually(getObjectPromise(defaultBackendDeploymentName, &appsv1.Deployment{}),
-					PollTimeout, PollInterval).Should(Succeed())
-
-				By("Checking NGINX TCP ConfigMap from GitLab Shell exists")
-				Eventually(getObjectPromise(tcpCfgMapName, &corev1.ConfigMap{}),
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")

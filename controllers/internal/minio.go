@@ -234,7 +234,7 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 		"nginx.ingress.kubernetes.io/proxy-request-buffering": "off",
 	}
 
-	configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), "global.ingress.configureCertmanager", true)
+	configureCertmanager := CertManagerEnabled(adapter)
 
 	if configureCertmanager {
 		annotations["cert-manager.io/issuer"] = fmt.Sprintf("%s-issuer", adapter.ReleaseName())

@@ -7,6 +7,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	gitlabToolboxEnabled  = "gitlab.%s.enabled"
+	toolboxEnabledDefault = true
+)
+
+// ToolboxEnabled returns `true` if Toolbox is enabled, and `false` if not.
+func ToolboxEnabled(adapter CustomResourceAdapter) bool {
+	key := fmt.Sprintf(gitlabToolboxEnabled, ToolboxComponentName(adapter))
+	enabled, _ := GetBoolValue(adapter.Values(), key, toolboxEnabledDefault)
+
+	return enabled
+}
+
 // ToolboxDeployment returns the Deployment of the Toolbox component.
 func ToolboxDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 	template, err := GetTemplate(adapter)

@@ -5,6 +5,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	redisInstall        = "redis.install"
+	redisEnabledDefault = true
+)
+
+// RedisEnabled returns `true` if Redis is enabled, and `false` if not.
+func RedisEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), redisInstall, redisEnabledDefault)
+
+	return enabled
+}
+
 // RedisConfigMaps returns the ConfigMaps of the Redis component.
 func RedisConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 	template, err := GetTemplate(adapter)

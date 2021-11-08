@@ -5,6 +5,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	gitlabSidekiqEnabled  = "gitlab.sidekiq.enabled"
+	sidekiqEnabledDefault = true
+)
+
+// SidekiqEnabled returns `true` if Sidekiq is enabled, and `false` if not.
+func SidekiqEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), gitlabSidekiqEnabled, sidekiqEnabledDefault)
+
+	return enabled
+}
+
 // SidekiqDeployments returns the Deployments of the Sidekiq component.
 func SidekiqDeployments(adapter CustomResourceAdapter) []*appsv1.Deployment {
 	template, err := GetTemplate(adapter)

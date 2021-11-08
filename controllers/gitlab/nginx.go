@@ -5,6 +5,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	nginxEnabled        = "nginx-ingress.enabled"
+	nginxEnabledDefault = true
+)
+
+// NGINXEnabled returns `true` if NGINX is enabled and `false` if not.
+func NGINXEnabled(adapter CustomResourceAdapter) bool {
+	enabled, _ := GetBoolValue(adapter.Values(), nginxEnabled, nginxEnabledDefault)
+
+	return enabled
+}
+
 // NGINXConfigMaps returns the ConfigMaps of the NGINX component.
 func NGINXConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 	template, err := GetTemplate(adapter)

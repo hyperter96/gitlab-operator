@@ -127,10 +127,10 @@ slow_unit_tests:
   needs: ["pull_charts"]
   before_script:
     #FIXME buildah should be part of gitlab-operator-builder image
-    - apk add --no-cache buildah
     - sed -i 's#^driver.*$#driver = "vfs"#g' /etc/containers/storage.conf
     - podman login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     # Update module cache so it can be saved in CI cache (only the dependencies required to build)
+    - mkdir -p .go
     - podman run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:1.16 go list ./...
   interruptible: false
 
@@ -183,7 +183,7 @@ build_bundle_image:
     - export OLM_PACKAGE_VERSION=${CI_COMMIT_TAG:-${TAG}}
     - export OPERATOR_TAG=${CI_COMMIT_TAG:-${TAG}}
     - export TAG=${CI_COMMIT_TAG:-${TAG}}
-    - scripts/olm_bundle.sh install_operatorsdk install_opm publish
+    - scripts/olm_bundle.sh publish
   rules:
     - !reference [.if_release_tag]
 
@@ -372,6 +372,7 @@ build_manifest:
   rules:
     - !reference [.skip_if_docs_branch]
     - if: '$CI_COMMIT_BRANCH'
+    - !reference [.if_release_tag]
 
 upload_manifest:
   stage: publish

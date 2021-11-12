@@ -101,8 +101,6 @@ unit_tests:
 slow_unit_tests:
   extends: .test_job
   script: /go/bin/ginkgo -focus 'controller' -cover -outputdir=coverage ./...
-  variables:
-    GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT: "600"
   parallel:
     matrix:
       - VERSION_INDEX: ["1", "2", "3"]

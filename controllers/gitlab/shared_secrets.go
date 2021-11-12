@@ -46,7 +46,7 @@ func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 
 	namePrefix := fmt.Sprintf("%s-%s", adapter.ReleaseName(), SharedSecretsComponentName)
 	for _, j := range jobs {
-		if strings.Contains(j.ObjectMeta.Name, namePrefix) {
+		if strings.HasPrefix(j.ObjectMeta.Name, namePrefix) && !strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
 			return j, nil
 		}
 	}
@@ -66,8 +66,9 @@ func SelfSignedCertsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 		"app": GitLabComponentName,
 	})
 
+	namePrefix := fmt.Sprintf("%s-%s", adapter.ReleaseName(), SharedSecretsComponentName)
 	for _, j := range jobs {
-		if strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
+		if strings.HasPrefix(j.ObjectMeta.Name, namePrefix) && strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
 			return j, nil
 		}
 	}

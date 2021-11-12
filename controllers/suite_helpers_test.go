@@ -120,7 +120,8 @@ func listObjectsPromise(query string, obj client.ObjectList, expectedSize int) f
 		switch l := obj.(type) {
 		case *batchv1.JobList:
 			if len(l.Items) < expectedSize {
-				return fmt.Errorf("Only %d Jobs found with [%s]", expectedSize, query)
+				return fmt.Errorf("Only %d Jobs found with [%s]. Expecting %d",
+					len(l.Items), query, expectedSize)
 			}
 		}
 

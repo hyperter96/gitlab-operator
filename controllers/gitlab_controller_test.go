@@ -152,7 +152,7 @@ var _ = Describe("GitLab controller", func() {
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Checking the Self signed certificates Job is created")
-				Eventually(listObjectsPromise(sharedSecretQuery, &batchv1.JobList{}, 1),
+				Eventually(listObjectsPromise(sharedSecretQuery, &batchv1.JobList{}, 2),
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Manipulating the Self signed certificates Job to succeed")

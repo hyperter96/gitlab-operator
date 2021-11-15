@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
@@ -45,6 +46,11 @@ func ResourceQuantity(request string) resource.Quantity {
 
 // IsGroupVersionSupported checks for API endpoint for given Group and Version.
 func IsGroupVersionSupported(group, version string) bool {
+	// For unit tests, we need to skip client creation.
+	if os.Getenv("USE_EXISTING_CLUSTER") == "false" {
+		return false
+	}
+
 	client, err := KubernetesConfig().NewKubernetesClient()
 	if err != nil {
 		fmt.Printf("Unable to acquire k8s client: %v", err)

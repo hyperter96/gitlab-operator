@@ -1,4 +1,4 @@
-image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
+image: registry.gitlab.com/dmakovey/gitlab-build-images:gitlab-operator-build-base
 
 variables:
   # Configuration of K8s
@@ -159,6 +159,7 @@ build_tag_image:
     # change this to:
     # - !reference [.if_release_tag_on_dev]
   needs:
+    - pull_charts
     - upload_manifest
 
 build_latest_image:
@@ -174,7 +175,7 @@ build_bundle_image:
   extends: .podman_build_job
   variables:
     BUNDLE_REGISTRY: ${CI_REGISTRY_IMAGE}/bundle
-    BUNDLE_IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
+    # BUNDLE_IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
     COMPILE_ONLY: "false"
     DOCKER: "podman"
     OPM_DOCKER: "podman"
@@ -183,6 +184,7 @@ build_bundle_image:
     - export OLM_PACKAGE_VERSION=${CI_COMMIT_TAG:-${TAG}}
     - export OPERATOR_TAG=${CI_COMMIT_TAG:-${TAG}}
     - export TAG=${CI_COMMIT_TAG:-${TAG}}
+    - export BUNDLE_IMAGE_TAG=${CI_COMMIT_TAG:-${CI_COMMIT_SHORT_SHA}}
     - scripts/olm_bundle.sh publish
   rules:
     - !reference [.if_release_tag]
@@ -436,6 +438,8 @@ issue-bot:
   image: registry.gitlab.com/gitlab-org/distribution/issue-bot:latest
   script: /issue-bot
   rules:
+    - if: $ISSUE_BOT_API_TOKEN == null
+      when: never
     - !reference [.if_release_tag]
     - !reference [.if_stable_branch]
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH

@@ -231,16 +231,22 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if err := r.reconcileMigrationsConfigMap(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+	if gitlabctl.MigrationsEnabled(adapter) {
+		if err := r.reconcileMigrationsConfigMap(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
-	if err := r.reconcileSidekiqConfigMaps(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+	if gitlabctl.SidekiqEnabled(adapter) {
+		if err := r.reconcileSidekiqConfigMaps(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
-	if err := r.reconcileWebserviceExceptDeployments(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+	if gitlabctl.WebserviceEnabled(adapter) {
+		if err := r.reconcileWebserviceExceptDeployments(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	if isUpgrade {
@@ -248,85 +254,67 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 
-		log.Info("reconciling Deployments (Webservice & Sidekiq paused)")
+		if gitlabctl.MigrationsEnabled(adapter) {
+			if gitlabctl.WebserviceEnabled(adapter) || gitlabctl.SidekiqEnabled(adapter) {
+				// If upgrading with Migrations enabled and Webservice and/or Sidekiq enabled,
+				// then follow the traditional upgrade logic.
+				if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, true, log); err != nil {
+					return ctrl.Result{}, err
+				}
 
-		pauseRails := true
+				log.Info("reconciling pre migrations")
 
-		if err := r.reconcileWebserviceDeployments(ctx, adapter, pauseRails); err != nil {
-			return ctrl.Result{}, err
-		}
+				if err := r.runPreMigrations(ctx, adapter); err != nil {
+					return ctrl.Result{}, err
+				}
 
-		if err := r.reconcileSidekiqDeployments(ctx, adapter, pauseRails); err != nil {
-			return ctrl.Result{}, err
-		}
+				if err := r.unpauseWebserviceAndSidekiqIfEnabled(ctx, adapter, log); err != nil {
+					return ctrl.Result{}, err
+				}
 
-		log.Info("reconciling pre migrations")
+				if err := r.webserviceAndSidekiqRunningIfEnabled(ctx, adapter, log); err != nil {
+					return ctrl.Result{}, err
+				}
 
-		if err := r.runPreMigrations(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
-		}
+				log.Info("reconciling post migrations")
 
-		log.Info("ensuring Sidekiq Deployments are unpaused")
+				if err := r.runAllMigrations(ctx, adapter); err != nil {
+					return ctrl.Result{}, err
+				}
 
-		if err := r.unpauseSidekiqDeployments(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
-		}
+				if err := r.rollingUpdateWebserviceAndSidekiqIfEnabled(ctx, adapter, log); err != nil {
+					return ctrl.Result{}, err
+				}
+			} else {
+				// If upgrading with Migrations enabled but neither Webservice nor Sidekiq are enabled,
+				// then just run all migrations.
+				log.Info("running all migrations")
 
-		log.Info("ensuring Webservice Deployments are unpaused")
-
-		if err := r.unpauseWebserviceDeployments(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		log.Info("ensuring Sidekiq Deployments are running")
-
-		if !r.sidekiqRunningWithRetry(ctx, adapter) {
-			return ctrl.Result{}, fmt.Errorf("Sidekiq has not started fully")
-		}
-
-		log.Info("ensuring Webservice Deployments are running")
-
-		if !r.webserviceRunningWithRetry(ctx, adapter) {
-			return ctrl.Result{}, fmt.Errorf("Webservice has not started fully")
-		}
-
-		log.Info("reconciling post migrations")
-
-		if err := r.runAllMigrations(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		log.Info("performing a rolling update on Sidekiq Deployments")
-
-		if err := r.rollingUpdateSidekiqDeployments(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		log.Info("performing a rolling update on Webservice Deployments")
-
-		if err := r.rollingUpdateWebserviceDeployments(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
+				if err := r.runAllMigrations(ctx, adapter); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		} else {
+			// If upgrading with Migrations disabled, then just reconcile enabled Deployments.
+			if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, false, log); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	} else {
+		// If not upgrading, then run all migrations (if enabled) and reconcile enabled Deployments.
 		if err := r.setStatusCondition(ctx, adapter, ConditionUpgrading, false, "GitLab is not currently upgrading"); err != nil {
 			return ctrl.Result{}, err
 		}
 
-		log.Info("running all migrations")
+		if gitlabctl.MigrationsEnabled(adapter) {
+			log.Info("running all migrations")
 
-		if err := r.runAllMigrations(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
+			if err := r.runAllMigrations(ctx, adapter); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 
-		log.Info("reconciling Deployments")
-
-		pauseRails := false
-
-		if err := r.reconcileWebserviceDeployments(ctx, adapter, pauseRails); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		if err := r.reconcileSidekiqDeployments(ctx, adapter, pauseRails); err != nil {
+		if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, false, log); err != nil {
 			return ctrl.Result{}, err
 		}
 	}

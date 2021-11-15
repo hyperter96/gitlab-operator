@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -91,6 +92,86 @@ func (r *GitLabReconciler) rollingUpdateWebserviceDeployments(ctx context.Contex
 
 func (r *GitLabReconciler) rollingUpdateSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	return r.rollingUpdateDeployments(ctx, adapter, gitlabctl.SidekiqDeployments(adapter))
+}
+
+func (r *GitLabReconciler) reconcileWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pause bool, log logr.Logger) error {
+	if gitlabctl.WebserviceEnabled(adapter) {
+		log.Info("reconciling Webservice Deployments", "pause", pause)
+
+		if err := r.reconcileWebserviceDeployments(ctx, adapter, pause); err != nil {
+			return err
+		}
+	}
+
+	if gitlabctl.SidekiqEnabled(adapter) {
+		log.Info("reconciling Sidekiq Deployments", "pause", pause)
+
+		if err := r.reconcileSidekiqDeployments(ctx, adapter, pause); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) unpauseWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, log logr.Logger) error {
+	if gitlabctl.WebserviceEnabled(adapter) {
+		log.Info("ensuring Webservice Deployments are unpaused")
+
+		if err := r.unpauseWebserviceDeployments(ctx, adapter); err != nil {
+			return err
+		}
+	}
+
+	if gitlabctl.SidekiqEnabled(adapter) {
+		log.Info("ensuring Sidekiq Deployments are unpaused")
+
+		if err := r.unpauseSidekiqDeployments(ctx, adapter); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, log logr.Logger) error {
+	if gitlabctl.WebserviceEnabled(adapter) {
+		log.Info("ensuring Webservice Deployments are running")
+
+		if !r.webserviceRunningWithRetry(ctx, adapter) {
+			return fmt.Errorf("Webservice has not started fully")
+		}
+	}
+
+	if gitlabctl.SidekiqEnabled(adapter) {
+		log.Info("ensuring Sidekiq Deployments are running")
+
+		if !r.sidekiqRunningWithRetry(ctx, adapter) {
+			return fmt.Errorf("Sidekiq has not started fully")
+		}
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) rollingUpdateWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, log logr.Logger) error {
+	if gitlabctl.WebserviceEnabled(adapter) {
+		log.Info("ensuring Webservice Deployments are running")
+
+		if err := r.rollingUpdateWebserviceDeployments(ctx, adapter); err != nil {
+			return err
+		}
+	}
+
+	if gitlabctl.SidekiqEnabled(adapter) {
+		log.Info("ensuring Sidekiq Deployments are running")
+
+		if err := r.rollingUpdateSidekiqDeployments(ctx, adapter); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func removeInitContainerEnvVar(deployment *appsv1.Deployment, initContainerName, envVarName string) {

@@ -158,7 +158,7 @@ build_tag_image:
     # change this to:
     # - !reference [.if_release_tag_on_dev]
   needs:
-    - pull_charts
+    - !reference [.docker_build_job, needs]
     - upload_manifest
 
 build_latest_image:

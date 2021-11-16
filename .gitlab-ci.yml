@@ -1,4 +1,4 @@
-image: registry.gitlab.com/dmakovey/gitlab-build-images:gitlab-operator-build-base
+image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
 
 variables:
   # Configuration of K8s

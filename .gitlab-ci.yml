@@ -371,8 +371,8 @@ build_manifest:
       - .build/openshift_resources.yaml
   rules:
     - !reference [.skip_if_docs_branch]
-    - if: '$CI_COMMIT_BRANCH'
     - !reference [.if_release_tag]
+    - if: '$CI_COMMIT_BRANCH'
 
 upload_manifest:
   stage: publish

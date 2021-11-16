@@ -126,7 +126,6 @@ slow_unit_tests:
   stage: release
   needs: ["pull_charts"]
   before_script:
-    #FIXME buildah should be part of gitlab-operator-builder image
     - sed -i 's#^driver.*$#driver = "vfs"#g' /etc/containers/storage.conf
     - podman login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     # Update module cache so it can be saved in CI cache (only the dependencies required to build)
@@ -175,7 +174,6 @@ build_bundle_image:
   extends: .podman_build_job
   variables:
     BUNDLE_REGISTRY: ${CI_REGISTRY_IMAGE}/bundle
-    # BUNDLE_IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
     COMPILE_ONLY: "false"
     DOCKER: "podman"
     OPM_DOCKER: "podman"

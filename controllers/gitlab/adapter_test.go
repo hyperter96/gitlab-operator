@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 var _ = Describe("CustomResourceAdapter", func() {
@@ -61,4 +62,20 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(beforeHash).NotTo(Equal(afterHash))
 	})
 
+	It("should reject unsupported chart versions", func() {
+		adapter := createMockAdapter(namespace, "0.0.0", helm.EmptyValues())
+		supported, err := adapter.ChartVersionSupported()
+
+		Expect(supported).To(BeFalse())
+		Expect(err).NotTo(BeNil())
+		Expect(err.Error()).To(ContainSubstring("chart version 0.0.0 not supported"))
+	})
+
+	It("should accept supported chart versions", func() {
+		adapter := createMockAdapter(namespace, chartVersions[0], helm.EmptyValues())
+		supported, err := adapter.ChartVersionSupported()
+
+		Expect(supported).To(BeTrue())
+		Expect(err).To(BeNil())
+	})
 })

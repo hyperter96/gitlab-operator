@@ -42,6 +42,10 @@ type CustomResourceAdapter interface {
 	// instance.
 	ChartVersion() string
 
+	// ChartVersionSupported returns `true` if the GitLab chart version specified is one of the
+	// supported versions bundled with the Operator, and `false` if not.
+	ChartVersionSupported() (bool, error)
+
 	// StatusVersion returns the version of the GitLab chart that the GitLab
 	// Custom Resource is actively running.
 	StatusVersion() string
@@ -268,6 +272,16 @@ func (a *populatingAdapter) Namespace() string {
 
 func (a *populatingAdapter) ChartVersion() string {
 	return a.resource.Spec.Chart.Version
+}
+
+func (a *populatingAdapter) ChartVersionSupported() (bool, error) {
+	for _, v := range AvailableChartVersions() {
+		if v == a.ChartVersion() {
+			return true, nil
+		}
+	}
+
+	return false, fmt.Errorf("chart version %s not supported; please use one of the following: %s", a.ChartVersion(), strings.Join(AvailableChartVersions(), ", "))
 }
 
 func (a *populatingAdapter) StatusVersion() string {

@@ -46,6 +46,10 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 	logger.V(2).Info("Rendering a new template.",
 		"values", adapter.Values())
 
+	if supported, err := adapter.ChartVersionSupported(); !supported {
+		return nil, err
+	}
+
 	template, err := buildTemplate(adapter)
 	if err != nil {
 		logger.Error(err, "Failed to render the template")

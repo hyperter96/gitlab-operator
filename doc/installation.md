@@ -88,7 +88,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
      name: example
    spec:
      chart:
-       version: "X.Y.Z" # select a version from the CHART_VERSIONS file in the root of this project
+       version: "X.Y.Z" # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/0.1.0/CHART_VERSIONS
        values:
          global:
            hosts:

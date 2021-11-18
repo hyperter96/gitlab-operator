@@ -37,6 +37,8 @@ When configuring the GitLab CR, be sure to set `nginx-ingress.enabled=false` to 
 
 We recommend [Cert Manager](https://cert-manager.io/docs/installation/) to create certificates used to secure the GitLab and Registry URLs. Follow the relevant instructions in the link based on your platform and preferred tooling.
 
+Our codebase currently targets Cert Manager 1.5. Version 1.6 has been released, but it removed deprecated APIs and therefore requires some changes to the GitLab Operator for compatibility (see [#435](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/435)).
+
 ### Metrics
 
 #### Kubernetes

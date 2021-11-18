@@ -126,11 +126,10 @@ slow_unit_tests:
   stage: release
   needs: ["pull_charts"]
   before_script:
-    #FIXME buildah should be part of gitlab-operator-builder image
-    - apk add --no-cache buildah
     - sed -i 's#^driver.*$#driver = "vfs"#g' /etc/containers/storage.conf
     - podman login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     # Update module cache so it can be saved in CI cache (only the dependencies required to build)
+    - mkdir -p .go
     - podman run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:1.16 go list ./...
   interruptible: false
 
@@ -159,6 +158,7 @@ build_tag_image:
     # change this to:
     # - !reference [.if_release_tag_on_dev]
   needs:
+    - !reference [.docker_build_job, needs]
     - upload_manifest
 
 build_latest_image:
@@ -174,7 +174,6 @@ build_bundle_image:
   extends: .podman_build_job
   variables:
     BUNDLE_REGISTRY: ${CI_REGISTRY_IMAGE}/bundle
-    BUNDLE_IMAGE_TAG: ${CI_COMMIT_SHORT_SHA}
     COMPILE_ONLY: "false"
     DOCKER: "podman"
     OPM_DOCKER: "podman"
@@ -183,7 +182,8 @@ build_bundle_image:
     - export OLM_PACKAGE_VERSION=${CI_COMMIT_TAG:-${TAG}}
     - export OPERATOR_TAG=${CI_COMMIT_TAG:-${TAG}}
     - export TAG=${CI_COMMIT_TAG:-${TAG}}
-    - scripts/olm_bundle.sh install_operatorsdk install_opm publish
+    - export BUNDLE_IMAGE_TAG=${CI_COMMIT_TAG:-${CI_COMMIT_SHORT_SHA}}
+    - scripts/olm_bundle.sh publish
   rules:
     - !reference [.if_release_tag]
 
@@ -371,6 +371,7 @@ build_manifest:
       - .build/openshift_resources.yaml
   rules:
     - !reference [.skip_if_docs_branch]
+    - !reference [.if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
 upload_manifest:
@@ -435,6 +436,8 @@ issue-bot:
   image: registry.gitlab.com/gitlab-org/distribution/issue-bot:latest
   script: /issue-bot
   rules:
+    - if: $ISSUE_BOT_API_TOKEN == null
+      when: never
     - !reference [.if_release_tag]
     - !reference [.if_stable_branch]
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH

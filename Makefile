@@ -18,6 +18,7 @@ KUSTOMIZE_FILES=$(shell find config -type f -name \*.yaml)
 TEST_CR_FILES=$(shell find config/test -type f -name \*.yaml)
 
 # Image URL to use all building/pushing image targets
+DEFAULT_IMG := registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
 IMG ?= registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
 TAG ?= latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -107,7 +108,7 @@ deploy_openshift_resources: .install/openshift_resources.yaml
 
 .build/operator.yaml: .build $(KUSTOMIZE_FILES)
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	cd config/manager && $(KUSTOMIZE) edit set image $(IMG)=$(IMG):$(TAG)
+	cd config/manager && $(KUSTOMIZE) edit set image $(DEFAULT_IMG)=$(IMG):$(TAG)
 	$(KUSTOMIZE) build config/default > $@
 
 build_operator: .build/operator.yaml

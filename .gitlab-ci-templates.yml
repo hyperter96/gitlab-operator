@@ -89,6 +89,7 @@
       - .build/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
   rules:
     - !reference [.skip_if_release_tag]
+    - !reference [.skip_if_docs_branch]
     - if: '$CI_COMMIT_BRANCH'
 
 .review_template:
@@ -157,10 +158,10 @@
     - ./scripts/test.sh cleanup
   allow_failure: true
   rules:
+    - !reference [.skip_if_docs_branch]
+    - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
       when: manual
-    - !reference [.skip_if_release_tag]
-    - !reference [.skip_if_docs_branch]
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: manual
     - <<: *if_stable_branch

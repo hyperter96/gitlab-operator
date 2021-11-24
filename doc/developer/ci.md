@@ -59,7 +59,7 @@ ocp-ci-4717-abcde-worker-c-5gq6r.c.cloud-native-123456.internal   NotReady   wor
 Scale down one of the `machineset`s:
 
 ```shell
-$ oc scale --replicas=0 machineset ocp-ci-4717-abcde-worker-a -n openshift-machine-api
+oc scale --replicas=0 machineset ocp-ci-4717-abcde-worker-a -n openshift-machine-api
 ```
 
 Wait for scale down to complete:
@@ -107,7 +107,7 @@ Note: `gitlab-operator-ci-gcloud-externaldns.json` is a file containing the cred
 Note: timeouts for Jobs can be configured. If the timeout is reached, then the GitLab Controller will return an error that the Job could not be completed in time.
 
 To configure these, modify the values under `spec.template.spec.containers[0].env` in
-[config/manager/manager.yaml](../../config/manager/manager.yaml).
+[`config/manager/manager.yaml`](../../config/manager/manager.yaml).
 
 ## Kubernetes CI clusters
 
@@ -115,7 +115,7 @@ We manage Kubernetes clusters in Google Cloud using GKE. These clusters are used
 
 Clusters are created using `charts/gitlab`'s [gke_bootstrap_script.sh script](https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/scripts/gke_bootstrap_script.sh).
 
-```sh
+```shell
 $ CLUSTER_NAME='gitlab-operator' \
   PROJECT='cloud-native-182609' \
   REGION='europe-west3' \
@@ -129,7 +129,7 @@ $ CLUSTER_NAME='gitlab-operator' \
 
 We then connect the cluster endpoint IP address by creating a new Cloud DNS record set.
 
-```sh
+```shell
 $ ENDPOINT="$(gcloud container clusters describe gitlab-operator --zone europe-west3-a --format='value(endpoint)')"
 
 $ gcloud dns record-sets create gitlab-operator.k8s-ft.win. \
@@ -138,7 +138,7 @@ $ gcloud dns record-sets create gitlab-operator.k8s-ft.win. \
 
 Once the cluster is created and connected with DNS, we run the `./scripts/install_certmanager` script to set up Letsencrypt TLS certificate.
 
-```sh
+```shell
 $ KUBECONFIG=demo/.kube/config \
   CLUSTER_NAME=gitlab-operator \
   BASE_DOMAIN=k8s-ft.win \
@@ -154,18 +154,9 @@ For CI clusters, we create a service account in Google Cloud, following the step
 
 We [use the gcloud CLI to add or remove worker nodes from a GKE cluster](https://cloud.google.com/kubernetes-engine/docs/how-to/resizing-a-cluster#gcloud). The Google Cloud web UI may also be used.
 
-For example, scaling the gitlab-operator CI cluster to 4 nodes:
+For example, scaling the `gitlab-operator` CI cluster to 4 nodes:
 
 ```shell
 $ gcloud container clusters resize \
   gitlab-operator --num-nodes 4
 ```
-
-## Configuration
-
-### Job timeouts
-
-Note: timeouts for Jobs can be configured. If the timeout is reached, then the GitLab Controller will return an error that the Job could not be completed in time.
-
-To configure these, modify the values under `spec.template.spec.containers[0].env` in
-[config/manager/manager.yaml](../../config/manager/manager.yaml).

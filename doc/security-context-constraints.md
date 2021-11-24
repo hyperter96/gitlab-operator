@@ -5,7 +5,7 @@
 Pods in OpenShift receive permissions based on their security context
 constraints. Security context constraints, often abbreviated _**SCC**_,
 simplify the role based access control mechanism for use in large scale
-deployments. [Administrators may consult the upstream documentation to gain more insight into how security context constraints work and their place in Openshift](https://docs.openshift.com/container-platform/4.7/authentication/managing-security-context-constraints.html)
+deployments. [Administrators may consult the upstream documentation to gain more insight into how security context constraints work and their place in OpenShift](https://docs.openshift.com/container-platform/4.7/authentication/managing-security-context-constraints.html)
 
 Administrators may also consult the following resources:
 
@@ -52,10 +52,10 @@ Omnibus, drop privilege to run as an application-specific user. The
 ### Ingress controller
 
 GitLab recommends and tests deployments using the
-**nginx-ingress-controller** when deploying Cloud Native GitLab. It uses its
-own [_**nginx-ingress-scc**_ security context constraint](../config/rbac/nginx_scc.yaml).
+`nginx-ingress-controller` when deploying Cloud Native GitLab. It uses its
+own [`nginx-ingress-scc` security context constraint](../config/rbac/nginx_scc.yaml).
 
-If selecting an alternative ingress controller, please consult the relevant
+If selecting an alternative Ingress controller, please consult the relevant
 documentation to learn more about its security context constraints.
 
 ### SSL encryption

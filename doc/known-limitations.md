@@ -1,8 +1,8 @@
-## Known limitations
+# Known limitations
 
 Below are known limitations of the GitLab Operator.
 
-### Certain components not supported
+## Certain components not supported
 
 Below is a list of unsupported components:
 

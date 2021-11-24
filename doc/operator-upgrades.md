@@ -21,7 +21,7 @@ Note that by default, the Operator deployment manifest specifies `imagePullPolic
 The next step is to instruct the Operator deployment to use the desired version of the Operator image. This can be done
 multiple ways - the simplest would be to run:
 
-```
+```shell
 TAG=abcd1234 make deploy_operator
 ```
 

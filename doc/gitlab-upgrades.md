@@ -5,6 +5,7 @@ The GitLab Operator is capable of managing upgrades between versions of GitLab. 
 ## How the Operator handles GitLab upgrades
 
 At the beginning of the controller reconcile loop, the Operator checks if the current version matches the desired version.
+
 - If these versions match, then the regular reconcile loop executes, ensuring objects exist that satisfy the configuration provided in the CR spec.
 - If these versions _do not_ match, the regular reconcile loop still executes, but an additional branch of logic executes to handle the upgrade flow.
 
@@ -48,19 +49,21 @@ spec:
 
 Apply your modified GitLab CR to the cluster:
 
-```
-$ kubectl -n gitlab-system apply -f mygitlab.yaml
+```shell
+kubectl -n gitlab-system apply -f mygitlab.yaml
 ```
 
 You should see the following message:
 
-> gitlab.apps.gitlab.com/gitlab created
+```shell
+gitlab.apps.gitlab.com/gitlab created
+```
 
 ### Step 3
 
 You can watch the progress via the controller logs:
 
-```
+```shell
 $ kubectl -n gitlab-system logs deployment/gitlab-controller-manager -c manager -f
 2021-09-14T20:59:12.342Z        INFO    controllers.GitLab      Reconciling GitLab    {"gitlab": "gitlab-system/gitlab"}
 2021-09-14T20:59:12.344Z        DEBUG   controllers.GitLab      version information   {"gitlab": "gitlab-system/gitlab", "upgrade": true, "current version": "", "desired version": "5.0.6"}

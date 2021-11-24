@@ -29,5 +29,4 @@ CI environments will now be automatically cleaned up after the specified wait pe
 
 Subsequently, use of explicit `needs` dependency from `cleanup` jobs on `test` or `qa` jobs tasks would be unnecessary.
 
-
 [environments]: https://docs.gitlab.com/ee/ci/environments/

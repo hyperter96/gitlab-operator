@@ -17,7 +17,6 @@ See also discussion in [merge request 181](https://gitlab.com/gitlab-org/cloud-n
 
 It has been decided to maintain single `Makefile` with all of the original scaffolding and our changes for the time being for simplicity. 
 
-
 ## Consequences
 
-We will rely on git history to resolve potential future conflicts (perhaps as part of operator-sdk upgrade)
+We will rely on Git history to resolve potential future conflicts (perhaps as part of operator-sdk upgrade)

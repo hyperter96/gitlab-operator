@@ -9,7 +9,7 @@ Accepted
 ## Context
 
 Release of a GitLab version normally include a stable branch corresponding to it
-being created from a known good commit from master/main branch, and a git tag
+being created from a known good commit from master/main branch, and a Git tag
 being created from this stable branch. When new patch releases need to be done,
 the commits are cherry-picked into these stable branches and tagged.
 
@@ -21,7 +21,7 @@ We will implement similar for Operator releases, following the implementation of
    naming format `X-Y-stable` will be created from the master branch.
 1. For patch releases X.Y.Z (where Z != 0), the new commits will be
    cherry-picked into existing `X-Y-stable` stable branch.
-1. [git tag needed for the release](0011-operator-release-process.md) will be
+1. [Git tag needed for the release](0011-operator-release-process.md) will be
    created from this stable branch.
 
 ## Consequences

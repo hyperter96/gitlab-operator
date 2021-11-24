@@ -64,7 +64,12 @@
 .create_review_template:
   extends: .cache
   stage: review
-  script: echo "Creating deployment environment"
+  script: 
+    - echo "Creating deployment environment"
+    - echo "TESTS_NAMESPACE=$TESTS_NAMESPACE" >> deploy_namespace.env
+  artifacts:
+    reports:
+      dotenv: deploy_namespace.env
   rules:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]

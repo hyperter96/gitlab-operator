@@ -3,7 +3,7 @@
 The GitLab Operator uses [semver versioning](https://semver.org/).
 Version tags should [be the semver version string](../adr/0009-version-tagging.md).
 
-# Documentation
+## Documentation
 
 Operator documentation is available in the `doc/` directory.
 
@@ -20,7 +20,7 @@ two merge requests:
 Issue [#418](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/418)
 tracks work toward automating this process.
 
-# Red Hat Certification
+## Red Hat Certification
 
 The release pipeline will contain a `certification_upload` job when the
 repository has been tagged with a semver version
@@ -28,7 +28,7 @@ repository has been tagged with a semver version
 certification test and allow the operator to be published through the
 Red Hat Connect portal.
 
-It is also possible to pass a release candidate tag (i.e. `1.0.0-rc1`) or  a
+It is also possible to pass a release candidate tag (i.e. `1.0.0-rc1`) or a
 beta tag (i.e. `1.0.0-beta1`) to trigger the `certification_upload` job.
 This will allow the image to go through the Red Hat certification tests, but
 will not release the images through the production channel (when that

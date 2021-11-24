@@ -1,17 +1,17 @@
 # Installation
 
-This document describes how to deploy the GitLab operator via manifests in your Kubernetes or OpenShift cluster.
+This document describes how to deploy the GitLab Operator via manifests in your Kubernetes or OpenShift cluster.
 
 If using OpenShift, these steps normally are handled by OLM (the Operator Lifecycle Manager) once an operator is bundle published. However, to test the most recent operator images, users may need to install the operator using the deployment manifests available in the operator repository.
 
 ## Prerequisites
 
 1. [Create or use an existing Kubernetes or OpenShift cluster](#cluster)
-2. Install pre-requisite services and software
-    - [Ingress controller](#ingress-controller)
-    - [Certificate manager](#tls-certificates)
-    - [Metrics server](#metrics)
-3. [Configure Domain Name Services](#configure-domain-name-services)
+1. Install pre-requisite services and software
+   - [Ingress controller](#ingress-controller)
+   - [Certificate manager](#tls-certificates)
+   - [Metrics server](#metrics)
+1. [Configure Domain Name Services](#configure-domain-name-services)
 
 ### Cluster
 
@@ -25,11 +25,11 @@ To create an OpenShift cluster, see the [OpenShift cluster setup docs](openshift
 
 ### Ingress controller
 
-An ingress controller is required to provide external access to the application and secure communication between components.
+An Ingress controller is required to provide external access to the application and secure communication between components.
 
 The GitLab Operator will deploy our [forked NGINX chart from the GitLab Helm Chart](https://docs.gitlab.com/charts/charts/nginx/) by default.
 
-If you prefer to use an external ingress controller, we recommend [NGINX Ingress](https://kubernetes.github.io/ingress-nginx/deploy/) by the Kubernetes community to deploy an Ingress Controller. Follow the relevant instructions in the link based on your platform and preferred tooling. Take note of the ingress class value for later (it typically defaults to `nginx`).
+If you prefer to use an external Ingress controller, we recommend [NGINX Ingress](https://kubernetes.github.io/ingress-nginx/deploy/) by the Kubernetes community to deploy an Ingress Controller. Follow the relevant instructions in the link based on your platform and preferred tooling. Take note of the Ingress class value for later (it typically defaults to `nginx`).
 
 When configuring the GitLab CR, be sure to set `nginx-ingress.enabled=false` to disable the NGINX objects from the GitLab Helm Chart.
 
@@ -59,25 +59,25 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 
 1. Deploy the GitLab Operator.
 
-    ```
-    $ GL_OPERATOR_VERSION=0.1.0
-    $ PLATFORM=kubernetes # or "openshift"
-    $ kubectl create namespace gitlab-system
-    $ kubectl apply -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
-    ```
+   ```shell
+   GL_OPERATOR_VERSION=0.1.0
+   PLATFORM=kubernetes # or "openshift"
+   kubectl create namespace gitlab-system
+   kubectl apply -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
+   ```
 
-    This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
+   This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
-    By default, the Operator will only watch the namespace where it is deployed.
-    If you'd like it to watch at the cluster scope, then remove the `WATCH_NAMESPACE`
-    environment variable from the Deployment in the manifest under:
-    `spec.template.spec.containers[0].env` and re-run the `kubectl apply` command above.
+   By default, the Operator will only watch the namespace where it is deployed.
+   If you'd like it to watch at the cluster scope, then remove the `WATCH_NAMESPACE`
+   environment variable from the Deployment in the manifest under:
+   `spec.template.spec.containers[0].env` and re-run the `kubectl apply` command above.
 
-    NOTE:
-    Running the Operator at the cluster scope is considered experimental.
-    See [issue #100](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/100) for more information.
+   NOTE:
+   Running the Operator at the cluster scope is considered experimental.
+   See [issue #100](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/100) for more information.
 
-2. Create a GitLab custom resource (CR).
+1. Create a GitLab custom resource (CR).
 
    Create a new file named something like `mygitlab.yaml`.
 
@@ -104,21 +104,21 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
    For more details on configuration options to use under `spec.chart.values`,
    see the [GitLab Helm Chart documentation](https://docs.gitlab.com/charts/charts).
 
-3. Deploy a GitLab instance using your new GitLab CR.
+1. Deploy a GitLab instance using your new GitLab CR.
 
-   ```
-   $ kubectl -n gitlab-system apply -f mygitlab.yaml
+   ```shell
+   kubectl -n gitlab-system apply -f mygitlab.yaml
    ```
 
    This command sends your GitLab CR up to the cluster for the GitLab Operator to reconcile. You can watch the progress by tailing the logs from the controller pod:
 
-   ```
-   $  kubectl -n gitlab-system logs deployment/gitlab-controller-manager -c manager -f
+   ```shell
+   kubectl -n gitlab-system logs deployment/gitlab-controller-manager -c manager -f
    ```
 
    You can also list GitLab resources and check their status:
 
-   ```
+   ```shell
    $ kubectl -n gitlab-system get gitlab
    NAME     STATUS   VERSION
    gitlab   Ready    5.2.4
@@ -137,18 +137,18 @@ Items to note prior to uninstalling the operator:
 
 ### Uninstall an instance of GitLab
 
-```
-$ kubectl -n gitlab-system delete -f mygitlab.yaml
+```shell
+kubectl -n gitlab-system delete -f mygitlab.yaml
 ```
 
 This will remove the GitLab instance, and all associated objects except for (PVCs as noted above).
 
 ### Uninstall the GitLab Operator
 
-```
-$ GL_OPERATOR_VERSION=0.1.0
-$ PLATFORM=kubernetes # or "openshift"
-$ kubectl delete -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
+```shell
+GL_OPERATOR_VERSION=0.1.0
+PLATFORM=kubernetes # or "openshift"
+kubectl delete -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
 ```
 
 This will delete the Operator's resources, including the running Deployment of the Operator. This **will not** delete objects associated with a GitLab instance.

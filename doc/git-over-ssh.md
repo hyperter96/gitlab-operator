@@ -1,6 +1,6 @@
-# Support for git over SSH
+# Support for Git over SSH
 
-This document provides configuration guidelines for GitLab's support for git over SSH on various environments/platforms.
+This document provides configuration guidelines for GitLab's support for Git over SSH on various environments/platforms.
 
 ## Overview
 
@@ -10,24 +10,24 @@ The GitLab Operator will deploy `gitlab-shell` when `gitlab.gitlab-shell.enabled
 
 To summarize the requirements based on the target platform:
 
-| Do you require git over SSH? | Kubernetes                                  | OpenShift                                                                                |
+| Do you require Git over SSH? | Kubernetes                                  | OpenShift                                                                                |
 | ---------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | No                           | You must use one of the NGINX Ingress providers below (Kubernetes does not have a built-in Ingress provider). | You do not need the Ingress providers below - can use built-in Routes as the Ingress provider.                       |
 | Yes                          | You must use one of the NGINX Ingress providers below (Kubernetes does not have a built-in Ingress provider). | You must use one of the Ingress providers below - Routes do not support exposing port `22`. |
 
 ## Ingress providers
 
-Below is a list of ingress providers along with relevant notes and platform-specific details.
+Below is a list of Ingress providers along with relevant notes and platform-specific details.
 
 ### NGINX-Ingress Helm Chart
 
-GitLab's [forked NGINX-ingress chart](https://docs.gitlab.com/charts/charts/nginx/fork.html) can be used to deploy NGINX resources that have been modified to support git over SSH "out of the box". 
+GitLab's [forked `NGINX-ingress` chart](https://docs.gitlab.com/charts/charts/nginx/fork.html) can be used to deploy NGINX resources that have been modified to support Git over SSH "out of the box".
 
 This is the default configuration when using the GitLab Operator, and is controlled via `nginx-ingress.enabled={true,false}` in the GitLab CR. When set to `false`, you can use an [external NGINX instance](https://docs.gitlab.com/charts/advanced/external-nginx/).
 
-This ingress provider can be used on both Kubernetes and OpenShift.
+This Ingress provider can be used on both Kubernetes and OpenShift.
 
-More information on installation options for the NGINX ingress provider is available in our [installation documentation](installation.md#ingress-controller).
+More information on installation options for the NGINX Ingress provider is available in our [installation documentation](installation.md#ingress-controller).
 
 ### NGINX Ingress Operator
 
@@ -48,15 +48,15 @@ OpenShift [Routes](https://docs.openshift.com/container-platform/3.4/architectur
 
 When deploying to OpenShift, you can set `nginx-ingress.enabled=false` in the GitLab CR and allow OpenShift Routes to control the flow of external traffic. When the GitLab Operator reconciles Ingress objects, OpenShift will automatically create an equivalent Route object that maps to the base domain of the cluster.
 
-Note that OpenShift Routes do not support exposing TCP traffic (SSH on port `22`), and therefore cannot be used for git over SSH via `gitlab-shell`.
+Note that OpenShift Routes do not support exposing TCP traffic (SSH on port `22`), and therefore cannot be used for Git over SSH via `gitlab-shell`.
 
 ## Considerations
 
-Below are items to consider when working with ingress.
+Below are items to consider when working with Ingress.
 
-### Using a third party ingress provider in OpenShift
+### Using a third party Ingress provider in OpenShift
 
-When using a third party ingress controller on OpenShift, the OpenShift Ingress Controller can conflict with the third party ingress controller in some cases.
+When using a third party Ingress controller on OpenShift, the OpenShift Ingress Controller can conflict with the third party Ingress controller in some cases.
 
 One example is that the NGINX Ingress Controller will set an Ingress `ADDRESS` to the NGINX Service's external IP address, and then OpenShift Ingress Controller will override it with the base domain of the cluster. This can conflict with DNS configuration, especially when using a service like [external-dns](https://github.com/kubernetes-sigs/external-dns) which relies on the Ingress having an IP address so it can create A records to map the URL to that specific NGINX Service. This is the case within the GitLab Operator CI environment.
 

@@ -1,7 +1,7 @@
 # Troubleshooting the Operator
 
 This document is a collection of notes and tips to assist in troubleshooting
-the installation of the GitLab operator and the deployment of a GitLab
+the installation of the GitLab Operator and the deployment of a GitLab
 instance from the GitLab custom resource.
 
 ## Installation problems
@@ -49,14 +49,14 @@ function properly.
 In addition to the information presented here, one should consult the
 GitLab Helm chart [troubleshooting documentation](https://docs.gitlab.com/charts/troubleshooting/index.html).
 
-* [Core services not ready](#core-services-not-ready)
-* [NGINX Ingress Controller pods missing](#nginx-ingress-controller-pods-missing)
-* [Horizontal pod autoscalers are not scaling](#horizontal-pod-autoscalers-are-not-scaling)
-* [Ingress does not show external IP](#ingress-does-not-show-external-ip)
+- [Core services not ready](#core-services-not-ready)
+- [NGINX Ingress Controller pods missing](#nginx-ingress-controller-pods-missing)
+- [Horizontal pod autoscalers are not scaling](#horizontal-pod-autoscalers-are-not-scaling)
+- [Ingress does not show external IP](#ingress-does-not-show-external-ip)
 
 ### Core services not ready
 
-The GitLab operator relies on installing instances of Redis, PostgreSQL and
+The GitLab Operator relies on installing instances of Redis, PostgreSQL and
 Gitaly. These are known as the core services. If after deploying a GitLab
 customer resource there are an excessive number of operator log messages
 stating that the core services are not ready, then it is one of these
@@ -95,8 +95,8 @@ kubectl apply -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gi
 ```
 
 After the manifest has been applied, it may be necessary to delete the
-ingress controller Deployment to acquire the SCC properly and allow the
-ingress controller to create the Pods correctly.
+Ingress controller Deployment to acquire the SCC properly and allow the
+Ingress controller to create the Pods correctly.
 
 ### Horizontal pod autoscalers are not scaling
 
@@ -111,12 +111,12 @@ HPAs should operate correctly.
 
 ### Ingress does not show external IP
 
-In an OpenShift environment the NGINX ingress may receive the hostname of
+In an OpenShift environment the NGINX Ingress may receive the hostname of
 the GitLab instance instead of the external IP address. This can be seen in
 the output of `kubectl get ingress -n <namespace>` in the `ADDRESS` column.
 
 This is caused by the OpenShift Router controller updating the Ingress resource
-instead of ignoring it because it is a different ingress class. The following
+instead of ignoring it because it is a different Ingress class. The following
 command will instruct the OpenShift Router controller to ignore Ingresses other
 than the standard Ingresses deployed in OpenShift:
 
@@ -125,4 +125,4 @@ than the standard Ingresses deployed in OpenShift:
     patch ingresscontroller default \
     --type merge \
     -p '{"spec":{"namespaceSelector":{"matchLabels":{"openshift.io/cluster-monitoring":"true"}}}}'
- ```
+```

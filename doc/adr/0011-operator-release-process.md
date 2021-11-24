@@ -17,39 +17,39 @@ so that operator versions can be released as part of official GitLab releases.
 The following iterations are proposed to implement an automatic release of
 operator
 
-1. A mirror of operator project will be setup in dev.gitlab.org - [#286](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/286)
+1. A mirror of operator project will be setup in `dev.gitlab.org` - [#286](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/286)
 1. CI jobs that are relevant for development will be run only on the .com
    project, while jobs necessary to confirm that we are shipping a working
    artifact will be run also on the dev mirror.
-1. Release will happen through git tag pushes, and pipelines caused by them.
+1. Release will happen through Git tag pushes, and pipelines caused by them.
 1. Tag pipeline in both .com project and its dev mirror will have two phases -
    tag and publish.
 1. In .com tag pipeline
-    1. Tag phase will perform the steps other than building an artifact and
-       deploying it to a registry. This involves jobs like static analysis,
-       tests that does not require artifacts, etc.
-    1. Publish phase will build the artifacts and deploy it to a public
-       registry.
-    1. First job of the publish phase will be a blocking manual job, which when
-       played will cause the pipeline to continue automatically and complete the
-       release.
+   1. Tag phase will perform the steps other than building an artifact and
+      deploying it to a registry. This involves jobs like static analysis,
+      tests that does not require artifacts, etc.
+   1. Publish phase will build the artifacts and deploy it to a public
+      registry.
+   1. First job of the publish phase will be a blocking manual job, which when
+      played will cause the pipeline to continue automatically and complete the
+      release.
 1. In dev tag pipeline
-    1. Tag phase will build and deploy artifacts to an internal registry.
-    1. These can be used to verify whether the artifacts we are about to release
-       work as expected. We may eventually add a test infrastructure to dev to
-       automate this testing.
-    1. Release phase will have a manual job, which when played will trigger the
-       manual job (part of release phase) in the correspoinding tag pipeline in
-       .com project.
+   1. Tag phase will build and deploy artifacts to an internal registry.
+   1. These can be used to verify whether the artifacts we are about to release
+      work as expected. We may eventually add a test infrastructure to dev to
+      automate this testing.
+   1. Release phase will have a manual job, which when played will trigger the
+      manual job (part of release phase) in the corresponding tag pipeline in
+      .com project.
 1. For the first iteration and GA release, maintainers will manually perform the
    following tasks
-    1. Update [`CHART_VERSIONS`](../../CHART_VERSIONS) file.
-    1. Create a git tag and push it to both .com project and the dev mirror.
-    1. Verify the opeator artifacts created by the dev mirror works as expected.
-    1. Once GitLab is released, play the manual job in the dev tag pipeline to
-       complete the release.
-    1. Ensure the tag pipeline in .com project completed and the artifacts are
-       available to the users from public registries.
+   1. Update [`CHART_VERSIONS`](../../CHART_VERSIONS) file.
+   1. Create a Git tag and push it to both .com project and the dev mirror.
+   1. Verify the operator artifacts created by the dev mirror works as expected.
+   1. Once GitLab is released, play the manual job in the dev tag pipeline to
+      complete the release.
+   1. Ensure the tag pipeline in .com project completed and the artifacts are
+      available to the users from public registries.
 1. As the next iteration, we will implement the stable branch strategy in
    operator. This will essentially mean a stable branch will be cut from the
    default branch towards the end of the milestone (or when a new operator
@@ -62,11 +62,11 @@ operator
    to avoid redundant operator versions, `ONLY THE RELEASE OF LATEST STABLE
    VERSION OF GITLAB CHARTS WILL CAUSE A NEW OPERATOR VERSION TO BE RELEASED
    AUTOMATICALLY`.
-    * For example, if a patch release for GitLab Charts 5.4.x, 5.3.x, and 5.2.x
-      is being done, only 5.4.x will cause a new operator release.
+   - For example, if a patch release for GitLab Charts 5.4.x, 5.3.x, and 5.2.x
+     is being done, only 5.4.x will cause a new operator release.
 
 ## Consequences
 
 1. For the time being, release will still be manual by maintainers updating
-   `CHART_VERSIONS` file and creating a git tag, and then finally playing the
+   `CHART_VERSIONS` file and creating a Git tag, and then finally playing the
    manual job to start the release.

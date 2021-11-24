@@ -10,7 +10,7 @@ Related [5. Versioning of the operator](0005-versioning-of-the-operator.md)
 
 ## Context
 
-We need to establish correlation between the operator version and Gitlab application version (and [GitLab Chart](https://gitlab.com/gitlab-org/charts/gitlab) version)
+We need to establish correlation between the operator version and GitLab application version (and [GitLab Chart](https://gitlab.com/gitlab-org/charts/gitlab) version)
 
 ## Decision
 
@@ -23,6 +23,7 @@ The Operator specifies the supported versions of the chart in the
 
 The goal is to support the three latest minor versions of the
 [GitLab Chart](https://gitlab.com/gitlab-org/charts/gitlab).
+
 ## Consequences
 
 When new versions of the GitLab Chart are released, the CHART_VERSIONS file

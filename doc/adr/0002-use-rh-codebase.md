@@ -18,4 +18,4 @@ RedHat will provide initial implementation
 
 ## Consequences
 
-We will use codebase provided by RedHat and develop it further to meet GitLab and its customers' needs. 
+We will use codebase provided by RedHat and develop it further to meet GitLab and its customers' needs.

@@ -170,7 +170,8 @@ environment_name:
         else
           ENVIRONMENT_NAME=$CI_COMMIT_REF_NAME 
         fi
-    - echo "ENVIRONMENT_NAME=$ENVIRONMENT_NAME" > environment_name.txt
+    - echo "ENVIRONMENT_NAME=$ENVIRONMENT_NAME" > environment_name.env
+    - cat environment_name.env
   artifacts:
     reports: 
       dotenv: environment_name.txt

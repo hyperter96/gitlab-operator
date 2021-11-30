@@ -176,8 +176,8 @@ environment_name:
   artifacts:
     reports: 
       dotenv: environment_name.env
-  needs: 
-    - approve_cluster_tests
+  # needs: 
+  #   - approve_cluster_tests
 
 build_tag_image:
   extends: .docker_build_job

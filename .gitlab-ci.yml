@@ -32,7 +32,7 @@ stages:
   - publish
   - release
   - cluster_tests_approval
-  - environment_setup
+  # - environment_setup
   - review
   - qa
   - cleanup
@@ -235,8 +235,6 @@ approve_cluster_tests:
 
 build_review_4_6:
   extends: .build_review_template
-  before_script:
-    - echo "${ENVIRONMENT_NAME}"
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_6
     PLATFORM: openshift

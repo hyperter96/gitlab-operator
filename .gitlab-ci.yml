@@ -23,7 +23,7 @@ variables:
   # OCP_RESOURCES_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}/openshift-resources-${CI_COMMIT_TAG}.yaml"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}"
   SECRET_DETECTION_HISTORIC_SCAN: "true"
-  ENVIRONMENT_NAME: "stub_name"
+  # ENVIRONMENT_NAME: "stub_name"
 
 stages:
   - prepare

@@ -43,6 +43,10 @@ func WebserviceConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 		"app": WebserviceComponentName,
 	})
 
+	for _, cm := range result {
+		setInstallationType(cm)
+	}
+
 	return result
 }
 

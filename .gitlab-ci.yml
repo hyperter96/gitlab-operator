@@ -162,7 +162,7 @@ build_branch_image:
     - if: '$CI_COMMIT_BRANCH'
 
 environment_name:
-  stage: environment_setup
+  stage: build
   script:
     - |
         if [ "$CI_COMMIT_REF_NAME" = "$CI_DEFAULT_BRANCH" ]
@@ -234,6 +234,8 @@ approve_cluster_tests:
 
 build_review_4_6:
   extends: .build_review_template
+  before_script:
+    - echo "${ENVIRONMENT_NAME}"
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_6
     PLATFORM: openshift
@@ -246,8 +248,8 @@ create_review_4_6:
     on_stop: stop_review_openshift_4_6
     auto_stop_in: 1 hour
   needs:
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - build_review_4_6
 
 review_4_6:
@@ -258,8 +260,8 @@ review_4_6:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
   needs: 
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - create_review_4_6
     # we need build_* dependency to receive appropriate artifacts
     - build_review_4_6
@@ -280,8 +282,8 @@ create_review_4_7:
     on_stop: stop_review_openshift_4_7
     auto_stop_in: 1 hour
   needs:
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - build_review_4_7
 
 review_4_7:
@@ -292,8 +294,8 @@ review_4_7:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
   needs: 
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - create_review_4_7
     # we need build_* dependency to receive appropriate artifacts
     - build_review_4_7
@@ -314,8 +316,8 @@ create_review_gke:
     on_stop: stop_review_gke
     auto_stop_in: 1 hour
   needs:
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - build_review_gke
   
 review_gke:
@@ -326,8 +328,8 @@ review_gke:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
   needs: 
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - create_review_gke
     # we need build_* dependency to receive appropriate artifacts
     - build_review_gke
@@ -371,8 +373,8 @@ stop_review_openshift_4_6:
     name: openshift_4_6/$ENVIRONMENT_NAME
     action: stop
   needs:
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - build_review_4_6
 
 
@@ -386,8 +388,8 @@ stop_review_openshift_4_7:
     name: openshift_4_7/$ENVIRONMENT_NAME
     action: stop
   needs:
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - build_review_4_7
 
 
@@ -401,8 +403,8 @@ stop_review_gke:
     name: gke/$ENVIRONMENT_NAME
     action: stop
   needs:
-    - job: environment_name
-      artifacts: true
+    # - job: environment_name
+    #   artifacts: true
     - build_review_gke
 
 build_manifest:

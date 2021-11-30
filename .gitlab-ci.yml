@@ -161,7 +161,7 @@ build_branch_image:
     - if: '$CI_COMMIT_BRANCH'
 
 environment_name:
-  stage: build
+  stage: review
   script:
     - |
         if [ "$CI_COMMIT_REF_NAME" = "$CI_DEFAULT_BRANCH" ]
@@ -175,8 +175,8 @@ environment_name:
   artifacts:
     reports: 
       dotenv: environment_name.env
-  rules:
-    - when: always
+  needs: 
+    - approve_cluster_tests
 
 build_tag_image:
   extends: .docker_build_job

@@ -4,7 +4,7 @@ variables:
   # Configuration of K8s
   # Namespace within which to run tests
   TESTS_NAMESPACE: "n${CI_COMMIT_SHORT_SHA}"
-  ENVIRONMENT_NAME: "n${CI_COMMIT_SHORT_SHA}"
+  # ENVIRONMENT_NAME: "n${CI_COMMIT_SHORT_SHA}"
   DOMAIN_OPENSHIFT_4_6: "apps.ocp-ci-4623.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_7: "apps.ocp-ci-4717.k8s-ft.win"
   DOMAIN_GKE: "gitlab-operator.k8s-ft.win"
@@ -242,7 +242,7 @@ build_review_4_6:
 create_review_4_6:
   extends: .create_review_template
   environment: &environment_4_6
-    name: openshift_4_6/$ENVIRONMENT_NAME
+    name: openshift_4_6/$CI_COMMIT_SHORT_SHA
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_6
     on_stop: stop_review_openshift_4_6
     auto_stop_in: 1 hour
@@ -276,7 +276,7 @@ build_review_4_7:
 create_review_4_7:
   extends: .create_review_template
   environment: &environment_4_7
-    name: openshift_4_7/$ENVIRONMENT_NAME
+    name: openshift_4_7/$CI_COMMIT_SHORT_SHA
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_7
     on_stop: stop_review_openshift_4_7
     auto_stop_in: 1 hour
@@ -310,7 +310,7 @@ build_review_gke:
 create_review_gke:
   extends: .create_review_template
   environment: &environment_gke
-    name: gke/$ENVIRONMENT_NAME
+    name: gke/$CI_COMMIT_SHORT_SHA
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
     on_stop: stop_review_gke
     auto_stop_in: 1 hour
@@ -369,7 +369,7 @@ stop_review_openshift_4_6:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
   environment:
-    name: openshift_4_6/$ENVIRONMENT_NAME
+    name: openshift_4_6/$CI_COMMIT_SHORT_SHA
     action: stop
   needs:
     # - job: environment_name
@@ -384,7 +384,7 @@ stop_review_openshift_4_7:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
   environment:
-    name: openshift_4_7/$ENVIRONMENT_NAME
+    name: openshift_4_7/$CI_COMMIT_SHORT_SHA
     action: stop
   needs:
     # - job: environment_name
@@ -399,7 +399,7 @@ stop_review_gke:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
   environment:
-    name: gke/$ENVIRONMENT_NAME
+    name: gke/$CI_COMMIT_SHORT_SHA
     action: stop
   needs:
     # - job: environment_name

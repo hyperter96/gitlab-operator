@@ -452,7 +452,6 @@ issue-bot:
   rules:
     - if: $ISSUE_BOT_API_TOKEN == null
       when: never
-    - !reference [.if_release_tag]
-    - !reference [.if_stable_branch]
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-      when: on_failure
+    - !reference [.on_failure_if_release_tag]
+    - !reference [.on_failure_if_stable_branch]
+    - !reference [.on_failure_if_default_branch]

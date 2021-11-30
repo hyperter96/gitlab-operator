@@ -31,6 +31,7 @@ stages:
   - publish
   - release
   - cluster_tests_approval
+  - environment_setup
   - review
   - qa
   - cleanup
@@ -161,7 +162,7 @@ build_branch_image:
     - if: '$CI_COMMIT_BRANCH'
 
 environment_name:
-  stage: review
+  stage: environment_setup
   script:
     - |
         if [ "$CI_COMMIT_REF_NAME" = "$CI_DEFAULT_BRANCH" ]

@@ -4,7 +4,6 @@ variables:
   # Configuration of K8s
   # Namespace within which to run tests
   TESTS_NAMESPACE: "n${CI_COMMIT_SHORT_SHA}"
-  # ENVIRONMENT_NAME: "n${CI_COMMIT_SHORT_SHA}"
   DOMAIN_OPENSHIFT_4_6: "apps.ocp-ci-4623.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_7: "apps.ocp-ci-4717.k8s-ft.win"
   DOMAIN_GKE: "gitlab-operator.k8s-ft.win"
@@ -32,7 +31,6 @@ stages:
   - publish
   - release
   - cluster_tests_approval
-  # - environment_setup
   - review
   - qa
   - cleanup
@@ -162,24 +160,6 @@ build_branch_image:
     - !reference [.skip_if_release_tag]
     - if: '$CI_COMMIT_BRANCH'
 
-environment_name:
-  stage: build
-  script:
-    - |
-        if [ "$CI_COMMIT_REF_NAME" = "$CI_DEFAULT_BRANCH" ]
-        then 
-          ENVIRONMENT_NAME=$TESTS_NAMESPACE
-        else
-          ENVIRONMENT_NAME=$CI_COMMIT_REF_NAME 
-        fi
-    - echo "ENVIRONMENT_NAME=$ENVIRONMENT_NAME" > environment_name.env
-    - cat environment_name.env
-  artifacts:
-    reports: 
-      dotenv: environment_name.env
-  # needs: 
-  #   - approve_cluster_tests
-
 build_tag_image:
   extends: .docker_build_job
   script:
@@ -247,8 +227,6 @@ create_review_4_6:
     on_stop: stop_review_openshift_4_6
     auto_stop_in: 1 hour
   needs:
-    # - job: environment_name
-    #   artifacts: true
     - build_review_4_6
 
 review_4_6:
@@ -259,8 +237,6 @@ review_4_6:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_6"
   needs: 
-    # - job: environment_name
-    #   artifacts: true
     - create_review_4_6
     # we need build_* dependency to receive appropriate artifacts
     - build_review_4_6
@@ -281,8 +257,6 @@ create_review_4_7:
     on_stop: stop_review_openshift_4_7
     auto_stop_in: 1 hour
   needs:
-    # - job: environment_name
-    #   artifacts: true
     - build_review_4_7
 
 review_4_7:
@@ -293,8 +267,6 @@ review_4_7:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
   needs: 
-    # - job: environment_name
-    #   artifacts: true
     - create_review_4_7
     # we need build_* dependency to receive appropriate artifacts
     - build_review_4_7
@@ -315,8 +287,6 @@ create_review_gke:
     on_stop: stop_review_gke
     auto_stop_in: 1 hour
   needs:
-    # - job: environment_name
-    #   artifacts: true
     - build_review_gke
   
 review_gke:
@@ -327,8 +297,6 @@ review_gke:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
   needs: 
-    # - job: environment_name
-    #   artifacts: true
     - create_review_gke
     # we need build_* dependency to receive appropriate artifacts
     - build_review_gke
@@ -372,8 +340,6 @@ stop_review_openshift_4_6:
     name: openshift_4_6/n$CI_COMMIT_SHORT_SHA
     action: stop
   needs:
-    # - job: environment_name
-    #   artifacts: true
     - build_review_4_6
 
 
@@ -387,8 +353,6 @@ stop_review_openshift_4_7:
     name: openshift_4_7/n$CI_COMMIT_SHORT_SHA
     action: stop
   needs:
-    # - job: environment_name
-    #   artifacts: true
     - build_review_4_7
 
 
@@ -402,8 +366,6 @@ stop_review_gke:
     name: gke/n$CI_COMMIT_SHORT_SHA
     action: stop
   needs:
-    # - job: environment_name
-    #   artifacts: true
     - build_review_gke
 
 build_manifest:

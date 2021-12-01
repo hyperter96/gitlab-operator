@@ -66,11 +66,10 @@
   stage: review
   script: 
     - echo "Creating deployment environment"
-    - echo "TESTS_NAMESPACE=$TESTS_NAMESPACE" >> environment_hack.env
-    - echo "ENVIRONMENT_NAME=$ENVIRONMENT_NAME" >> environment_hack.env
+    - echo "TESTS_NAMESPACE=$TESTS_NAMESPACE" >> deploy_namespace.env
   artifacts:
     reports:
-      dotenv: environment_hack.env
+      dotenv: deploy_namespace.env
   rules:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]
@@ -97,8 +96,6 @@
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]
     - if: '$CI_COMMIT_BRANCH'
-  # needs: 
-  #   - environment_name
 
 .review_template:
   extends: .cache

@@ -14,7 +14,7 @@ const (
 
 // ToolboxEnabled returns `true` if Toolbox is enabled, and `false` if not.
 func ToolboxEnabled(adapter CustomResourceAdapter) bool {
-	key := fmt.Sprintf(gitlabToolboxEnabled, ToolboxComponentName(adapter))
+	key := fmt.Sprintf(gitlabToolboxEnabled, ToolboxComponentName(adapter.ChartVersion()))
 	enabled, _ := GetBoolValue(adapter.Values(), key, toolboxEnabledDefault)
 
 	return enabled
@@ -27,7 +27,7 @@ func ToolboxDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().DeploymentByComponent(ToolboxComponentName(adapter))
+	result := template.Query().DeploymentByComponent(ToolboxComponentName(adapter.ChartVersion()))
 
 	return result
 }
@@ -43,7 +43,7 @@ func ToolboxConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 	}
 
 	result = template.Query().ConfigMapByName(
-		fmt.Sprintf("%s-%s", adapter.ReleaseName(), ToolboxComponentName(adapter)))
+		fmt.Sprintf("%s-%s", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
 
 	return result
 }

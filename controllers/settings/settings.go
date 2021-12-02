@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 var (
@@ -44,6 +46,8 @@ var (
 	// HealthzCheck returns the checker.
 	HealthzCheck = func(_ *http.Request) error { return AliveStatus }
 	ReadyzCheck  = func(_ *http.Request) error { return ReadyStatus }
+
+	KubeVersion *chartutil.KubeVersion = nil
 )
 
 const (
@@ -51,6 +55,7 @@ const (
 	envManagerServiceAccount = "GITLAB_MANAGER_SERVICE_ACCOUNT"
 	envAppServiceAccount     = "GITLAB_APP_SERVICE_ACCOUNT"
 	envNGINXServiceAccount   = "NGINX_SERVICE_ACCOUNT"
+	envKubeVersion           = "GITLAB_OPERATOR_KUBERNETES_VERSION"
 )
 
 // Load reads Operator settings from environment variables.
@@ -73,5 +78,10 @@ func Load() {
 	nginxServiceAccount := os.Getenv(envNGINXServiceAccount)
 	if nginxServiceAccount != "" {
 		NGINXServiceAccount = nginxServiceAccount
+	}
+
+	kubeVersionStr := os.Getenv(envKubeVersion)
+	if kubeVersionStr != "" {
+		KubeVersion, _ = chartutil.ParseKubeVersion(kubeVersionStr)
 	}
 }

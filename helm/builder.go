@@ -8,6 +8,8 @@ import (
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/releaseutil"
 	"k8s.io/kubectl/pkg/scheme"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 )
 
 // Builder provides an interface to build and render a Helm template.
@@ -138,6 +140,9 @@ func (b *defaultBuilder) Render(values Values) (Template, error) {
 	client.DisableHooks = b.disableHooks
 	client.Namespace = b.namespace
 	client.ReleaseName = b.releaseName
+
+	client.KubeVersion = settings.KubeVersion
+	client.APIVersions = settings.GetKubeAPIVersions()
 
 	chartPath, err := client.ChartPathOptions.LocateChart(b.chart, b.envSettings)
 	if err != nil {

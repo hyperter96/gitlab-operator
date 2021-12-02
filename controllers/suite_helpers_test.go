@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -22,7 +21,6 @@ import (
 )
 
 var (
-	ctx         = context.Background()
 	emptyValues = helm.EmptyValues()
 )
 

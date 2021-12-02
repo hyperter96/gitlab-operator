@@ -8,7 +8,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -218,7 +218,7 @@ func MinioScriptConfigMap(adapter gitlab.CustomResourceAdapter) *corev1.ConfigMa
 }
 
 // MinioIngress returns the Ingress that exposes MinIO.
-func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingress {
+func MinioIngress(adapter gitlab.CustomResourceAdapter) *networkingv1.Ingress {
 	ingressClass, err := gitlab.GetStringValue(adapter.Values(), "global.ingress.class")
 	if err != nil || ingressClass == "" {
 		ingressClass = fmt.Sprintf("%s-nginx", adapter.ReleaseName())
@@ -260,26 +260,32 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 	}
 
 	url := getMinioURL(adapter)
+	pathType := networkingv1.PathTypePrefix
 
-	return &extensionsv1beta1.Ingress{
+	return &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        labels["app.kubernetes.io/instance"],
 			Namespace:   adapter.Namespace(),
 			Labels:      labels,
 			Annotations: annotations,
 		},
-		Spec: extensionsv1beta1.IngressSpec{
-			Rules: []extensionsv1beta1.IngressRule{
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{
 				{
 					Host: url,
-					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
-						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
-							Paths: []extensionsv1beta1.HTTPIngressPath{
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
 								{
-									Path: "/",
-									Backend: extensionsv1beta1.IngressBackend{
-										ServiceName: MinioService(adapter).Name,
-										ServicePort: intstr.FromInt(9000),
+									Path:     "/",
+									PathType: &pathType,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: MinioService(adapter).Name,
+											Port: networkingv1.ServiceBackendPort{
+												Number: 9000,
+											},
+										},
 									},
 								},
 							},
@@ -287,7 +293,7 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *extensionsv1beta1.Ingre
 					},
 				},
 			},
-			TLS: []extensionsv1beta1.IngressTLS{
+			TLS: []networkingv1.IngressTLS{
 				{
 					Hosts:      []string{url},
 					SecretName: tlsSecretName,

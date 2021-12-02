@@ -8,8 +8,7 @@ import (
 	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
-	networkpolicyv1 "k8s.io/api/networking/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -83,10 +82,10 @@ type Query interface {
 	StatefulSetByComponent(component string) *appsv1.StatefulSet
 
 	// IngressesByLabels lists all Ingresses that match the labels.
-	IngressesByLabels(labels map[string]string) []*extensionsv1beta1.Ingress
+	IngressesByLabels(labels map[string]string) []*networkingv1.Ingress
 
 	// IngressByComponent returns the INgress for a specific component.
-	IngressByComponent(component string) *extensionsv1beta1.Ingress
+	IngressByComponent(component string) *networkingv1.Ingress
 
 	// HPAByName returns the HPA with the specified name.
 	HPAByName(name string) *autoscalingv2beta1.HorizontalPodAutoscaler
@@ -98,13 +97,13 @@ type Query interface {
 	HPAByComponent(component string) *autoscalingv2beta1.HorizontalPodAutoscaler
 
 	// NetworkPolicyByName returns the NetworkPolicy with the specified name.
-	NetworkPolicyByName(name string) *networkpolicyv1.NetworkPolicy
+	NetworkPolicyByName(name string) *networkingv1.NetworkPolicy
 
 	// NetworkPolicyByLabels lists all NetworkPolicy that match the labels.
-	NetworkPolicyByLabels(labels map[string]string) []*networkpolicyv1.NetworkPolicy
+	NetworkPolicyByLabels(labels map[string]string) []*networkingv1.NetworkPolicy
 
 	// NetworkPolicyByComponent returns the NetworkPolicy for a specific component.
-	NetworkPolicyByComponent(component string) *networkpolicyv1.NetworkPolicy
+	NetworkPolicyByComponent(component string) *networkingv1.NetworkPolicy
 
 	// ServiceAccountByName returns the ServiceAccount with the specified name.
 	ServiceAccountByName(name string) *corev1.ServiceAccount
@@ -139,7 +138,7 @@ const (
 	gvkConfigMap               = "ConfigMap.v1.core"
 	gvkSecret                  = "Secret.v1.core"
 	gvkService                 = "Service.v1.core"
-	gvkIngress                 = "Ingress.v1beta1.extensions"
+	gvkIngress                 = "Ingress.v1.networking"
 	gvkHorizontalPodAutoscaler = "HorizontalPodAutoscaler.v2beta1.autoscaling"
 	gvkNetworkPolicy           = "NetworkPolicy.v1.networking"
 	gvkServiceAccount          = "ServiceAccount.v1.core"

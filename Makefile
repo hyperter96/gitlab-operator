@@ -21,8 +21,7 @@ TEST_CR_FILES=$(shell find config/test -type f -name \*.yaml)
 DEFAULT_IMG := registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
 IMG ?= registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
 TAG ?= latest
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+
 # Namespace to deploy operator into
 NAMESPACE ?= gitlab-system
 # Chart version to use in the container
@@ -149,14 +148,6 @@ deploy_test_cr: .install/test_cr.yaml
 delete_test_cr: .install/test_cr.yaml
 	kubectl delete -f $<
 
-# Generate manifests e.g. CRD, RBAC etc.
-
-config/crd/bases/apps.gitlab.com_gitlabs.yaml: $(CONTROLLER_GEN)
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
-.PHONY: manifests
-manifests: config/crd/bases/apps.gitlab.com_gitlabs.yaml
-
 # Restores files that are modified during operator and CR deploy
 restore_kustomize_files:
 	git checkout -q \
@@ -176,6 +167,12 @@ vet:
 	go vet ./...
 
 # Generate code
+
+.PHONY: manifests
+manifests:
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+.PHONY: generate
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
@@ -188,37 +185,20 @@ docker-build: test # Pending https://github.com/kubernetes-sigs/kubebuilder/pull
 docker-push:
 	podman push $(IMG):$(TAG)
 
-# find or download controller-gen
-# download controller-gen if necessary
-controller-gen:
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
+CONTROLLER_GEN = $(shell which controller-gen)
+.PHONY: controller-gen
+controller-gen: ## Download controller-gen locally if necessary.
+    $(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0)
 
+KUSTOMIZE = $(shell which kustomize)
+.PHONY: kustomize
 kustomize:
-ifeq (, $(shell which kustomize))
-	@{ \
-	set -e ;\
-	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v$(KUSTOMIZE_VERSION) ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-	}
-KUSTOMIZE=$(GOBIN)/kustomize
-else
-KUSTOMIZE=$(shell which kustomize)
-endif
+	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+
+ENVTEST = $(shell which setup-envtest)
+.PHONY: envtest
+envtest: ## Download envtest-setup locally if necessary.
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
 .PHONY: clean
 clean:
@@ -244,3 +224,15 @@ deployment-files: bundle
 	cp -av bundle/manifests/*_clusterrolebinding.yaml config/deploy
 	for rb in `ls config/deploy/*_clusterrolebinding.yaml`; do egrep "  namespace:"  $$rb || echo "  namespace: gitlab-system" >> $$rb; done
 	sed -n -e 's/manager-role/gitlab-manager-role/g;w config/deploy/gitlab-manager-role_rbac.authorization.k8s.io_v1_clusterrole.yaml' config/rbac/role.yaml
+
+define go-get-tool
+@[ -f $(1) ] || { \
+set -e ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+go mod init tmp ;\
+echo "Downloading $(2)" ;\
+go get $(2) ;\
+rm -rf $$TMP_DIR ;\
+}
+endef

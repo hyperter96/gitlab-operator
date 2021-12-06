@@ -7,6 +7,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,6 +39,9 @@ type Query interface {
 
 	// ConfigMapByComponent lists all ConfigMaps for a specific component.
 	ConfigMapByComponent(component string) *corev1.ConfigMap
+
+	// CronJobByName returns the CronJob with the specified name.
+	CronJobByName(name string) *batchv1beta1.CronJob
 
 	// DeploymentByName returns the Deployment with the specified name.
 	DeploymentByName(name string) *appsv1.Deployment

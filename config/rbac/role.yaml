@@ -117,7 +117,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ""
+  - batch
   resources:
   - cronjobs
   verbs:

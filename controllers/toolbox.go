@@ -11,6 +11,12 @@ func (r *GitLabReconciler) reconcileToolbox(ctx context.Context, adapter gitlabc
 		return err
 	}
 
+	if gitlabctl.ToolboxCronJobEnabled(adapter) {
+		if err := r.reconcileToolboxCronJob(ctx, adapter); err != nil {
+			return err
+		}
+	}
+
 	if err := r.reconcileToolboxDeployment(ctx, adapter); err != nil {
 		return err
 	}
@@ -20,6 +26,14 @@ func (r *GitLabReconciler) reconcileToolbox(ctx context.Context, adapter gitlabc
 
 func (r *GitLabReconciler) reconcileToolboxConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	if _, err := r.createOrPatch(ctx, gitlabctl.ToolboxConfigMap(adapter), adapter); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) reconcileToolboxCronJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.ToolboxCronJob(adapter), adapter); err != nil {
 		return err
 	}
 

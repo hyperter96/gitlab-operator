@@ -321,7 +321,7 @@ func (a *populatingAdapter) populateValues() {
 		"$ToolboxConnectionSecretName", settings.ToolboxConnectionSecretName,
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
 		"$NGINXServiceAccount", settings.NGINXServiceAccount,
-		"$ToolboxComponentName", ToolboxComponentName(a),
+		"$ToolboxComponentName", ToolboxComponentName(a.ChartVersion()),
 	).Replace(defaultValues)
 
 	_ = a.values.AddFromYAML([]byte(valuesToUse))

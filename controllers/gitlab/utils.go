@@ -64,9 +64,9 @@ func RedisSubqueues() [5]string {
 // If the Chart version is < 5.5.0, then it returns "task-runner".
 // When the list of supported Chart versions are all 5.5.0 or newer, this function
 // can be removed and we can use a constant `ToolboxComponentName = "toolbox"`.
-func ToolboxComponentName(adapter CustomResourceAdapter) string {
+func ToolboxComponentName(chartVersion string) string {
 	versionWithToolbox, _ := semver.NewConstraint(">= 5.5.0")
-	currentVersion, _ := semver.NewVersion(adapter.ChartVersion())
+	currentVersion, _ := semver.NewVersion(chartVersion)
 
 	if versionWithToolbox.Check(currentVersion) {
 		return "toolbox"

@@ -5,7 +5,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkpolicyv1 "k8s.io/api/networking/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 const (
@@ -51,7 +51,7 @@ func MailroomConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 }
 
 // MailroomNetworkPolicy returns the NetworkPolicy for the Mailroom component.
-func MailroomNetworkPolicy(adapter CustomResourceAdapter) *networkpolicyv1.NetworkPolicy {
+func MailroomNetworkPolicy(adapter CustomResourceAdapter) *networkingv1.NetworkPolicy {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error

@@ -29,14 +29,13 @@ var _ = Describe("KAS", func() {
 	When("KAS is enabled", func() {
 		chartValues := helm.EmptyValues()
 		_ = chartValues.SetValue("global.kas.enabled", true)
+		_ = chartValues.SetValue("global.kas.service.apiExternalPort", 8153)
 
 		adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
 
-		It("KasEnabled should return true", func() {
-			Expect(KasEnabled(adapter)).To(BeTrue())
-		})
-
 		It("KAS managed resources must be available", func() {
+			Expect(KasEnabled(adapter)).To(BeTrue())
+
 			cfgMap := KasConfigMap(adapter)
 			deployment := KasDeployment(adapter)
 			ingress := KasIngress(adapter)

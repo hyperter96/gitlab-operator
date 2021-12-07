@@ -11,12 +11,20 @@
   <<: *if_release_tag
   when: never
 
+.on_failure_if_release_tag: &on_failure_if_release_tag
+  <<: *if_release_tag
+  when: on_failure
+
 .if_default_branch: &if_default_branch
   if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 .skip_if_default_branch: &skip_if_default_branch
   <<: *if_default_branch
   when: never
+
+.on_failure_if_default_branch: &on_failure_if_default_branch
+  <<: *if_default_branch
+  when: on_failure
 
 .if_default_branch_with_bundle_changes: &if_default_branch_with_bundle_changes
   <<: *if_default_branch
@@ -29,6 +37,10 @@
 .skip_if_stable_branch: &skip_if_stable_branch
   <<: *if_stable_branch
   when: never
+
+.on_failure_if_stable_branch: &on_failure_if_stable_branch
+  <<: *if_stable_branch
+  when: on_failure
 
 .if_dev_mirror: &if_dev_mirror
   if: '$CI_PROJECT_PATH == "gitlab/cloud-native/gitlab-operator"'

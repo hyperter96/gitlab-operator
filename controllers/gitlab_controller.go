@@ -37,14 +37,16 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 )
@@ -72,8 +74,8 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=extensions,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
@@ -323,7 +325,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if internal.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
+	if settings.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
 		// Deploy a prometheus service monitor
 		if err := r.reconcileServiceMonitor(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
@@ -346,14 +348,17 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&batchv1.Job{}).
-		Owns(&extensionsv1beta1.Ingress{}).
+		Owns(&batchv1beta1.CronJob{}).
+		Owns(&networkingv1.Ingress{}).
 		WithEventFilter(predicate.GenerationChangedPredicate{})
 
-	if internal.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
+	if settings.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
+		r.Log.Info("Using monitoring.coreos.com/v1")
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 	}
 
-	if internal.IsGroupVersionSupported("cert-manager.io", "v1alpha2") {
+	if settings.IsGroupVersionSupported("cert-manager.io", "v1alpha2") {
+		r.Log.Info("Using cert-manager.io/v1alpha2")
 		builder.
 			Owns(&certmanagerv1alpha2.Issuer{}).
 			Owns(&certmanagerv1alpha2.Certificate{})
@@ -633,10 +638,10 @@ func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject cl
 	return false, true, nil
 }
 
-func (r *GitLabReconciler) reconcileIngress(ctx context.Context, ingress *extensionsv1beta1.Ingress, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileIngress(ctx context.Context, ingress *networkingv1.Ingress, adapter gitlabctl.CustomResourceAdapter) error {
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
 
-	found := &extensionsv1beta1.Ingress{}
+	found := &networkingv1.Ingress{}
 	err := r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: adapter.Namespace()}, found)
 
 	if err != nil {

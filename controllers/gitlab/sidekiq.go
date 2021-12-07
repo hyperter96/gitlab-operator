@@ -42,5 +42,9 @@ func SidekiqConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 		"app": SidekiqComponentName,
 	})
 
+	for _, cm := range result {
+		setInstallationType(cm)
+	}
+
 	return result
 }

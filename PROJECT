@@ -1,14 +1,16 @@
 domain: gitlab.com
-layout: go.kubebuilder.io/v2
+layout:
+- go.kubebuilder.io/v3
 projectName: gitlab-operator
 repo: gitlab.com/gitlab-org/cloud-native/gitlab-operator
 resources:
--
+- api:
+    crdVersion: v1
+    namespaced: true
   controller: true
+  domain: gitlab.com
   group: apps
   kind: GitLab
-  path: apps.gitlab.com/v1beta1
+  path: gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1
   version: v1beta1
 version: "3"
-plugins:
-  go.sdk.operatorframework.io/v2-alpha: {}

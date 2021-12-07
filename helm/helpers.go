@@ -8,7 +8,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
 	networkingv1 "k8s.io/api/networking/v1"
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -92,7 +91,7 @@ var HorizontalPodAutoscalerSelector = func(o runtime.Object) bool {
 
 // IngressSelector is an ObjectSelector that selects Ingress objects.
 var IngressSelector = func(o runtime.Object) bool {
-	_, ok := o.(*extensionsv1beta1.Ingress)
+	_, ok := o.(*networkingv1.Ingress)
 	if !ok {
 		_, ok = o.(*networkingv1beta1.Ingress)
 	}
@@ -256,9 +255,9 @@ func NewHorizontalPodAutoscalerSelector(delegate func(*autoscalingv2beta1.Horizo
 }
 
 // NewIngressSelector builds a new ObjectSelector that selects Ingress objects with the provided delegate.
-func NewIngressSelector(delegate func(*extensionsv1beta1.Ingress) bool) ObjectSelector {
+func NewIngressSelector(delegate func(*networkingv1.Ingress) bool) ObjectSelector {
 	return func(o runtime.Object) bool {
-		ingress, ok := o.(*extensionsv1beta1.Ingress)
+		ingress, ok := o.(*networkingv1.Ingress)
 		if ok {
 			return delegate(ingress)
 		}
@@ -496,11 +495,11 @@ func NewHorizontalPodAutoscalerEditor(delegate func(*autoscalingv2beta1.Horizont
 }
 
 // NewIngressEditor builds a new ObjectEditor for Ingress objects with the provided delegate.
-func NewIngressEditor(delegate func(*extensionsv1beta1.Ingress) error) ObjectEditor {
+func NewIngressEditor(delegate func(*networkingv1.Ingress) error) ObjectEditor {
 	return func(o runtime.Object) error {
-		ingress, ok := o.(*extensionsv1beta1.Ingress)
+		ingress, ok := o.(*networkingv1.Ingress)
 		if !ok {
-			return newTypeMistmatchError(extensionsv1beta1.Ingress{}, o)
+			return newTypeMistmatchError(networkingv1.Ingress{}, o)
 		}
 
 		return delegate(ingress)

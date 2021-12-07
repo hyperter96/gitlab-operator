@@ -3,7 +3,7 @@ package gitlab
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 // KasEnabled returns `true` if KAS is enabled, and `false` if not. By default it returns `false`.
@@ -31,7 +31,7 @@ func KasDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 	return template.Query().DeploymentByComponent(KasComponentName)
 }
 
-func KasIngress(adapter CustomResourceAdapter) *extensionsv1beta1.Ingress {
+func KasIngress(adapter CustomResourceAdapter) *networkingv1.Ingress {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error

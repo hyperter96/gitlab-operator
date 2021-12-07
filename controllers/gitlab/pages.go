@@ -5,7 +5,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 )
 
 const (
@@ -52,7 +52,7 @@ func PagesDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
 }
 
 // PagesIngress returns the Ingress for the GitLab Pages component.
-func PagesIngress(adapter CustomResourceAdapter) *extensionsv1beta1.Ingress {
+func PagesIngress(adapter CustomResourceAdapter) *networkingv1.Ingress {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error

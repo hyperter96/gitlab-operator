@@ -1,4 +1,4 @@
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
@@ -6,8 +6,9 @@ metadata:
   name: gitlab-validating-webhook-configuration
   namespace: gitlab-system
 webhooks:
-- clientConfig:
-    caBundle: Cg==
+- admissionReviewVersions:
+  - v1
+  clientConfig:
     service:
       name: gitlab-webhook-service
       namespace: gitlab-system
@@ -24,6 +25,7 @@ webhooks:
     - UPDATE
     resources:
     - gitlabs
+  sideEffects: None
 ---
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer

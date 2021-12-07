@@ -19,7 +19,8 @@ var _ = Describe("CustomResourceAdapter", func() {
 		When("Toolbox CronJob is disabled", func() {
 			chartValues := helm.EmptyValues()
 
-			adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
 			enabled := ToolboxCronJobEnabled(adapter)
@@ -37,12 +38,13 @@ var _ = Describe("CustomResourceAdapter", func() {
 		})
 
 		When("Toolbox CronJob is enabled", func() {
-			key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName(chartVersions[0]))
+			key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName(GetChartVersion()))
 
 			chartValues := helm.EmptyValues()
 			_ = chartValues.SetValue(key, true)
 
-			adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
 			enabled := ToolboxCronJobEnabled(adapter)

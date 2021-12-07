@@ -9,49 +9,28 @@ import (
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-var (
-	chartVersions []string = AvailableChartVersions()
-	namespace     string   = os.Getenv("HELM_NAMESPACE")
-)
-
 var _ = Describe("CustomResourceAdapter", func() {
+	chartVersions := AvailableChartVersions()
 
 	if namespace == "" {
 		namespace = "default"
 	}
 
-	mockGitLab1 := &gitlabv1beta1.GitLab{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: namespace,
-		},
-		Spec: gitlabv1beta1.GitLabSpec{
-			Chart: gitlabv1beta1.GitLabChartSpec{
-				Version: chartVersions[0],
-			},
-		},
-	}
+	currentChartVersion := GetChartVersion()
+	os.Setenv("CHART_VERSION", chartVersions[0])
+	mockGitLab1 := CreateMockGitLab(releaseName, namespace, helm.EmptyValues())
 
-	mockGitLab2 := &gitlabv1beta1.GitLab{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: namespace,
-		},
-		Spec: gitlabv1beta1.GitLabSpec{
-			Chart: gitlabv1beta1.GitLabChartSpec{
-				Version: chartVersions[1],
-			},
-		},
-	}
+	os.Setenv("CHART_VERSION", chartVersions[1])
+	mockGitLab2 := CreateMockGitLab(releaseName, namespace, helm.EmptyValues())
+
+	os.Setenv("CHART_VERSION", currentChartVersion)
 
 	/*
 	 * All tests are packed together here to avoid rendering GitLab Chart repeatedly.
@@ -59,8 +38,8 @@ var _ = Describe("CustomResourceAdapter", func() {
 	 */
 
 	It("must render the template only when the CR has changed", func() {
-		adapter1 := NewCustomResourceAdapter(mockGitLab1)
-		adapter2 := NewCustomResourceAdapter(mockGitLab2)
+		adapter1 := CreateMockAdapter(mockGitLab1)
+		adapter2 := CreateMockAdapter(mockGitLab2)
 
 		template1, err := GetTemplate(adapter1)
 
@@ -99,22 +78,8 @@ var _ = Describe("CustomResourceAdapter", func() {
 			chartValues := helm.EmptyValues()
 			_ = chartValues.SetValue(globalPagesEnabled, true)
 
-			mockGitLab := &gitlabv1beta1.GitLab{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: namespace,
-				},
-				Spec: gitlabv1beta1.GitLabSpec{
-					Chart: gitlabv1beta1.GitLabChartSpec{
-						Version: chartVersions[0],
-						Values: gitlabv1beta1.ChartValues{
-							Object: chartValues.AsMap(),
-						},
-					},
-				},
-			}
-
-			adapter := NewCustomResourceAdapter(mockGitLab)
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
 			enabled := PagesEnabled(adapter)
@@ -141,22 +106,9 @@ var _ = Describe("CustomResourceAdapter", func() {
 			chartValues := helm.EmptyValues()
 			_ = chartValues.SetValue(globalPagesEnabled, false)
 
-			mockGitLab := &gitlabv1beta1.GitLab{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "test",
-					Namespace: namespace,
-				},
-				Spec: gitlabv1beta1.GitLabSpec{
-					Chart: gitlabv1beta1.GitLabChartSpec{
-						Version: chartVersions[0],
-						Values: gitlabv1beta1.ChartValues{
-							Object: chartValues.AsMap(),
-						},
-					},
-				},
-			}
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
 
-			adapter := NewCustomResourceAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
 			enabled := PagesEnabled(adapter)

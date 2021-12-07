@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -10,7 +9,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,36 +21,6 @@ import (
 var (
 	emptyValues = helm.EmptyValues()
 )
-
-func getChartVersion() string {
-	version, found := os.LookupEnv("CHART_VERSION")
-	if !found {
-		version = gitlab.AvailableChartVersions()[0]
-	}
-
-	return version
-}
-
-func newGitLab(releaseName string, chartValues helm.Values) *gitlabv1beta1.GitLab {
-	return &gitlabv1beta1.GitLab{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "apps.gitlab.com/v1beta1",
-			Kind:       "GitLab",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      releaseName,
-			Namespace: Namespace,
-		},
-		Spec: gitlabv1beta1.GitLabSpec{
-			Chart: gitlabv1beta1.GitLabChartSpec{
-				Version: getChartVersion(),
-				Values: gitlabv1beta1.ChartValues{
-					Object: chartValues.AsMap(),
-				},
-			},
-		},
-	}
-}
 
 func createObject(obj client.Object, ignoreAlreadyExists bool) error {
 	err := k8sClient.Create(ctx, obj)
@@ -193,7 +161,7 @@ func appLabels(releaseName, appName string) string {
 
 func createGitLabResource(releaseName string, chartValues helm.Values) {
 	By("Creating a new GitLab resource")
-	Expect(createObject(newGitLab(releaseName, chartValues), true)).Should(Succeed())
+	Expect(createObject(gitlab.CreateMockGitLab(releaseName, Namespace, chartValues), true)).Should(Succeed())
 
 	By("Checking GitLab resource is created")
 	Eventually(getObjectPromise(releaseName, &gitlabv1beta1.GitLab{}),
@@ -204,7 +172,7 @@ func updateGitLabResource(releaseName string, chartValues helm.Values) {
 	By("Update the existing GitLab resource")
 	Expect(
 		updateObject(
-			newGitLab(releaseName, helm.EmptyValues()),
+			gitlab.CreateMockGitLab(releaseName, Namespace, helm.EmptyValues()),
 			func(obj client.Object) error {
 				gitlab := obj.(*gitlabv1beta1.GitLab)
 				gitlab.Spec.Chart.Values.Object = chartValues.AsMap()

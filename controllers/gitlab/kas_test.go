@@ -8,11 +8,10 @@ import (
 )
 
 var _ = Describe("KAS", func() {
-
 	When("KAS is disabled", func() {
 		chartValues := helm.EmptyValues()
-
-		adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
+		mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+		adapter := CreateMockAdapter(mockGitLab)
 
 		It("KasEnabled should return false", func() {
 			Expect(KasEnabled(adapter)).To(BeFalse())
@@ -31,7 +30,8 @@ var _ = Describe("KAS", func() {
 		_ = chartValues.SetValue("global.kas.enabled", true)
 		_ = chartValues.SetValue("global.kas.service.apiExternalPort", 8153)
 
-		adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
+		mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+		adapter := CreateMockAdapter(mockGitLab)
 
 		It("KAS managed resources must be available", func() {
 			Expect(KasEnabled(adapter)).To(BeTrue())

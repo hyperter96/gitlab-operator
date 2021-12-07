@@ -21,9 +21,6 @@ import (
 )
 
 var _ = Describe("GitLab controller", func() {
-
-	fmt.Println("testing with chart version", getChartVersion())
-
 	BeforeEach(func() {
 		os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "1")
 	})
@@ -41,7 +38,7 @@ var _ = Describe("GitLab controller", func() {
 			_ = chartValues.SetValue("certmanager-issuer.email", "me@mydomain.com")
 
 			By("Creating a new GitLab resource")
-			Expect(createObject(newGitLab(releaseName, chartValues), true)).Should(Succeed())
+			Expect(createObject(gitlabctl.CreateMockGitLab(releaseName, Namespace, chartValues), true)).Should(Succeed())
 
 			By("Checking the created GitLab resource")
 			Eventually(func() error {

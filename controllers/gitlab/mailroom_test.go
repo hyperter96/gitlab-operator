@@ -8,7 +8,6 @@ import (
 )
 
 var _ = Describe("CustomResourceAdapter", func() {
-
 	if namespace == "" {
 		namespace = "default"
 	}
@@ -20,7 +19,8 @@ var _ = Describe("CustomResourceAdapter", func() {
 			_ = chartValues.SetValue(IncomingEmailEnabled, true)
 			_ = chartValues.SetValue(IncomingEmailSecret, "secret_value")
 
-			adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
 			enabled := MailroomEnabled(adapter)
@@ -46,7 +46,8 @@ var _ = Describe("CustomResourceAdapter", func() {
 			chartValues := helm.EmptyValues()
 			_ = chartValues.SetValue(GitLabMailroomEnabled, false)
 
-			adapter := createMockAdapter(namespace, chartVersions[0], chartValues)
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
 			enabled := MailroomEnabled(adapter)

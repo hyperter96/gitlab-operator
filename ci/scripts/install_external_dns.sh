@@ -2,7 +2,7 @@
 
 # Environment variables
 ENVIRONMENT="${ENVIRONMENT:-kubernetes}"
-CLUSTER_VERSION="${CLUSTER_VERSION:-4.6}"
+CLUSTER_NAME="${CLUSTER_NAME:-ocp-$USER}"
 BASE_DOMAIN="${BASE_DOMAIN:-k8s-ft.win}"
 RELEASE_NAME="${RELEASE_NAME:-gitlab-external-dns}"
 SECRET_NAME="${SECRET_NAME:-$RELEASE_NAME-secret}"
@@ -13,6 +13,8 @@ VERSION="${VERSION:-4.5.0}"
 GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS:-gcloud.json}"
 GOOGLE_CREDENTIALS="${GOOGLE_CREDENTIALS:-$(cat $GOOGLE_APPLICATION_CREDENTIALS)}"
 GCP_PROJECT_ID="${GCP_PROJECT_ID:-cloud-native-182609}"
+
+export KUBECONFIG="install-$CLUSTER_NAME/auth/kubeconfig"
 
 # Patch the OpenShift Ingress Controller to only watch OpenShift namespaces.
 # This prevents OpenShift Ingress Controller from overriding Ingress' `HOSTS`
@@ -46,6 +48,6 @@ helm upgrade --install "${RELEASE_NAME}" bitnami/external-dns \
   --set google.serviceAccountSecret="${SECRET_NAME}" \
   --set domainFilters[0]="${BASE_DOMAIN}" \
   --set zoneIdFilters[0]="${ZONE_ID}" \
-  --set txtOwnerId="${PROVIDER}-${ENVIRONMENT}-${CLUSTER_VERSION}-${NAMESPACE}" \
+  --set txtOwnerId="${PROVIDER}-${ENVIRONMENT}-${CLUSTER_NAME}-${NAMESPACE}" \
   --set rbac.create='true' \
   --set policy='sync'

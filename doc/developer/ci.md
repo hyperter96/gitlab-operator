@@ -18,6 +18,15 @@ CI clusters have been launched with `scripts/create_openshift_cluster.sh` in thi
 
 See [OpenShift cluster setup documentation](../openshift-cluster-setup.md) for instruction on using this script.
 
+### "public" and "dev" clusters
+
+We maintain two sets of OpenShift CI clusters for this project:
+
+- `public` CI clusters are responsible for everyday CI pipelines on [gitlab.com](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/pipelines).
+- `dev` CI clusters are responsible for tagging and creating official releases on [dev.gitlab.org](https://dev.gitlab.org/gitlab/cloud-native/gitlab-operator/-/pipelines).
+
+Every cluster is created using the [OpenShift cluster setup documentation](../openshift-cluster-setup.md) and script, regardless of their set. For every OpenShift version deployed in public, there is a corresponding cluster with the same version deployed to dev. Both clusters are deployed to the `cloud-native` GCP project and use `k8s-ft.win` for DNS base domain.
+
 ### Scaling OpenShift clusters
 
 OpenShift clusters use `machineset`s to pool resources. Default deployment has 4 `machineset`s out of which 2 are utilized.

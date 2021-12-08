@@ -7,7 +7,7 @@ compute:
   platform:
     gcp:
       type: n2-standard-4
-  replicas: 2
+  replicas: 3
 controlPlane:
   architecture: amd64
   hyperthreading: Enabled

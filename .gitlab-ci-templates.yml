@@ -94,6 +94,12 @@
     CLEANUP: "no"
   script:
   - ls -l .build || true
+  - &vars_on_dev_gitlab_org |
+      if [ "$CI_SERVER_HOST" = "dev.gitlab.org" ] && [ "$CI_PROJECT_PATH" = "gitlab/cloud-native/gitlab-operator" ]
+      then
+        export REGISTRY_AUTH_SECRET="dev-registry-pull-secret"
+        export REGISTRY_AUTH_SECRET_NS="default"
+      fi
   - ./scripts/test.sh build_kustomized
   artifacts:
     paths:
@@ -117,6 +123,7 @@
   script:
   - ls -l .build || true
   - ls -l .install || true
+  - *vars_on_dev_gitlab_org
   - ./scripts/test.sh deploy_kustomized
   - echo "ROOT_PASSWORD=$(kubectl -n $TESTS_NAMESPACE get secret gitlab-gitlab-initial-root-password -ojsonpath='{.data.password}' | base64 --decode ; echo)" >> review.env
   - echo "GITLAB_VERSION=$(kubectl -n $TESTS_NAMESPACE exec -i $(kubectl -n $TESTS_NAMESPACE get pods | grep sidekiq | awk '{print $1}') -c sidekiq -- cat /srv/gitlab/VERSION)" >> review.env

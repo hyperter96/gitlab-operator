@@ -129,7 +129,7 @@ delete_operator: manifests kustomize .build/operator.yaml
 # Deploy test GitLab custom resource to cluster
 build_test_cr: .build/test_cr.yaml
 
-.build/test_cr.yaml: $(TEST_CR_FILES)
+.build/test_cr.yaml: .build $(TEST_CR_FILES)
 	cd config/test && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	$(KUSTOMIZE) build config/test \
 		| sed "s/CHART_VERSION/${CHART_VERSION}/g" \

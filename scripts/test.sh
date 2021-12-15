@@ -9,6 +9,15 @@ DOMAIN="${DOMAIN:-example.com}"
 DEBUG_CLEANUP="${DEBUG_CLEANUP:-off}"
 KUBECTL_WAIT_TIMEOUT_SECONDS=${KUBECTL_WAIT_TIMEOUT_SECONDS:-"600s"}
 
+REGISTRY_AUTH_SECRET_NS=${REGISTRY_AUTH_SECRET_NS:-""}
+REGISTRY_AUTH_SECRET=${REGISTRY_AUTH_SECRET:-""}
+
+# When defined - skip cleanup at the end of script run
+NO_TRAP=${NO_TRAP:-""}
+
+# Command for `yq`, expected to be https://github.com/mikefarah/yq
+YQ=${YQ:-"yq"}
+
 export IMG TAG NAMESPACE=${TESTS_NAMESPACE}
 PLATFORM="${PLATFORM:-kubernetes}"
 
@@ -29,7 +38,7 @@ finish() {
     echo 'Skipping cleanup'
   fi
 }
-trap finish EXIT
+[ -z "${NO_TRAP}" ] && trap finish EXIT
 
 main() {
   [ "$CLEANUP" = "only" ] && { cleanup; exit 0; }
@@ -73,8 +82,21 @@ deploy_kustomized(){
   verify_gitlab_is_running
 }
 
+_repurpose_cr(){
+  # Strip all the metadata k8s adds to resource
+  # upon creation and make resource more "generic"
+  ${YQ} eval "del(.metadata.namespace,.metadata.creationTimestamp,.metadata.resourceVersion,.metadata.selfLink,.metadata.uid,.metadata.managedFields)" $@
+}
+
 create_namespace() {
   kubectl get namespace ${TESTS_NAMESPACE} > /dev/null 2>&1 || kubectl create namespace ${TESTS_NAMESPACE}
+  if [ -n "${REGISTRY_AUTH_SECRET}" ] && [ -n "${REGISTRY_AUTH_SECRET_NS}" ]
+  then
+    kubectl get secret ${REGISTRY_AUTH_SECRET} --namespace=${REGISTRY_AUTH_SECRET_NS} -o yaml \
+      | _repurpose_cr - \
+      | sed -e "s/namespace: ${REGISTRY_AUTH_SECRET_NS}/namespace: ${TESTS_NAMESPACE}/" \
+      | kubectl apply --namespace=${TESTS_NAMESPACE} -f -
+  fi
 }
 
 install_crds() {
@@ -82,6 +104,7 @@ install_crds() {
   echo 'Installing operator CRDs'
   make install_crds
 }
+
 
 create_kustomization() {
   # create kustomization infrastructure
@@ -95,12 +118,22 @@ create_kustomization() {
 
   (
     cd .build/kustomize/generic
+    if [ -n "${REGISTRY_AUTH_SECRET}" ]
+    then
+      ${YQ} eval -i ".spec.template.spec.imagePullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\"" patches/dev-pullSecret.yaml
+      kustomize edit add patch --kind Deployment --path patches/dev-pullSecret.yaml
+    fi
     kustomize edit set image ${IMG}:${TAG}
     kustomize edit set namesuffix -- "-${TESTS_NAMESPACE}"
     kustomize edit set namespace "${TESTS_NAMESPACE}"
   )
   (
     cd .build/kustomize/openshift
+    if [ -n "${REGISTRY_AUTH_SECRET}" ]
+    then
+      ${YQ} eval -i ".spec.template.spec.imagePullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\"" patches/dev-pullSecret.yaml
+      kustomize edit add patch --kind Deployment --path patches/dev-pullSecret.yaml
+    fi
     kustomize edit set image ${IMG}:${TAG}
     kustomize edit set namesuffix -- "-${TESTS_NAMESPACE}"
     kustomize edit set namespace "${TESTS_NAMESPACE}"
@@ -168,7 +201,11 @@ build_gitlab_custom_resource() {
   echo 'Building GitLab custom resource manifest'
   make build_test_cr
   set -x
-  cp .build/test_cr.yaml ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  YQ_CMD="."
+  [ -n "${REGISTRY_AUTH_SECRET}" ] && \
+    kubectl get secret --namespace="${TESTS_NAMESPACE}" "${REGISTRY_AUTH_SECRET}" && \
+    YQ_CMD=".spec.chart.values.global.image.pullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\""
+  ${YQ} eval "${YQ_CMD}" .build/test_cr.yaml > ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
   set +x
 }
 
@@ -184,7 +221,7 @@ install_gitlab_custom_resource() {
 copy_certificate() {
   echo 'Copying certificate to namespace'
   kubectl get secret -n default gitlab-ci-tls -o yaml \
-    | yq eval 'del(.metadata.["namespace","resourceVersion","uid","annotations","creationTimestamp","selfLink","managedFields"])' - \
+    | ${YQ} eval 'del(.metadata.["namespace","resourceVersion","uid","annotations","creationTimestamp","selfLink","managedFields"])' - \
     | kubectl apply -n "$TESTS_NAMESPACE" -f -
 }
 

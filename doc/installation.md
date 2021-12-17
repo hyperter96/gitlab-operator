@@ -19,13 +19,13 @@ If using OpenShift, these steps normally are handled by OLM (the Operator Lifecy
 
 To create a traditional Kubernetes cluster, consider using [official tooling](https://kubernetes.io/docs/tasks/tools/) or your preferred method of installation.
 
-GitLab Operator requires Kubernetes 1.19 or newer.
+GitLab Operator supports Kubernetes 1.19 through 1.21. Support for Kubernetes 1.22 is under active development - see [&6883](https://gitlab.com/groups/gitlab-org/-/epics/6883) for more information.
 
 #### OpenShift
 
 To create an OpenShift cluster, see the [OpenShift cluster setup docs](openshift-cluster-setup.md) for an example of how to create a _development environment_.
 
-GitLab Operator requires OpenShift 4.6 or newer.
+GitLab Operator supports OpenShift 4.6 through 4.8. Support for Kubernetes 1.22 is under active development - see [&6883](https://gitlab.com/groups/gitlab-org/-/epics/6883) for more information.
 
 ### Ingress controller
 

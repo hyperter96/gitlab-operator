@@ -14,6 +14,9 @@ resources:
 - nginx_controller_service_account.yaml
 - nginx_controller_role.yaml
 - nginx_controller_role_binding.yaml
+- nginx_controller_clusterrole.yaml
+- nginx_controller_clusterrole_binding.yaml
+- nginx_ingressclass.yaml
 
 configurations:
 - kustomizeconfig.yaml

@@ -9,7 +9,6 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -92,9 +91,6 @@ var HorizontalPodAutoscalerSelector = func(o runtime.Object) bool {
 // IngressSelector is an ObjectSelector that selects Ingress objects.
 var IngressSelector = func(o runtime.Object) bool {
 	_, ok := o.(*networkingv1.Ingress)
-	if !ok {
-		_, ok = o.(*networkingv1beta1.Ingress)
-	}
 	return ok
 }
 

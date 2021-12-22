@@ -1,27 +1,27 @@
 ---
-# Source: gitlab/charts/nginx-ingress/templates/controller-role.yaml
+# Source: gitlab/charts/nginx-ingress/templates/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: nginx-ingress
 rules:
   - apiGroups:
       - ""
     resources:
-      - namespaces
+      - configmaps
+      - endpoints
+      - nodes
+      - pods
+      - secrets
     verbs:
-      - get
+      - list
+      - watch
   - apiGroups:
       - ""
     resources:
-      - configmaps
-      - pods
-      - secrets
-      - endpoints
+      - nodes
     verbs:
       - get
-      - list
-      - watch
   - apiGroups:
       - ""
     resources:
@@ -39,6 +39,13 @@ rules:
       - list
       - watch
   - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+  - apiGroups:
       - networking.k8s.io
     resources:
       - ingresses/status
@@ -52,27 +59,3 @@ rules:
       - get
       - list
       - watch
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    # Only needs access to one ConfigMap, but Kustomize struggles with
-    # complex substitution.
-    # resourceNames:
-    #   - ingress-controller-leader-$releaseName-nginx
-    verbs:
-      - get
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - create
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - patch

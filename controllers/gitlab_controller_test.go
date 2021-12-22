@@ -668,7 +668,8 @@ global:
 			releaseName := "nginx-disabled"
 			controllerServiceName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
 			controllerDeploymentName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
-			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-default-backend", releaseName, gitlabctl.NGINXComponentName)
+			defaultBackendComponentName := gitlabctl.NGINXDefaultBackendComponentName(gitlabctl.GetChartVersion())
+			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-%s", releaseName, gitlabctl.NGINXComponentName, defaultBackendComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := helm.EmptyValues()
@@ -702,7 +703,8 @@ global:
 			releaseName := "nginx-enabled"
 			controllerServiceName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
 			controllerDeploymentName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
-			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-default-backend", releaseName, gitlabctl.NGINXComponentName)
+			defaultBackendComponentName := gitlabctl.NGINXDefaultBackendComponentName(gitlabctl.GetChartVersion())
+			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-%s", releaseName, gitlabctl.NGINXComponentName, defaultBackendComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			BeforeEach(func() {

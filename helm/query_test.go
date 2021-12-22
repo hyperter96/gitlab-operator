@@ -32,7 +32,7 @@ var _ = Describe("Query", func() {
 	It("must return empty list for a non-existent kind specifiers", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ObjectsByKind("Ingress.v1.networking.k8s.io")).To(BeEmpty())
+		Expect(template.Query().ObjectsByKind("Ingress.v1beta1.networking.k8s.io")).To(BeEmpty())
 	})
 
 	It("must return the same objects with different equivalent kind specifiers", func() {
@@ -40,10 +40,8 @@ var _ = Describe("Query", func() {
 
 		list1 := template.Query().ObjectsByKind("Ingress")
 		list2 := template.Query().ObjectsByKind("Ingress.networking.k8s.io")
-		list3 := template.Query().ObjectsByKind("Ingress.v1beta1.networking.k8s.io")
 
 		Expect(list1).To(Equal(list2))
-		Expect(list2).To(Equal(list3))
 	})
 
 	It("must return the same object that matches the kind specifier and has the specified name", func() {

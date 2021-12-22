@@ -225,13 +225,12 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *networkingv1.Ingress {
 	}
 
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
-	annotations := map[string]string{
-		"kubernetes.io/ingress.class":                         ingressClass,
-		"kubernetes.io/ingress.provider":                      "nginx",
-		"nginx.ingress.kubernetes.io/proxy-body-size":         "0",
-		"nginx.ingress.kubernetes.io/proxy-buffering":         "off",
-		"nginx.ingress.kubernetes.io/proxy-read-timeout":      "900",
-		"nginx.ingress.kubernetes.io/proxy-request-buffering": "off",
+	annotations := make(map[string]string)
+
+	if provider, _ := gitlab.GetStringValue(adapter.Values(), "global.ingress.provider", "nginx"); provider == "nginx" {
+		for k, v := range gitlab.NGINXAnnotations() {
+			annotations[k] = v
+		}
 	}
 
 	configureCertmanager := CertManagerEnabled(adapter)
@@ -270,6 +269,7 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *networkingv1.Ingress {
 			Annotations: annotations,
 		},
 		Spec: networkingv1.IngressSpec{
+			IngressClassName: &ingressClass,
 			Rules: []networkingv1.IngressRule{
 				{
 					Host: url,

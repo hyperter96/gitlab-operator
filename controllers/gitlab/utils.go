@@ -75,6 +75,22 @@ func ToolboxComponentName(chartVersion string) string {
 	return "task-runner"
 }
 
+// NGINXDefaultBackendComponentName returns the component name for NGINXDefaultBackend depending on the Chart version.
+// If the Chart version is >= 5.6.0, then it returns "defaultbackend".
+// If the Chart version is < 5.6.0, then it returns "default-backend".
+// When the list of supported Chart versions are all 5.6.0 or newer, this function
+// can be removed and we can use a constant `NGINXDefaultBackendComponentName = "defaultbackend"`.
+func NGINXDefaultBackendComponentName(chartVersion string) string {
+	versionWithNameChange, _ := semver.NewConstraint(">= 5.6.0")
+	currentVersion, _ := semver.NewVersion(chartVersion)
+
+	if versionWithNameChange.Check(currentVersion) {
+		return "defaultbackend"
+	}
+
+	return "default-backend"
+}
+
 func updateCommonLabels(releaseName, componentName string, labels map[string]string) {
 	labels["app.kubernetes.io/name"] = releaseName
 	labels["app.kubernetes.io/instance"] = fmt.Sprintf("%s-%s", releaseName, componentName)

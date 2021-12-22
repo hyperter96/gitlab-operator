@@ -28,6 +28,9 @@ func NGINXConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 		"app": NGINXComponentName,
 	})
 
+	// Namespaces are properly set on NGINX objects in Chart version 5.6.0.
+	// When all of Operator's supported CHART_VERSIONS are at or above 5.6.0,
+	// we can remove this override.
 	for _, cm := range result {
 		cm.SetNamespace(adapter.Namespace())
 	}
@@ -46,6 +49,9 @@ func NGINXServices(adapter CustomResourceAdapter) []*corev1.Service {
 		"app": NGINXComponentName,
 	})
 
+	// Namespaces are properly set on NGINX objects in Chart version 5.6.0.
+	// When all of Operator's supported CHART_VERSIONS are at or above 5.6.0,
+	// we can remove this override.
 	for _, svc := range result {
 		svc.SetNamespace(adapter.Namespace())
 	}
@@ -64,9 +70,22 @@ func NGINXDeployments(adapter CustomResourceAdapter) []*appsv1.Deployment {
 		"app": NGINXComponentName,
 	})
 
+	// Namespaces are properly set on NGINX objects in Chart version 5.6.0.
+	// When all of Operator's supported CHART_VERSIONS are at or above 5.6.0,
+	// we can remove this override.
 	for _, dep := range result {
 		dep.SetNamespace(adapter.Namespace())
 	}
 
 	return result
+}
+
+// NGINXAnnotations returns the annotations for Ingress objects.
+func NGINXAnnotations() map[string]string {
+	return map[string]string{
+		"nginx.ingress.kubernetes.io/proxy-body-size":         "0",
+		"nginx.ingress.kubernetes.io/proxy-buffering":         "off",
+		"nginx.ingress.kubernetes.io/proxy-read-timeout":      "900",
+		"nginx.ingress.kubernetes.io/proxy-request-buffering": "off",
+	}
 }

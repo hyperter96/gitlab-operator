@@ -159,6 +159,7 @@ global:
   image:
     pullPolicy: IfNotPresent
   ingress:
+    apiVersion: networking.k8s.io/v1
     annotations:
       $GlobalIngressAnnotations
   serviceAccount:
@@ -194,6 +195,9 @@ nginx-ingress:
     create: false
   serviceAccount:
     name: $NGINXServiceAccount
+  controller:
+    service:
+      loadBalancerIP: $GlobalHostsExternalIP
   defaultBackend:
     serviceAccount:
       name: $AppServiceAccount
@@ -313,6 +317,8 @@ func (a *populatingAdapter) populateValues() {
 		globalIngressAnnotations = fmt.Sprintf("%s\n      %s", issuerAnnotation, acmeAnnotation)
 	}
 
+	globalHostsExternalIP, _ := GetStringValue(a.Values(), "global.hosts.externalIP", "")
+
 	valuesToUse := strings.NewReplacer(
 		"$ReleaseName", a.ReleaseName(),
 		"$LocalUser", settings.LocalUser,
@@ -321,6 +327,7 @@ func (a *populatingAdapter) populateValues() {
 		"$ToolboxConnectionSecretName", settings.ToolboxConnectionSecretName,
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
 		"$NGINXServiceAccount", settings.NGINXServiceAccount,
+		"$GlobalHostsExternalIP", globalHostsExternalIP,
 		"$ToolboxComponentName", ToolboxComponentName(a.ChartVersion()),
 	).Replace(defaultValues)
 

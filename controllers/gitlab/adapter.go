@@ -333,7 +333,7 @@ func (a *populatingAdapter) populateValues() {
 
 	_ = a.values.AddFromYAML([]byte(valuesToUse))
 
-	minioEnabled, _ := GetBoolValue(a.Values(), "global.minio.enabled", true)
+	minioEnabled, _ := GetBoolValue(a.Values(), globalMinioEnabled, true)
 	if minioEnabled {
 		minioRedirect, _ := GetBoolValue(a.values, "registry.minio.redirect", false)
 		valuesToUse := strings.NewReplacer(
@@ -343,13 +343,13 @@ func (a *populatingAdapter) populateValues() {
 		).Replace(defaultValuesMinio)
 
 		_ = a.values.AddFromYAML([]byte(valuesToUse))
-
-		// This is a workaround to account for the fact that our "internal" MinIO is actually
-		// implemented as external object storage, meaning `global.minio.enabled` must be
-		// set to `false`. If `internalMinioEnabled=true`, then our "internal" MinIO objects
-		// will be reconciled, and vice versa.
-		_ = a.values.SetValue(internalMinioEnabled, true)
 	}
+
+	// This is a workaround to account for the fact that our "internal" MinIO is actually
+	// implemented as external object storage, meaning `global.minio.enabled` must be
+	// set to `false`. If `internalMinioEnabled=true`, then our "internal" MinIO objects
+	// will be reconciled, and vice versa.
+	_ = a.values.SetValue(internalMinioEnabled, minioEnabled)
 
 	email, err := GetStringValue(a.Values(), "certmanager-issuer.email")
 	if err != nil || email == "" {

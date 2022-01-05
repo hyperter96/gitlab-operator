@@ -1,6 +1,7 @@
 package gitlab
 
 const (
+	globalMinioEnabled   = "global.minio.enabled"
 	internalMinioEnabled = "internalMinioEnabled"
 )
 

@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	gitlabExporterEnabled  = "gitlab.exporter.enabled"
+	gitlabExporterEnabled  = "gitlab.gitlab-exporter.enabled"
 	exporterEnabledDefault = true
 )
 

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"os"
 	"strings"
 	"time"
 
@@ -42,30 +41,6 @@ func Label(resource, component, resourceType string) map[string]string {
 // ResourceQuantity returns quantity requested for resource.
 func ResourceQuantity(request string) resource.Quantity {
 	return resource.MustParse(request)
-}
-
-// IsGroupVersionSupported checks for API endpoint for given Group and Version.
-func IsGroupVersionSupported(group, version string) bool {
-	// For unit tests, we need to skip client creation.
-	if os.Getenv("USE_EXISTING_CLUSTER") == "false" {
-		return false
-	}
-
-	client, err := KubernetesConfig().NewKubernetesClient()
-	if err != nil {
-		fmt.Printf("Unable to acquire k8s client: %v", err)
-	}
-
-	groupVersion := schema.GroupVersion{
-		Group:   group,
-		Version: version,
-	}
-
-	if err := discovery.ServerSupportsVersion(client, groupVersion); err != nil {
-		return false
-	}
-
-	return true
 }
 
 // IsOpenshift check if API has the API route.openshift.io/v1,

@@ -17,7 +17,7 @@ two merge requests:
 - Operator: [doc/installation.md](../../installation.md)
 - Charts: [doc/installation/operator.md](https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/doc/installation/operator.md)
 
-Issue [#418](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/418)
+Issue [#436](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/436)
 tracks work toward automating this process.
 
 ## Red Hat Certification

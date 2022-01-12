@@ -2,12 +2,14 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: orders.acme.cert-manager.io
+  annotations:
+    cert-manager.io/inject-ca-from-secret: 'cert-manager/cert-manager-webhook-ca'
   labels:
-    app: cert-manager
-    app.kubernetes.io/name: cert-manager
-    app.kubernetes.io/instance: cert-manager
-    app.kubernetes.io/managed-by: cert-manager
-    helm.sh/chart: cert-manager
+    app: 'cert-manager'
+    app.kubernetes.io/name: 'cert-manager'
+    app.kubernetes.io/instance: 'cert-manager'
+    # Generated labels
+    app.kubernetes.io/version: "v1.6.1"
 spec:
   group: acme.cert-manager.io
   names:
@@ -15,7 +17,30 @@ spec:
     listKind: OrderList
     plural: orders
     singular: order
+    categories:
+      - cert-manager
+      - cert-manager-acme
   scope: Namespaced
+  conversion:
+    # a Webhook strategy instruct API server to call an external webhook for any conversion between custom resources.
+    strategy: Webhook
+    # webhookClientConfig is required when strategy is `Webhook` and it configures the webhook endpoint to be called by API server.
+    webhook:
+      # We don't actually support `v1beta1` but is listed here as it is a
+      # required value for [Kubernetes v1.16](kubernetes/kubernetes#82023). The
+      # API server reads the supported versions in order, so _should always_
+      # attempt a `v1` request which is understood by the cert-manager webhook.
+      # Any `v1beta1` request will return an error and fail closed for that
+      # resource (the whole object request is rejected).
+      # When we no longer support v1.16 we can remove `v1beta1` from this list.
+      conversionReviewVersions: ["v1", "v1beta1"]
+      clientConfig:
+        #
+        service:
+          name: 'cert-manager-webhook'
+          namespace: "cert-manager"
+          path: /convert
+          #
   versions:
     - name: v1alpha2
       subresources:
@@ -172,7 +197,7 @@ spec:
                 url:
                   description: URL of the Order. This will initially be empty when the resource is first created. The Order controller will populate this field when the Order is first processed. This field will be immutable after it is initially set.
                   type: string
-      served: true
+      served: false
       storage: false
     - name: v1alpha3
       subresources:
@@ -329,7 +354,7 @@ spec:
                 url:
                   description: URL of the Order. This will initially be empty when the resource is first created. The Order controller will populate this field when the Order is first processed. This field will be immutable after it is initially set.
                   type: string
-      served: true
+      served: false
       storage: false
     - name: v1beta1
       subresources:
@@ -487,7 +512,7 @@ spec:
                 url:
                   description: URL of the Order. This will initially be empty when the resource is first created. The Order controller will populate this field when the Order is first processed. This field will be immutable after it is initially set.
                   type: string
-      served: true
+      served: false
       storage: false
     - name: v1
       subresources:
@@ -647,9 +672,3 @@ spec:
                   type: string
       served: true
       storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

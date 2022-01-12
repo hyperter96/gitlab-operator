@@ -3,8 +3,8 @@ package internal
 import (
 	"fmt"
 
-	acmev1alpha2 "github.com/jetstack/cert-manager/pkg/apis/acme/v1alpha2"
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	acmev1 "github.com/jetstack/cert-manager/pkg/apis/acme/v1"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 	certmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -26,7 +26,7 @@ func CertManagerEnabled(adapter gitlab.CustomResourceAdapter) bool {
 }
 
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource.
-func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.IssuerConfig {
+func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1.IssuerConfig {
 	if CertManagerEnabled(adapter) {
 		email, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.email")
 		if err != nil || email == "" {
@@ -43,8 +43,8 @@ func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.I
 			ingressClass = fmt.Sprintf("%s-nginx", adapter.ReleaseName())
 		}
 
-		return certmanagerv1alpha2.IssuerConfig{
-			ACME: &acmev1alpha2.ACMEIssuer{
+		return certmanagerv1.IssuerConfig{
+			ACME: &acmev1.ACMEIssuer{
 				Email:  email,
 				Server: server,
 				PrivateKey: certmetav1.SecretKeySelector{
@@ -52,11 +52,11 @@ func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.I
 						Name: fmt.Sprintf("%s-acme-key", adapter.ReleaseName()),
 					},
 				},
-				Solvers: []acmev1alpha2.ACMEChallengeSolver{
+				Solvers: []acmev1.ACMEChallengeSolver{
 					{
-						Selector: &acmev1alpha2.CertificateDNSNameSelector{},
-						HTTP01: &acmev1alpha2.ACMEChallengeSolverHTTP01{
-							Ingress: &acmev1alpha2.ACMEChallengeSolverHTTP01Ingress{
+						Selector: &acmev1.CertificateDNSNameSelector{},
+						HTTP01: &acmev1.ACMEChallengeSolverHTTP01{
+							Ingress: &acmev1.ACMEChallengeSolverHTTP01Ingress{
 								Class: &ingressClass,
 							},
 						},
@@ -66,22 +66,22 @@ func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1alpha2.I
 		}
 	}
 
-	return certmanagerv1alpha2.IssuerConfig{
-		SelfSigned: &certmanagerv1alpha2.SelfSignedIssuer{},
+	return certmanagerv1.IssuerConfig{
+		SelfSigned: &certmanagerv1.SelfSignedIssuer{},
 	}
 }
 
 // CertificateIssuer create a certificate generator.
-func CertificateIssuer(adapter gitlab.CustomResourceAdapter) *certmanagerv1alpha2.Issuer {
+func CertificateIssuer(adapter gitlab.CustomResourceAdapter) *certmanagerv1.Issuer {
 	labels := Label(adapter.ReleaseName(), "issuer", GitlabType)
 
-	issuer := &certmanagerv1alpha2.Issuer{
+	issuer := &certmanagerv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: adapter.Namespace(),
 			Labels:    labels,
 		},
-		Spec: certmanagerv1alpha2.IssuerSpec{
+		Spec: certmanagerv1.IssuerSpec{
 			IssuerConfig: GetIssuerConfig(adapter),
 		},
 	}

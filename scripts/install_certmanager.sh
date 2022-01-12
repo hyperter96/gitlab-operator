@@ -25,7 +25,7 @@ install_certmanager() {
   $HELM upgrade --install \
     cert-manager-helm jetstack/cert-manager \
     --namespace default \
-    --version v1.1.0 \
+    --version v1.6.1 \
     --values "scripts/manifests/cert-manager-values-$PLATFORM.yaml"
 
   sleep 10

@@ -27,7 +27,7 @@ webhooks:
     - gitlabs
   sideEffects: None
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: gitlab-selfsigned-issuer
@@ -36,7 +36,7 @@ spec:
   selfSigned: {}
 
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: gitlab-serving-cert

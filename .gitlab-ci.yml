@@ -31,6 +31,7 @@ stages:
   - test
   - publish
   - release
+  - certification
   - cluster_tests_approval
   - review
   - qa
@@ -415,6 +416,27 @@ stop_review_gke:
     action: stop
   needs:
     - build_review_gke
+
+
+certification_upload:
+  stage: certification
+  image: "registry.gitlab.com/gitlab-org/gitlab-omnibus-builder/ruby_docker:2.2.0"
+  services:
+    - docker:dind
+  rules:
+    - !reference [.if_release_tag]
+    - !reference [.if_redhat_certification]
+  retry: 1
+  allow_failure: true
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+    - apt-get -y update && apt-get -y install libgpgme11
+    - curl -o skopeo.deb -H "PRIVATE-TOKEN:${COM_OPERATOR_PROJECT_ACCESS_TOKEN}" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/skopeo/1.4.1/skopeo_1.4.1+ds1-1_amd64.deb"
+    - curl -o golang-github-containers-common.deb -H "PRIVATE-TOKEN:${COM_OPERATOR_PROJECT_ACCESS_TOKEN}" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/golang-github-containers-common/0.44.3/golang-github-containers-common_0.44.3+ds1-2_all.deb"
+    - curl -o golang-github-containers-image.deb -H "PRIVATE-TOKEN:${COM_OPERATOR_PROJECT_ACCESS_TOKEN}" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/generic/golang-github-containers-image/5.16.0/golang-github-containers-image_5.16.0-3_all.deb"
+    - dpkg -i golang-github-containers-image.deb && dpkg -i golang-github-containers-common.deb && dpkg -i skopeo.deb
+  script:
+    - ruby scripts/redhat_certification.rb "${CI_COMMIT_REF_SLUG}"
 
 build_manifest:
   stage: build

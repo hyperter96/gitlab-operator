@@ -64,6 +64,15 @@
   <<: *if_release_tag_on_dev
   when: manual
 
+.if_redhat_certification: &if_redhat_certification
+  if: '$REDHAT_CERTIFICATION == "true"'
+  #TODO at the moment publishing is broken due to changes in RH API
+  # so we'll let things fail until it is fixed
+  allow_failure: true
+
+variables:
+  REDHAT_PROJECT_JSON: '{"gitlab-operator":{"ospid":"ospid-a369d742-5890-45e9-a303-6926cbe8e171","pid":"5e96152f4b2cf9c97fb2cc26"}}'
+
 .cache:
   variables:
     GOPATH: "${CI_PROJECT_DIR}/.go"
@@ -76,7 +85,7 @@
 .create_review_template:
   extends: .cache
   stage: review
-  script: 
+  script:
     - echo "Creating deployment environment"
     - echo "TESTS_NAMESPACE=$TESTS_NAMESPACE" >> deploy_namespace.env
   artifacts:
@@ -176,7 +185,7 @@
   variables:
     DEBUG_CLEANUP: "yes"
     CLEANUP: "only"
-  script: 
+  script:
     - ls -l .build || true
     - ls -l .install || true
     - ./scripts/test.sh cleanup

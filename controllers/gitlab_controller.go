@@ -41,7 +41,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
@@ -357,11 +357,11 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 	}
 
-	if settings.IsGroupVersionSupported("cert-manager.io", "v1alpha2") {
-		r.Log.Info("Using cert-manager.io/v1alpha2")
+	if settings.IsGroupVersionSupported("cert-manager.io", "v1") {
+		r.Log.Info("Using cert-manager.io/v1")
 		builder.
-			Owns(&certmanagerv1alpha2.Issuer{}).
-			Owns(&certmanagerv1alpha2.Certificate{})
+			Owns(&certmanagerv1.Issuer{}).
+			Owns(&certmanagerv1.Certificate{})
 	}
 
 	return builder.Complete(r)

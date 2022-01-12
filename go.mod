@@ -7,7 +7,7 @@ require (
 	github.com/coreos/prometheus-operator v0.41.1
 	github.com/go-logr/logr v0.4.0
 	github.com/imdario/mergo v0.3.12
-	github.com/jetstack/cert-manager v0.15.2
+	github.com/jetstack/cert-manager v1.6.1
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.15.0
 	github.com/openshift/api v3.9.0+incompatible

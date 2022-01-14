@@ -46,13 +46,13 @@ func (r *GitLabReconciler) reconcilePostgresStatefulSet(ctx context.Context, ada
 
 func (r *GitLabReconciler) validateExternalPostgresConfiguration(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	// Ensure that the PostgreSQL password Secret was created.
-	pgSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.psql.password.secret")
+	pgSecretName := adapter.Values().GetString("global.psql.password.secret")
 	if err := r.ensureSecret(ctx, adapter, pgSecretName); err != nil {
 		return err
 	}
 
 	// If set, ensure that the PostgreSQL SSL Secret was created.
-	pgSecretNameSSL, _ := gitlabctl.GetStringValue(adapter.Values(), "global.psql.ssl.secret", "unset")
+	pgSecretNameSSL := adapter.Values().GetString("global.psql.ssl.secret", "unset")
 	if pgSecretNameSSL != "unset" {
 		if err := r.ensureSecret(ctx, adapter, pgSecretNameSSL); err != nil {
 			return err

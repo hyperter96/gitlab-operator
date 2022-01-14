@@ -15,8 +15,7 @@ const (
 
 // PagesEnabled returns `true` if enabled and `false` if not.
 func PagesEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), globalPagesEnabled, pagesEnabledDefault)
-	return enabled
+	return adapter.Values().GetBool(globalPagesEnabled, pagesEnabledDefault)
 }
 
 // PagesConfigMap returns the ConfigMap for the GitLab Pages component.

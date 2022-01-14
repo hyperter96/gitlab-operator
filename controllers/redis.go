@@ -48,14 +48,14 @@ func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapte
 }
 
 func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	defaultRedisSecretName, err := gitlabctl.GetStringValue(adapter.Values(), "global.redis.password.secret")
-	if err != nil || defaultRedisSecretName == "" {
+	defaultRedisSecretName := adapter.Values().GetString("global.redis.password.secret")
+	if defaultRedisSecretName == "" {
 		defaultRedisSecretName = fmt.Sprintf("%s-%s-secret", adapter.ReleaseName(), gitlabctl.RedisComponentName)
 	}
 
 	// If external Redis global password is enabled, ensure it was created.
 	if gitlabctl.RedisEnabled(adapter) {
-		redisSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.redis.password.secret", defaultRedisSecretName)
+		redisSecretName := adapter.Values().GetString("global.redis.password.secret", defaultRedisSecretName)
 		if err := r.ensureSecret(ctx, adapter, redisSecretName); err != nil {
 			return err
 		}
@@ -63,10 +63,10 @@ func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Contex
 
 	// If any of the sub-queues and configured, ensure relevant Secrets are created if enabled.
 	for _, subqueue := range gitlabctl.RedisSubqueues() {
-		if _, err := gitlabctl.GetStringValue(adapter.Values(), fmt.Sprintf("global.redis.%s.host", subqueue)); err == nil {
+		if host := adapter.Values().GetString(fmt.Sprintf("global.redis.%s.host", subqueue)); host != "" {
 			// Subqueue is configured. Ensure its password was created.
-			if passwordEnabled, _ := gitlabctl.GetBoolValue(adapter.Values(), fmt.Sprintf("global.redis.%s.password.enabled", subqueue), true); passwordEnabled {
-				subqueueSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), fmt.Sprintf("global.redis.%s.password.secret", subqueue), defaultRedisSecretName)
+			if passwordEnabled := adapter.Values().GetBool(fmt.Sprintf("global.redis.%s.password.enabled", subqueue), true); passwordEnabled {
+				subqueueSecretName := adapter.Values().GetString(fmt.Sprintf("global.redis.%s.password.secret", subqueue), defaultRedisSecretName)
 				if err := r.ensureSecret(ctx, adapter, subqueueSecretName); err != nil {
 					return err
 				}

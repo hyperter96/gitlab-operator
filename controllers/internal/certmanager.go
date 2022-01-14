@@ -20,7 +20,7 @@ const (
 
 // CertManager returns `true` if CertManager is enabled, and `false` if not.
 func CertManagerEnabled(adapter gitlab.CustomResourceAdapter) bool {
-	configureCertmanager, _ := gitlab.GetBoolValue(adapter.Values(), globalIngressConfigureCertmanager, configureCertmanagerDefault)
+	configureCertmanager := adapter.Values().GetBool(globalIngressConfigureCertmanager, configureCertmanagerDefault)
 
 	return configureCertmanager
 }
@@ -28,18 +28,18 @@ func CertManagerEnabled(adapter gitlab.CustomResourceAdapter) bool {
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource.
 func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1.IssuerConfig {
 	if CertManagerEnabled(adapter) {
-		email, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.email")
-		if err != nil || email == "" {
+		email := adapter.Values().GetString("certmanager-issuer.email")
+		if email == "" {
 			email = specCertIssuerEmail
 		}
 
-		server, err := gitlab.GetStringValue(adapter.Values(), "certmanager-issuer.server")
-		if err != nil || server == "" {
+		server := adapter.Values().GetString("certmanager-issuer.server")
+		if server == "" {
 			server = specCertIssuerServer
 		}
 
-		ingressClass, err := gitlab.GetStringValue(adapter.Values(), "global.ingress.class")
-		if err != nil || ingressClass == "" {
+		ingressClass := adapter.Values().GetString("global.ingress.class")
+		if ingressClass == "" {
 			ingressClass = fmt.Sprintf("%s-nginx", adapter.ReleaseName())
 		}
 
@@ -102,7 +102,7 @@ type EndpointTLS struct {
 func RequiresCertManagerCertificate(adapter gitlab.CustomResourceAdapter) EndpointTLS {
 	// This implies that Operator can only consume wildcard certificate and individual certificate
 	// per service will be ignored.
-	tlsSecretName, _ := gitlab.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+	tlsSecretName := adapter.Values().GetString("global.ingress.tls.secretName")
 
 	return EndpointTLS{
 		gitlab:   tlsSecretName == "",

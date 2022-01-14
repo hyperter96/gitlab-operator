@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -25,10 +26,10 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	currentChartVersion := GetChartVersion()
 	os.Setenv("CHART_VERSION", chartVersions[0])
-	mockGitLab1 := CreateMockGitLab(releaseName, namespace, helm.EmptyValues())
+	mockGitLab1 := CreateMockGitLab(releaseName, namespace, resource.Values{})
 
 	os.Setenv("CHART_VERSION", chartVersions[1])
-	mockGitLab2 := CreateMockGitLab(releaseName, namespace, helm.EmptyValues())
+	mockGitLab2 := CreateMockGitLab(releaseName, namespace, resource.Values{})
 
 	os.Setenv("CHART_VERSION", currentChartVersion)
 
@@ -75,7 +76,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	Context("GitLab Pages", func() {
 		When("Pages is enabled", func() {
-			chartValues := helm.EmptyValues()
+			chartValues := resource.Values{}
 			_ = chartValues.SetValue(globalPagesEnabled, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
@@ -103,7 +104,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		})
 
 		When("Pages is disabled", func() {
-			chartValues := helm.EmptyValues()
+			chartValues := resource.Values{}
 			_ = chartValues.SetValue(globalPagesEnabled, false)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
@@ -164,15 +165,15 @@ func dumpTemplateToFile(template helm.Template, filename string) error { //nolin
 }
 
 // dumpHelmValues() will output the current values that Helm is using.
-func dumpHelmValues(values helm.Values) string { //nolint:golint,unused
-	output, _ := json.MarshalIndent(values.AsMap(), "", "    ")
+func dumpHelmValues(values resource.Values) string { //nolint:golint,unused
+	output, _ := json.MarshalIndent(values, "", "    ")
 	return string(output)
 }
 
 // dumpHelmValuesToFile() will output the current values to a file.
 // Note: the file is written to where the test runs NOT from where the
 //       tests were run from.
-func dumpHelmValuesToFile(values helm.Values, filename string) error { //nolint:golint,deadcode,unused
+func dumpHelmValuesToFile(values resource.Values, filename string) error { //nolint:golint,deadcode,unused
 	fh, err := os.Create(filename)
 	if err != nil {
 		return err

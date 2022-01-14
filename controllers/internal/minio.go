@@ -219,15 +219,15 @@ func MinioScriptConfigMap(adapter gitlab.CustomResourceAdapter) *corev1.ConfigMa
 
 // MinioIngress returns the Ingress that exposes MinIO.
 func MinioIngress(adapter gitlab.CustomResourceAdapter) *networkingv1.Ingress {
-	ingressClass, err := gitlab.GetStringValue(adapter.Values(), "global.ingress.class")
-	if err != nil || ingressClass == "" {
+	ingressClass := adapter.Values().GetString("global.ingress.class")
+	if ingressClass == "" {
 		ingressClass = fmt.Sprintf("%s-nginx", adapter.ReleaseName())
 	}
 
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 	annotations := make(map[string]string)
 
-	if provider, _ := gitlab.GetStringValue(adapter.Values(), "global.ingress.provider", "nginx"); provider == "nginx" {
+	if provider := adapter.Values().GetString("global.ingress.provider", "nginx"); provider == "nginx" {
 		for k, v := range gitlab.NGINXAnnotations() {
 			annotations[k] = v
 		}
@@ -240,8 +240,8 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *networkingv1.Ingress {
 		annotations["acme.cert-manager.io/http01-edit-in-place"] = "true"
 	}
 
-	minioIngressTLSSecretName, _ := gitlab.GetStringValue(adapter.Values(), "minio.ingress.tls.secretName")
-	globalIngressTLSSecretName, _ := gitlab.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+	minioIngressTLSSecretName := adapter.Values().GetString("minio.ingress.tls.secretName")
+	globalIngressTLSSecretName := adapter.Values().GetString("global.ingress.tls.secretName")
 	wildcardIngressTLSSecretName := fmt.Sprintf("%s-wildcard-tls", adapter.ReleaseName())
 	certmanagerIngressTLSSecretName := fmt.Sprintf("%s-minio-tls", adapter.ReleaseName())
 
@@ -367,7 +367,7 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 	data := minioSecret.Data
 
 	minioEndpoint := options.ObjectStore.Endpoint
-	minioRedirect, _ := gitlab.GetBoolValue(adapter.Values(), "registry.minio.redirect", false)
+	minioRedirect := adapter.Values().GetBool("registry.minio.redirect", false)
 
 	if minioRedirect {
 		// We can always assume it is HTTPS.
@@ -437,13 +437,13 @@ website_endpoint = https://%s
 }
 
 func getMinioURL(adapter gitlab.CustomResourceAdapter) string {
-	name, _ := gitlab.GetStringValue(adapter.Values(), "global.hosts.minio.name")
+	name := adapter.Values().GetString("global.hosts.minio.name")
 	if name != "" {
 		return name
 	}
 
-	hostSuffix, _ := gitlab.GetStringValue(adapter.Values(), "global.hosts.hostSuffix")
-	domain, _ := gitlab.GetStringValue(adapter.Values(), "global.hosts.domain", "example.com")
+	hostSuffix := adapter.Values().GetString("global.hosts.hostSuffix")
+	domain := adapter.Values().GetString("global.hosts.domain", "example.com")
 
 	if hostSuffix != "" {
 		return fmt.Sprintf("minio-%s.%s", hostSuffix, domain)

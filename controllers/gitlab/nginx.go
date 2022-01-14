@@ -12,9 +12,7 @@ const (
 
 // NGINXEnabled returns `true` if NGINX is enabled and `false` if not.
 func NGINXEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), nginxEnabled, nginxEnabledDefault)
-
-	return enabled
+	return adapter.Values().GetBool(nginxEnabled, nginxEnabledDefault)
 }
 
 // NGINXConfigMaps returns the ConfigMaps of the NGINX component.

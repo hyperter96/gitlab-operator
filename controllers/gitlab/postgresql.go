@@ -14,9 +14,7 @@ const (
 
 // PostgresEnabled returns `true` if `PostgreSQL` is enabled, and `false` if not.
 func PostgresEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), postgresInstall, postgresEnabledDefault)
-
-	return enabled
+	return adapter.Values().GetBool(postgresInstall, postgresEnabledDefault)
 }
 
 // PostgresServices returns the Services of the Postgres component.

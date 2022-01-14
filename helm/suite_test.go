@@ -6,6 +6,8 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
 func loadTemplate() (Template, error) {
@@ -19,8 +21,8 @@ func loadTemplate() (Template, error) {
 		valuesPath = "testdata/chart/values.yaml"
 	}
 
-	values := EmptyValues()
-	_ = values.AddFromFile(valuesPath)
+	values := resource.Values{}
+	_ = values.AddFromYAMLFile(valuesPath)
 
 	template, err := NewBuilder(chartPath).Render(values)
 

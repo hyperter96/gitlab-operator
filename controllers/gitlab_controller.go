@@ -139,7 +139,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	configureCertmanager := internal.CertManagerEnabled(adapter)
-	tlsSecretName, _ := gitlabctl.GetStringValue(adapter.Values(), "global.ingress.tls.secretName")
+	tlsSecretName := adapter.Values().GetString("global.ingress.tls.secretName")
 
 	if !configureCertmanager && tlsSecretName == "" {
 		if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {

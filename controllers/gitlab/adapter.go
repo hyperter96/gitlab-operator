@@ -8,7 +8,7 @@ import (
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
 // CustomResourceAdapter is a wrapper for GitLab Custom Resource. It provides a convenient interface
@@ -55,7 +55,7 @@ type CustomResourceAdapter interface {
 	IsUpgrade() bool
 
 	// Values returns the set of values that will be used the render GitLab chart.
-	Values() helm.Values
+	Values() resource.Values
 }
 
 var defaultValues string = `
@@ -243,7 +243,7 @@ registry:
 func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapter {
 	result := &populatingAdapter{
 		resource: gitlab,
-		values:   helm.FromMap(gitlab.Spec.Chart.Values.Object),
+		values:   gitlab.Spec.Chart.Values.Object,
 	}
 	result.populateValues()
 	result.hashValues()
@@ -253,7 +253,7 @@ func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapte
 
 type populatingAdapter struct {
 	resource  *gitlabv1beta1.GitLab
-	values    helm.Values
+	values    resource.Values
 	hash      string
 	reference string
 }
@@ -300,14 +300,14 @@ func (a *populatingAdapter) ReleaseName() string {
 	return a.resource.Name
 }
 
-func (a *populatingAdapter) Values() helm.Values {
+func (a *populatingAdapter) Values() resource.Values {
 	return a.values
 }
 
 func (a *populatingAdapter) populateValues() {
 	a.reference = fmt.Sprintf("%s.%s", a.resource.Name, a.resource.Namespace)
 
-	configureCertmanager, _ := GetBoolValue(a.Values(), "global.ingress.configureCertmanager", true)
+	configureCertmanager := a.values.GetBool("global.ingress.configureCertmanager", true)
 
 	globalIngressAnnotations := "{}"
 
@@ -317,7 +317,7 @@ func (a *populatingAdapter) populateValues() {
 		globalIngressAnnotations = fmt.Sprintf("%s\n      %s", issuerAnnotation, acmeAnnotation)
 	}
 
-	globalHostsExternalIP, _ := GetStringValue(a.Values(), "global.hosts.externalIP", "")
+	globalHostsExternalIP := a.values.GetString("global.hosts.externalIP")
 
 	valuesToUse := strings.NewReplacer(
 		"$ReleaseName", a.ReleaseName(),
@@ -331,18 +331,18 @@ func (a *populatingAdapter) populateValues() {
 		"$ToolboxComponentName", ToolboxComponentName(a.ChartVersion()),
 	).Replace(defaultValues)
 
-	_ = a.values.AddFromYAML([]byte(valuesToUse))
+	_ = a.values.AddFromYAML(valuesToUse)
 
-	minioEnabled, _ := GetBoolValue(a.Values(), globalMinioEnabled, true)
+	minioEnabled := a.values.GetBool(globalMinioEnabled, true)
 	if minioEnabled {
-		minioRedirect, _ := GetBoolValue(a.values, "registry.minio.redirect", false)
+		minioRedirect := a.values.GetBool("registry.minio.redirect")
 		valuesToUse := strings.NewReplacer(
 			"$AppConfigConnectionSecretName", settings.AppConfigConnectionSecretName,
 			"$RegistryConnectionSecretName", settings.RegistryConnectionSecretName,
 			"$RegistryMinioRedirect", strconv.FormatBool(!minioRedirect),
 		).Replace(defaultValuesMinio)
 
-		_ = a.values.AddFromYAML([]byte(valuesToUse))
+		_ = a.values.AddFromYAML(valuesToUse)
 	}
 
 	// This is a workaround to account for the fact that our "internal" MinIO is actually
@@ -351,8 +351,8 @@ func (a *populatingAdapter) populateValues() {
 	// will be reconciled, and vice versa.
 	_ = a.values.SetValue(internalMinioEnabled, minioEnabled)
 
-	email, err := GetStringValue(a.Values(), "certmanager-issuer.email")
-	if err != nil || email == "" {
+	email := a.values.GetString("certmanager-issuer.email")
+	if email == "" {
 		_ = a.values.SetValue("certmanager-issuer.email", "admin@example.com")
 	}
 }
@@ -363,7 +363,7 @@ func (a *populatingAdapter) hashValues() {
 		[]byte(a.Namespace()),
 		[]byte(a.ReleaseName()),
 		[]byte(a.ChartVersion()),
-		[]byte(fmt.Sprintf("%s", a.Values())),
+		[]byte(fmt.Sprintf("%s", a.values)),
 	}
 	valuesHashed := 0
 

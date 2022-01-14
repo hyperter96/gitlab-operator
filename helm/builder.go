@@ -10,6 +10,7 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
 // Builder provides an interface to build and render a Helm template.
@@ -45,7 +46,7 @@ type Builder interface {
 	EnableHooks()
 
 	// Render renders the template with the provided values and parses the objects.
-	Render(values Values) (Template, error)
+	Render(values resource.Values) (Template, error)
 }
 
 // NewBuilder creates a new builder interface for Helm template.
@@ -127,7 +128,7 @@ func (b *defaultBuilder) newActionConfig() (*action.Configuration, error) {
 }
 
 // Render renders the template with the provided values and parses the objects.
-func (b *defaultBuilder) Render(values Values) (Template, error) {
+func (b *defaultBuilder) Render(values resource.Values) (Template, error) {
 	actionConfig, err := b.newActionConfig()
 	if err != nil {
 		return nil, err
@@ -154,7 +155,7 @@ func (b *defaultBuilder) Render(values Values) (Template, error) {
 		return nil, err
 	}
 
-	release, err := client.Run(chartRequested, values.AsMap())
+	release, err := client.Run(chartRequested, values)
 	if err != nil {
 		return nil, err
 	}

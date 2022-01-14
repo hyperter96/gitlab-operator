@@ -15,9 +15,7 @@ const (
 
 // RegistryEnabled returns `true` if the registry is enabled, and `false` if not.
 func RegistryEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), registryEnabled, registryEnabledDefault)
-
-	return enabled
+	return adapter.Values().GetBool(registryEnabled, registryEnabledDefault)
 }
 
 // RegistryService returns the Service of the Registry component.

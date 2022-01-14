@@ -14,9 +14,7 @@ const (
 
 // ExporterEnabled returns `true` if enabled and `false` if not.
 func ExporterEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), gitlabExporterEnabled, exporterEnabledDefault)
-
-	return enabled
+	return adapter.Values().GetBool(gitlabExporterEnabled, exporterEnabledDefault)
 }
 
 // ExporterService returns the Service for the GitLab Exporter component.

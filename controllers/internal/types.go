@@ -69,10 +69,10 @@ type ObjectStoreOptions struct {
 // and uses them to build configuration options used to deploy
 // the Gitlab instance.
 func SystemBuildOptions(adapter gitlab.CustomResourceAdapter) ConfigurationOptions {
-	objectStoreEnabled, _ := gitlab.GetBoolValue(adapter.Values(), "global.appConfig.object_store.enabled")
-	objectStoreHost, _ := gitlab.GetStringValue(adapter.Values(), "global.hosts.minio.name")
+	objectStoreEnabled := adapter.Values().GetBool("global.appConfig.object_store.enabled")
+	objectStoreHost := adapter.Values().GetString("global.hosts.minio.name")
 	// This implies that we only support global object-store config.
-	objectStoreSecret, _ := gitlab.GetStringValue(adapter.Values(), "global.appConfig.object_store.connection.secret")
+	objectStoreSecret := adapter.Values().GetString("global.appConfig.object_store.connection.secret")
 
 	options := ConfigurationOptions{
 		ObjectStore: ObjectStoreOptions{
@@ -81,7 +81,7 @@ func SystemBuildOptions(adapter gitlab.CustomResourceAdapter) ConfigurationOptio
 		},
 	}
 
-	objectStoreCapacity, _ := gitlab.GetStringValue(adapter.Values(), "minio.persistence.size")
+	objectStoreCapacity := adapter.Values().GetString("minio.persistence.size")
 	if objectStoreCapacity == "" {
 		objectStoreCapacity = "5Gi"
 	}

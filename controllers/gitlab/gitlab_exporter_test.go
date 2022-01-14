@@ -6,20 +6,20 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
 var _ = Describe("Enabling or disabling GitLab Exporter", func() {
-	chartValuesDefault := helm.EmptyValues()
+	chartValuesDefault := resource.Values{}
 
-	chartValuesEnabled := helm.EmptyValues()
+	chartValuesEnabled := resource.Values{}
 	_ = chartValuesEnabled.SetValue(gitlabExporterEnabled, true)
 
-	chartValuesDisabled := helm.EmptyValues()
+	chartValuesDisabled := resource.Values{}
 	_ = chartValuesDisabled.SetValue(gitlabExporterEnabled, false)
 
 	tests := map[string]struct {
-		chartValues helm.Values
+		chartValues resource.Values
 		expected    bool
 	}{
 		"enabled (default)": {chartValues: chartValuesDefault, expected: true},

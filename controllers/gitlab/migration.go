@@ -20,9 +20,7 @@ const (
 
 // MigrationsEnabled returns `true` if enabled and `false` if not.
 func MigrationsEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), gitlabMigrationsEnabled, migrationsEnabledDefault)
-
-	return enabled
+	return adapter.Values().GetBool(gitlabMigrationsEnabled, migrationsEnabledDefault)
 }
 
 // MigrationsConfigMap returns the ConfigMaps of Migrations component.

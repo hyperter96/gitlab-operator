@@ -18,17 +18,15 @@ const (
 // ToolboxEnabled returns `true` if Toolbox is enabled, and `false` if not.
 func ToolboxEnabled(adapter CustomResourceAdapter) bool {
 	key := fmt.Sprintf(gitlabToolboxEnabled, ToolboxComponentName(adapter.ChartVersion()))
-	enabled, _ := GetBoolValue(adapter.Values(), key, toolboxEnabledDefault)
 
-	return enabled
+	return adapter.Values().GetBool(key, toolboxEnabledDefault)
 }
 
 // ToolboxCronJobEnabled returns `true` if Toolbox CronJob is enabled, and `false` if not.
 func ToolboxCronJobEnabled(adapter CustomResourceAdapter) bool {
 	key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName(adapter.ChartVersion()))
-	enabled, _ := GetBoolValue(adapter.Values(), key, toolboxCronJobEnabledDefault)
 
-	return enabled
+	return adapter.Values().GetBool(key, toolboxCronJobEnabledDefault)
 }
 
 // ToolboxDeployment returns the Deployment of the Toolbox component.

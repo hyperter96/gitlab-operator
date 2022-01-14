@@ -8,9 +8,7 @@ import (
 
 // KasEnabled returns `true` if KAS is enabled, and `false` if not. By default it returns `false`.
 func KasEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), "global.kas.enabled", false)
-
-	return enabled
+	return adapter.Values().GetBool("global.kas.enabled", false)
 }
 
 func KasConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {

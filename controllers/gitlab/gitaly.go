@@ -12,9 +12,7 @@ const (
 
 // GitalyEnabled returns `true` if enabled and `false` if not.
 func GitalyEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), GlobalGitalyEnabled, gitalyEnabledDefault)
-
-	return enabled
+	return adapter.Values().GetBool(GlobalGitalyEnabled, gitalyEnabledDefault)
 }
 
 // GitalyStatefulSet returns the StatefulSet of Gitaly component.

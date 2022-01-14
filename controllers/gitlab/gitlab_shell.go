@@ -14,9 +14,7 @@ const (
 
 // ShellEnabled returns `true` if enabled, and `false` if not.
 func ShellEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), gitlabShellEnabled, gitlabShellEnabledDefault)
-
-	return enabled
+	return adapter.Values().GetBool(gitlabShellEnabled, gitlabShellEnabledDefault)
 }
 
 // ShellDeployment returns the Deployment of GitLab Shell component.

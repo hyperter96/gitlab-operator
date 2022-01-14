@@ -12,6 +12,7 @@ COPY go.mod go.sum ./
 COPY main.go main.go
 COPY api/ api/
 COPY helm/ helm/
+COPY pkg/ pkg/
 COPY controllers/ controllers/
 
 # Build

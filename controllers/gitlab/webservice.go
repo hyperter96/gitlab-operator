@@ -13,9 +13,7 @@ const (
 
 // WebserviceEnabled returns `true` if Webservice is enabled, and `false` if not.
 func WebserviceEnabled(adapter CustomResourceAdapter) bool {
-	enabled, _ := GetBoolValue(adapter.Values(), gitlabWebserviceEnabled, webserviceEnabledDefault)
-
-	return enabled
+	return adapter.Values().GetBool(gitlabWebserviceEnabled, webserviceEnabledDefault)
 }
 
 // WebserviceDeployments returns the Deployments for the Webservice component.

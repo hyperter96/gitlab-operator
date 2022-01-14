@@ -6,16 +6,16 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
 var _ = Describe("Enabling or disabling internal MinIO", func() {
-	chartValuesDefault := helm.EmptyValues()
+	chartValuesDefault := resource.Values{}
 
-	chartValuesEnabled := helm.EmptyValues()
+	chartValuesEnabled := resource.Values{}
 	_ = chartValuesEnabled.SetValue(globalMinioEnabled, true)
 
-	chartValuesDisabled := helm.EmptyValues()
+	chartValuesDisabled := resource.Values{}
 	chartValuesDisabledString := `
 global:
   minio:
@@ -35,10 +35,10 @@ gitlab:
           key: config
 `
 
-	_ = chartValuesDisabled.AddFromYAML([]byte(chartValuesDisabledString))
+	_ = chartValuesDisabled.AddFromYAML(chartValuesDisabledString)
 
 	tests := map[string]struct {
-		chartValues helm.Values
+		chartValues resource.Values
 		expected    bool
 	}{
 		"enabled (default)": {chartValues: chartValuesDefault, expected: true},

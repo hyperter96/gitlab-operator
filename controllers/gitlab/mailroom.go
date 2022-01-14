@@ -18,9 +18,9 @@ const (
 
 // MailroomEnabled returns `true` if enabled and `false` if not.
 func MailroomEnabled(adapter CustomResourceAdapter) bool {
-	mrEnabled, _ := GetBoolValue(adapter.Values(), GitLabMailroomEnabled, mailroomEnabledDefault)
-	imEnabled, _ := GetBoolValue(adapter.Values(), IncomingEmailEnabled, incomingEmailDefault)
-	emSecret, _ := GetStringValue(adapter.Values(), IncomingEmailSecret, "")
+	mrEnabled := adapter.Values().GetBool(GitLabMailroomEnabled, mailroomEnabledDefault)
+	imEnabled := adapter.Values().GetBool(IncomingEmailEnabled, incomingEmailDefault)
+	emSecret := adapter.Values().GetString(IncomingEmailSecret, "")
 
 	return mrEnabled && imEnabled && emSecret != ""
 }

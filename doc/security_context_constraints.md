@@ -53,7 +53,7 @@ Omnibus, drop privilege to run as an application-specific user. The
 
 GitLab recommends and tests deployments using the
 `nginx-ingress-controller` when deploying Cloud Native GitLab. It uses its
-own [`nginx-ingress-scc` security context constraint](../config/rbac/nginx_scc.yaml).
+own [`nginx-ingress-scc` security context constraint](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/config/openshift/nginx_scc.yaml).
 
 If selecting an alternative Ingress controller, please consult the relevant
 documentation to learn more about its security context constraints.

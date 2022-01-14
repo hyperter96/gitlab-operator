@@ -116,7 +116,7 @@ Note: `gitlab-operator-ci-gcloud-externaldns.json` is a file containing the cred
 Note: timeouts for Jobs can be configured. If the timeout is reached, then the GitLab Controller will return an error that the Job could not be completed in time.
 
 To configure these, modify the values under `spec.template.spec.containers[0].env` in
-[`config/manager/manager.yaml`](../../config/manager/manager.yaml).
+[`config/manager/manager.yaml`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/config/manager/manager.yaml).
 
 ## Kubernetes CI clusters
 
@@ -157,7 +157,7 @@ $ KUBECONFIG=demo/.kube/config \
 
 Once wildcard certificates have been issued for the cluster's domain, the cluster is ready to run tests.
 
-For CI clusters, we create a service account in Google Cloud, following the steps in [Google Cloud's authentication docs](https://cloud.google.com/kubernetes-engine/docs/how-to/api-server-authentication#environments-without-gcloud). This allows us to generate CI variables `KUBECONFIG_GKE` and `GOOGLE_APPLICATION_CREDENTIALS` for this project. We have scripted this, see [scripts/create_gcloud_sa_kubeconfig.sh](../../scripts/create_gcloud_sa_kubeconfig.sh). These kubeconfigconfig files are saved in the 1Password cloud-native vault. Search the vault for `gitlab-operator`.
+For CI clusters, we create a service account in Google Cloud, following the steps in [Google Cloud's authentication docs](https://cloud.google.com/kubernetes-engine/docs/how-to/api-server-authentication#environments-without-gcloud). This allows us to generate CI variables `KUBECONFIG_GKE` and `GOOGLE_APPLICATION_CREDENTIALS` for this project. We have scripted this, see [scripts/create_gcloud_sa_kubeconfig.sh](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/scripts/create_gcloud_sa_kubeconfig.sh). These kubeconfigconfig files are saved in the 1Password cloud-native vault. Search the vault for `gitlab-operator`.
 
 ### Scaling Kubernetes clusters
 

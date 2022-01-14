@@ -25,7 +25,7 @@ multiple ways - the simplest would be to run:
 TAG=abcd1234 make deploy_operator
 ```
 
-This will instruct `kustomize` to patch the [Operator deployment manifest](../config/manager/manager.yaml) with the desired
+This will instruct `kustomize` to patch the [Operator deployment manifest](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/config/manager/manager.yaml) with the desired
 tag and send that Deployment manifest to the cluster.
 
 Alternatively, you can edit the Deployment in the cluster directly and enter the desired image tag.

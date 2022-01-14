@@ -7,19 +7,6 @@ Version tags should [be the semver version string](../adr/0009-version-tagging.m
 
 Operator documentation is available in the `doc/` directory.
 
-The [Operator installation document](../../installation.md) is mirrored into the
-[GitLab documentation site](https://docs.gitlab.com/charts/installation/operator.html),
-primarily for public visibility.
-
-At this time, this process is manual, which means changes to this document requires
-two merge requests:
-
-- Operator: [doc/installation.md](../../installation.md)
-- Charts: [doc/installation/operator.md](https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/doc/installation/operator.md)
-
-Issue [#436](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/436)
-tracks work toward automating this process.
-
 ## Red Hat Certification
 
 The release pipeline will contain a `certification_upload` job when the

@@ -43,7 +43,7 @@ operator
       .com project.
 1. For the first iteration and GA release, maintainers will manually perform the
    following tasks
-   1. Update [`CHART_VERSIONS`](../../CHART_VERSIONS) file.
+   1. Update [`CHART_VERSIONS`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/CHART_VERSIONS) file.
    1. Create a Git tag and push it to both .com project and the dev mirror.
    1. Verify the operator artifacts created by the dev mirror works as expected.
    1. Once GitLab is released, play the manual job in the dev tag pipeline to

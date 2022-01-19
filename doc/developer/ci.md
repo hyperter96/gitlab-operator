@@ -16,7 +16,7 @@ kubeconfig files for connecting to these clusters are stored in the 1Password cl
 
 CI clusters have been launched with `scripts/create_openshift_cluster.sh` in this project. CI variables named `KUBECONFIG_OCP_4_7` allow scripts to connect to clusters as kubeadmin. `4_7` refers to the major and minor version of the targeted OpenShift cluster.
 
-See [OpenShift cluster setup documentation](../openshift-cluster-setup.md) for instruction on using this script.
+See [OpenShift cluster setup documentation](openshift_cluster_setup.md) for instruction on using this script.
 
 ### "public" and "dev" clusters
 
@@ -25,7 +25,7 @@ We maintain two sets of OpenShift CI clusters for this project:
 - `public` CI clusters are responsible for everyday CI pipelines on [gitlab.com](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/pipelines).
 - `dev` CI clusters are responsible for tagging and creating official releases on [dev.gitlab.org](https://dev.gitlab.org/gitlab/cloud-native/gitlab-operator/-/pipelines).
 
-Every cluster is created using the [OpenShift cluster setup documentation](../openshift-cluster-setup.md) and script, regardless of their set. For every OpenShift version deployed in public, there is a corresponding cluster with the same version deployed to dev. Both clusters are deployed to the `cloud-native` GCP project and use `k8s-ft.win` for DNS base domain.
+Every cluster is created using the [OpenShift cluster setup documentation](openshift_cluster_setup.md) and script, regardless of their set. For every OpenShift version deployed in public, there is a corresponding cluster with the same version deployed to dev. Both clusters are deployed to the `cloud-native` GCP project and use `k8s-ft.win` for DNS base domain.
 
 ### Scaling OpenShift clusters
 
@@ -102,7 +102,7 @@ ocp-ci-4717-abcde-worker-c-5gq6r.c.cloud-native-123456.internal   Ready    worke
 
 ### external-dns
 
-[external-dns](https://github.com/kubernetes-sigs/external-dns) has been installed using the [Bitnami Helm Chart](https://github.com/bitnami/charts/tree/master/bitnami/external-dns) using [ci/scripts/install_external_dns.sh](../ci/scripts/install_external_dns.sh). This tool creates DNS entries for the NGINX Ingress controller Services that are created as external-facing LoadBalancers, ensuring that our QA jobs can reach the instance for testing.
+[external-dns](https://github.com/kubernetes-sigs/external-dns) has been installed using the [Bitnami Helm Chart](https://github.com/bitnami/charts/tree/master/bitnami/external-dns) using [ci/scripts/install_external_dns.sh](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/ci/scripts/install_external_dns.sh). This tool creates DNS entries for the NGINX Ingress controller Services that are created as external-facing LoadBalancers, ensuring that our QA jobs can reach the instance for testing.
 
 - For our `4.6` OpenShift Cluster: `CLUSTER_VERSION=4.6 ENVIRONMENT=openshift GOOGLE_APPLICATION_CREDENTIALS=gitlab-operator-ci-gcloud-externaldns.json ./ci/scripts/install_external_dns.sh`
 - For our `4.7` OpenShift Cluster: `CLUSTER_VERSION=4.7 ENVIRONMENT=openshift GOOGLE_APPLICATION_CREDENTIALS=gitlab-operator-ci-gcloud-externaldns.json ./ci/scripts/install_external_dns.sh`

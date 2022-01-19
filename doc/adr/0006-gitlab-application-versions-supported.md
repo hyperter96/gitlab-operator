@@ -19,7 +19,7 @@ for most of the objects that the Operator manages, the version of the Operator m
 versions of the GitLab Chart rather than to the GitLab application itself.
 
 The Operator specifies the supported versions of the chart in the
-[CHART_VERSIONS file](../CHART_VERSIONS).
+[CHART_VERSIONS file](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/CHART_VERSIONS).
 
 The goal is to support the three latest minor versions of the
 [GitLab Chart](https://gitlab.com/gitlab-org/charts/gitlab).

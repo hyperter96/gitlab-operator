@@ -6,7 +6,7 @@ If using OpenShift, these steps normally are handled by OLM (the Operator Lifecy
 
 ## Prerequisites
 
-Please consult the "Prerequisites" section of [installation.md](../installation.md#prerequisites).
+Please consult the "Prerequisites" section of the [installation](../installation.md#prerequisites) page.
 
 ## Installing the GitLab Operator
 

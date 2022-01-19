@@ -61,6 +61,9 @@ type Query interface {
 	// JobByComponent lists all Jobs for a specific component.
 	JobByComponent(component string) *batchv1.Job
 
+	// PersistentVolumeClaimByName returns the PersistentVolumeClaim with the specified name.
+	PersistentVolumeClaimByName(name string) *corev1.PersistentVolumeClaim
+
 	// SecretByName returns the Secret with the specified name.
 	SecretByName(name string) *corev1.Secret
 
@@ -145,6 +148,7 @@ const (
 	gvkIngress                 = "Ingress.v1.networking"
 	gvkHorizontalPodAutoscaler = "HorizontalPodAutoscaler.v2beta1.autoscaling"
 	gvkNetworkPolicy           = "NetworkPolicy.v1.networking"
+	gvkPersistentVolumeClaim   = "PersistentVolumeClaim.v1.core"
 	gvkServiceAccount          = "ServiceAccount.v1.core"
 
 	appLabel = "app"

@@ -9,10 +9,12 @@ import (
 )
 
 const (
-	gitlabToolboxEnabled         = "gitlab.%s.enabled"
-	toolboxEnabledDefault        = true
-	gitlabToolboxCronJobEnabled  = "gitlab.%s.backups.cron.enabled"
-	toolboxCronJobEnabledDefault = false
+	gitlabToolboxEnabled                   = "gitlab.%s.enabled"
+	toolboxEnabledDefault                  = true
+	gitlabToolboxCronJobEnabled            = "gitlab.%s.backups.cron.enabled"
+	toolboxCronJobEnabledDefault           = false
+	gitlabToolboxCronJobPersistenceEnabled = "gitlab.%s.backups.cron.persistence.enabled"
+	gitlabToolboxCronJobPersistenceDefault = false
 )
 
 // ToolboxEnabled returns `true` if Toolbox is enabled, and `false` if not.
@@ -27,6 +29,13 @@ func ToolboxCronJobEnabled(adapter CustomResourceAdapter) bool {
 	key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName(adapter.ChartVersion()))
 
 	return adapter.Values().GetBool(key, toolboxCronJobEnabledDefault)
+}
+
+// ToolboxCronJobPersistenceEnabled returns `true` if Toolbox CronJob persistence is enabled, and `false` if not.
+func ToolboxCronJobPersistenceEnabled(adapter CustomResourceAdapter) bool {
+	key := fmt.Sprintf(gitlabToolboxCronJobPersistenceEnabled, ToolboxComponentName(adapter.ChartVersion()))
+
+	return adapter.Values().GetBool(key, gitlabToolboxCronJobPersistenceDefault)
 }
 
 // ToolboxDeployment returns the Deployment of the Toolbox component.
@@ -69,6 +78,22 @@ func ToolboxCronJob(adapter CustomResourceAdapter) *batchv1beta1.CronJob {
 
 	result = template.Query().CronJobByName(
 		fmt.Sprintf("%s-%s-backup", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
+
+	return result
+}
+
+// ToolboxPersistentVolumeClaim returns the PersistentVolumeClaim of the Toolbox component.
+func ToolboxCronJobPersistentVolumeClaim(adapter CustomResourceAdapter) *corev1.PersistentVolumeClaim {
+	var result *corev1.PersistentVolumeClaim
+
+	template, err := GetTemplate(adapter)
+
+	if err != nil {
+		return nil // WARNING: This should return an error instead.
+	}
+
+	result = template.Query().PersistentVolumeClaimByName(
+		fmt.Sprintf("%s-%s-backup-tmp", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
 
 	return result
 }

@@ -50,6 +50,9 @@ var _ = Describe("CustomResourceAdapter", func() {
 			enabled := ToolboxCronJobEnabled(adapter)
 			cronJob := ToolboxCronJob(adapter)
 
+			persistenceEnabled := ToolboxCronJobPersistenceEnabled(adapter)
+			cronJobPersistentVolumeClaim := ToolboxCronJobPersistentVolumeClaim(adapter)
+
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())
 				Expect(template).NotTo(BeNil())
@@ -58,6 +61,45 @@ var _ = Describe("CustomResourceAdapter", func() {
 			It("Should contain Toolbox CronJob resources", func() {
 				Expect(enabled).To(BeTrue())
 				Expect(cronJob).NotTo(BeNil())
+			})
+
+			It("Should not contain Toolbox CronJob Persistence resources", func() {
+				Expect(persistenceEnabled).To(BeFalse())
+				Expect(cronJobPersistentVolumeClaim).To(BeNil())
+			})
+		})
+
+		When("Toolbox CronJob and CronJob Persistence is enabled", func() {
+			gitlabToolboxCronJobEnabled := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName(GetChartVersion()))
+			gitlabToolboxCronJobPersistenceEnabled := fmt.Sprintf(gitlabToolboxCronJobPersistenceEnabled, ToolboxComponentName(GetChartVersion()))
+
+			chartValues := resource.Values{}
+			_ = chartValues.SetValue(gitlabToolboxCronJobEnabled, true)
+			_ = chartValues.SetValue(gitlabToolboxCronJobPersistenceEnabled, true)
+
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
+			template, err := GetTemplate(adapter)
+
+			enabled := ToolboxCronJobEnabled(adapter)
+			cronJob := ToolboxCronJob(adapter)
+
+			persistenceEnabled := ToolboxCronJobPersistenceEnabled(adapter)
+			cronJobPersistentVolumeClaim := ToolboxCronJobPersistentVolumeClaim(adapter)
+
+			It("Should render the template", func() {
+				Expect(err).To(BeNil())
+				Expect(template).NotTo(BeNil())
+			})
+
+			It("Should contain Toolbox CronJob resources", func() {
+				Expect(enabled).To(BeTrue())
+				Expect(cronJob).NotTo(BeNil())
+			})
+
+			It("Should contain Toolbox CronJob Persistence resources", func() {
+				Expect(persistenceEnabled).To(BeTrue())
+				Expect(cronJobPersistentVolumeClaim).NotTo(BeNil())
 			})
 		})
 	})

@@ -17,6 +17,12 @@ func (r *GitLabReconciler) reconcileToolbox(ctx context.Context, adapter gitlabc
 		}
 	}
 
+	if gitlabctl.ToolboxCronJobPersistenceEnabled(adapter) {
+		if err := r.reconcileToolboxPersistentVolumeClaim(ctx, adapter); err != nil {
+			return err
+		}
+	}
+
 	if err := r.reconcileToolboxDeployment(ctx, adapter); err != nil {
 		return err
 	}
@@ -50,4 +56,12 @@ func (r *GitLabReconciler) reconcileToolboxDeployment(ctx context.Context, adapt
 	_, err := r.createOrPatch(ctx, deployment, adapter)
 
 	return err
+}
+
+func (r *GitLabReconciler) reconcileToolboxPersistentVolumeClaim(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.ToolboxCronJobPersistentVolumeClaim(adapter), adapter); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -13,6 +13,7 @@ This issue will serve as a checklist and record of the first release of the GitL
 1. [ ] Create `X.Y.0` tag from `X-Y-stable` branch and push
 1. [ ] Confirm that the release is created with the associated manifest artifacts
 1. [ ] Confirm that the tagged image is pushed to the container registry
+1. [ ] Include the chart versions in the tag message: `Version X.Y.Z - supports GitLab Charts vX.Y.Z, vX.Y.Z, vX.Y.Z`
 1. [ ] Delete any unneeded beta releases from testing (https://docs.gitlab.com/ee/api/releases/#delete-a-release)
 1. [ ] Update documentation with references to the latest version
 

@@ -11,6 +11,7 @@ This issue will serve as a checklist and record of the release of the GitLab Ope
 1. [ ] Create `X.Y.Z` tag from `X-Y-stable` branch and push
 1. [ ] Confirm that the release is created with the associated manifest artifacts
 1. [ ] Confirm that the tagged image is pushed to the container registry
+1. [ ] Include the chart versions in the tag message: `Version X.Y.Z - supports GitLab Charts vX.Y.Z, vX.Y.Z, vX.Y.Z`
 1. [ ] Update Documentation with references to the latest version
 
    * [ ] Operator repo

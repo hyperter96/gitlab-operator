@@ -77,7 +77,7 @@ func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, a
 
 func (r *GitLabReconciler) reconcileWebserviceIngresses(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	for _, ingress := range gitlabctl.WebserviceIngresses(adapter) {
-		if _, err := r.createOrPatch(ctx, ingress, adapter); err != nil {
+		if err := r.reconcileIngress(ctx, ingress, adapter); err != nil {
 			return err
 		}
 	}

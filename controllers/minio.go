@@ -64,7 +64,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 	}
 
 	ingress := internal.MinioIngress(adapter)
-	if _, err = r.createOrPatch(ctx, ingress, adapter); err != nil {
+	if err = r.reconcileIngress(ctx, ingress, adapter); err != nil {
 		return err
 	}
 

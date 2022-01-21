@@ -25,7 +25,7 @@ GitLab Operator supports Kubernetes 1.19 through 1.21. Support for Kubernetes 1.
 
 To create an OpenShift cluster, see the [OpenShift cluster setup docs](developer/openshift_cluster_setup.md) for an example of how to create a _development environment_.
 
-GitLab Operator supports OpenShift 4.6 through 4.8. Support for Kubernetes 1.22 is under active development - see [&6883](https://gitlab.com/groups/gitlab-org/-/epics/6883) for more information.
+GitLab Operator supports OpenShift 4.7 through 4.8. Support for Kubernetes 1.22 is under active development - see [&6883](https://gitlab.com/groups/gitlab-org/-/epics/6883) for more information.
 
 ### Ingress controller
 
@@ -51,7 +51,7 @@ Install the [metrics server](https://github.com/kubernetes-sigs/metrics-server#i
 
 #### OpenShift
 
-OpenShift ships with [Prometheus Adapter](https://docs.openshift.com/container-platform/4.6/monitoring/understanding-the-monitoring-stack.html#default-monitoring-components_understanding-the-monitoring-stack) by default, so there is no manual action required here.
+OpenShift ships with [Prometheus Adapter](https://docs.openshift.com/container-platform/4.8/monitoring/understanding-the-monitoring-stack.html#default-monitoring-components_understanding-the-monitoring-stack) by default, so there is no manual action required here.
 
 ### Configure Domain Name Services
 

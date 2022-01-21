@@ -20,7 +20,7 @@ Note that this does not include the GitLab Runner. For more information, see the
 
 ## Documentation
 
-Information on installation, usage, and contributing to the GitLab Operator can be found under [documentation](doc/README.md).
+Information on installation, usage, and contributing to the GitLab Operator can be found under [documentation](doc/index.md).
 
 ## Owned Custom Resource: GitLab
 

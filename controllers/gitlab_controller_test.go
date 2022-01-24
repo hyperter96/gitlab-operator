@@ -17,6 +17,7 @@ import (
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
@@ -669,7 +670,7 @@ global:
 			releaseName := "nginx-disabled"
 			controllerServiceName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
 			controllerDeploymentName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
-			defaultBackendComponentName := gitlabctl.NGINXDefaultBackendComponentName(gitlabctl.GetChartVersion())
+			defaultBackendComponentName := gitlabctl.NGINXDefaultBackendComponentName(helm.GetChartVersion())
 			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-%s", releaseName, gitlabctl.NGINXComponentName, defaultBackendComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
@@ -704,7 +705,7 @@ global:
 			releaseName := "nginx-enabled"
 			controllerServiceName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
 			controllerDeploymentName := fmt.Sprintf("%s-%s-controller", releaseName, gitlabctl.NGINXComponentName)
-			defaultBackendComponentName := gitlabctl.NGINXDefaultBackendComponentName(gitlabctl.GetChartVersion())
+			defaultBackendComponentName := gitlabctl.NGINXDefaultBackendComponentName(helm.GetChartVersion())
 			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-%s", releaseName, gitlabctl.NGINXComponentName, defaultBackendComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 

@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
@@ -23,7 +24,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(adapter.Reference()).To(Equal(fmt.Sprintf("test.%s", namespace)))
 		Expect(adapter.Namespace()).To(Equal(namespace))
 		Expect(adapter.ReleaseName()).To(Equal(releaseName))
-		Expect(adapter.ChartVersion()).To(Equal(GetChartVersion()))
+		Expect(adapter.ChartVersion()).To(Equal(helm.GetChartVersion()))
 	})
 
 	It("should change the hash when values change", func() {
@@ -48,13 +49,13 @@ var _ = Describe("CustomResourceAdapter", func() {
 	})
 
 	It("should reject unsupported chart versions", func() {
-		currentChartVersion := GetChartVersion()
+		currentChartVersion := helm.GetChartVersion()
 		os.Setenv("CHART_VERSION", "0.0.0")
 		mockGitLab := CreateMockGitLab(releaseName, namespace, resource.Values{})
 		adapter := CreateMockAdapter(mockGitLab)
 		os.Setenv("CHART_VERSION", currentChartVersion)
 
-		supported, err := adapter.ChartVersionSupported()
+		supported, err := helm.ChartVersionSupported(adapter.ChartVersion())
 
 		Expect(supported).To(BeFalse())
 		Expect(err).NotTo(BeNil())
@@ -64,7 +65,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 	It("should accept supported chart versions", func() {
 		mockGitLab := CreateMockGitLab(releaseName, namespace, resource.Values{})
 		adapter := CreateMockAdapter(mockGitLab)
-		supported, err := adapter.ChartVersionSupported()
+		supported, err := helm.ChartVersionSupported(adapter.ChartVersion())
 
 		Expect(supported).To(BeTrue())
 		Expect(err).To(BeNil())

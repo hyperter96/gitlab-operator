@@ -17,12 +17,14 @@ limitations under the License.
 package v1beta1
 
 import (
-	"errors"
-
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 // log is for logging in this package.
@@ -43,8 +45,8 @@ var _ webhook.Validator = &GitLab{}
 func (r *GitLab) ValidateCreate() error {
 	gitlablog.Info("validate create", "name", r.Name)
 
-	if r.Spec.Chart.Version == "" {
-		return errors.New("spec.chart.version is empty")
+	if err := r.validateChartVersion(); err != nil {
+		return newError(r.Name, err)
 	}
 
 	return nil
@@ -54,6 +56,10 @@ func (r *GitLab) ValidateCreate() error {
 func (r *GitLab) ValidateUpdate(old runtime.Object) error {
 	gitlablog.Info("validate update", "name", r.Name)
 
+	if err := r.validateChartVersion(); err != nil {
+		return newError(r.Name, err)
+	}
+
 	return nil
 }
 
@@ -62,4 +68,23 @@ func (r *GitLab) ValidateDelete() error {
 	gitlablog.Info("validate delete", "name", r.Name)
 
 	return nil
+}
+
+func (r GitLab) validateChartVersion() *field.Error {
+	key := field.NewPath("spec").Child("chart").Child("version")
+	value := r.Spec.Chart.Version
+
+	if value == "" {
+		return field.Invalid(key, value, "chart version must be configured")
+	}
+
+	if _, err := helm.ChartVersionSupported(r.Spec.Chart.Version); err != nil {
+		return field.Invalid(key, value, err.Error())
+	}
+
+	return nil
+}
+
+func newError(name string, err *field.Error) error {
+	return apierrors.NewInvalid(GroupKind, name, field.ErrorList{err})
 }

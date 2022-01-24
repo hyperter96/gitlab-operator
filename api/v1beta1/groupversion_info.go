@@ -25,6 +25,9 @@ import (
 )
 
 var (
+	// GroupKind is a group kind used in webhooks.
+	GroupKind = schema.GroupKind{Group: "apps.gitlab.com", Kind: "gitlab"}
+
 	// GroupVersion is group version used to register these objects.
 	GroupVersion = schema.GroupVersion{Group: "apps.gitlab.com", Version: "v1beta1"}
 

@@ -18,13 +18,13 @@ import (
 )
 
 var _ = Describe("CustomResourceAdapter", func() {
-	chartVersions := AvailableChartVersions()
+	chartVersions := helm.AvailableChartVersions()
 
 	if namespace == "" {
 		namespace = "default"
 	}
 
-	currentChartVersion := GetChartVersion()
+	currentChartVersion := helm.GetChartVersion()
 	os.Setenv("CHART_VERSION", chartVersions[0])
 	mockGitLab1 := CreateMockGitLab(releaseName, namespace, resource.Values{})
 

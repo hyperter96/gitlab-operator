@@ -4,6 +4,7 @@ import (
 	"os"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,15 +14,6 @@ var (
 	releaseName = "test"
 	namespace   = os.Getenv("HELM_NAMESPACE")
 )
-
-func GetChartVersion() string {
-	version, found := os.LookupEnv("CHART_VERSION")
-	if !found {
-		version = AvailableChartVersions()[0]
-	}
-
-	return version
-}
 
 func CreateMockGitLab(releaseName, namespace string, values resource.Values) *gitlabv1beta1.GitLab {
 	return &gitlabv1beta1.GitLab{
@@ -35,7 +27,7 @@ func CreateMockGitLab(releaseName, namespace string, values resource.Values) *gi
 		},
 		Spec: gitlabv1beta1.GitLabSpec{
 			Chart: gitlabv1beta1.GitLabChartSpec{
-				Version: GetChartVersion(),
+				Version: helm.GetChartVersion(),
 				Values: gitlabv1beta1.ChartValues{
 					Object: values,
 				},

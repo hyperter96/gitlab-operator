@@ -33,6 +33,12 @@ This will be a 6 node cluster with 3 control plane (master) nodes and 3 worker n
 
 Once created, you should be able to see your cluster registered here: <https://cloud.redhat.com/openshift/>. All installation logs and metadata will be stored in the `install-$CLUSTER_NAME/` directory in this repository. This folder is gitignored.
 
+If this cluster is meant to be used by other teammates or CI, create a new item in the 1Password Cloud Native vault and attach these files placed in `INSTALL_DIR`:
+
+- `metadata.json`, delete clusters as needed
+- `auth/kubeconfig`, authenticate to cluster
+- `auth/kubeadmin-password`, authenticate to cluster UI
+
 ### Configuration Options
 
 Configuration can be applied during runtime by setting environment variables. All options have defaults, no options are required.
@@ -59,16 +65,18 @@ The variables `CLUSTER_NAME` and `BASE_DOMAIN` are combined to build the domain 
 
 Run `./scripts/destroy_openshift_cluster.sh` to destroy your OpenShift cluster in Google Cloud. This takes around 4 minutes.
 
+The `metadata.json` file in `INSTALL_DIR` is all that is needed to destroy an OpenShift cluster. `metadata.json` files are attached to the cluster's existing 1Password item that  holds the cluster's credentials.
+
 ### Configuration Options
 
 Configuration can be applied during runtime by setting the following environment variables. All options have defaults, no options are required.
 
-| Variable                         | Description                                       | Default |
-|----------------------------------|---------------------------------------------------|---------|
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google Cloud service account JSON file    | `gcloud.json` |
-| `GOOGLE_CREDENTIALS`             | Content of Google Cloud service account JSON file | Content of `$GOOGLE_APPLICATION_CREDENTIALS` |
-| `LOG_LEVEL`                      | Verbosity of `openshift-install` output           | `info` |
-| `INSTALL_DIR`                    | Directory for install assets, useful for launching multiple clusters | `install-$CLUSTER_NAME` |
+| Variable | Description | Default |
+| - | - | - |
+| `CLUSTER_NAME` | Name of cluster | `ocp-$USER` |
+| `LOG_LEVEL` | Verbosity of `openshift-install` output | `info` |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google Cloud service account JSON file | `gcloud.json` |
+| `GOOGLE_CREDENTIALS` | Content of Google Cloud service account JSON file | Content of `$GOOGLE_APPLICATION_CREDENTIALS` |
 
 ## Next Steps
 

@@ -8,10 +8,10 @@ This issue will serve as a checklist and record of the release of the GitLab Ope
 1. [ ] Confirm MR pipeline passes (ensuring that all new chart versions work as expected) -> https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/pipelines/`NNNNNNNNN`
 1. [ ] Merge MR to `master`
 1. [ ] Pick relevant changes into `X-Y-stable`
-1. [ ] Create `X.Y.Z` tag from `X-Y-stable` branch and push
+1. [ ] Create `X.Y.Z` tag from `X-Y-stable` branch: `./scripts/tag_release.sh <version>`
+1. [ ] Push `X.Y.Z` tag: `git push origin <version>`
 1. [ ] Confirm that the release is created with the associated manifest artifacts
 1. [ ] Confirm that the tagged image is pushed to the container registry
-1. [ ] Include the chart versions in the tag message: `Version X.Y.Z - supports GitLab Charts vX.Y.Z, vX.Y.Z, vX.Y.Z`
 1. [ ] Update Documentation with references to the latest version
 
    * [ ] Operator repo

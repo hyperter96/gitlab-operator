@@ -41,7 +41,10 @@ When configuring the GitLab CR, be sure to set `nginx-ingress.enabled=false` to 
 
 We recommend [Cert Manager](https://cert-manager.io/docs/installation/) to create certificates used to secure the GitLab and Registry URLs. Follow the relevant instructions in the link based on your platform and preferred tooling.
 
-Our codebase currently targets Cert Manager 1.5. Version 1.6 has been released, but it removed deprecated APIs and therefore requires some changes to the GitLab Operator for compatibility (see [#435](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/435)).
+Our codebase currently targets Cert Manager 1.6.1.
+
+NOTE:
+Cert Manager [1.6](https://github.com/jetstack/cert-manager/releases/tag/v1.6.0) removed some deprecated APIs. As a result, if deploying Cert Manager >= 1.6, you will need GitLab Operator >= 0.4.
 
 ### Metrics
 
@@ -64,7 +67,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 1. Deploy the GitLab Operator.
 
    ```shell
-   GL_OPERATOR_VERSION=0.2.0 # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases
+   GL_OPERATOR_VERSION=0.4.0 # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases
    PLATFORM=kubernetes # or "openshift"
    kubectl create namespace gitlab-system
    kubectl apply -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
@@ -94,7 +97,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
      name: example
    spec:
      chart:
-       version: "X.Y.Z" # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/0.2.0/CHART_VERSIONS
+       version: "X.Y.Z" # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/0.4.0/CHART_VERSIONS
        values:
          global:
            hosts:
@@ -150,7 +153,7 @@ This will remove the GitLab instance, and all associated objects except for (PVC
 ### Uninstall the GitLab Operator
 
 ```shell
-GL_OPERATOR_VERSION=0.2.0 # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases
+GL_OPERATOR_VERSION=0.4.0 # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases
 PLATFORM=kubernetes # or "openshift"
 kubectl delete -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
 ```

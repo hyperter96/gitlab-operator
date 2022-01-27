@@ -3,8 +3,7 @@ package gitlab
 import (
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -18,40 +17,40 @@ func ExporterEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // ExporterService returns the Service for the GitLab Exporter component.
-func ExporterService(adapter CustomResourceAdapter) *corev1.Service {
+func ExporterService(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().ServiceByComponent(GitLabExporterComponentName)
+	result := template.Query().ObjectByKindAndComponent(ServiceKind, GitLabExporterComponentName)
 
 	return result
 }
 
 // ExporterDeployment returns the Deployment for the GitLab Exporter component.
-func ExporterDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+func ExporterDeployment(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().DeploymentByComponent(GitLabExporterComponentName)
+	result := template.Query().ObjectByKindAndComponent(DeploymentKind, GitLabExporterComponentName)
 
 	return result
 }
 
 // ExporterConfigMaps returns the ConfigMaps for the GitLab Exporter component.
-func ExporterConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
+func ExporterConfigMaps(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	exporterCfgMap := template.Query().ConfigMapByName(
+	exporterCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), GitLabExporterComponentName))
 
-	result := []*corev1.ConfigMap{exporterCfgMap}
+	result := []client.Object{exporterCfgMap}
 
 	return result
 }

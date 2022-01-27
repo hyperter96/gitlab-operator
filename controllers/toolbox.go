@@ -49,7 +49,7 @@ func (r *GitLabReconciler) reconcileToolboxCronJob(ctx context.Context, adapter 
 func (r *GitLabReconciler) reconcileToolboxDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	deployment := gitlabctl.ToolboxDeployment(adapter)
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &deployment.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, deployment); err != nil {
 		return err
 	}
 

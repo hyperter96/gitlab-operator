@@ -29,7 +29,7 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 		return err
 	}
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &shell.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, shell); err != nil {
 		return err
 	}
 

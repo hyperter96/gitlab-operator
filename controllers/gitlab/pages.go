@@ -3,9 +3,7 @@ package gitlab
 import (
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -19,7 +17,7 @@ func PagesEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // PagesConfigMap returns the ConfigMap for the GitLab Pages component.
-func PagesConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+func PagesConfigMap(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
@@ -27,35 +25,35 @@ func PagesConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 
 	cfgMapName := fmt.Sprintf("%s-%s", adapter.ReleaseName(), PagesComponentName)
 
-	return template.Query().ConfigMapByName(cfgMapName)
+	return template.Query().ObjectByKindAndName(ConfigMapKind, cfgMapName)
 }
 
 // PagesService returns the Service for the GitLab Pages component.
-func PagesService(adapter CustomResourceAdapter) *corev1.Service {
+func PagesService(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	return template.Query().ServiceByComponent(PagesComponentName)
+	return template.Query().ObjectByKindAndComponent(ServiceKind, PagesComponentName)
 }
 
 // PagesDeployment returns the Deployment for the GitLab Pages component.
-func PagesDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+func PagesDeployment(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	return template.Query().DeploymentByComponent(PagesComponentName)
+	return template.Query().ObjectByKindAndComponent(DeploymentKind, PagesComponentName)
 }
 
 // PagesIngress returns the Ingress for the GitLab Pages component.
-func PagesIngress(adapter CustomResourceAdapter) *networkingv1.Ingress {
+func PagesIngress(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	return template.Query().IngressByComponent(PagesComponentName)
+	return template.Query().ObjectByKindAndComponent(IngressKind, PagesComponentName)
 }

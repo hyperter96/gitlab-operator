@@ -7,10 +7,9 @@ import (
 	"strings"
 	"time"
 
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -19,7 +18,7 @@ const (
 )
 
 // SharedSecretsConfigMap returns the ConfigMaps of Shared Secret component.
-func SharedSecretsConfigMap(adapter CustomResourceAdapter) (*corev1.ConfigMap, error) {
+func SharedSecretsConfigMap(adapter CustomResourceAdapter) (client.Object, error) {
 	template, err := GetTemplate(adapter)
 
 	if err != nil {
@@ -27,26 +26,26 @@ func SharedSecretsConfigMap(adapter CustomResourceAdapter) (*corev1.ConfigMap, e
 	}
 
 	cfgMapName := fmt.Sprintf("%s-%s", adapter.ReleaseName(), SharedSecretsComponentName)
-	cfgMap := template.Query().ConfigMapByName(cfgMapName)
+	cfgMap := template.Query().ObjectByKindAndName(ConfigMapKind, cfgMapName)
 
 	return cfgMap, nil
 }
 
 // SharedSecretsJob returns the Job for Shared Secret component.
-func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
+func SharedSecretsJob(adapter CustomResourceAdapter) (client.Object, error) {
 	template, err := GetTemplate(adapter)
 
 	if err != nil {
 		return nil, err
 	}
 
-	jobs := template.Query().JobsByLabels(map[string]string{
+	jobs := template.Query().ObjectsByKindAndLabels(JobKind, map[string]string{
 		"app": GitLabComponentName,
 	})
 
 	namePrefix := fmt.Sprintf("%s-%s", adapter.ReleaseName(), SharedSecretsComponentName)
 	for _, j := range jobs {
-		if strings.HasPrefix(j.ObjectMeta.Name, namePrefix) && !strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
+		if strings.HasPrefix(j.GetName(), namePrefix) && !strings.HasSuffix(j.GetName(), "-selfsign") {
 			return j, nil
 		}
 	}
@@ -55,20 +54,20 @@ func SharedSecretsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 }
 
 // SelfSignedCertsJob returns the Job for Self Signed Certificates component.
-func SelfSignedCertsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
+func SelfSignedCertsJob(adapter CustomResourceAdapter) (client.Object, error) {
 	template, err := GetTemplate(adapter)
 
 	if err != nil {
 		return nil, err
 	}
 
-	jobs := template.Query().JobsByLabels(map[string]string{
+	jobs := template.Query().ObjectsByKindAndLabels(JobKind, map[string]string{
 		"app": GitLabComponentName,
 	})
 
 	namePrefix := fmt.Sprintf("%s-%s", adapter.ReleaseName(), SharedSecretsComponentName)
 	for _, j := range jobs {
-		if strings.HasPrefix(j.ObjectMeta.Name, namePrefix) && strings.HasSuffix(j.ObjectMeta.Name, "-selfsign") {
+		if strings.HasPrefix(j.GetName(), namePrefix) && strings.HasSuffix(j.GetName(), "-selfsign") {
 			return j, nil
 		}
 	}
@@ -77,7 +76,7 @@ func SelfSignedCertsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
 }
 
 // SharedSecretsResources returns Kubernetes resources for running shared secrets job.
-func SharedSecretsResources(adapter CustomResourceAdapter) (*corev1.ConfigMap, *batchv1.Job, error) {
+func SharedSecretsResources(adapter CustomResourceAdapter) (client.Object, client.Object, error) {
 	cfgMap, err := SharedSecretsConfigMap(adapter)
 	if err != nil {
 		return nil, nil, err

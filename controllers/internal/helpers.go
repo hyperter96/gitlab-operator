@@ -5,8 +5,65 @@ import (
 	"fmt"
 	"sort"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func GetPodTemplateSpec(obj client.Object) (*corev1.PodTemplateSpec, error) {
+	switch obj.GetObjectKind().GroupVersionKind().Kind {
+	case gitlab.DeploymentKind:
+		deployment, ok := obj.(*appsv1.Deployment)
+		if !ok {
+			return nil, helm.NewTypeMistmatchError(deployment, obj)
+		}
+
+		return &deployment.Spec.Template, nil
+	case gitlab.StatefulSetKind:
+		statefulset, ok := obj.(*appsv1.StatefulSet)
+		if !ok {
+			return nil, helm.NewTypeMistmatchError(statefulset, obj)
+		}
+
+		return &statefulset.Spec.Template, nil
+	default:
+		return nil, helm.NewTypeMistmatchError(corev1.PodTemplateSpec{}, obj)
+	}
+}
+
+func AsIngress(obj client.Object) (*networkingv1.Ingress, error) {
+	ingress, ok := obj.(*networkingv1.Ingress)
+	if !ok {
+		return nil, helm.NewTypeMistmatchError(ingress, obj)
+	}
+
+	return ingress, nil
+}
+
+func AsDeployment(obj client.Object) (*appsv1.Deployment, error) {
+	deployment, ok := obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, helm.NewTypeMistmatchError(deployment, obj)
+	}
+
+	return deployment, nil
+}
+
+func ToggleDeploymentPause(obj client.Object, pause bool) error {
+	deployment, err := AsDeployment(obj)
+	if err != nil {
+		return err
+	}
+
+	deployment.Spec.Paused = pause
+
+	return nil
+}
 
 // PopulateAttachedSecrets populates all the Secrets that are attached to a ReplicaSet.
 // nolint:nestif,gocognit // This function is a bit complicated, but breaking it up may not increase legibility.

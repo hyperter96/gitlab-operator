@@ -1,8 +1,7 @@
 package gitlab
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -16,13 +15,13 @@ func NGINXEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // NGINXConfigMaps returns the ConfigMaps of the NGINX component.
-func NGINXConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
+func NGINXConfigMaps(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil
 	}
 
-	result := template.Query().ConfigMapsByLabels(map[string]string{
+	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{
 		"app": NGINXComponentName,
 	})
 
@@ -37,13 +36,13 @@ func NGINXConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 }
 
 // NGINXServices returns the Services of the NGINX Component.
-func NGINXServices(adapter CustomResourceAdapter) []*corev1.Service {
+func NGINXServices(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil
 	}
 
-	result := template.Query().ServicesByLabels(map[string]string{
+	result := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": NGINXComponentName,
 	})
 
@@ -58,13 +57,13 @@ func NGINXServices(adapter CustomResourceAdapter) []*corev1.Service {
 }
 
 // NGINXDeployments returns the Deployments of the NGINX Component.
-func NGINXDeployments(adapter CustomResourceAdapter) []*appsv1.Deployment {
+func NGINXDeployments(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil
 	}
 
-	result := template.Query().DeploymentsByLabels(map[string]string{
+	result := template.Query().ObjectsByKindAndLabels(DeploymentKind, map[string]string{
 		"app": NGINXComponentName,
 	})
 

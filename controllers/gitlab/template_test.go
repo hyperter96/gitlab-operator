@@ -59,9 +59,9 @@ var _ = Describe("CustomResourceAdapter", func() {
 		Expect(template2).NotTo(BeIdenticalTo(template1))
 
 		chartInfo1 := template1.Query().
-			ObjectByKindAndName("ConfigMap", "test-gitlab-chart-info").(*corev1.ConfigMap)
+			ObjectByKindAndName(ConfigMapKind, "test-gitlab-chart-info").(*corev1.ConfigMap)
 		chartInfo2 := template2.Query().
-			ObjectByKindAndName("ConfigMap", "test-gitlab-chart-info").(*corev1.ConfigMap)
+			ObjectByKindAndName(ConfigMapKind, "test-gitlab-chart-info").(*corev1.ConfigMap)
 
 		Expect(chartInfo1).NotTo(BeNil())
 		Expect(chartInfo1.Namespace).To(Equal(namespace))

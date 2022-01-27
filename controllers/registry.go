@@ -41,7 +41,7 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adap
 		return err
 	}
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &registry.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, registry); err != nil {
 		return err
 	}
 

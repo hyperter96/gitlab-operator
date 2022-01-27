@@ -3,8 +3,7 @@ package gitlab
 import (
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -18,30 +17,30 @@ func ShellEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // ShellDeployment returns the Deployment of GitLab Shell component.
-func ShellDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+func ShellDeployment(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: This should return an error instead.
 	}
 
-	return template.Query().DeploymentByComponent(GitLabShellComponentName)
+	return template.Query().ObjectByKindAndComponent(DeploymentKind, GitLabShellComponentName)
 }
 
 // ShellConfigMaps returns the ConfigMaps of GitLab Shell component.
-func ShellConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
+func ShellConfigMaps(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
-		return []*corev1.ConfigMap{} // WARNING: This should return an error instead.
+		return []client.Object{} // WARNING: This should return an error instead.
 	}
 
-	shellCfgMap := template.Query().ConfigMapByName(
+	shellCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), GitLabShellComponentName))
-	sshdCfgMap := template.Query().ConfigMapByName(
+	sshdCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s-sshd", adapter.ReleaseName(), GitLabShellComponentName))
-	tcpCfgMap := template.Query().ConfigMapByName(
+	tcpCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-nginx-ingress-tcp", adapter.ReleaseName()))
 
-	result := []*corev1.ConfigMap{
+	result := []client.Object{
 		shellCfgMap,
 		sshdCfgMap,
 		tcpCfgMap,
@@ -51,13 +50,13 @@ func ShellConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 }
 
 // ShellService returns the Service of GitLab Shell component.
-func ShellService(adapter CustomResourceAdapter) *corev1.Service {
+func ShellService(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: This should return an error instead.
 	}
 
-	result := template.Query().ServiceByComponent(GitLabShellComponentName)
+	result := template.Query().ObjectByKindAndComponent(ServiceKind, GitLabShellComponentName)
 
 	return result
 }

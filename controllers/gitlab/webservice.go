@@ -1,9 +1,7 @@
 package gitlab
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -17,13 +15,13 @@ func WebserviceEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // WebserviceDeployments returns the Deployments for the Webservice component.
-func WebserviceDeployments(adapter CustomResourceAdapter) []*appsv1.Deployment {
+func WebserviceDeployments(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().DeploymentsByLabels(map[string]string{
+	result := template.Query().ObjectsByKindAndLabels(DeploymentKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
 
@@ -31,13 +29,13 @@ func WebserviceDeployments(adapter CustomResourceAdapter) []*appsv1.Deployment {
 }
 
 // WebserviceConfigMaps returns the ConfigMaps for the Webservice component.
-func WebserviceConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
+func WebserviceConfigMaps(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().ConfigMapsByLabels(map[string]string{
+	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
 
@@ -49,13 +47,13 @@ func WebserviceConfigMaps(adapter CustomResourceAdapter) []*corev1.ConfigMap {
 }
 
 // WebserviceServices returns the Services for the Webservice component.
-func WebserviceServices(adapter CustomResourceAdapter) []*corev1.Service {
+func WebserviceServices(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().ServicesByLabels(map[string]string{
+	result := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
 
@@ -63,13 +61,13 @@ func WebserviceServices(adapter CustomResourceAdapter) []*corev1.Service {
 }
 
 // WebserviceIngresses returns the Ingresses for the Webservice component.
-func WebserviceIngresses(adapter CustomResourceAdapter) []*networkingv1.Ingress {
+func WebserviceIngresses(adapter CustomResourceAdapter) []client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().IngressesByLabels(map[string]string{
+	result := template.Query().ObjectsByKindAndLabels(IngressKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
 

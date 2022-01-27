@@ -367,8 +367,8 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return builder.Complete(r)
 }
 
-func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job *batchv1.Job, timeout time.Duration) error {
-	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.Name, "namespace", job.Namespace)
+func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job client.Object, timeout time.Duration) error {
+	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.GetName(), "namespace", job.GetNamespace())
 
 	_, err := r.createOrPatch(ctx, job, adapter)
 	if err != nil {
@@ -378,8 +378,8 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.
 	elapsed := time.Duration(0)
 	waitPeriod := timeout / 100
 	lookupKey := types.NamespacedName{
-		Name:      job.Name,
-		Namespace: job.Namespace,
+		Name:      job.GetName(),
+		Namespace: job.GetNamespace(),
 	}
 
 	var result error = nil
@@ -422,7 +422,7 @@ func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.
 
 		if lookupVal.Status.Failed > 0 {
 			result = errors.NewInternalError(
-				fmt.Errorf("job %s has failed, check the logs in %s", job.Name, lookupKey))
+				fmt.Errorf("job %s has failed, check the logs in %s", job.GetName(), lookupKey))
 			logger.Error(result, "Job failed")
 
 			break
@@ -638,11 +638,16 @@ func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject cl
 	return false, true, nil
 }
 
-func (r *GitLabReconciler) reconcileIngress(ctx context.Context, ingress *networkingv1.Ingress, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileIngress(ctx context.Context, obj client.Object, adapter gitlabctl.CustomResourceAdapter) error {
+	ingress, err := internal.AsIngress(obj)
+	if err != nil {
+		return err
+	}
+
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
 
 	found := &networkingv1.Ingress{}
-	err := r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: adapter.Namespace()}, found)
+	err = r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: adapter.Namespace()}, found)
 
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -709,8 +714,8 @@ func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabc
 		return err
 	}
 
-	for _, hpa := range template.Query().ObjectsByKind("HorizontalPodAutoscaler") {
-		if _, err := r.createOrPatch(ctx, hpa.(client.Object), adapter); err != nil {
+	for _, hpa := range template.Query().ObjectsByKind(gitlabctl.HorizontalPodAutoscalerKind) {
+		if _, err := r.createOrPatch(ctx, hpa, adapter); err != nil {
 			return err
 		}
 	}
@@ -758,7 +763,12 @@ func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitl
 }
 
 // If a Deployment has an HPA attached to it consult its Status to set the replica count.
-func (r *GitLabReconciler) setDeploymentReplica(ctx context.Context, deployment *appsv1.Deployment) error {
+func (r *GitLabReconciler) setDeploymentReplica(ctx context.Context, obj client.Object) error {
+	deployment, err := internal.AsDeployment(obj)
+	if err != nil {
+		return err
+	}
+
 	// Get the Deployment's HPA so we can check the desired number of replicas.
 	// Finds the Deployment's HPA using the Deployment's name (since they are defined the same way in the Helm chart).
 	hpa := &autoscalingv1.HorizontalPodAutoscaler{}
@@ -789,7 +799,12 @@ func (r *GitLabReconciler) setDeploymentReplica(ctx context.Context, deployment 
 	return nil
 }
 
-func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template *corev1.PodTemplateSpec) error {
+func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, obj client.Object) error {
+	template, err := internal.GetPodTemplateSpec(obj)
+	if err != nil {
+		return err
+	}
+
 	secretsInfo := internal.PopulateAttachedSecrets(*template)
 	for secretName, secretKeys := range secretsInfo {
 		secret := &corev1.Secret{}

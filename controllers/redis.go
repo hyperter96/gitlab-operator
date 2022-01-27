@@ -36,7 +36,7 @@ func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter
 func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	redis := gitlabctl.RedisStatefulSet(adapter)
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &redis.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, redis); err != nil {
 		return err
 	}
 

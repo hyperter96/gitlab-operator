@@ -49,7 +49,7 @@ func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter g
 	}
 
 	minio := internal.MinioStatefulSet(adapter)
-	if err := r.annotateSecretsChecksum(ctx, adapter, &minio.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, minio); err != nil {
 		return err
 	}
 

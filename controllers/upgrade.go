@@ -9,6 +9,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 )
@@ -31,9 +32,9 @@ func (r *GitLabReconciler) getDeployment(ctx context.Context, adapter gitlabctl.
 	return deployment, nil
 }
 
-func (r *GitLabReconciler) unpauseDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []*appsv1.Deployment) error {
+func (r *GitLabReconciler) unpauseDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []client.Object) error {
 	for i := range deployments {
-		deployment, err := r.getDeployment(ctx, adapter, deployments[i].Name)
+		deployment, err := r.getDeployment(ctx, adapter, deployments[i].GetName())
 		if err != nil {
 			return err
 		}
@@ -68,9 +69,9 @@ func (r *GitLabReconciler) unpauseSidekiqDeployments(ctx context.Context, adapte
 	return r.unpauseDeployments(ctx, adapter, gitlabctl.SidekiqDeployments(adapter))
 }
 
-func (r *GitLabReconciler) rollingUpdateDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []*appsv1.Deployment) error {
+func (r *GitLabReconciler) rollingUpdateDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []client.Object) error {
 	for i := range deployments {
-		deployment, err := r.getDeployment(ctx, adapter, deployments[i].Name)
+		deployment, err := r.getDeployment(ctx, adapter, deployments[i].GetName())
 		if err != nil {
 			return err
 		}

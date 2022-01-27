@@ -8,6 +8,18 @@ import (
 )
 
 const (
+	// Known object kinds.
+	ConfigMapKind               = "ConfigMap"
+	CronJobKind                 = "CronJob"
+	DeploymentKind              = "Deployment"
+	HorizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
+	IngressKind                 = "Ingress"
+	JobKind                     = "Job"
+	PersistentVolumeClaimKind   = "PersistentVolumeClaim"
+	SecretKind                  = "Secret"
+	ServiceKind                 = "Service"
+	StatefulSetKind             = "StatefulSet"
+
 	// GitlabComponentName is the com mon name of GitLab.
 	GitLabComponentName = "gitlab"
 

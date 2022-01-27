@@ -3,6 +3,8 @@ package internal
 import (
 	"strings"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,6 +42,9 @@ func GenericStatefulSet(component Component) *appsv1.StatefulSet {
 	labels := component.Labels
 
 	return &appsv1.StatefulSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind: gitlab.StatefulSetKind,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: component.Namespace,
@@ -76,6 +81,9 @@ func GenericJob(component Component) *batchv1.Job {
 	)
 
 	return &batchv1.Job{
+		TypeMeta: metav1.TypeMeta{
+			Kind: gitlab.JobKind,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
 			Namespace: component.Namespace,
@@ -118,6 +126,9 @@ func ServiceAccount(name, namespace string) *corev1.ServiceAccount {
 // GenericSecret returns empty secret.
 func GenericSecret(name, namespace string, labels map[string]string) *corev1.Secret {
 	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind: gitlab.SecretKind,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
@@ -130,6 +141,9 @@ func GenericSecret(name, namespace string, labels map[string]string) *corev1.Sec
 // GenericConfigMap returns empty configmap.
 func GenericConfigMap(name, namespace string, labels map[string]string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind: gitlab.ConfigMapKind,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,

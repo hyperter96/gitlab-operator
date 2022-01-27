@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 func (r *GitLabReconciler) reconcileMigrationsConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
@@ -23,13 +25,18 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabc
 		return err
 	}
 
-	job := migrations.DeepCopy()
+	// Attention: Type Assertion: Job.Spec is needed
+	job, ok := migrations.DeepCopyObject().(*batchv1.Job)
+	if !ok {
+		return helm.NewTypeMistmatchError(job, migrations)
+	}
 
 	// If `skipPostMigrations=true`, then:
 	// - Append "-pre" to the Migrations Job name
 	// - Inject environment variable to skip post-deployment migrations.
 	if skipPostMigrations {
-		job.Name = fmt.Sprintf("%s-pre", migrations.Name)
+		job.SetName(fmt.Sprintf("%s-pre", migrations.GetName()))
+
 		for i := range job.Spec.Template.Spec.Containers {
 			job.Spec.Template.Spec.Containers[i].Env = append(
 				job.Spec.Template.Spec.Containers[i].Env,

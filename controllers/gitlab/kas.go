@@ -1,9 +1,7 @@
 package gitlab
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // KasEnabled returns `true` if KAS is enabled, and `false` if not. By default it returns `false`.
@@ -11,38 +9,38 @@ func KasEnabled(adapter CustomResourceAdapter) bool {
 	return adapter.Values().GetBool("global.kas.enabled", false)
 }
 
-func KasConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+func KasConfigMap(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	return template.Query().ConfigMapByComponent(KasComponentName)
+	return template.Query().ObjectByKindAndComponent(ConfigMapKind, KasComponentName)
 }
 
-func KasDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+func KasDeployment(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	return template.Query().DeploymentByComponent(KasComponentName)
+	return template.Query().ObjectByKindAndComponent(DeploymentKind, KasComponentName)
 }
 
-func KasIngress(adapter CustomResourceAdapter) *networkingv1.Ingress {
+func KasIngress(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	return template.Query().IngressByComponent(KasComponentName)
+	return template.Query().ObjectByKindAndComponent(IngressKind, KasComponentName)
 }
 
-func KasService(adapter CustomResourceAdapter) *corev1.Service {
+func KasService(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	return template.Query().ServiceByComponent(KasComponentName)
+	return template.Query().ObjectByKindAndComponent(ServiceKind, KasComponentName)
 }

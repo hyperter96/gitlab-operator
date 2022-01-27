@@ -11,6 +11,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 )
@@ -59,13 +60,18 @@ func deploymentComplete(deployment *appsv1.Deployment, newStatus *appsv1.Deploym
 		newStatus.ObservedGeneration >= deployment.Generation
 }
 
-func (r *GitLabReconciler) componentRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []*appsv1.Deployment) bool {
+func (r *GitLabReconciler) componentRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []client.Object) bool {
 	running := true
 
 	for _, deployment := range deployments {
+		// This is only for safeguarding
+		if deployment.GetObjectKind().GroupVersionKind().Kind != gitlabctl.DeploymentKind {
+			continue
+		}
+
 		webservice := &appsv1.Deployment{}
 		key := types.NamespacedName{
-			Name:      deployment.Name,
+			Name:      deployment.GetName(),
 			Namespace: adapter.Namespace(),
 		}
 

@@ -46,10 +46,10 @@ var _ = Describe("KAS", func() {
 			Expect(ingress).NotTo(BeNil())
 			Expect(svc).NotTo(BeNil())
 
-			Expect(cfgMap.Name).To(Equal("test-kas"))
-			Expect(deployment.Name).To(Equal("test-kas"))
-			Expect(ingress.Name).To(Equal("test-kas"))
-			Expect(svc.Name).To(Equal("test-kas"))
+			Expect(cfgMap.GetName()).To(Equal("test-kas"))
+			Expect(deployment.GetName()).To(Equal("test-kas"))
+			Expect(ingress.GetName()).To(Equal("test-kas"))
+			Expect(svc.GetName()).To(Equal("test-kas"))
 		})
 	})
 

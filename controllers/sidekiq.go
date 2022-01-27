@@ -4,6 +4,7 @@ import (
 	"context"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 )
 
 func (r *GitLabReconciler) reconcileSidekiqConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
@@ -24,14 +25,12 @@ func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adap
 			return err
 		}
 
-		if err := r.annotateSecretsChecksum(ctx, adapter, &sidekiq.Spec.Template); err != nil {
+		if err := r.annotateSecretsChecksum(ctx, adapter, sidekiq); err != nil {
 			return err
 		}
 
-		if pause {
-			sidekiq.Spec.Paused = true
-		} else {
-			sidekiq.Spec.Paused = false
+		if err := internal.ToggleDeploymentPause(sidekiq, pause); err != nil {
+			return err
 		}
 
 		if _, err := r.createOrPatch(ctx, sidekiq, adapter); err != nil {

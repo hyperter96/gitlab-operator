@@ -41,7 +41,7 @@ func (r *GitLabReconciler) reconcileKasDeployment(ctx context.Context, adapter g
 		return err
 	}
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &kas.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, kas); err != nil {
 		return err
 	}
 

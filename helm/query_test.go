@@ -20,10 +20,10 @@ var _ = Describe("Query", func() {
 		cache := cacheBackdoor(template.Query())
 		saveCacheSize := len(*cache)
 
-		deployments := template.Query().DeploymentsByLabels(labels)
+		deployments := template.Query().ObjectsByKindAndLabels("Deployment", labels)
 		Expect(len(*cache)).To(Equal(saveCacheSize + 1))
 
-		cachedDeployments := template.Query().DeploymentsByLabels(labels)
+		cachedDeployments := template.Query().ObjectsByKindAndLabels("Deployment", labels)
 		Expect(len(*cache)).To(Equal(saveCacheSize + 1))
 
 		Expect(deployments).To(Equal(cachedDeployments))
@@ -67,14 +67,14 @@ var _ = Describe("Query", func() {
 	It("must return ConfigMaps that match the labels", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ConfigMapsByLabels(labels)).
+		Expect(template.Query().ObjectsByKindAndLabels("ConfigMap", labels)).
 			To(HaveLen(1))
 	})
 
 	It("must return empty list when there is no ConfigMap that matchs the labels", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ConfigMapsByLabels(map[string]string{
+		Expect(template.Query().ObjectsByKindAndLabels("ConfigMap", map[string]string{
 			"foo": "bar",
 		})).
 			To(BeEmpty())
@@ -83,28 +83,28 @@ var _ = Describe("Query", func() {
 	It("must return nil when there is no ConfigMap that matches the name", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ConfigMapByName("does-not-exist")).
+		Expect(template.Query().ObjectByKindAndName("ConfigMap", "does-not-exist")).
 			To(BeNil())
 	})
 
 	It("must return the ConfigMap that matches the name", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ConfigMapByName("ephemeral-test")).
+		Expect(template.Query().ObjectByKindAndName("ConfigMap", "ephemeral-test")).
 			NotTo(BeNil())
 	})
 
 	It("must return Secrets that match the labels", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().SecretsByLabels(labels)).
+		Expect(template.Query().ObjectsByKindAndLabels("Secret", labels)).
 			To(HaveLen(1))
 	})
 
 	It("must return empty list when there is no Secret that matchs the labels", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().SecretsByLabels(map[string]string{
+		Expect(template.Query().ObjectsByKindAndLabels("Secret", map[string]string{
 			"foo": "bar",
 		})).
 			To(BeEmpty())
@@ -113,28 +113,28 @@ var _ = Describe("Query", func() {
 	It("must return nil when there is no Secret that matches the name", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().SecretByName("does-not-exist")).
+		Expect(template.Query().ObjectByKindAndName("Secret", "does-not-exist")).
 			To(BeNil())
 	})
 
 	It("must return the Secret that matches the name", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().SecretByName("ephemeral-test")).
+		Expect(template.Query().ObjectByKindAndName("Secret", "ephemeral-test")).
 			NotTo(BeNil())
 	})
 
 	It("must return Deployments that match the labels", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().DeploymentsByLabels(labels)).
+		Expect(template.Query().ObjectsByKindAndLabels("Deployment", labels)).
 			To(HaveLen(1))
 	})
 
 	It("must return empty list when there is no Deployment that matchs the labels", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().DeploymentsByLabels(map[string]string{
+		Expect(template.Query().ObjectsByKindAndLabels("Deployment", map[string]string{
 			"foo": "bar",
 		})).
 			To(BeEmpty())
@@ -143,28 +143,28 @@ var _ = Describe("Query", func() {
 	It("must return nil when there is no Deployment that matches the name", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().DeploymentByName("does-not-exist")).
+		Expect(template.Query().ObjectByKindAndName("Deployment", "does-not-exist")).
 			To(BeNil())
 	})
 
 	It("must return the Deployment that matches the name", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().DeploymentByName("ephemeral-test")).
+		Expect(template.Query().ObjectByKindAndName("Deployment", "ephemeral-test")).
 			NotTo(BeNil())
 	})
 
 	It("must return Services that match the labels", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ServicesByLabels(labels)).
+		Expect(template.Query().ObjectsByKindAndLabels("Service", labels)).
 			To(HaveLen(1))
 	})
 
 	It("must return empty list when there is no Service that matchs the labels", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ServicesByLabels(map[string]string{
+		Expect(template.Query().ObjectsByKindAndLabels("Service", map[string]string{
 			"foo": "bar",
 		})).
 			To(BeEmpty())
@@ -173,14 +173,14 @@ var _ = Describe("Query", func() {
 	It("must return nil when there is no Service that matches the name", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ServiceByName("does-not-exist")).
+		Expect(template.Query().ObjectByKindAndName("Service", "does-not-exist")).
 			To(BeNil())
 	})
 
 	It("must return the Service that matches the name", func() {
 		Expect(err).To(BeNil())
 
-		Expect(template.Query().ServiceByName("ephemeral-test")).
+		Expect(template.Query().ObjectByKindAndName("Service", "ephemeral-test")).
 			NotTo(BeNil())
 	})
 })

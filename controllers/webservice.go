@@ -57,14 +57,12 @@ func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, a
 			return err
 		}
 
-		if err := r.annotateSecretsChecksum(ctx, adapter, &webservice.Spec.Template); err != nil {
+		if err := r.annotateSecretsChecksum(ctx, adapter, webservice); err != nil {
 			return err
 		}
 
-		if pause {
-			webservice.Spec.Paused = true
-		} else {
-			webservice.Spec.Paused = false
+		if err := internal.ToggleDeploymentPause(webservice, pause); err != nil {
+			return err
 		}
 
 		if _, err := r.createOrPatch(ctx, webservice, adapter); err != nil {

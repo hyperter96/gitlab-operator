@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -24,31 +23,29 @@ func MigrationsEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // MigrationsConfigMap returns the ConfigMaps of Migrations component.
-func MigrationsConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
-	var result *corev1.ConfigMap
+func MigrationsConfigMap(adapter CustomResourceAdapter) client.Object {
+	var result client.Object
 
 	template, err := GetTemplate(adapter)
-
 	if err != nil {
 		return result // WARNING: This should return an error instead.
 	}
 
-	result = template.Query().ConfigMapByName(
+	result = template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MigrationsComponentName))
 
 	return result
 }
 
 // MigrationsJob returns the Job for Migrations component.
-func MigrationsJob(adapter CustomResourceAdapter) (*batchv1.Job, error) {
+func MigrationsJob(adapter CustomResourceAdapter) (client.Object, error) {
 	template, err := GetTemplate(adapter)
-
 	if err != nil {
 		return nil, err
 	}
 
-	result := template.Query().JobByComponent(MigrationsComponentName)
-	result.Name = nameWithHashSuffix(result.Name, adapter, 3)
+	result := template.Query().ObjectByKindAndComponent(JobKind, MigrationsComponentName)
+	result.SetName(nameWithHashSuffix(result.GetName(), adapter, 3))
 
 	return result, nil
 }

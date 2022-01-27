@@ -28,7 +28,7 @@ func (r *GitLabReconciler) reconcileMailroomConfigMap(ctx context.Context, adapt
 
 func (r *GitLabReconciler) reconcileMailroomDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	deployment := gitlabctl.MailroomDeployment(adapter)
-	if err := r.annotateSecretsChecksum(ctx, adapter, &deployment.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, deployment); err != nil {
 		return err
 	}
 

@@ -41,7 +41,7 @@ func (r *GitLabReconciler) reconcilePagesDeployment(ctx context.Context, adapter
 		return err
 	}
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &pages.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, pages); err != nil {
 		return err
 	}
 

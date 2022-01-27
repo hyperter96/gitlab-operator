@@ -3,9 +3,7 @@ package gitlab
 import (
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -19,50 +17,50 @@ func RegistryEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // RegistryService returns the Service of the Registry component.
-func RegistryService(adapter CustomResourceAdapter) *corev1.Service {
+func RegistryService(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().ServiceByComponent(RegistryComponentName)
+	result := template.Query().ObjectByKindAndComponent(ServiceKind, RegistryComponentName)
 
 	return result
 }
 
 // RegistryDeployment returns the Deployment of the Registry component.
-func RegistryDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+func RegistryDeployment(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().DeploymentByComponent(RegistryComponentName)
+	result := template.Query().ObjectByKindAndComponent(DeploymentKind, RegistryComponentName)
 
 	return result
 }
 
 // RegistryConfigMap returns the ConfigMap of the Registry component.
-func RegistryConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
+func RegistryConfigMap(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().ConfigMapByName(
+	result := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), RegistryComponentName))
 
 	return result
 }
 
 // RegistryIngress returns the Ingress of the Registry component.
-func RegistryIngress(adapter CustomResourceAdapter) *networkingv1.Ingress {
+func RegistryIngress(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().IngressByComponent(RegistryComponentName)
+	result := template.Query().ObjectByKindAndComponent(IngressKind, RegistryComponentName)
 
 	return result
 }

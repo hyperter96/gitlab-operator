@@ -35,7 +35,7 @@ func (r *GitLabReconciler) reconcileGitLabExporterConfigMaps(ctx context.Context
 func (r *GitLabReconciler) reconcileGitLabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	exporter := gitlabctl.ExporterDeployment(adapter)
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &exporter.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, exporter); err != nil {
 		return err
 	}
 

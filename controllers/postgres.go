@@ -33,7 +33,7 @@ func (r *GitLabReconciler) reconcilePostgresConfigMap(ctx context.Context, adapt
 func (r *GitLabReconciler) reconcilePostgresStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
 	ss := gitlabctl.PostgresStatefulSet(adapter)
 
-	if err := r.annotateSecretsChecksum(ctx, adapter, &ss.Spec.Template); err != nil {
+	if err := r.annotateSecretsChecksum(ctx, adapter, ss); err != nil {
 		return err
 	}
 

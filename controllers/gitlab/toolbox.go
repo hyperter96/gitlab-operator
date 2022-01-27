@@ -3,9 +3,7 @@ package gitlab
 import (
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -39,20 +37,20 @@ func ToolboxCronJobPersistenceEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // ToolboxDeployment returns the Deployment of the Toolbox component.
-func ToolboxDeployment(adapter CustomResourceAdapter) *appsv1.Deployment {
+func ToolboxDeployment(adapter CustomResourceAdapter) client.Object {
 	template, err := GetTemplate(adapter)
 	if err != nil {
 		return nil // WARNING: this should return an error
 	}
 
-	result := template.Query().DeploymentByComponent(ToolboxComponentName(adapter.ChartVersion()))
+	result := template.Query().ObjectByKindAndComponent(DeploymentKind, ToolboxComponentName(adapter.ChartVersion()))
 
 	return result
 }
 
 // ToolboxConfigMap returns the ConfigMaps of the Toolbox component.
-func ToolboxConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
-	var result *corev1.ConfigMap
+func ToolboxConfigMap(adapter CustomResourceAdapter) client.Object {
+	var result client.Object
 
 	template, err := GetTemplate(adapter)
 
@@ -60,15 +58,15 @@ func ToolboxConfigMap(adapter CustomResourceAdapter) *corev1.ConfigMap {
 		return nil // WARNING: This should return an error instead.
 	}
 
-	result = template.Query().ConfigMapByName(
+	result = template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
 
 	return result
 }
 
 // ToolboxCronJob returns the CronJob of the Toolbox component.
-func ToolboxCronJob(adapter CustomResourceAdapter) *batchv1beta1.CronJob {
-	var result *batchv1beta1.CronJob
+func ToolboxCronJob(adapter CustomResourceAdapter) client.Object {
+	var result client.Object
 
 	template, err := GetTemplate(adapter)
 
@@ -76,15 +74,15 @@ func ToolboxCronJob(adapter CustomResourceAdapter) *batchv1beta1.CronJob {
 		return nil // WARNING: This should return an error instead.
 	}
 
-	result = template.Query().CronJobByName(
+	result = template.Query().ObjectByKindAndName(CronJobKind,
 		fmt.Sprintf("%s-%s-backup", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
 
 	return result
 }
 
 // ToolboxPersistentVolumeClaim returns the PersistentVolumeClaim of the Toolbox component.
-func ToolboxCronJobPersistentVolumeClaim(adapter CustomResourceAdapter) *corev1.PersistentVolumeClaim {
-	var result *corev1.PersistentVolumeClaim
+func ToolboxCronJobPersistentVolumeClaim(adapter CustomResourceAdapter) client.Object {
+	var result client.Object
 
 	template, err := GetTemplate(adapter)
 
@@ -92,7 +90,7 @@ func ToolboxCronJobPersistentVolumeClaim(adapter CustomResourceAdapter) *corev1.
 		return nil // WARNING: This should return an error instead.
 	}
 
-	result = template.Query().PersistentVolumeClaimByName(
+	result = template.Query().ObjectByKindAndName(PersistentVolumeClaimKind,
 		fmt.Sprintf("%s-%s-backup-tmp", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
 
 	return result

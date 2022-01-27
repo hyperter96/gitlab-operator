@@ -56,7 +56,6 @@ Configuration can be applied during runtime by setting environment variables. Al
 | `SSH_PUBLIC_KEY_FILE` | Path to SSH public key file                               | `$HOME/.ssh/id_rsa.pub` |
 | `SSH_PUBLIC_KEY`      | Content of SSH public key file                            | Content of `$SSH_PUBLIC_KEY_FILE` |
 | `LOG_LEVEL`           | Verbosity of `openshift-install` output                   | `info` |
-| `INSTALL_DIR`         | Directory for install assets, useful for launching multiple clusters | `install-$CLUSTER_NAME` |
 
 NOTE:
 The variables `CLUSTER_NAME` and `BASE_DOMAIN` are combined to build the domain name for the cluster.

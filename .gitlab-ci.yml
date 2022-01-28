@@ -181,7 +181,7 @@ build_latest_image:
   script:
     - docker build -t "${CI_REGISTRY_IMAGE}:${CI_DEFAULT_BRANCH}" -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}" -t "${CI_REGISTRY_IMAGE}:latest" .
     - docker push "${CI_REGISTRY_IMAGE}:${CI_DEFAULT_BRANCH}"
-    - docker push "${CI_REGISTRY_IMAGE}:latest
+    - docker push "${CI_REGISTRY_IMAGE}:latest"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}"
   rules:
     - !reference [.if_default_branch]

@@ -45,6 +45,8 @@ OPM_VERSION=${OPM_VERSION:-"1.19.0"}
 OPM_URL=${OPM_URL:-"https://github.com/operator-framework/operator-registry/archive/refs/tags/v${OPM_VERSION}.tar.gz"}
 TARGET_NAMESPACE="gitlab-system"
 OPM_DOCKER=${OPM_DOCKER:-"docker"}
+KIND_CONFIG=${KIND_CONFIG:-""}
+KIND_IMAGE=${KIND_IMAGE:-""}
 
 OPERATOR_HOME_DIR=$(realpath ${OPERATOR_HOME_DIR})
 
@@ -96,8 +98,15 @@ generate_bundle(){
 }
 
 patch_bundle(){
-  ${YQ} eval -i '(.spec.install.spec.deployments[].spec.template.spec.containers[] | select( .name=="manager").image) |= "'$OPERATOR_IMG:$OPERATOR_TAG'"' \
+  # Point CSV to proper image tag
+  local operator_image="${OPERATOR_IMG}:${OPERATOR_TAG}"
+  ${YQ} eval -i '(.spec.install.spec.deployments[].spec.template.spec.containers[] | select( .name=="manager").image) |= "'${operator_image}'"' \
     ${OSDK_BASE_DIR}/bundle/manifests/${OLM_PACKAGE_NAME}.clusterserviceversion.yaml
+  ${YQ} eval -i '.metadata.annotations.containerImage |= "'${operator_image}'"' \
+    ${OSDK_BASE_DIR}/bundle/manifests/${OLM_PACKAGE_NAME}.clusterserviceversion.yaml
+  ## Currently neither OLM nor OperatorSDK can't handle IngressClass presence gracefully
+  ## https://github.com/operator-framework/operator-sdk/issues/5491
+  # ${YQ} eval '.metadata.name="gitlab-nginx"' ${OPERATOR_HOME_DIR}/config/rbac/nginx_ingressclass.yaml > ${OSDK_BASE_DIR}/bundle/manifests/gitlab-nginx-ingressclass.yaml
 }
 
 validate_bundle(){
@@ -116,7 +125,12 @@ compile_and_publish_bundle(){
 }
 
 initialize_kind(){
-  ${KIND} create cluster --name ${KIND_CLUSTER_NAME}
+  local kind_config_option=""
+  local kind_image_option=""
+  [ -n "$KIND_CONFIG" ] && kind_config_option="--config=${KIND_CONFIG}"
+  [ -n "$KIND_IMAGE" ] && kind_image_option="--image=${KIND_IMAGE}"
+
+  ${KIND} create cluster --name ${KIND_CLUSTER_NAME} ${kind_config_option} ${kind_image_option}
 }
 
 install_olm(){

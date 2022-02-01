@@ -3,7 +3,7 @@ image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-
 variables:
   # Configuration of K8s
   # Namespace within which to run tests
-  TESTS_NAMESPACE: "n${CI_COMMIT_SHORT_SHA}"
+  TESTS_NAMESPACE: "${CI_COMMIT_SHORT_SHA}-${CI_COMMIT_REF_SLUG}"
   DOMAIN_OPENSHIFT_4_7: "apps.ocp-ci-4717.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_8: "apps.ocp-ci-4821.k8s-ft.win"
   DOMAIN_GKE: "gitlab-operator.k8s-ft.win"
@@ -11,7 +11,7 @@ variables:
   NAMESPACE: "gitlab-system"
   TAG: ${CI_COMMIT_SHORT_SHA}
   IMG: ${CI_REGISTRY_IMAGE}
-  HOSTSUFFIX: "n${CI_COMMIT_SHORT_SHA}"
+  HOSTSUFFIX: "${CI_COMMIT_SHORT_SHA}-${CI_COMMIT_REF_SLUG}"
   TLSSECRETNAME: "gitlab-ci-tls"
   # docker configuration
   DOCKER_DRIVER: overlay2
@@ -224,7 +224,7 @@ build_review_4_7:
 create_review_4_7:
   extends: .create_review_template
   environment: &environment_4_7
-    name: openshift_4_7/n$CI_COMMIT_SHORT_SHA
+    name: openshift_4_7/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_7
     on_stop: stop_review_openshift_4_7
     auto_stop_in: 1 hour
@@ -253,7 +253,7 @@ build_review_4_8:
 create_review_4_8:
   extends: .create_review_template
   environment: &environment_4_8
-    name: openshift_4_8/$CI_COMMIT_REF_NAME
+    name: openshift_4_8/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_8
     on_stop: stop_review_openshift_4_8
     auto_stop_in: 1 hour
@@ -283,7 +283,7 @@ build_review_gke:
 create_review_gke:
   extends: .create_review_template
   environment: &environment_gke
-    name: gke/n$CI_COMMIT_SHORT_SHA
+    name: gke/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
     on_stop: stop_review_gke
     auto_stop_in: 1 hour
@@ -308,7 +308,6 @@ qa_4_7:
   stage: qa
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_7
-    QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   needs:
     - review_4_7
 
@@ -317,7 +316,6 @@ qa_4_8:
   stage: qa
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_8
-    QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   needs:
     - review_4_8
 
@@ -326,7 +324,6 @@ qa_gke:
   stage: qa
   variables:
     DOMAIN: $DOMAIN_GKE
-    QA_ENVIRONMENT_URL: "https://gitlab-${HOSTSUFFIX}.${DOMAIN}"
   needs:
     - review_gke
 
@@ -337,7 +334,7 @@ stop_review_openshift_4_7:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_7"
   environment:
-    name: openshift_4_7/n$CI_COMMIT_SHORT_SHA
+    name: openshift_4_7/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     action: stop
   needs:
     - build_review_4_7
@@ -349,7 +346,7 @@ stop_review_openshift_4_8:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_8"
   environment:
-    name: openshift_4_8/$CI_COMMIT_REF_NAME
+    name: openshift_4_8/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     action: stop
   needs:
     - build_review_4_8
@@ -361,7 +358,7 @@ stop_review_gke:
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
   environment:
-    name: gke/n$CI_COMMIT_SHORT_SHA
+    name: gke/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     action: stop
   needs:
     - build_review_gke

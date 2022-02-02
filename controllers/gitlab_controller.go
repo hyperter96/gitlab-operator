@@ -134,14 +134,13 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+	if gitlabctl.SharedSecretsEnabled(adapter) {
+		if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
-	configureCertmanager := internal.CertManagerEnabled(adapter)
-	tlsSecretName := adapter.Values().GetString("global.ingress.tls.secretName")
-
-	if !configureCertmanager && tlsSecretName == "" {
+	if gitlabctl.SelfSignedCertsEnabled(adapter) {
 		if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {
 			return ctrl.Result{}, err
 		}

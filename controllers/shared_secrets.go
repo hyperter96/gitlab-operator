@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 )
@@ -24,10 +23,6 @@ func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gi
 	job, err := gitlabctl.SelfSignedCertsJob(adapter)
 	if err != nil {
 		return err
-	}
-
-	if job == nil {
-		return fmt.Errorf("self-signed certificate job skipped, not needed per configuration: %s", adapter.Reference())
 	}
 
 	return r.runJobAndWait(ctx, adapter, job, gitlabctl.SharedSecretsJobTimeout())

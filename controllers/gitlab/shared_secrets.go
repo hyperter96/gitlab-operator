@@ -15,7 +15,30 @@ import (
 const (
 	// SharedSecretsJobDefaultTimeout is the default timeout to wait for Shared Secrets job to finish.
 	SharedSecretsJobDefaultTimeout = 300 * time.Second
+
+	sharedSecretsEnabled        = "shared-secrets.enabled"
+	sharedSecretsEnabledDefault = true
 )
+
+// SharedSecretsEnabled returns `true` if the Shared Secrets component is enabled, and `false` if not.
+func SharedSecretsEnabled(adapter CustomResourceAdapter) bool {
+	enabled := adapter.Values().GetBool(sharedSecretsEnabled, sharedSecretsEnabledDefault)
+
+	return enabled
+}
+
+// SelfSignedCertsEnabled returns `true` if the self-signed certificates component is enabled, and `false` if not.
+func SelfSignedCertsEnabled(adapter CustomResourceAdapter) bool {
+	sharedSecretsEnabled := SharedSecretsEnabled(adapter)
+	configureCertmanager := adapter.Values().GetBool("global.ingress.configureCertmanager", true)
+	globalTLSConfigured, _ := adapter.Values().GetValue("global.ingress.tls")
+
+	if sharedSecretsEnabled && !configureCertmanager && globalTLSConfigured == nil {
+		return true
+	}
+
+	return false
+}
 
 // SharedSecretsConfigMap returns the ConfigMaps of Shared Secret component.
 func SharedSecretsConfigMap(adapter CustomResourceAdapter) (client.Object, error) {

@@ -7,38 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	// SharedSecretsJobDefaultTimeout is the default timeout to wait for Shared Secrets job to finish.
 	SharedSecretsJobDefaultTimeout = 300 * time.Second
-
-	sharedSecretsEnabled        = "shared-secrets.enabled"
-	sharedSecretsEnabledDefault = true
 )
-
-// SharedSecretsEnabled returns `true` if the Shared Secrets component is enabled, and `false` if not.
-func SharedSecretsEnabled(adapter CustomResourceAdapter) bool {
-	enabled := adapter.Values().GetBool(sharedSecretsEnabled, sharedSecretsEnabledDefault)
-
-	return enabled
-}
-
-// SelfSignedCertsEnabled returns `true` if the self-signed certificates component is enabled, and `false` if not.
-func SelfSignedCertsEnabled(adapter CustomResourceAdapter) bool {
-	sharedSecretsEnabled := SharedSecretsEnabled(adapter)
-	configureCertmanager := adapter.Values().GetBool("global.ingress.configureCertmanager", true)
-	globalTLSConfigured, _ := adapter.Values().GetValue("global.ingress.tls")
-
-	if sharedSecretsEnabled && !configureCertmanager && globalTLSConfigured == nil {
-		return true
-	}
-
-	return false
-}
 
 // SharedSecretsConfigMap returns the ConfigMaps of Shared Secret component.
 func SharedSecretsConfigMap(adapter CustomResourceAdapter) (client.Object, error) {
@@ -102,22 +77,12 @@ func SelfSignedCertsJob(adapter CustomResourceAdapter) (client.Object, error) {
 func SharedSecretsResources(adapter CustomResourceAdapter) (client.Object, client.Object, error) {
 	cfgMap, err := SharedSecretsConfigMap(adapter)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	if cfgMap == nil {
-		return nil, nil,
-			errors.NewNotFound(schema.ParseGroupResource("configmaps"), SharedSecretsComponentName)
+		return cfgMap, nil, err
 	}
 
 	job, err := SharedSecretsJob(adapter)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	if job == nil {
-		return nil, nil,
-			errors.NewNotFound(schema.ParseGroupResource("jobs.batch"), SharedSecretsComponentName)
+		return cfgMap, job, err
 	}
 
 	return cfgMap, job, nil

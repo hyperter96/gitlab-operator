@@ -134,16 +134,12 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if gitlabctl.SharedSecretsEnabled(adapter) {
-		if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
-		}
+	if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
+		return ctrl.Result{}, err
 	}
 
-	if gitlabctl.SelfSignedCertsEnabled(adapter) {
-		if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
-		}
+	if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if gitlabctl.PostgresEnabled(adapter) {

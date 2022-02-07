@@ -5,6 +5,6 @@ VERSION=$1
 CHART_VERSIONS=$(paste -sd, CHART_VERSIONS)
 MSG="Version ${VERSION} - supports GitLab Charts ${CHART_VERSIONS//,/, }"
 
-git tag "${VERSION}" -m \"${MSG}\"
+git tag "${VERSION}" -m "${MSG}"
 
-echo "tag ${VERSION} created, finish by pushing: 'git push origin ${VERSION}'"
+echo "tag ${VERSION} created, finish by pushing: git push origin ${VERSION}"

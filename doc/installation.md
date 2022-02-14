@@ -1,5 +1,8 @@
 # Installation
 
+NOTE:
+The GitLab Operator is under active development and is not yet suitable for production use. See our [`Minimal` to `Viable` Epic](https://gitlab.com/groups/gitlab-org/cloud-native/-/epics/39) for more information.
+
 This document describes how to deploy the GitLab Operator via manifests in your Kubernetes or OpenShift cluster.
 
 If using OpenShift, these steps normally are handled by OLM (the Operator Lifecycle Manager) once an operator is bundle published. However, to test the most recent operator images, users may need to install the operator using the deployment manifests available in the operator repository.

@@ -6,6 +6,8 @@
 
 # GitLab Operator
 
+**Note:** The GitLab Operator is under active development and is not yet suitable for production use. See our [`Minimal` to `Viable` Epic](https://gitlab.com/groups/gitlab-org/cloud-native/-/epics/39) for more information.
+
 The GitLab operator aims to manage the full lifecycle of GitLab instances in your Kubernetes or Openshift container platforms.
 
 While new and still actively being developed, the operator aims to:

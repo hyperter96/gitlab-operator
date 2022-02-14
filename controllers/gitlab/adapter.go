@@ -9,6 +9,10 @@ import (
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+
+	"github.com/mitchellh/copystructure"
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 // CustomResourceAdapter is a wrapper for GitLab Custom Resource. It provides a convenient interface
@@ -52,6 +56,14 @@ type CustomResourceAdapter interface {
 
 	// Values returns the set of values that will be used the render GitLab chart.
 	Values() resource.Values
+
+	// ResetValues re-initializes the values of the adapter with the values of
+	// GitLab resource and Operator defaults.
+	ResetValues(resource *gitlabv1beta1.GitLab)
+
+	// UpdateValues coalesces all the values in the Chart with the current values.
+	// This is to ensure that Chart default values are populated as well.
+	UpdateValues(chart *chart.Chart) error
 }
 
 var defaultValues string = `
@@ -239,10 +251,8 @@ registry:
 func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapter {
 	result := &populatingAdapter{
 		resource: gitlab,
-		values:   gitlab.Spec.Chart.Values.Object,
 	}
-	result.populateValues()
-	result.hashValues()
+	result.ResetValues(gitlab)
 
 	return result
 }
@@ -288,6 +298,27 @@ func (a *populatingAdapter) ReleaseName() string {
 
 func (a *populatingAdapter) Values() resource.Values {
 	return a.values
+}
+
+func (a *populatingAdapter) ResetValues(resource *gitlabv1beta1.GitLab) {
+	if vCopy, err := copystructure.Copy(resource.Spec.Chart.Values.Object); err == nil {
+		a.values = vCopy.(map[string]interface{})
+	} else {
+		a.values = resource.Spec.Chart.Values.Object
+	}
+
+	a.populateValues()
+	a.hashValues()
+}
+
+func (a *populatingAdapter) UpdateValues(chart *chart.Chart) error {
+	coalesceValues, err := chartutil.CoalesceValues(chart, a.values)
+
+	if err == nil {
+		a.values = coalesceValues.AsMap()
+	}
+
+	return err
 }
 
 func (a *populatingAdapter) populateValues() {

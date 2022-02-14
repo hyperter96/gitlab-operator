@@ -24,9 +24,12 @@ func loadTemplate() (Template, error) {
 	values := resource.Values{}
 	_ = values.AddFromYAMLFile(valuesPath)
 
-	template, err := NewBuilder(chartPath).Render(values)
+	builder, err := NewBuilder(chartPath)
+	if err != nil {
+		return nil, err
+	}
 
-	return template, err
+	return builder.Render(values)
 }
 
 func TestHelm(t *testing.T) {

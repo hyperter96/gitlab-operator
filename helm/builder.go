@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/releaseutil"
@@ -16,9 +17,8 @@ import (
 // Builder provides an interface to build and render a Helm template.
 type Builder interface {
 
-	// Chart return the source of the chart that will be rendered. This field is immutable and must
-	// be specified when Builder is initialized.
-	Chart() string
+	// Chart returns the Helm chart that will be rendered.
+	Chart() *chart.Chart
 
 	// Namespace returns namespace of the template.
 	Namespace() string
@@ -50,17 +50,41 @@ type Builder interface {
 }
 
 // NewBuilder creates a new builder interface for Helm template.
-func NewBuilder(chart string) Builder {
+func NewBuilder(chartName string) (Builder, error) {
 	envSettings := cli.New()
 
-	return &defaultBuilder{
-		envSettings:   envSettings,
-		chart:         chart,
-		namespace:     envSettings.Namespace(),
-		releaseName:   defaultReleaseName,
-		storageDriver: memoryStorageDriver,
-		debugLogger:   noopLogger,
+	actionConfig := new(action.Configuration)
+	actionConfig, err := actionConfig, actionConfig.Init(
+		envSettings.RESTClientGetter(), envSettings.Namespace(),
+		memoryStorageDriver, noopLogger)
+
+	if err != nil {
+		return nil, err
 	}
+
+	client := action.NewInstall(actionConfig)
+	client.DryRun = true
+	client.Replace = true
+	client.ClientOnly = true
+	client.KubeVersion = settings.KubeVersion
+	client.APIVersions = settings.GetKubeAPIVersions()
+
+	chartPath, err := client.ChartPathOptions.LocateChart(chartName, envSettings)
+	if err != nil {
+		return nil, err
+	}
+
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &defaultBuilder{
+		client:      client,
+		chart:       chart,
+		namespace:   envSettings.Namespace(),
+		releaseName: defaultReleaseName,
+	}, nil
 }
 
 const (
@@ -73,16 +97,14 @@ var (
 )
 
 type defaultBuilder struct {
-	envSettings   *cli.EnvSettings
-	storageDriver string
-	debugLogger   func(string, ...interface{})
-	chart         string
-	namespace     string
-	releaseName   string
-	disableHooks  bool
+	client       *action.Install
+	chart        *chart.Chart
+	namespace    string
+	releaseName  string
+	disableHooks bool
 }
 
-func (b *defaultBuilder) Chart() string {
+func (b *defaultBuilder) Chart() *chart.Chart {
 	return b.chart
 }
 
@@ -121,41 +143,13 @@ func (b *defaultBuilder) EnableHooks() {
 	b.disableHooks = false
 }
 
-func (b *defaultBuilder) newActionConfig() (*action.Configuration, error) {
-	actionConfig := new(action.Configuration)
-	return actionConfig, actionConfig.Init(
-		b.envSettings.RESTClientGetter(), b.namespace, b.storageDriver, b.debugLogger)
-}
-
 // Render renders the template with the provided values and parses the objects.
 func (b *defaultBuilder) Render(values resource.Values) (Template, error) {
-	actionConfig, err := b.newActionConfig()
-	if err != nil {
-		return nil, err
-	}
+	b.client.DisableHooks = b.disableHooks
+	b.client.Namespace = b.namespace
+	b.client.ReleaseName = b.releaseName
 
-	client := action.NewInstall(actionConfig)
-	client.DryRun = true
-	client.Replace = true
-	client.ClientOnly = true
-	client.DisableHooks = b.disableHooks
-	client.Namespace = b.namespace
-	client.ReleaseName = b.releaseName
-
-	client.KubeVersion = settings.KubeVersion
-	client.APIVersions = settings.GetKubeAPIVersions()
-
-	chartPath, err := client.ChartPathOptions.LocateChart(b.chart, b.envSettings)
-	if err != nil {
-		return nil, err
-	}
-
-	chartRequested, err := loader.Load(chartPath)
-	if err != nil {
-		return nil, err
-	}
-
-	release, err := client.Run(chartRequested, values)
+	release, err := b.client.Run(b.chart, values)
 	if err != nil {
 		return nil, err
 	}

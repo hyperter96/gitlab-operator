@@ -3,6 +3,7 @@ package gitlab
 import (
 	"sync"
 
+	"helm.sh/helm/v3/pkg/chart"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
@@ -26,7 +27,9 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 		if entry.hash == adapter.Hash() {
 			logger.V(2).Info("Retrieving the cached template")
 
-			return entry.template, nil
+			err := adapter.UpdateValues(entry.chart)
+
+			return entry.template, err
 		}
 
 		logger.V(1).Info("Template signature has changed. Evicting it now.")
@@ -43,11 +46,26 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 		return nil, err
 	}
 
-	template, err := buildTemplate(adapter)
+	builder, err := helm.NewBuilder(helm.GetChartPath(adapter.ChartVersion()))
+	if err != nil {
+		return nil, err
+	}
+
+	builder.SetNamespace(adapter.Namespace())
+	builder.SetReleaseName(adapter.ReleaseName())
+	builder.EnableHooks()
+
+	template, err := builder.Render(adapter.Values())
+	if err != nil {
+		return template, err
+	}
+
+	err = adapter.UpdateValues(builder.Chart())
+
 	if err != nil {
 		logger.Error(err, "Failed to render the template")
 
-		return nil, err
+		return template, err
 	}
 
 	logger.V(1).Info("The template is rendered. Check the warnings (if any).",
@@ -65,6 +83,7 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 	entry = store.update(adapter.Reference(), &digestedTemplate{
 		hash:     adapter.Hash(),
 		template: template,
+		chart:    builder.Chart(),
 	})
 
 	return entry.template, nil
@@ -73,6 +92,7 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 type digestedTemplate struct {
 	hash     string
 	template helm.Template
+	chart    *chart.Chart
 }
 
 type internalTemplateStore struct {
@@ -113,14 +133,4 @@ func newTemplateStore() *internalTemplateStore {
 		inventory: map[string]*digestedTemplate{},
 		locker:    &sync.Mutex{},
 	}
-}
-
-func buildTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
-	builder := helm.NewBuilder(helm.GetChartPath(adapter.ChartVersion()))
-
-	builder.SetNamespace(adapter.Namespace())
-	builder.SetReleaseName(adapter.ReleaseName())
-	builder.EnableHooks()
-
-	return builder.Render(adapter.Values())
 }

@@ -3,6 +3,7 @@ package gitlab
 import (
 	"encoding/json"
 	"os"
+	"strconv"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -10,6 +11,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 
@@ -37,6 +39,113 @@ var _ = Describe("CustomResourceAdapter", func() {
 	 * All tests are packed together here to avoid rendering GitLab Chart repeatedly.
 	 * This is done to speed up the test.
 	 */
+
+	It("populates Chart default values after rendering", func() {
+		userValues := resource.Values{
+			"global": map[string]interface{}{
+				"hosts": map[string]interface{}{
+					"domain": "test.com",
+				},
+				"ingress": map[string]interface{}{
+					"class":                "nginx",
+					"configureCertmanager": true,
+				},
+			},
+			"certmanager-issuer": map[string]interface{}{
+				"email": "me@test.com",
+			},
+		}
+
+		runAsUser, _ := strconv.ParseFloat(settings.LocalUser, 32)
+
+		expectedPreRenderValues := map[string]interface{}{
+			"certmanager.install":                      false,
+			"gitlab-runner.install":                    false,
+			"gitlab.sidekiq.securityContext.runAsUser": runAsUser,
+			"nginx-ingress.serviceAccount.name":        settings.NGINXServiceAccount,
+			"global.hosts.domain":                      "test.com",
+			"global.ingress.configureCertmanager":      true,
+			"certmanager-issuer.email":                 "me@test.com",
+		}
+
+		expectedPostRenderValues := map[string]interface{}{
+			"nginx-ingress.serviceAccount.create":       true,
+			"gitlab.gitlab-shell.sshDaemon":             "openssh",
+			"gitlab.gitaly.logging.format":              "json",
+			"shared-secrets.env":                        "production",
+			"certmanager-issuer.resources.requests.cpu": "50m",
+			"grafana.admin.existingSecret":              "bogus",
+		}
+
+		cr := CreateMockGitLab(releaseName, namespace, userValues)
+		adapter := CreateMockAdapter(cr)
+
+		for k, v := range expectedPreRenderValues {
+			Expect(adapter.Values().GetValue(k)).To(Equal(v))
+		}
+
+		for k, v := range expectedPostRenderValues {
+			if adapter.Values().HasKey(k) {
+				Expect(adapter.Values().GetValue(k)).NotTo(Equal(v))
+			}
+		}
+
+		template, err := GetTemplate(adapter)
+
+		Expect(err).NotTo(HaveOccurred())
+
+		for k, v := range expectedPreRenderValues {
+			Expect(adapter.Values().GetValue(k)).To(Equal(v))
+		}
+
+		for k, v := range expectedPostRenderValues {
+			Expect(adapter.Values().GetValue(k)).To(Equal(v))
+		}
+
+		/* reset values back to pre-render */
+
+		adapter.ResetValues(cr)
+
+		for k, v := range expectedPreRenderValues {
+			Expect(adapter.Values().GetValue(k)).To(Equal(v))
+		}
+
+		for k, v := range expectedPostRenderValues {
+			if adapter.Values().HasKey(k) {
+				Expect(adapter.Values().GetValue(k)).NotTo(Equal(v))
+			}
+		}
+
+		/* retrieve template from cache for a new adapter
+		   this is to ensure that second pass of GetTemplate
+		   coalesces chart values */
+
+		newAdapter := CreateMockAdapter(cr)
+
+		for k, v := range expectedPreRenderValues {
+			Expect(newAdapter.Values().GetValue(k)).To(Equal(v))
+		}
+
+		for k, v := range expectedPostRenderValues {
+			if newAdapter.Values().HasKey(k) {
+				Expect(newAdapter.Values().GetValue(k)).NotTo(Equal(v))
+			}
+		}
+
+		/* cache kicks in here */
+		newTemplate, err := GetTemplate(newAdapter)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(newTemplate).To(BeIdenticalTo(template))
+
+		for k, v := range expectedPreRenderValues {
+			Expect(newAdapter.Values().GetValue(k)).To(Equal(v))
+		}
+
+		for k, v := range expectedPostRenderValues {
+			Expect(newAdapter.Values().GetValue(k)).To(Equal(v))
+		}
+	})
 
 	It("must render the template only when the CR has changed", func() {
 		adapter1 := CreateMockAdapter(mockGitLab1)

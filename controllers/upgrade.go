@@ -44,13 +44,7 @@ func (r *GitLabReconciler) unpauseDeployments(ctx context.Context, adapter gitla
 
 		// If unpausing during an upgrade, then set BYPASS_SCHEMA_VERSION.
 		if adapter.IsUpgrade() {
-			for j := range deployment.Spec.Template.Spec.InitContainers {
-				if deployment.Spec.Template.Spec.InitContainers[j].Name == initContainerNameDependencies {
-					deployment.Spec.Template.Spec.InitContainers[j].Env = append(
-						deployment.Spec.Template.Spec.InitContainers[j].Env,
-						corev1.EnvVar{Name: envVarNameBypassSchemaVersion, Value: "true"})
-				}
-			}
+			addInitContainerEnvVar(deployment, initContainerNameDependencies, envVarNameBypassSchemaVersion, "true")
 		}
 
 		err = r.Update(ctx, deployment)
@@ -176,22 +170,65 @@ func (r *GitLabReconciler) rollingUpdateWebserviceAndSidekiqIfEnabled(ctx contex
 	return nil
 }
 
-func removeInitContainerEnvVar(deployment *appsv1.Deployment, initContainerName, envVarName string) {
-	for i := range deployment.Spec.Template.Spec.InitContainers {
-		if deployment.Spec.Template.Spec.InitContainers[i].Name == initContainerName {
-			for j := range deployment.Spec.Template.Spec.InitContainers[i].Env {
-				if deployment.Spec.Template.Spec.InitContainers[i].Env[j].Name == envVarName {
-					deployment.Spec.Template.Spec.InitContainers[i].Env = removeEnvVar(deployment.Spec.Template.Spec.InitContainers[i].Env, j)
-				}
-			}
+type containerInPlaceOperator = func(container *corev1.Container) error
+
+func applyToContainer(containers []corev1.Container, name string, operator containerInPlaceOperator) error {
+	for i := range containers {
+		if containers[i].Name == name {
+			return operator(&containers[i])
 		}
+	}
+
+	return nil
+}
+
+func indexOfEnvVar(envVars []corev1.EnvVar, name string) int {
+	idx := -1
+
+	for i := range envVars {
+		if envVars[i].Name == name {
+			idx = i
+			break
+		}
+	}
+
+	return idx
+}
+
+func addEnvVar(name, value string) containerInPlaceOperator {
+	return func(container *corev1.Container) error {
+		idx := indexOfEnvVar(container.Env, name)
+		if idx < 0 {
+			container.Env = append(container.Env,
+				corev1.EnvVar{Name: name, Value: value})
+		}
+
+		return nil
 	}
 }
 
-func removeEnvVar(vars []corev1.EnvVar, i int) []corev1.EnvVar {
-	// copy the last element to the spot we want to remove
-	vars[i] = vars[len(vars)-1]
+func removeEnvVar(name string) containerInPlaceOperator {
+	return func(container *corev1.Container) error {
+		for {
+			idx := indexOfEnvVar(container.Env, name)
+			if idx > -1 {
+				container.Env[idx] = container.Env[len(container.Env)-1]
+				container.Env = container.Env[:len(container.Env)-1]
+			} else {
+				break
+			}
+		}
 
-	// remove the last ("copied") element from the slice
-	return vars[:len(vars)-1]
+		return nil
+	}
+}
+
+func removeInitContainerEnvVar(deployment *appsv1.Deployment, initContainerName, envVarName string) {
+	_ = applyToContainer(deployment.Spec.Template.Spec.InitContainers,
+		initContainerName, removeEnvVar(envVarName))
+}
+
+func addInitContainerEnvVar(deployment *appsv1.Deployment, initContainerName, envVarName, envVarValue string) {
+	_ = applyToContainer(deployment.Spec.Template.Spec.InitContainers,
+		initContainerName, addEnvVar(envVarName, envVarValue))
 }

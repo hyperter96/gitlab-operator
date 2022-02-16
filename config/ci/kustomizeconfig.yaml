@@ -5,6 +5,13 @@ namePrefix:
     path: metadata/name
   - kind: ClusterRoleBinding
     path: metadata/name
+  - kind: ValidatingWebhookConfiguration
+    path: metadata/name
+  - kind: IngressClass
+    path: metadata/name
+  - kind: SecurityContextConstraints
+    path: metadata/name
+
 
 # ensures that SCC in Role matches SCC name with prefix.
 nameReference:

@@ -205,7 +205,10 @@ build_gitlab_custom_resource() {
   [ -n "${REGISTRY_AUTH_SECRET}" ] && \
     kubectl get secret --namespace="${TESTS_NAMESPACE}" "${REGISTRY_AUTH_SECRET}" && \
     YQ_CMD=".spec.chart.values.global.image.pullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\""
-  ${YQ} eval "${YQ_CMD}" .build/test_cr.yaml > ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  ${YQ} eval "${YQ_CMD}" .build/test_cr.yaml  > ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  [ ${TESTS_NAMESPACE} != "gitlab-system" ] \
+    && ${YQ} -i eval ".spec.chart.values.global.ingress.class=\"gitlab-nginx-${TESTS_NAMESPACE}\"" \
+          ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
   set +x
 }
 

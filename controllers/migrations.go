@@ -11,16 +11,16 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileMigrationsConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.MigrationsConfigMap(adapter), adapter); err != nil {
+func (r *GitLabReconciler) reconcileMigrationsConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.MigrationsConfigMap(adapter, template), adapter); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, skipPostMigrations bool) error {
-	migrations, err := gitlabctl.MigrationsJob(adapter)
+func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, skipPostMigrations bool) error {
+	migrations, err := gitlabctl.MigrationsJob(adapter, template)
 	if err != nil {
 		return err
 	}
@@ -47,10 +47,10 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabc
 	return r.runJobAndWait(ctx, adapter, job, gitlabctl.MigrationsJobTimeout())
 }
 
-func (r *GitLabReconciler) runPreMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.runMigrationsJob(ctx, adapter, true)
+func (r *GitLabReconciler) runPreMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	return r.runMigrationsJob(ctx, adapter, template, true)
 }
 
-func (r *GitLabReconciler) runAllMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.runMigrationsJob(ctx, adapter, false)
+func (r *GitLabReconciler) runAllMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	return r.runMigrationsJob(ctx, adapter, template, false)
 }

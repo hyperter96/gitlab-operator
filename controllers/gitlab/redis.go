@@ -2,6 +2,8 @@ package gitlab
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -15,12 +17,7 @@ func RedisEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // RedisConfigMaps returns the ConfigMaps of the Redis component.
-func RedisConfigMaps(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return []client.Object{} // WARNING: this should return an error instead.
-	}
-
+func RedisConfigMaps(adapter CustomResourceAdapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{
 		"app": RedisComponentName,
 	})
@@ -33,12 +30,7 @@ func RedisConfigMaps(adapter CustomResourceAdapter) []client.Object {
 }
 
 // RedisServices returns the Services of the Redis component.
-func RedisServices(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
+func RedisServices(adapter CustomResourceAdapter, template helm.Template) []client.Object {
 	results := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": RedisComponentName,
 	})
@@ -51,13 +43,6 @@ func RedisServices(adapter CustomResourceAdapter) []client.Object {
 }
 
 // RedisStatefulSet returns the Statefulset of the Redis component.
-func RedisStatefulSet(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
-	result := template.Query().ObjectByKindAndComponent(StatefulSetKind, RedisComponentName)
-
-	return result
+func RedisStatefulSet(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(StatefulSetKind, RedisComponentName)
 }

@@ -4,26 +4,27 @@ import (
 	"context"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileGitLabExporter(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if err := r.reconcileGitLabExporterConfigMaps(ctx, adapter); err != nil {
+func (r *GitLabReconciler) reconcileGitLabExporter(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if err := r.reconcileGitLabExporterConfigMaps(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileGitLabExporterDeployment(ctx, adapter); err != nil {
+	if err := r.reconcileGitLabExporterDeployment(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileGitLabExporterService(ctx, adapter); err != nil {
+	if err := r.reconcileGitLabExporterService(ctx, adapter, template); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitLabExporterConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	for _, cm := range gitlabctl.ExporterConfigMaps(adapter) {
+func (r *GitLabReconciler) reconcileGitLabExporterConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	for _, cm := range gitlabctl.ExporterConfigMaps(adapter, template) {
 		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
@@ -32,8 +33,8 @@ func (r *GitLabReconciler) reconcileGitLabExporterConfigMaps(ctx context.Context
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitLabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	exporter := gitlabctl.ExporterDeployment(adapter)
+func (r *GitLabReconciler) reconcileGitLabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	exporter := gitlabctl.ExporterDeployment(template)
 
 	if err := r.annotateSecretsChecksum(ctx, adapter, exporter); err != nil {
 		return err
@@ -44,8 +45,8 @@ func (r *GitLabReconciler) reconcileGitLabExporterDeployment(ctx context.Context
 	return err
 }
 
-func (r *GitLabReconciler) reconcileGitLabExporterService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.ExporterService(adapter), adapter); err != nil {
+func (r *GitLabReconciler) reconcileGitLabExporterService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.ExporterService(template), adapter); err != nil {
 		return err
 	}
 

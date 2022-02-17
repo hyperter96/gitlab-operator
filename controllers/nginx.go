@@ -4,22 +4,23 @@ import (
 	"context"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileNGINX(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	for _, cm := range gitlabctl.NGINXConfigMaps(adapter) {
+func (r *GitLabReconciler) reconcileNGINX(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	for _, cm := range gitlabctl.NGINXConfigMaps(adapter, template) {
 		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
 
-	for _, svc := range gitlabctl.NGINXServices(adapter) {
+	for _, svc := range gitlabctl.NGINXServices(adapter, template) {
 		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
 		}
 	}
 
-	for _, dep := range gitlabctl.NGINXDeployments(adapter) {
+	for _, dep := range gitlabctl.NGINXDeployments(adapter, template) {
 		if _, err := r.createOrPatch(ctx, dep, adapter); err != nil {
 			return err
 		}

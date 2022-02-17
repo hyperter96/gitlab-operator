@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -24,26 +26,12 @@ func MailroomEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // MailroomDeployment returns the Deployment for the Mailroom component.
-func MailroomDeployment(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectByKindAndComponent(DeploymentKind, MailroomComponentName)
-
-	return result
+func MailroomDeployment(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(DeploymentKind, MailroomComponentName)
 }
 
 // MailroomConfigMapsreturns the ConfigMaps for the Mailroom component.
-func MailroomConfigMap(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	mailroomCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
+func MailroomConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MailroomComponentName))
-
-	return mailroomCfgMap
 }

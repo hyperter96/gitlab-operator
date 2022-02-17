@@ -25,7 +25,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 			template, err := GetTemplate(adapter)
 
 			enabled := ToolboxCronJobEnabled(adapter)
-			cronJob := ToolboxCronJob(adapter)
+			cronJob := ToolboxCronJob(adapter, template)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())
@@ -49,10 +49,10 @@ var _ = Describe("CustomResourceAdapter", func() {
 			template, err := GetTemplate(adapter)
 
 			enabled := ToolboxCronJobEnabled(adapter)
-			cronJob := ToolboxCronJob(adapter)
+			cronJob := ToolboxCronJob(adapter, template)
 
 			persistenceEnabled := ToolboxCronJobPersistenceEnabled(adapter)
-			cronJobPersistentVolumeClaim := ToolboxCronJobPersistentVolumeClaim(adapter)
+			cronJobPersistentVolumeClaim := ToolboxCronJobPersistentVolumeClaim(adapter, template)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())
@@ -83,10 +83,10 @@ var _ = Describe("CustomResourceAdapter", func() {
 			template, err := GetTemplate(adapter)
 
 			enabled := ToolboxCronJobEnabled(adapter)
-			cronJob := ToolboxCronJob(adapter)
+			cronJob := ToolboxCronJob(adapter, template)
 
 			persistenceEnabled := ToolboxCronJobPersistenceEnabled(adapter)
-			cronJobPersistentVolumeClaim := ToolboxCronJobPersistentVolumeClaim(adapter)
+			cronJobPersistentVolumeClaim := ToolboxCronJobPersistentVolumeClaim(adapter, template)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())

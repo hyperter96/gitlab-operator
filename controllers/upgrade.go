@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -61,12 +62,12 @@ func (r *GitLabReconciler) unpauseDeployments(ctx context.Context, adapter gitla
 	return nil
 }
 
-func (r *GitLabReconciler) unpauseWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.unpauseDeployments(ctx, adapter, gitlabctl.WebserviceDeployments(adapter))
+func (r *GitLabReconciler) unpauseWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	return r.unpauseDeployments(ctx, adapter, gitlabctl.WebserviceDeployments(template))
 }
 
-func (r *GitLabReconciler) unpauseSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.unpauseDeployments(ctx, adapter, gitlabctl.SidekiqDeployments(adapter))
+func (r *GitLabReconciler) unpauseSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	return r.unpauseDeployments(ctx, adapter, gitlabctl.SidekiqDeployments(template))
 }
 
 func (r *GitLabReconciler) rollingUpdateDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []client.Object) error {
@@ -87,19 +88,19 @@ func (r *GitLabReconciler) rollingUpdateDeployments(ctx context.Context, adapter
 	return nil
 }
 
-func (r *GitLabReconciler) rollingUpdateWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.rollingUpdateDeployments(ctx, adapter, gitlabctl.WebserviceDeployments(adapter))
+func (r *GitLabReconciler) rollingUpdateWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	return r.rollingUpdateDeployments(ctx, adapter, gitlabctl.WebserviceDeployments(template))
 }
 
-func (r *GitLabReconciler) rollingUpdateSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	return r.rollingUpdateDeployments(ctx, adapter, gitlabctl.SidekiqDeployments(adapter))
+func (r *GitLabReconciler) rollingUpdateSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	return r.rollingUpdateDeployments(ctx, adapter, gitlabctl.SidekiqDeployments(template))
 }
 
-func (r *GitLabReconciler) reconcileWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pause bool, log logr.Logger) error {
+func (r *GitLabReconciler) reconcileWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, pause bool, log logr.Logger) error {
 	if gitlabctl.WebserviceEnabled(adapter) {
 		log.Info("reconciling Webservice Deployments", "pause", pause)
 
-		if err := r.reconcileWebserviceDeployments(ctx, adapter, pause); err != nil {
+		if err := r.reconcileWebserviceDeployments(ctx, adapter, template, pause); err != nil {
 			return err
 		}
 	}
@@ -107,7 +108,7 @@ func (r *GitLabReconciler) reconcileWebserviceAndSidekiqIfEnabled(ctx context.Co
 	if gitlabctl.SidekiqEnabled(adapter) {
 		log.Info("reconciling Sidekiq Deployments", "pause", pause)
 
-		if err := r.reconcileSidekiqDeployments(ctx, adapter, pause); err != nil {
+		if err := r.reconcileSidekiqDeployments(ctx, adapter, template, pause); err != nil {
 			return err
 		}
 	}
@@ -115,11 +116,11 @@ func (r *GitLabReconciler) reconcileWebserviceAndSidekiqIfEnabled(ctx context.Co
 	return nil
 }
 
-func (r *GitLabReconciler) unpauseWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, log logr.Logger) error {
+func (r *GitLabReconciler) unpauseWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, log logr.Logger) error {
 	if gitlabctl.WebserviceEnabled(adapter) {
 		log.Info("ensuring Webservice Deployments are unpaused")
 
-		if err := r.unpauseWebserviceDeployments(ctx, adapter); err != nil {
+		if err := r.unpauseWebserviceDeployments(ctx, adapter, template); err != nil {
 			return err
 		}
 	}
@@ -127,7 +128,7 @@ func (r *GitLabReconciler) unpauseWebserviceAndSidekiqIfEnabled(ctx context.Cont
 	if gitlabctl.SidekiqEnabled(adapter) {
 		log.Info("ensuring Sidekiq Deployments are unpaused")
 
-		if err := r.unpauseSidekiqDeployments(ctx, adapter); err != nil {
+		if err := r.unpauseSidekiqDeployments(ctx, adapter, template); err != nil {
 			return err
 		}
 	}
@@ -135,11 +136,11 @@ func (r *GitLabReconciler) unpauseWebserviceAndSidekiqIfEnabled(ctx context.Cont
 	return nil
 }
 
-func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, log logr.Logger) error {
+func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, log logr.Logger) error {
 	if gitlabctl.WebserviceEnabled(adapter) {
 		log.Info("ensuring Webservice Deployments are running")
 
-		if !r.webserviceRunningWithRetry(ctx, adapter) {
+		if !r.webserviceRunningWithRetry(ctx, adapter, template) {
 			return fmt.Errorf("Webservice has not started fully")
 		}
 	}
@@ -147,7 +148,7 @@ func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Cont
 	if gitlabctl.SidekiqEnabled(adapter) {
 		log.Info("ensuring Sidekiq Deployments are running")
 
-		if !r.sidekiqRunningWithRetry(ctx, adapter) {
+		if !r.sidekiqRunningWithRetry(ctx, adapter, template) {
 			return fmt.Errorf("Sidekiq has not started fully")
 		}
 	}
@@ -155,11 +156,11 @@ func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Cont
 	return nil
 }
 
-func (r *GitLabReconciler) rollingUpdateWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, log logr.Logger) error {
+func (r *GitLabReconciler) rollingUpdateWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, log logr.Logger) error {
 	if gitlabctl.WebserviceEnabled(adapter) {
 		log.Info("ensuring Webservice Deployments are running")
 
-		if err := r.rollingUpdateWebserviceDeployments(ctx, adapter); err != nil {
+		if err := r.rollingUpdateWebserviceDeployments(ctx, adapter, template); err != nil {
 			return err
 		}
 	}
@@ -167,7 +168,7 @@ func (r *GitLabReconciler) rollingUpdateWebserviceAndSidekiqIfEnabled(ctx contex
 	if gitlabctl.SidekiqEnabled(adapter) {
 		log.Info("ensuring Sidekiq Deployments are running")
 
-		if err := r.rollingUpdateSidekiqDeployments(ctx, adapter); err != nil {
+		if err := r.rollingUpdateSidekiqDeployments(ctx, adapter, template); err != nil {
 			return err
 		}
 	}

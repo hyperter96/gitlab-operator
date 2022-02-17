@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -22,12 +23,12 @@ const (
 	ConditionUpgrading   = "Upgrading"
 )
 
-func (r *GitLabReconciler) reconcileGitLabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) (ctrl.Result, error) {
+func (r *GitLabReconciler) reconcileGitLabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) (ctrl.Result, error) {
 	resultRequeue := ctrl.Result{RequeueAfter: 10 * time.Second}
 	resultNoRequeue := ctrl.Result{}
 	result := resultNoRequeue
 
-	if r.sidekiqAndWebserviceRunning(ctx, adapter) {
+	if r.sidekiqAndWebserviceRunning(ctx, adapter, template) {
 		adapter.Resource().Status.Phase = "Running"
 
 		if err := r.setStatusCondition(ctx, adapter, ConditionAvailable, true, "GitLab is running and available to accept requests"); err != nil {
@@ -85,21 +86,21 @@ func (r *GitLabReconciler) componentRunning(ctx context.Context, adapter gitlabc
 	return running
 }
 
-func (r *GitLabReconciler) sidekiqRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	return r.componentRunning(ctx, adapter, gitlabctl.SidekiqDeployments(adapter))
+func (r *GitLabReconciler) sidekiqRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
+	return r.componentRunning(ctx, adapter, gitlabctl.SidekiqDeployments(template))
 }
 
-func (r *GitLabReconciler) webserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	return r.componentRunning(ctx, adapter, gitlabctl.WebserviceDeployments(adapter))
+func (r *GitLabReconciler) webserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
+	return r.componentRunning(ctx, adapter, gitlabctl.WebserviceDeployments(template))
 }
 
-func (r *GitLabReconciler) sidekiqAndWebserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
-	return r.sidekiqRunning(ctx, adapter) && r.webserviceRunning(ctx, adapter)
+func (r *GitLabReconciler) sidekiqAndWebserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
+	return r.sidekiqRunning(ctx, adapter, template) && r.webserviceRunning(ctx, adapter, template)
 }
 
-func (r *GitLabReconciler) sidekiqRunningWithRetry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) sidekiqRunningWithRetry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
 	fn := func() error {
-		if r.sidekiqRunning(ctx, adapter) {
+		if r.sidekiqRunning(ctx, adapter, template) {
 			return nil
 		}
 
@@ -113,9 +114,9 @@ func (r *GitLabReconciler) sidekiqRunningWithRetry(ctx context.Context, adapter 
 	return true
 }
 
-func (r *GitLabReconciler) webserviceRunningWithRetry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) webserviceRunningWithRetry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
 	fn := func() error {
-		if r.webserviceRunning(ctx, adapter) {
+		if r.webserviceRunning(ctx, adapter, template) {
 			return nil
 		}
 

@@ -4,42 +4,43 @@ import (
 	"context"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileGitaly(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if err := r.reconcileGitalyConfigMap(ctx, adapter); err != nil {
+func (r *GitLabReconciler) reconcileGitaly(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if err := r.reconcileGitalyConfigMap(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileGitalyStatefulSet(ctx, adapter); err != nil {
+	if err := r.reconcileGitalyStatefulSet(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileGitalyService(ctx, adapter); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *GitLabReconciler) reconcileGitalyConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyConfigMap(adapter), adapter); err != nil {
+	if err := r.reconcileGitalyService(ctx, adapter, template); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitalyStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyStatefulSet(adapter), adapter); err != nil {
+func (r *GitLabReconciler) reconcileGitalyConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyConfigMap(template), adapter); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitalyService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyService(adapter), adapter); err != nil {
+func (r *GitLabReconciler) reconcileGitalyStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyStatefulSet(template), adapter); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) reconcileGitalyService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyService(template), adapter); err != nil {
 		return err
 	}
 

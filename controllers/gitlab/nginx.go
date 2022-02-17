@@ -2,6 +2,8 @@ package gitlab
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -15,12 +17,7 @@ func NGINXEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // NGINXConfigMaps returns the ConfigMaps of the NGINX component.
-func NGINXConfigMaps(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil
-	}
-
+func NGINXConfigMaps(adapter CustomResourceAdapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{
 		"app": NGINXComponentName,
 	})
@@ -36,12 +33,7 @@ func NGINXConfigMaps(adapter CustomResourceAdapter) []client.Object {
 }
 
 // NGINXServices returns the Services of the NGINX Component.
-func NGINXServices(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil
-	}
-
+func NGINXServices(adapter CustomResourceAdapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": NGINXComponentName,
 	})
@@ -57,12 +49,7 @@ func NGINXServices(adapter CustomResourceAdapter) []client.Object {
 }
 
 // NGINXDeployments returns the Deployments of the NGINX Component.
-func NGINXDeployments(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil
-	}
-
+func NGINXDeployments(adapter CustomResourceAdapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(DeploymentKind, map[string]string{
 		"app": NGINXComponentName,
 	})

@@ -4,10 +4,11 @@ import (
 	"context"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter)
+func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter, template)
 	if err != nil {
 		return err
 	}
@@ -25,8 +26,8 @@ func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitl
 	return r.runJobAndWait(ctx, adapter, job, gitlabctl.SharedSecretsJobTimeout())
 }
 
-func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	job, err := gitlabctl.SelfSignedCertsJob(adapter)
+func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	job, err := gitlabctl.SelfSignedCertsJob(adapter, template)
 	if err != nil {
 		return err
 	}

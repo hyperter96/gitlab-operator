@@ -5,6 +5,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -18,12 +20,7 @@ func PostgresEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // PostgresServices returns the Services of the Postgres component.
-func PostgresServices(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
+func PostgresServices(adapter CustomResourceAdapter, template helm.Template) []client.Object {
 	results := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": PostgresComponentName,
 	})
@@ -40,12 +37,7 @@ func PostgresServices(adapter CustomResourceAdapter) []client.Object {
 }
 
 // PostgresStatefulSet returns the StatefulSet of the PostgreSQL component.
-func PostgresStatefulSet(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
+func PostgresStatefulSet(adapter CustomResourceAdapter, template helm.Template) client.Object {
 	result := template.Query().ObjectByKindAndComponent(StatefulSetKind, PostgresComponentName)
 
 	// Temporary fix: patch in the namespace because the version of the PostgreSQL chart
@@ -61,12 +53,7 @@ func PostgresStatefulSet(adapter CustomResourceAdapter) client.Object {
 }
 
 // PostgresConfigMap returns the ConfigMap of the PostgreSQL component.
-func PostgresConfigMap(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
+func PostgresConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
 	initDBConfigMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-postgresql-init-db", adapter.ReleaseName()))
 

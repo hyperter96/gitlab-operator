@@ -2,6 +2,8 @@ package gitlab
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -15,26 +17,14 @@ func WebserviceEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // WebserviceDeployments returns the Deployments for the Webservice component.
-func WebserviceDeployments(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectsByKindAndLabels(DeploymentKind, map[string]string{
+func WebserviceDeployments(template helm.Template) []client.Object {
+	return template.Query().ObjectsByKindAndLabels(DeploymentKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
-
-	return result
 }
 
 // WebserviceConfigMaps returns the ConfigMaps for the Webservice component.
-func WebserviceConfigMaps(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
+func WebserviceConfigMaps(template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
@@ -47,29 +37,15 @@ func WebserviceConfigMaps(adapter CustomResourceAdapter) []client.Object {
 }
 
 // WebserviceServices returns the Services for the Webservice component.
-func WebserviceServices(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
+func WebserviceServices(template helm.Template) []client.Object {
+	return template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
-
-	return result
 }
 
 // WebserviceIngresses returns the Ingresses for the Webservice component.
-func WebserviceIngresses(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectsByKindAndLabels(IngressKind, map[string]string{
+func WebserviceIngresses(template helm.Template) []client.Object {
+	return template.Query().ObjectsByKindAndLabels(IngressKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
-
-	return result
 }

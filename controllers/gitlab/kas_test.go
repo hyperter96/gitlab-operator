@@ -12,16 +12,21 @@ var _ = Describe("KAS", func() {
 		chartValues := resource.Values{}
 		mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 		adapter := CreateMockAdapter(mockGitLab)
+		template, err := GetTemplate(adapter)
+
+		It("Returns the template", func() {
+			Expect(err).To(BeNil())
+		})
 
 		It("KasEnabled should return false", func() {
 			Expect(KasEnabled(adapter)).To(BeFalse())
 		})
 
 		It("KAS managed resources must be nil", func() {
-			Expect(KasConfigMap(adapter)).To(BeNil())
-			Expect(KasDeployment(adapter)).To(BeNil())
-			Expect(KasIngress(adapter)).To(BeNil())
-			Expect(KasService(adapter)).To(BeNil())
+			Expect(KasConfigMap(template)).To(BeNil())
+			Expect(KasDeployment(template)).To(BeNil())
+			Expect(KasIngress(template)).To(BeNil())
+			Expect(KasService(template)).To(BeNil())
 		})
 	})
 
@@ -32,14 +37,19 @@ var _ = Describe("KAS", func() {
 
 		mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 		adapter := CreateMockAdapter(mockGitLab)
+		template, err := GetTemplate(adapter)
+
+		It("Returns the template", func() {
+			Expect(err).To(BeNil())
+		})
 
 		It("KAS managed resources must be available", func() {
 			Expect(KasEnabled(adapter)).To(BeTrue())
 
-			cfgMap := KasConfigMap(adapter)
-			deployment := KasDeployment(adapter)
-			ingress := KasIngress(adapter)
-			svc := KasService(adapter)
+			cfgMap := KasConfigMap(template)
+			deployment := KasDeployment(template)
+			ingress := KasIngress(template)
+			svc := KasService(template)
 
 			Expect(cfgMap).NotTo(BeNil())
 			Expect(deployment).NotTo(BeNil())

@@ -24,8 +24,8 @@ var _ = Describe("CustomResourceAdapter", func() {
 			template, err := GetTemplate(adapter)
 
 			enabled := MailroomEnabled(adapter)
-			configMap := MailroomConfigMap(adapter)
-			deployment := MailroomDeployment(adapter)
+			configMap := MailroomConfigMap(adapter, template)
+			deployment := MailroomDeployment(template)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())
@@ -49,8 +49,8 @@ var _ = Describe("CustomResourceAdapter", func() {
 			template, err := GetTemplate(adapter)
 
 			enabled := MailroomEnabled(adapter)
-			configMap := MailroomConfigMap(adapter)
-			deployment := MailroomDeployment(adapter)
+			configMap := MailroomConfigMap(adapter, template)
+			deployment := MailroomDeployment(template)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())

@@ -193,10 +193,10 @@ var _ = Describe("CustomResourceAdapter", func() {
 			template, err := GetTemplate(adapter)
 
 			enabled := PagesEnabled(adapter)
-			configMap := PagesConfigMap(adapter)
-			service := PagesService(adapter)
-			deployment := PagesDeployment(adapter)
-			ingress := PagesIngress(adapter)
+			configMap := PagesConfigMap(adapter, template)
+			service := PagesService(template)
+			deployment := PagesDeployment(template)
+			ingress := PagesIngress(template)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())
@@ -222,10 +222,10 @@ var _ = Describe("CustomResourceAdapter", func() {
 			template, err := GetTemplate(adapter)
 
 			enabled := PagesEnabled(adapter)
-			configMap := PagesConfigMap(adapter)
-			service := PagesService(adapter)
-			deployment := PagesDeployment(adapter)
-			ingress := PagesIngress(adapter)
+			configMap := PagesConfigMap(adapter, template)
+			service := PagesService(template)
+			deployment := PagesDeployment(template)
+			ingress := PagesIngress(template)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())

@@ -4,26 +4,27 @@ import (
 	"context"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileGitLabShell(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if err := r.reconcileShellConfigMaps(ctx, adapter); err != nil {
+func (r *GitLabReconciler) reconcileGitLabShell(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if err := r.reconcileShellConfigMaps(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileShellDeployment(ctx, adapter); err != nil {
+	if err := r.reconcileShellDeployment(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileShellService(ctx, adapter); err != nil {
+	if err := r.reconcileShellService(ctx, adapter, template); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	shell := gitlabctl.ShellDeployment(adapter)
+func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	shell := gitlabctl.ShellDeployment(template)
 
 	if err := r.setDeploymentReplica(ctx, shell); err != nil {
 		return err
@@ -38,8 +39,8 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 	return err
 }
 
-func (r *GitLabReconciler) reconcileShellConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	for _, cm := range gitlabctl.ShellConfigMaps(adapter) {
+func (r *GitLabReconciler) reconcileShellConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	for _, cm := range gitlabctl.ShellConfigMaps(adapter, template) {
 		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
@@ -48,8 +49,8 @@ func (r *GitLabReconciler) reconcileShellConfigMaps(ctx context.Context, adapter
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileShellService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.ShellService(adapter), adapter); err != nil {
+func (r *GitLabReconciler) reconcileShellService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.ShellService(template), adapter); err != nil {
 		return err
 	}
 

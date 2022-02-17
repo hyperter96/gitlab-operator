@@ -5,26 +5,27 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileWebserviceExceptDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if err := r.reconcileWebserviceConfigMaps(ctx, adapter); err != nil {
+func (r *GitLabReconciler) reconcileWebserviceExceptDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if err := r.reconcileWebserviceConfigMaps(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileWebserviceServices(ctx, adapter); err != nil {
+	if err := r.reconcileWebserviceServices(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileWebserviceIngresses(ctx, adapter); err != nil {
+	if err := r.reconcileWebserviceIngresses(ctx, adapter, template); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	for _, cm := range gitlabctl.WebserviceConfigMaps(adapter) {
+func (r *GitLabReconciler) reconcileWebserviceConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	for _, cm := range gitlabctl.WebserviceConfigMaps(template) {
 		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
@@ -33,8 +34,8 @@ func (r *GitLabReconciler) reconcileWebserviceConfigMaps(ctx context.Context, ad
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	for _, svc := range gitlabctl.WebserviceServices(adapter) {
+func (r *GitLabReconciler) reconcileWebserviceServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	for _, svc := range gitlabctl.WebserviceServices(template) {
 		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
 		}
@@ -43,10 +44,10 @@ func (r *GitLabReconciler) reconcileWebserviceServices(ctx context.Context, adap
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, pause bool) error {
+func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, pause bool) error {
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
 
-	webservices := gitlabctl.WebserviceDeployments(adapter)
+	webservices := gitlabctl.WebserviceDeployments(template)
 
 	if internal.IsOpenshift() && len(webservices) > 1 {
 		logger.V(2).Info("Multiple Webservice Ingresses detected, which is not supported on OpenShift when using NGINX Ingress Operator. See https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/160")
@@ -73,8 +74,8 @@ func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, a
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceIngresses(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	for _, ingress := range gitlabctl.WebserviceIngresses(adapter) {
+func (r *GitLabReconciler) reconcileWebserviceIngresses(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	for _, ingress := range gitlabctl.WebserviceIngresses(template) {
 		if err := r.reconcileIngress(ctx, ingress, adapter); err != nil {
 			return err
 		}

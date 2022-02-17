@@ -5,26 +5,27 @@ import (
 	"fmt"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileRedis(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if err := r.reconcileRedisConfigMaps(ctx, adapter); err != nil {
+func (r *GitLabReconciler) reconcileRedis(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if err := r.reconcileRedisConfigMaps(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileRedisStatefulSet(ctx, adapter); err != nil {
+	if err := r.reconcileRedisStatefulSet(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileRedisServices(ctx, adapter); err != nil {
+	if err := r.reconcileRedisServices(ctx, adapter, template); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	for _, cm := range gitlabctl.RedisConfigMaps(adapter) {
+func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	for _, cm := range gitlabctl.RedisConfigMaps(adapter, template) {
 		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
@@ -33,8 +34,8 @@ func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	redis := gitlabctl.RedisStatefulSet(adapter)
+func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	redis := gitlabctl.RedisStatefulSet(template)
 
 	if err := r.annotateSecretsChecksum(ctx, adapter, redis); err != nil {
 		return err
@@ -77,8 +78,8 @@ func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Contex
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRedisServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	for _, svc := range gitlabctl.RedisServices(adapter) {
+func (r *GitLabReconciler) reconcileRedisServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	for _, svc := range gitlabctl.RedisServices(adapter, template) {
 		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
 		}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -17,50 +19,22 @@ func RegistryEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // RegistryService returns the Service of the Registry component.
-func RegistryService(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectByKindAndComponent(ServiceKind, RegistryComponentName)
-
-	return result
+func RegistryService(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(ServiceKind, RegistryComponentName)
 }
 
 // RegistryDeployment returns the Deployment of the Registry component.
-func RegistryDeployment(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectByKindAndComponent(DeploymentKind, RegistryComponentName)
-
-	return result
+func RegistryDeployment(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(DeploymentKind, RegistryComponentName)
 }
 
 // RegistryConfigMap returns the ConfigMap of the Registry component.
-func RegistryConfigMap(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectByKindAndName(ConfigMapKind,
+func RegistryConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), RegistryComponentName))
-
-	return result
 }
 
 // RegistryIngress returns the Ingress of the Registry component.
-func RegistryIngress(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectByKindAndComponent(IngressKind, RegistryComponentName)
-
-	return result
+func RegistryIngress(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(IngressKind, RegistryComponentName)
 }

@@ -2,6 +2,8 @@ package gitlab
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 // KasEnabled returns `true` if KAS is enabled, and `false` if not. By default it returns `false`.
@@ -9,38 +11,18 @@ func KasEnabled(adapter CustomResourceAdapter) bool {
 	return adapter.Values().GetBool("global.kas.enabled", false)
 }
 
-func KasConfigMap(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
+func KasConfigMap(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ConfigMapKind, KasComponentName)
 }
 
-func KasDeployment(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
+func KasDeployment(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(DeploymentKind, KasComponentName)
 }
 
-func KasIngress(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
+func KasIngress(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(IngressKind, KasComponentName)
 }
 
-func KasService(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
+func KasService(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, KasComponentName)
 }

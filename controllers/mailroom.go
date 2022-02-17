@@ -4,30 +4,31 @@ import (
 	"context"
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if err := r.reconcileMailroomConfigMap(ctx, adapter); err != nil {
+func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if err := r.reconcileMailroomConfigMap(ctx, adapter, template); err != nil {
 		return err
 	}
 
-	if err := r.reconcileMailroomDeployment(ctx, adapter); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *GitLabReconciler) reconcileMailroomConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.MailroomConfigMap(adapter), adapter); err != nil {
+	if err := r.reconcileMailroomDeployment(ctx, adapter, template); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileMailroomDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	deployment := gitlabctl.MailroomDeployment(adapter)
+func (r *GitLabReconciler) reconcileMailroomConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	if _, err := r.createOrPatch(ctx, gitlabctl.MailroomConfigMap(adapter, template), adapter); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) reconcileMailroomDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	deployment := gitlabctl.MailroomDeployment(template)
 	if err := r.annotateSecretsChecksum(ctx, adapter, deployment); err != nil {
 		return err
 	}

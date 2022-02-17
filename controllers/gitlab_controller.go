@@ -47,6 +47,7 @@ import (
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 )
@@ -110,7 +111,8 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	if _, err := gitlabctl.GetTemplate(adapter); err != nil {
+	template, err := gitlabctl.GetTemplate(adapter)
+	if err != nil {
 		r.Recorder.Event(adapter.Resource(), "Warning", "ConfigError",
 			fmt.Sprintf("Configuration error detected: %v", err))
 		return ctrl.Result{}, nil // return nil here to prevent further reconcile loops
@@ -129,21 +131,21 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if gitlabctl.NGINXEnabled(adapter) {
-		if err := r.reconcileNGINX(ctx, adapter); err != nil {
+		if err := r.reconcileNGINX(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	if err := r.runSharedSecretsJob(ctx, adapter); err != nil {
+	if err := r.runSharedSecretsJob(ctx, adapter, template); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if err := r.runSelfSignedCertsJob(ctx, adapter); err != nil {
+	if err := r.runSelfSignedCertsJob(ctx, adapter, template); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	if gitlabctl.PostgresEnabled(adapter) {
-		if err := r.reconcilePostgres(ctx, adapter); err != nil {
+		if err := r.reconcilePostgres(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	} else {
@@ -153,7 +155,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if gitlabctl.RedisEnabled(adapter) {
-		if err := r.reconcileRedis(ctx, adapter); err != nil {
+		if err := r.reconcileRedis(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	} else {
@@ -163,7 +165,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if gitlabctl.GitalyEnabled(adapter) {
-		if err := r.reconcileGitaly(ctx, adapter); err != nil {
+		if err := r.reconcileGitaly(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -175,7 +177,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if gitlabctl.MailroomEnabled(adapter) {
-		if err := r.reconcileMailroom(ctx, adapter); err != nil {
+		if err := r.reconcileMailroom(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -193,55 +195,55 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if gitlabctl.ShellEnabled(adapter) {
-		if err := r.reconcileGitLabShell(ctx, adapter); err != nil {
+		if err := r.reconcileGitLabShell(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if gitlabctl.RegistryEnabled(adapter) {
-		if err := r.reconcileRegistry(ctx, adapter); err != nil {
+		if err := r.reconcileRegistry(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if gitlabctl.ToolboxEnabled(adapter) {
-		if err := r.reconcileToolbox(ctx, adapter); err != nil {
+		if err := r.reconcileToolbox(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if gitlabctl.ExporterEnabled(adapter) {
-		if err := r.reconcileGitLabExporter(ctx, adapter); err != nil {
+		if err := r.reconcileGitLabExporter(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if gitlabctl.PagesEnabled(adapter) {
-		if err := r.reconcilePages(ctx, adapter); err != nil {
+		if err := r.reconcilePages(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if gitlabctl.KasEnabled(adapter) {
-		if err := r.reconcileKas(ctx, adapter); err != nil {
+		if err := r.reconcileKas(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if gitlabctl.MigrationsEnabled(adapter) {
-		if err := r.reconcileMigrationsConfigMap(ctx, adapter); err != nil {
+		if err := r.reconcileMigrationsConfigMap(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if gitlabctl.SidekiqEnabled(adapter) {
-		if err := r.reconcileSidekiqConfigMaps(ctx, adapter); err != nil {
+		if err := r.reconcileSidekiqConfigMaps(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	if gitlabctl.WebserviceEnabled(adapter) {
-		if err := r.reconcileWebserviceExceptDeployments(ctx, adapter); err != nil {
+		if err := r.reconcileWebserviceExceptDeployments(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -255,31 +257,31 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if gitlabctl.WebserviceEnabled(adapter) || gitlabctl.SidekiqEnabled(adapter) {
 				// If upgrading with Migrations enabled and Webservice and/or Sidekiq enabled,
 				// then follow the traditional upgrade logic.
-				if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, true, log); err != nil {
+				if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, true, log); err != nil {
 					return ctrl.Result{}, err
 				}
 
 				log.Info("reconciling pre migrations")
 
-				if err := r.runPreMigrations(ctx, adapter); err != nil {
+				if err := r.runPreMigrations(ctx, adapter, template); err != nil {
 					return ctrl.Result{}, err
 				}
 
-				if err := r.unpauseWebserviceAndSidekiqIfEnabled(ctx, adapter, log); err != nil {
+				if err := r.unpauseWebserviceAndSidekiqIfEnabled(ctx, adapter, template, log); err != nil {
 					return ctrl.Result{}, err
 				}
 
-				if err := r.webserviceAndSidekiqRunningIfEnabled(ctx, adapter, log); err != nil {
+				if err := r.webserviceAndSidekiqRunningIfEnabled(ctx, adapter, template, log); err != nil {
 					return ctrl.Result{}, err
 				}
 
 				log.Info("reconciling post migrations")
 
-				if err := r.runAllMigrations(ctx, adapter); err != nil {
+				if err := r.runAllMigrations(ctx, adapter, template); err != nil {
 					return ctrl.Result{}, err
 				}
 
-				if err := r.rollingUpdateWebserviceAndSidekiqIfEnabled(ctx, adapter, log); err != nil {
+				if err := r.rollingUpdateWebserviceAndSidekiqIfEnabled(ctx, adapter, template, log); err != nil {
 					return ctrl.Result{}, err
 				}
 			} else {
@@ -287,13 +289,13 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				// then just run all migrations.
 				log.Info("running all migrations")
 
-				if err := r.runAllMigrations(ctx, adapter); err != nil {
+				if err := r.runAllMigrations(ctx, adapter, template); err != nil {
 					return ctrl.Result{}, err
 				}
 			}
 		} else {
 			// If upgrading with Migrations disabled, then just reconcile enabled Deployments.
-			if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, false, log); err != nil {
+			if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, false, log); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -306,17 +308,17 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if gitlabctl.MigrationsEnabled(adapter) {
 			log.Info("running all migrations")
 
-			if err := r.runAllMigrations(ctx, adapter); err != nil {
+			if err := r.runAllMigrations(ctx, adapter, template); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 
-		if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, false, log); err != nil {
+		if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, false, log); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	if err := r.setupAutoscaling(ctx, adapter); err != nil {
+	if err := r.setupAutoscaling(ctx, adapter, template); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -327,7 +329,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	result, err := r.reconcileGitLabStatus(ctx, adapter)
+	result, err := r.reconcileGitLabStatus(ctx, adapter, template)
 
 	return result, err
 }
@@ -703,12 +705,7 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 	return nil
 }
 
-func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	template, err := gitlabctl.GetTemplate(adapter)
-	if err != nil {
-		return err
-	}
-
+func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, hpa := range template.Query().ObjectsByKind(gitlabctl.HorizontalPodAutoscalerKind) {
 		if _, err := r.createOrPatch(ctx, hpa, adapter); err != nil {
 			return err

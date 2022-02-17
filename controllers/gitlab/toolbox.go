@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -37,61 +39,24 @@ func ToolboxCronJobPersistenceEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // ToolboxDeployment returns the Deployment of the Toolbox component.
-func ToolboxDeployment(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: this should return an error
-	}
-
-	result := template.Query().ObjectByKindAndComponent(DeploymentKind, ToolboxComponentName(adapter.ChartVersion()))
-
-	return result
+func ToolboxDeployment(adapter CustomResourceAdapter, template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(DeploymentKind, ToolboxComponentName(adapter.ChartVersion()))
 }
 
 // ToolboxConfigMap returns the ConfigMaps of the Toolbox component.
-func ToolboxConfigMap(adapter CustomResourceAdapter) client.Object {
-	var result client.Object
-
-	template, err := GetTemplate(adapter)
-
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
-	result = template.Query().ObjectByKindAndName(ConfigMapKind,
+func ToolboxConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
-
-	return result
 }
 
 // ToolboxCronJob returns the CronJob of the Toolbox component.
-func ToolboxCronJob(adapter CustomResourceAdapter) client.Object {
-	var result client.Object
-
-	template, err := GetTemplate(adapter)
-
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
-	result = template.Query().ObjectByKindAndName(CronJobKind,
+func ToolboxCronJob(adapter CustomResourceAdapter, template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndName(CronJobKind,
 		fmt.Sprintf("%s-%s-backup", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
-
-	return result
 }
 
 // ToolboxPersistentVolumeClaim returns the PersistentVolumeClaim of the Toolbox component.
-func ToolboxCronJobPersistentVolumeClaim(adapter CustomResourceAdapter) client.Object {
-	var result client.Object
-
-	template, err := GetTemplate(adapter)
-
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
-	result = template.Query().ObjectByKindAndName(PersistentVolumeClaimKind,
+func ToolboxCronJobPersistentVolumeClaim(adapter CustomResourceAdapter, template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndName(PersistentVolumeClaimKind,
 		fmt.Sprintf("%s-%s-backup-tmp", adapter.ReleaseName(), ToolboxComponentName(adapter.ChartVersion())))
-
-	return result
 }

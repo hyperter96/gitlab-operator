@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
 const (
@@ -17,22 +19,12 @@ func ShellEnabled(adapter CustomResourceAdapter) bool {
 }
 
 // ShellDeployment returns the Deployment of GitLab Shell component.
-func ShellDeployment(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
+func ShellDeployment(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(DeploymentKind, GitLabShellComponentName)
 }
 
 // ShellConfigMaps returns the ConfigMaps of GitLab Shell component.
-func ShellConfigMaps(adapter CustomResourceAdapter) []client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return []client.Object{} // WARNING: This should return an error instead.
-	}
-
+func ShellConfigMaps(adapter CustomResourceAdapter, template helm.Template) []client.Object {
 	shellCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), GitLabShellComponentName))
 	sshdCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
@@ -40,23 +32,14 @@ func ShellConfigMaps(adapter CustomResourceAdapter) []client.Object {
 	tcpCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-nginx-ingress-tcp", adapter.ReleaseName()))
 
-	result := []client.Object{
+	return []client.Object{
 		shellCfgMap,
 		sshdCfgMap,
 		tcpCfgMap,
 	}
-
-	return result
 }
 
 // ShellService returns the Service of GitLab Shell component.
-func ShellService(adapter CustomResourceAdapter) client.Object {
-	template, err := GetTemplate(adapter)
-	if err != nil {
-		return nil // WARNING: This should return an error instead.
-	}
-
-	result := template.Query().ObjectByKindAndComponent(ServiceKind, GitLabShellComponentName)
-
-	return result
+func ShellService(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(ServiceKind, GitLabShellComponentName)
 }

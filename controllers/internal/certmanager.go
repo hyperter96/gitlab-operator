@@ -13,14 +13,13 @@ import (
 
 const (
 	globalIngressConfigureCertmanager = "global.ingress.configureCertmanager"
-	configureCertmanagerDefault       = true
 	specCertIssuerEmail               = "admin@example.com"
 	specCertIssuerServer              = "https://acme-v02.api.letsencrypt.org/directory"
 )
 
 // CertManager returns `true` if CertManager is enabled, and `false` if not.
 func CertManagerEnabled(adapter gitlab.CustomResourceAdapter) bool {
-	configureCertmanager := adapter.Values().GetBool(globalIngressConfigureCertmanager, configureCertmanagerDefault)
+	configureCertmanager := adapter.Values().GetBool(globalIngressConfigureCertmanager)
 
 	return configureCertmanager
 }

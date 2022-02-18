@@ -7,13 +7,12 @@ import (
 )
 
 const (
-	gitlabSidekiqEnabled  = "gitlab.sidekiq.enabled"
-	sidekiqEnabledDefault = true
+	gitlabSidekiqEnabled = "gitlab.sidekiq.enabled"
 )
 
 // SidekiqEnabled returns `true` if Sidekiq is enabled, and `false` if not.
 func SidekiqEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(gitlabSidekiqEnabled, sidekiqEnabledDefault)
+	return adapter.Values().GetBool(gitlabSidekiqEnabled)
 }
 
 // SidekiqDeployments returns the Deployments of the Sidekiq component.

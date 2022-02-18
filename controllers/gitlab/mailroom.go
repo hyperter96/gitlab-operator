@@ -9,18 +9,16 @@ import (
 )
 
 const (
-	GitLabMailroomEnabled  = "gitlab.mailroom.enabled"
-	IncomingEmailEnabled   = "global.appConfig.incomingEmail.enabled"
-	IncomingEmailSecret    = "global.appConfig.incomingEmail.password.secret" //nolint:golint,gosec
-	mailroomEnabledDefault = true
-	incomingEmailDefault   = false
+	GitLabMailroomEnabled = "gitlab.mailroom.enabled"
+	IncomingEmailEnabled  = "global.appConfig.incomingEmail.enabled"
+	IncomingEmailSecret   = "global.appConfig.incomingEmail.password.secret" //nolint:golint,gosec
 )
 
 // MailroomEnabled returns `true` if enabled and `false` if not.
 func MailroomEnabled(adapter CustomResourceAdapter) bool {
-	mrEnabled := adapter.Values().GetBool(GitLabMailroomEnabled, mailroomEnabledDefault)
-	imEnabled := adapter.Values().GetBool(IncomingEmailEnabled, incomingEmailDefault)
-	emSecret := adapter.Values().GetString(IncomingEmailSecret, "")
+	mrEnabled := adapter.Values().GetBool(GitLabMailroomEnabled)
+	imEnabled := adapter.Values().GetBool(IncomingEmailEnabled)
+	emSecret := adapter.Values().GetString(IncomingEmailSecret)
 
 	return mrEnabled && imEnabled && emSecret != ""
 }

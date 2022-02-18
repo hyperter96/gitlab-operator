@@ -10,13 +10,12 @@ import (
 )
 
 const (
-	postgresInstall        = "postgresql.install"
-	postgresEnabledDefault = true
+	postgresInstall = "postgresql.install"
 )
 
 // PostgresEnabled returns `true` if `PostgreSQL` is enabled, and `false` if not.
 func PostgresEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(postgresInstall, postgresEnabledDefault)
+	return adapter.Values().GetBool(postgresInstall)
 }
 
 // PostgresServices returns the Services of the Postgres component.

@@ -8,7 +8,7 @@ import (
 
 // KasEnabled returns `true` if KAS is enabled, and `false` if not. By default it returns `false`.
 func KasEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool("global.kas.enabled", false)
+	return adapter.Values().GetBool("global.kas.enabled")
 }
 
 func KasConfigMap(template helm.Template) client.Object {

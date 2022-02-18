@@ -7,13 +7,12 @@ import (
 )
 
 const (
-	redisInstall        = "redis.install"
-	redisEnabledDefault = true
+	redisInstall = "redis.install"
 )
 
 // RedisEnabled returns `true` if Redis is enabled, and `false` if not.
 func RedisEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(redisInstall, redisEnabledDefault)
+	return adapter.Values().GetBool(redisInstall)
 }
 
 // RedisConfigMaps returns the ConfigMaps of the Redis component.

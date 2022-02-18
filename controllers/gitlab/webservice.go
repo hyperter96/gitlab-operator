@@ -7,13 +7,12 @@ import (
 )
 
 const (
-	gitlabWebserviceEnabled  = "gitlab.webservice.enabled"
-	webserviceEnabledDefault = true
+	gitlabWebserviceEnabled = "gitlab.webservice.enabled"
 )
 
 // WebserviceEnabled returns `true` if Webservice is enabled, and `false` if not.
 func WebserviceEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(gitlabWebserviceEnabled, webserviceEnabledDefault)
+	return adapter.Values().GetBool(gitlabWebserviceEnabled)
 }
 
 // WebserviceDeployments returns the Deployments for the Webservice component.

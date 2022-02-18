@@ -7,13 +7,12 @@ import (
 )
 
 const (
-	nginxEnabled        = "nginx-ingress.enabled"
-	nginxEnabledDefault = true
+	nginxEnabled = "nginx-ingress.enabled"
 )
 
 // NGINXEnabled returns `true` if NGINX is enabled and `false` if not.
 func NGINXEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(nginxEnabled, nginxEnabledDefault)
+	return adapter.Values().GetBool(nginxEnabled)
 }
 
 // NGINXConfigMaps returns the ConfigMaps of the NGINX component.

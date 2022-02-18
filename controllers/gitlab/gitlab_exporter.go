@@ -9,13 +9,12 @@ import (
 )
 
 const (
-	gitlabExporterEnabled  = "gitlab.gitlab-exporter.enabled"
-	exporterEnabledDefault = true
+	gitlabExporterEnabled = "gitlab.gitlab-exporter.enabled"
 )
 
 // ExporterEnabled returns `true` if enabled and `false` if not.
 func ExporterEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(gitlabExporterEnabled, exporterEnabledDefault)
+	return adapter.Values().GetBool(gitlabExporterEnabled)
 }
 
 // ExporterService returns the Service for the GitLab Exporter component.

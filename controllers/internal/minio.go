@@ -227,7 +227,7 @@ func MinioIngress(adapter gitlab.CustomResourceAdapter) *networkingv1.Ingress {
 	labels := Label(adapter.ReleaseName(), "minio", GitlabType)
 	annotations := make(map[string]string)
 
-	if provider := adapter.Values().GetString("global.ingress.provider", "nginx"); provider == "nginx" {
+	if provider := adapter.Values().GetString("global.ingress.provider"); provider == "nginx" {
 		for k, v := range gitlab.NGINXAnnotations() {
 			annotations[k] = v
 		}
@@ -367,7 +367,7 @@ func RegistryConnectionSecret(adapter gitlab.CustomResourceAdapter, minioSecret 
 	data := minioSecret.Data
 
 	minioEndpoint := options.ObjectStore.Endpoint
-	minioRedirect := adapter.Values().GetBool("registry.minio.redirect", false)
+	minioRedirect := adapter.Values().GetBool("registry.minio.redirect")
 
 	if minioRedirect {
 		// We can always assume it is HTTPS.
@@ -443,7 +443,7 @@ func getMinioURL(adapter gitlab.CustomResourceAdapter) string {
 	}
 
 	hostSuffix := adapter.Values().GetString("global.hosts.hostSuffix")
-	domain := adapter.Values().GetString("global.hosts.domain", "example.com")
+	domain := adapter.Values().GetString("global.hosts.domain")
 
 	if hostSuffix != "" {
 		return fmt.Sprintf("minio-%s.%s", hostSuffix, domain)

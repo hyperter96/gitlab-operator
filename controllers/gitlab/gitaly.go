@@ -7,13 +7,12 @@ import (
 )
 
 const (
-	GlobalGitalyEnabled  = "global.gitaly.enabled"
-	gitalyEnabledDefault = true
+	GlobalGitalyEnabled = "global.gitaly.enabled"
 )
 
 // GitalyEnabled returns `true` if enabled and `false` if not.
 func GitalyEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(GlobalGitalyEnabled, gitalyEnabledDefault)
+	return adapter.Values().GetBool(GlobalGitalyEnabled)
 }
 
 // GitalyStatefulSet returns the StatefulSet of Gitaly component.

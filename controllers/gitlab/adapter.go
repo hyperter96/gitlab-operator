@@ -324,6 +324,7 @@ func (a *populatingAdapter) UpdateValues(chart *chart.Chart) error {
 func (a *populatingAdapter) populateValues() {
 	a.reference = fmt.Sprintf("%s.%s", a.resource.Name, a.resource.Namespace)
 
+	// Need to pass a default value here as we don't yet have the coalesced values from GetTemplate().
 	configureCertmanager := a.values.GetBool("global.ingress.configureCertmanager", true)
 
 	globalIngressAnnotations := "{}"
@@ -350,6 +351,7 @@ func (a *populatingAdapter) populateValues() {
 
 	_ = a.values.AddFromYAML(valuesToUse)
 
+	// Need to pass a default value here as we don't yet have the coalesced values from GetTemplate().
 	minioEnabled := a.values.GetBool(globalMinioEnabled, true)
 	if minioEnabled {
 		minioRedirect := a.values.GetBool("registry.minio.redirect")

@@ -9,13 +9,12 @@ import (
 )
 
 const (
-	globalPagesEnabled  = "global.pages.enabled"
-	pagesEnabledDefault = false
+	globalPagesEnabled = "global.pages.enabled"
 )
 
 // PagesEnabled returns `true` if enabled and `false` if not.
 func PagesEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(globalPagesEnabled, pagesEnabledDefault)
+	return adapter.Values().GetBool(globalPagesEnabled)
 }
 
 // PagesConfigMap returns the ConfigMap for the GitLab Pages component.

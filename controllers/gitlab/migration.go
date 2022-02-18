@@ -15,13 +15,12 @@ const (
 	// MigrationsJobDefaultTimeout is the default timeout to wait for Migrations job to finish.
 	MigrationsJobDefaultTimeout = 300 * time.Second
 
-	gitlabMigrationsEnabled  = "gitlab.migrations.enabled"
-	migrationsEnabledDefault = true
+	gitlabMigrationsEnabled = "gitlab.migrations.enabled"
 )
 
 // MigrationsEnabled returns `true` if enabled and `false` if not.
 func MigrationsEnabled(adapter CustomResourceAdapter) bool {
-	return adapter.Values().GetBool(gitlabMigrationsEnabled, migrationsEnabledDefault)
+	return adapter.Values().GetBool(gitlabMigrationsEnabled)
 }
 
 // MigrationsConfigMap returns the ConfigMaps of Migrations component.

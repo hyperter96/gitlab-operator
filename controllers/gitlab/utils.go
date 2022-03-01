@@ -64,27 +64,14 @@ const (
 
 	// KasComponentName is the common name of KAS.
 	KasComponentName = "kas"
+
+	// ToolboxComponentName is the common name of Toolbox.
+	ToolboxComponentName = "toolbox"
 )
 
 // RedisSubqueues is the array of possible Redis subqueues.
 func RedisSubqueues() [5]string {
 	return [5]string{"cache", "sharedState", "queues", "actioncable", "traceChunks"}
-}
-
-// ToolboxComponentName returns the component name for Toolbox depending on the Chart version.
-// If the Chart version is >= 5.5.0, then it returns "toolbox".
-// If the Chart version is < 5.5.0, then it returns "task-runner".
-// When the list of supported Chart versions are all 5.5.0 or newer, this function
-// can be removed and we can use a constant `ToolboxComponentName = "toolbox"`.
-func ToolboxComponentName(chartVersion string) string {
-	versionWithToolbox, _ := semver.NewConstraint(">= 5.5.0")
-	currentVersion, _ := semver.NewVersion(chartVersion)
-
-	if versionWithToolbox.Check(currentVersion) {
-		return "toolbox"
-	}
-
-	return "task-runner"
 }
 
 // NGINXDefaultBackendComponentName returns the component name for NGINXDefaultBackend depending on the Chart version.

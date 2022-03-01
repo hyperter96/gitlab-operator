@@ -111,7 +111,7 @@ gitlab:
     securityContext:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
-  $ToolboxComponentName:
+  toolbox:
     backups:
       objectStorage:
         config:
@@ -119,8 +119,8 @@ gitlab:
           key: config
     common:
       labels:
-        app.kubernetes.io/component: $ToolboxComponentName
-        app.kubernetes.io/instance: $ReleaseName-$ToolboxComponentName
+        app.kubernetes.io/component: toolbox
+        app.kubernetes.io/instance: $ReleaseName-toolbox
     securityContext:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
@@ -346,7 +346,6 @@ func (a *populatingAdapter) populateValues() {
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
 		"$NGINXServiceAccount", settings.NGINXServiceAccount,
 		"$GlobalHostsExternalIP", globalHostsExternalIP,
-		"$ToolboxComponentName", ToolboxComponentName(a.ChartVersion()),
 	).Replace(defaultValues)
 
 	_ = a.values.AddFromYAML(valuesToUse)

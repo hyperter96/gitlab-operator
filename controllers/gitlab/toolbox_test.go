@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
@@ -39,7 +38,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		})
 
 		When("Toolbox CronJob is enabled", func() {
-			key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName(helm.GetChartVersion()))
+			key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName)
 
 			chartValues := resource.Values{}
 			_ = chartValues.SetValue(key, true)
@@ -71,8 +70,8 @@ var _ = Describe("CustomResourceAdapter", func() {
 		})
 
 		When("Toolbox CronJob and CronJob Persistence is enabled", func() {
-			gitlabToolboxCronJobEnabled := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName(helm.GetChartVersion()))
-			gitlabToolboxCronJobPersistenceEnabled := fmt.Sprintf(gitlabToolboxCronJobPersistenceEnabled, ToolboxComponentName(helm.GetChartVersion()))
+			gitlabToolboxCronJobEnabled := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName)
+			gitlabToolboxCronJobPersistenceEnabled := fmt.Sprintf(gitlabToolboxCronJobPersistenceEnabled, ToolboxComponentName)
 
 			chartValues := resource.Values{}
 			_ = chartValues.SetValue(gitlabToolboxCronJobEnabled, true)

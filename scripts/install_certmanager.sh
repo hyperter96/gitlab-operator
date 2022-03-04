@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
 PLATFORM="${1:-openshift}"
+VERSION="${2:-v1.6.1}"
 
 CLUSTER_NAME="${CLUSTER_NAME:-ocp-$USER}"
 INSTALL_DIR="install-${CLUSTER_NAME}"
@@ -25,14 +26,14 @@ install_certmanager() {
   $HELM upgrade --install \
     cert-manager-helm jetstack/cert-manager \
     --namespace default \
-    --version v1.6.1 \
-    --values "scripts/manifests/cert-manager-values-$PLATFORM.yaml"
+    --version "$VERSION" \
+    --values "scripts/manifests/cert-manager-values.yaml"
 
   sleep 10
 
   export KUBECONFIG  # needed so kubectl apply uses the correct cluster
 
-  local google_credentials_json="$(echo $GOOGLE_CREDENTIALS | base64)"
+  local google_credentials_json="$(echo -n $GOOGLE_CREDENTIALS | base64 -w 0)"
 
   template_data="$(cat scripts/manifests/cert-manager-$PLATFORM.yaml)"
   template_data="$(echo "${template_data//GOOGLE_CREDENTIALS/$google_credentials_json}")"

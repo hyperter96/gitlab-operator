@@ -16,6 +16,7 @@ controlPlane:
     gcp:
       type: n2-standard-4
   replicas: 3
+fips: false
 metadata:
   creationTimestamp: null
   name: 'CLUSTER_NAME'

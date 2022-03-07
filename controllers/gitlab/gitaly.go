@@ -1,6 +1,8 @@
 package gitlab
 
 import (
+	"strings"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
@@ -17,15 +19,39 @@ func GitalyEnabled(adapter CustomResourceAdapter) bool {
 
 // GitalyStatefulSet returns the StatefulSet of Gitaly component.
 func GitalyStatefulSet(template helm.Template) client.Object {
-	return template.Query().ObjectByKindAndComponent(StatefulSetKind, GitalyComponentName)
+	results := template.Query().ObjectsByKindAndLabels(StatefulSetKind, map[string]string{"app": GitalyComponentName})
+
+	for _, result := range results {
+		if _, hasStorageLabel := result.GetLabels()["storage"]; !hasStorageLabel {
+			return result
+		}
+	}
+
+	return nil
 }
 
 // GitalyConfigMap returns the ConfigMap of Gitaly component.
 func GitalyConfigMap(template helm.Template) client.Object {
-	return template.Query().ObjectByKindAndComponent(ConfigMapKind, GitalyComponentName)
+	results := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{"app": GitalyComponentName})
+
+	for _, result := range results {
+		if hasPraefectSuffix := strings.HasSuffix(result.GetName(), "-praefect"); !hasPraefectSuffix {
+			return result
+		}
+	}
+
+	return nil
 }
 
-// GitalyService returns the Service of GitLab Shell component.
+// GitalyService returns the Service of Gitaly component.
 func GitalyService(template helm.Template) client.Object {
-	return template.Query().ObjectByKindAndComponent(ServiceKind, GitalyComponentName)
+	results := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{"app": GitalyComponentName})
+
+	for _, result := range results {
+		if _, hasStorageLabel := result.GetLabels()["storage"]; !hasStorageLabel {
+			return result
+		}
+	}
+
+	return nil
 }

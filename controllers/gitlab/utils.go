@@ -59,6 +59,9 @@ const (
 	// PagesComponentName is the common name of GitLab Pages.
 	PagesComponentName = "gitlab-pages"
 
+	// PraefectComponentName is the common name of Praefect.
+	PraefectComponentName = "praefect"
+
 	// MailroomComponentName is the common name of Mailroom.
 	MailroomComponentName = "mailroom"
 

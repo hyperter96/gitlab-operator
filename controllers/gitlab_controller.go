@@ -165,8 +165,22 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if gitlabctl.GitalyEnabled(adapter) {
-		if err := r.reconcileGitaly(ctx, adapter, template); err != nil {
+		if !gitlabctl.PraefectEnabled(adapter) || !gitlabctl.PraefectReplaceInternalGitalyEnabled(adapter) {
+			if err := r.reconcileGitaly(ctx, adapter, template); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	if gitlabctl.PraefectEnabled(adapter) {
+		if err := r.reconcilePraefect(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
+		}
+
+		if gitlabctl.GitalyEnabled(adapter) {
+			if err := r.reconcileGitalyPraefect(ctx, adapter, template); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
@@ -189,7 +203,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	waitInterval := 5 * time.Second
-	if !r.ifCoreServicesReady(ctx, adapter) {
+	if !r.ifCoreServicesReady(ctx, adapter, template) {
 		log.Info("Core services are not ready. Waiting and retrying", "interval", waitInterval)
 		return ctrl.Result{RequeueAfter: waitInterval}, nil
 	}
@@ -732,7 +746,7 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 	return len(addresses) > 0
 }
 
-func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
 	if gitlabctl.PostgresEnabled(adapter) {
 		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) {
 			return false
@@ -746,8 +760,24 @@ func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitl
 	}
 
 	if gitlabctl.GitalyEnabled(adapter) {
-		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-gitaly", adapter) {
+		if !gitlabctl.PraefectEnabled(adapter) || !gitlabctl.PraefectReplaceInternalGitalyEnabled(adapter) {
+			if !r.isEndpointReady(ctx, gitlabctl.GitalyService(template).GetName(), adapter) {
+				return false
+			}
+		}
+	}
+
+	if gitlabctl.PraefectEnabled(adapter) {
+		if !r.isEndpointReady(ctx, gitlabctl.PraefectService(template).GetName(), adapter) {
 			return false
+		}
+
+		if gitlabctl.GitalyEnabled(adapter) {
+			for _, gitalyPraefectService := range gitlabctl.GitalyPraefectServices(template) {
+				if !r.isEndpointReady(ctx, gitalyPraefectService.GetName(), adapter) {
+					return false
+				}
+			}
 		}
 	}
 

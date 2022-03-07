@@ -1,0 +1,66 @@
+package gitlab
+
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+)
+
+var _ = Describe("Gitaly and Praefect resources", func() {
+	if namespace == "" {
+		namespace = "default"
+	}
+
+	Context("Praefect-managed Gitaly", func() {
+		When("Gitaly and Praefect are enabled", func() {
+			chartValues := resource.Values{}
+			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
+			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
+
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
+			template, err := GetTemplate(adapter)
+
+			configMap := GitalyPraefectConfigMap(template)
+			services := GitalyPraefectServices(template)
+			statefulSets := GitalyPraefectStatefulSets(template)
+
+			It("Should render the template", func() {
+				Expect(err).To(BeNil())
+				Expect(template).NotTo(BeNil())
+			})
+
+			It("Should contain Praefect-managed Gitaly resources", func() {
+				Expect(configMap).NotTo(BeNil())
+				Expect(services).NotTo(BeNil())
+				Expect(statefulSets).NotTo(BeNil())
+			})
+		})
+
+		When("Gitaly is enabled and Praefect is disabled", func() {
+			chartValues := resource.Values{}
+			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
+			_ = chartValues.SetValue(GlobalPraefectEnabled, false)
+
+			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
+			adapter := CreateMockAdapter(mockGitLab)
+			template, err := GetTemplate(adapter)
+
+			configMap := GitalyPraefectConfigMap(template)
+			services := GitalyPraefectServices(template)
+			statefulSets := GitalyPraefectStatefulSets(template)
+
+			It("Should render the template", func() {
+				Expect(err).To(BeNil())
+				Expect(template).NotTo(BeNil())
+			})
+
+			It("Should not contain Praefect-managed Gitaly resources", func() {
+				Expect(configMap).To(BeNil())
+				Expect(services).To(BeNil())
+				Expect(statefulSets).To(BeNil())
+			})
+		})
+	})
+})

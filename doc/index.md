@@ -35,8 +35,6 @@ Below are known limitations of the GitLab Operator.
 
 Below is a list of unsupported components:
 
-- Praefect: [#136](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/136)
-
 ### Components not recommended for production use
 
 Below is a list of components that are not yet recommended for production when

@@ -6,6 +6,7 @@ variables:
   TESTS_NAMESPACE: "${CI_COMMIT_SHORT_SHA}-${CI_COMMIT_REF_SLUG}"
   DOMAIN_OPENSHIFT_4_7: "apps.ocp-ci-4717.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_8: "apps.ocp-ci-4821.k8s-ft.win"
+  DOMAIN_OPENSHIFT_4_9: "apps.ocp-ci-4917.k8s-ft.win"
   DOMAIN_GKE: "gitlab-operator.k8s-ft.win"
   # Namespace built into default manifest
   NAMESPACE: "gitlab-system"
@@ -274,6 +275,36 @@ review_4_8:
   environment: *environment_4_8
   resource_group: "openshift_4_8/${CI_COMMIT_REF_NAME}"
 
+build_review_4_9:
+  extends: .build_review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_9
+    PLATFORM: openshift
+
+create_review_4_9:
+  extends: .create_review_template
+  environment: &environment_4_9
+    name: openshift_4_9/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_9
+    on_stop: stop_review_openshift_4_9
+    auto_stop_in: 1 hour
+  needs:
+    - build_review_4_9
+
+review_4_9:
+  extends: .review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_9
+    PLATFORM: openshift
+  before_script:
+    - export KUBECONFIG="$KUBECONFIG_OCP_4_9"
+  needs:
+    - create_review_4_9
+    # we need build_* dependency to receive appropriate artifacts
+    - build_review_4_9
+  environment: *environment_4_9
+  resource_group: "openshift_4_9/${CI_COMMIT_REF_NAME}"
+
 build_review_gke:
   extends: .build_review_template
   variables:
@@ -319,6 +350,14 @@ qa_4_8:
   needs:
     - review_4_8
 
+qa_4_9:
+  extends: .qa
+  stage: qa
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_9
+  needs:
+    - review_4_9
+
 qa_gke:
   extends: .qa
   stage: qa
@@ -350,6 +389,18 @@ stop_review_openshift_4_8:
     action: stop
   needs:
     - build_review_4_8
+
+stop_review_openshift_4_9:
+  extends: .stop_review_template
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_9
+  before_script:
+    - export KUBECONFIG="$KUBECONFIG_OCP_4_9"
+  environment:
+    name: openshift_4_9/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
+    action: stop
+  needs:
+    - build_review_4_9
 
 stop_review_gke:
   extends: .stop_review_template

@@ -31,16 +31,13 @@ install_certmanager() {
 
   sleep 10
 
-  export KUBECONFIG  # needed so kubectl apply uses the correct cluster
-
-  local google_credentials_json="$(echo -n $GOOGLE_CREDENTIALS | base64 -w 0)"
-
   template_data="$(cat scripts/manifests/cert-manager-$PLATFORM.yaml)"
-  template_data="$(echo "${template_data//GOOGLE_CREDENTIALS/$google_credentials_json}")"
+  template_data="$(echo "${template_data//GOOGLE_CREDENTIALS/$GOOGLE_CREDENTIALS}")"
   template_data="$(echo "${template_data//GCP_PROJECT_ID/$GCP_PROJECT_ID}")"
   template_data="$(echo "${template_data//CLUSTER_NAME/$CLUSTER_NAME}")"
   template_data="$(echo "${template_data//BASE_DOMAIN/$BASE_DOMAIN}")"
 
+  export KUBECONFIG  # needed so kubectl apply uses the correct cluster
   echo "$template_data" | kubectl apply -f -
 }
 

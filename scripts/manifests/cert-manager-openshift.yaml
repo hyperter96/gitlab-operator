@@ -5,7 +5,7 @@ metadata:
   name: gitlab-dns-credentials
   namespace: default
 type: Opaque
-data:
+stringData:
   credentials.json: 'GOOGLE_CREDENTIALS'
 
 ---

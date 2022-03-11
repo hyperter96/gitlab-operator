@@ -89,6 +89,7 @@ gcloud*.json
 pull_secret
 must-gather.*
 charts/
+!*/**/charts
 helm
 !helm/
 *.coverprofile

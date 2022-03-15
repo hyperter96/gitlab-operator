@@ -4,6 +4,8 @@ variables:
   # Configuration of K8s
   # Namespace within which to run tests
   TESTS_NAMESPACE: "${CI_COMMIT_SHORT_SHA}-${CI_COMMIT_REF_SLUG}"
+  BUILD_DIR: ".build"
+  INSTALL_DIR: ".install"
   DOMAIN_OPENSHIFT_4_7: "apps.ocp-ci-4717.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_8: "apps.ocp-ci-4821.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_9: "apps.ocp-ci-4917.k8s-ft.win"
@@ -441,15 +443,14 @@ build_manifest:
     - export TAG=${CI_COMMIT_TAG:-${TAG}}
     - make build_operator
     - make build_openshift_resources
-    - echo "---" > .build/separator
-    - cat .build/operator.yaml .build/separator .build/openshift_resources.yaml > .build/operator-openshift.yaml
+    - make build_operator_openshift
   artifacts:
     untracked: false
     expire_in: 30 days
     paths:
-      - .build/operator.yaml
-      - .build/operator-openshift.yaml
-      - .build/openshift_resources.yaml
+      - ${BUILD_DIR}/operator.yaml
+      - ${BUILD_DIR}/openshift_resources.yaml
+      - ${BUILD_DIR}/operator-openshift.yaml
   rules:
     - !reference [.skip_if_docs_branch]
     - !reference [.if_release_tag]
@@ -466,15 +467,15 @@ upload_manifest:
   script:
     - |
       curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
-        --upload-file .build/operator.yaml \
+        --upload-file ${BUILD_DIR}/operator.yaml \
         ${K8S_MANIFEST_URL}?status=default
     - |
       curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
-        --upload-file .build/operator-openshift.yaml \
+        --upload-file ${BUILD_DIR}/operator-openshift.yaml \
         ${OCP_MANIFEST_URL}?status=default
 #   - |
 #     curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
-#       --upload-file .build/openshift_resources.yaml \
+#       --upload-file ${BUILD_DIR}/openshift_resources.yaml \
 #       ${OCP_RESOURCES_URL}?status=default
 
 publish_release:

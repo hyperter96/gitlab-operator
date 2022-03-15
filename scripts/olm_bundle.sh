@@ -27,6 +27,8 @@ CATALOG_NAME=${CATALOG_NAME:-"gitlab-catalog"}
 OLM_PACKAGE_VERSION=${OLM_PACKAGE_VERSION:-"0.2.0"}
 COMPILE_ONLY=${COMPILE_ONLY:-"false"}
 
+BUILD_DIR=${BUILD_DIR:-.build}
+INSTALL_DIR=${INSTALL_DIR:-.install}
 
 # Most (if not all) of the below vars can be overridden, but defaults should work
 OPERATOR_IMG=${OPERATOR_IMG:-"registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator"}
@@ -34,7 +36,7 @@ OPERATOR_TAG=${OPERATOR_TAG:-"latest"}
 BUNDLE_IMAGE_NAME=${BUNDLE_IMAGE_NAME:-"${BUNDLE_REGISTRY}"}
 CATALOG_IMAGE_NAME=${CATALOG_IMAGE_NAME:-"${BUNDLE_REGISTRY}/gitlab-operator-catalog"}
 CATALOG_IMAGE_TAG=${CATALOG_IMAGE_TAG:-"${BUNDLE_IMAGE_TAG}"}
-OSDK_BASE_DIR=${OSDK_BASE_DIR:-".build/operatorsdk"}
+OSDK_BASE_DIR=${OSDK_BASE_DIR:-"${BUILD_DIR}/operatorsdk"}
 CATALOGSOURCE_YAML=${OSDK_BASE_DIR}/catalogsource.yaml
 OPERATORGROUP_YAML=${OSDK_BASE_DIR}/operatorgroup.yaml
 SUBSCRIPTION_YAML=${OSDK_BASE_DIR}/subscription.yaml
@@ -54,21 +56,21 @@ build_manifests(){
   make build_operator
   make build_openshift_resources
   make build_test_cr
-  ( cd config/scorecard; kustomize build ) > .build/scorecard.yaml
+  ( cd config/scorecard; kustomize build ) > ${BUILD_DIR}/scorecard.yaml
   mkdir -p ${OSDK_BASE_DIR}
   ( cd ${OSDK_BASE_DIR}; ln -sf ${OPERATOR_HOME_DIR}/config )
 }
 
 install_opm(){
-  mkdir -p .build
-  curl -s -L -o .build/operator-registry-${OPM_VERSION}.tgz https://github.com/operator-framework/operator-registry/archive/refs/tags/v${OPM_VERSION}.tar.gz
+  mkdir -p ${BUILD_DIR}
+  curl -s -L -o ${BUILD_DIR}/operator-registry-${OPM_VERSION}.tgz https://github.com/operator-framework/operator-registry/archive/refs/tags/v${OPM_VERSION}.tar.gz
   ( 
-    cd .build
+    cd ${BUILD_DIR}
     tar -xzf operator-registry-${OPM_VERSION}.tgz
     cd operator-registry-${OPM_VERSION}
     make bin/opm
   )
-  OPM=$(pwd)/.build/operator-registry-${OPM_VERSION}/bin/opm
+  OPM=$(realpath "${BUILD_DIR}/operator-registry-${OPM_VERSION}/bin/opm")
   ls -l ${OPM}
   ${OPM} version
 }
@@ -85,7 +87,7 @@ install_operatorsdk(){
 }
 
 generate_bundle(){
-  ${YQ} eval '.' .build/openshift_resources.yaml .build/operator.yaml .build/test_cr.yaml .build/scorecard.yaml \
+  ${YQ} eval '.' ${BUILD_DIR}/openshift_resources.yaml ${BUILD_DIR}/operator.yaml ${BUILD_DIR}/test_cr.yaml ${BUILD_DIR}/scorecard.yaml \
       | ( 
           cd ${OSDK_BASE_DIR}
           ${OPERATOR_SDK} generate bundle -q --overwrite \

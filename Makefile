@@ -14,6 +14,9 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 BUNDLE_OPTS ?= --extra-service-accounts=gitlab-manager,gitlab-nginx-ingress,gitlab-app
 
+BUILD_DIR ?= .build
+INSTALL_DIR ?= .install
+
 KUSTOMIZE_FILES=$(shell find config -type f -name \*.yaml)
 TEST_CR_FILES=$(shell find config/test -type f -name \*.yaml)
 
@@ -59,29 +62,29 @@ manager: generate fmt vet
 run: generate fmt vet manifests
 	go run ./main.go
 
-.build:
-	mkdir .build
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
 # Build CRDs
-.build/crds.yaml: .build manifests kustomize $(KUSTOMIZE_FILES)
+$(BUILD_DIR)/crds.yaml: $(BUILD_DIR) manifests kustomize $(KUSTOMIZE_FILES)
 	$(KUSTOMIZE) build config/crd > $@
 
-build_crds: .build/crds.yaml
+build_crds: $(BUILD_DIR)/crds.yaml
 
-.install:
-	mkdir .install
+$(INSTALL_DIR):
+	mkdir -p $(INSTALL_DIR)
 
-.install/crds.yaml: .build/crds.yaml .install
+$(INSTALL_DIR)/crds.yaml: $(BUILD_DIR)/crds.yaml $(INSTALL_DIR)
 	$(KUBECTL) apply -f $<
 	cp $< $@
 
 # Install CRDs into a cluster
-install_crds: .install/crds.yaml
+install_crds: $(INSTALL_DIR)/crds.yaml
 
 # Uninstall CRDs from a cluster
 uninstall_crds: manifests kustomize build_crds
-	$(KUBECTL) delete -f .build/crds.yaml
-	rm .install/crds.yaml
+	$(KUBECTL) delete -f $(BUILD_DIR)/crds.yaml
+	rm $(INSTALL_DIR)/crds.yaml
 
 # Suffix operator clusterrolebinding names so they can be installed in parallel
 suffix_clusterrolebinding_names: kustomize
@@ -91,45 +94,53 @@ suffix_clusterrolebinding_names: kustomize
 suffix_webhook_names: kustomize
 	cd config/webhook && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
 
-.build/openshift_resources.yaml: .build $(KUSTOMIZE_FILES)
+$(BUILD_DIR)/openshift_resources.yaml: $(BUILD_DIR) $(KUSTOMIZE_FILES)
 	cd config/openshift && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	$(KUSTOMIZE) build config/openshift > $@
 
-build_openshift_resources: .build/openshift_resources.yaml
+build_openshift_resources: $(BUILD_DIR)/openshift_resources.yaml
 
-.install/openshift_resources.yaml: .build/openshift_resources.yaml .install
+$(INSTALL_DIR)/openshift_resources.yaml: $(BUILD_DIR)/openshift_resources.yaml $(INSTALL_DIR)
 	$(KUBECTL) create namespace ${NAMESPACE} || true
 	$(KUBECTL) label namespace ${NAMESPACE} control-plane=controller-manager || true
 	$(KUBECTL) apply -f $<
 	cp $< $@
 
-deploy_openshift_resources: .install/openshift_resources.yaml
+deploy_openshift_resources: $(INSTALL_DIR)/openshift_resources.yaml
 
-.build/operator.yaml: .build $(KUSTOMIZE_FILES)
+$(BUILD_DIR)/operator.yaml: $(BUILD_DIR) $(KUSTOMIZE_FILES)
 	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	cd config/manager && $(KUSTOMIZE) edit set image $(DEFAULT_IMG)=$(IMG):$(TAG)
 	$(KUSTOMIZE) build config/default > $@
 
-build_operator: .build/operator.yaml
+build_operator: $(BUILD_DIR)/operator.yaml
+
+${BUILD_DIR}/yaml-separator:
+	echo "---" > $@
+
+${BUILD_DIR}/operator-openshift.yaml: ${BUILD_DIR}/operator.yaml ${BUILD_DIR}/openshift_resources.yaml ${BUILD_DIR}/yaml-separator
+	cat ${BUILD_DIR}/operator.yaml ${BUILD_DIR}/yaml-separator ${BUILD_DIR}/openshift_resources.yaml > $@
+
+build_operator_openshift: $(BUILD_DIR)/operator-openshift.yaml
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-.install/operator.yaml: .build/operator.yaml .install
+$(INSTALL_DIR)/operator.yaml: $(BUILD_DIR)/operator.yaml $(INSTALL_DIR)
 	$(KUBECTL) create namespace ${NAMESPACE} || true
 	$(KUBECTL) label namespace ${NAMESPACE} control-plane=controller-manager || true
 	$(KUBECTL) apply -f $<
 	cp $< $@
 
-deploy_operator: .install/operator.yaml
+deploy_operator: $(INSTALL_DIR)/operator.yaml
 
 # Delete controller from the configured Kubernetes cluster
-delete_operator: manifests kustomize .build/operator.yaml
-	$(KUBECTL) delete -f .build/operator.yaml
-	rm .install/operator.yaml
+delete_operator: manifests kustomize $(BUILD_DIR)/operator.yaml
+	$(KUBECTL) delete -f $(BUILD_DIR)/operator.yaml
+	rm $(INSTALL_DIR)/operator.yaml
 
 # Deploy test GitLab custom resource to cluster
-build_test_cr: .build/test_cr.yaml
+build_test_cr: $(BUILD_DIR)/test_cr.yaml
 
-.build/test_cr.yaml: .build $(TEST_CR_FILES)
+$(BUILD_DIR)/test_cr.yaml: $(BUILD_DIR) $(TEST_CR_FILES)
 	cd config/test && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
 	$(KUSTOMIZE) build config/test \
 		| sed "s/CHART_VERSION/${CHART_VERSION}/g" \
@@ -138,14 +149,14 @@ build_test_cr: .build/test_cr.yaml
 		| sed "s/TLSSECRETNAME/${TLSSECRETNAME}/g" > $@
 
 # Deploy test GitLab custom resource to cluster
-.install/test_cr.yaml: .build/test_cr.yaml
+$(INSTALL_DIR)/test_cr.yaml: $(BUILD_DIR)/test_cr.yaml
 	kubectl apply -f $<
 	cp $< $@
 
-deploy_test_cr: .install/test_cr.yaml
+deploy_test_cr: $(INSTALL_DIR)/test_cr.yaml
 
 # Delete the test GitLab custom resource from cluster
-delete_test_cr: .install/test_cr.yaml
+delete_test_cr: $(INSTALL_DIR)/test_cr.yaml
 	kubectl delete -f $<
 
 # Restores files that are modified during operator and CR deploy
@@ -202,7 +213,7 @@ envtest: ## Download envtest-setup locally if necessary.
 
 .PHONY: clean
 clean:
-	rm -rf .build .install
+	rm -rf $(BUILD_DIR) $(INSTALL_DIR)
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle

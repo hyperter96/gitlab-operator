@@ -12,6 +12,10 @@ KUBECTL_WAIT_TIMEOUT_SECONDS=${KUBECTL_WAIT_TIMEOUT_SECONDS:-"600s"}
 REGISTRY_AUTH_SECRET_NS=${REGISTRY_AUTH_SECRET_NS:-""}
 REGISTRY_AUTH_SECRET=${REGISTRY_AUTH_SECRET:-""}
 
+BASE_DIR=${BASE_DIR:-$(pwd)}
+export INSTALL_DIR=$(realpath ${INSTALL_DIR:-"${BASE_DIR}/.install"})
+export BUILD_DIR=$(realpath ${BUILD_DIR:-"${BASE_DIR}/.build"})
+
 # When defined - skip cleanup at the end of script run
 NO_TRAP=${NO_TRAP:-""}
 
@@ -110,14 +114,14 @@ create_kustomization() {
   # create kustomization infrastructure
   for d in generic openshift
   do
-    mkdir -p .build/kustomize/${d}
-    cp -r config/ci/* .build/kustomize/${d}/
-    cp .build/operator.yaml .build/kustomize/${d}
+    mkdir -p ${BUILD_DIR}/kustomize/${d}
+    cp -r config/ci/* ${BUILD_DIR}/kustomize/${d}/
+    cp ${BUILD_DIR}/operator.yaml ${BUILD_DIR}/kustomize/${d}
   done
-  cp .build/openshift_resources.yaml .build/kustomize/openshift/
+  cp ${BUILD_DIR}/openshift_resources.yaml ${BUILD_DIR}/kustomize/openshift/
 
   (
-    cd .build/kustomize/generic
+    cd ${BUILD_DIR}/kustomize/generic
     if [ -n "${REGISTRY_AUTH_SECRET}" ]
     then
       ${YQ} eval -i ".spec.template.spec.imagePullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\"" patches/dev-pullSecret.yaml
@@ -128,7 +132,7 @@ create_kustomization() {
     kustomize edit set namespace "${TESTS_NAMESPACE}"
   )
   (
-    cd .build/kustomize/openshift
+    cd ${BUILD_DIR}/kustomize/openshift
     if [ -n "${REGISTRY_AUTH_SECRET}" ]
     then
       ${YQ} eval -i ".spec.template.spec.imagePullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\"" patches/dev-pullSecret.yaml
@@ -142,24 +146,13 @@ create_kustomization() {
 }
 
 setup_kustomization() {
-  local basedir
-  echo "Setting up environment for kustomize"
-  if [ -n "$1" ]
-  then
-    basedir=$1
-  else
-    basedir=$(pwd)
-  fi
-  DEPLOYMENT_DIR=${basedir}/.install
-  BUILD_DIR=${basedir}/.build
-
   if [ "${PLATFORM}" == "openshift" ]
   then
-    MANIFEST_DIR=${basedir}/.build/kustomize/openshift
+    MANIFEST_DIR=${BUILD_DIR}/kustomize/openshift
   else
-    MANIFEST_DIR=${basedir}/.build/kustomize/generic
+    MANIFEST_DIR=${BUILD_DIR}/kustomize/generic
   fi
-  mkdir -p ${DEPLOYMENT_DIR}
+  mkdir -p ${INSTALL_DIR}
   mkdir -p ${BUILD_DIR}
 }
 
@@ -178,7 +171,7 @@ install_kustomization() {
   echo "Deploying operator"
   set -x
   kubectl apply -f ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
-  cp ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml ${DEPLOYMENT_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+  cp ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml ${INSTALL_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
   set +x
 }
 
@@ -205,7 +198,7 @@ build_gitlab_custom_resource() {
   [ -n "${REGISTRY_AUTH_SECRET}" ] && \
     kubectl get secret --namespace="${TESTS_NAMESPACE}" "${REGISTRY_AUTH_SECRET}" && \
     YQ_CMD=".spec.chart.values.global.image.pullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\""
-  ${YQ} eval "${YQ_CMD}" .build/test_cr.yaml  > ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  ${YQ} eval "${YQ_CMD}" ${BUILD_DIR}/test_cr.yaml  > ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
   [ ${TESTS_NAMESPACE} != "gitlab-system" ] \
     && ${YQ} -i eval ".spec.chart.values.global.ingress.class=\"gitlab-nginx-${TESTS_NAMESPACE}\"" \
           ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
@@ -217,7 +210,7 @@ install_gitlab_custom_resource() {
   echo 'Installing GitLab custom resource'
   set -x
   kubectl apply -n ${TESTS_NAMESPACE} -f ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
-  cp ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml ${DEPLOYMENT_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  cp ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml ${INSTALL_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
   set +x
 }
 

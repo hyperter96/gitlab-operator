@@ -7,8 +7,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"helm.sh/helm/v3/pkg/chart"
-
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 )
 
 func newTestChart(name, version, appVersion string) *chart.Chart {
@@ -202,7 +200,7 @@ var _ = Describe("Catalog", func() {
 		})
 
 		It("makes a copy of the original Chart", func() {
-			val := resource.Values{
+			val := map[string]interface{}{
 				"foo": "bar",
 			}
 			chrt := &chart.Chart{

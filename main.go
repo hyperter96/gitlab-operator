@@ -36,6 +36,7 @@ import (
 	appsv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -79,6 +80,11 @@ func main() {
 	flag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
+
+	_ = charts.PopulateGlobalCatalog(
+		charts.WithLogger(logger),
+		charts.WithSearchPath(settings.HelmChartsDirectory),
+	)
 
 	ctrl.SetLogger(logger)
 

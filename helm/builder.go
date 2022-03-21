@@ -3,15 +3,16 @@ package helm
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/releaseutil"
 	"k8s.io/kubectl/pkg/scheme"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
 )
 
 // Builder provides an interface to build and render a Helm template.
@@ -50,7 +51,7 @@ type Builder interface {
 }
 
 // NewBuilder creates a new builder interface for Helm template.
-func NewBuilder(chartName string) (Builder, error) {
+func NewBuilder(name, version string) (Builder, error) {
 	envSettings := cli.New()
 
 	actionConfig := new(action.Configuration)
@@ -69,14 +70,11 @@ func NewBuilder(chartName string) (Builder, error) {
 	client.KubeVersion = settings.KubeVersion
 	client.APIVersions = settings.GetKubeAPIVersions()
 
-	chartPath, err := client.ChartPathOptions.LocateChart(chartName, envSettings)
-	if err != nil {
-		return nil, err
-	}
+	chart := charts.GlobalCatalog().Query(
+		charts.WithName(name), charts.WithVersion(version)).First()
 
-	chart, err := loader.Load(chartPath)
-	if err != nil {
-		return nil, err
+	if chart == nil {
+		return nil, errors.Errorf("chart %s-%s not found", name, version)
 	}
 
 	return &defaultBuilder{

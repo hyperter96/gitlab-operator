@@ -46,7 +46,7 @@ func GetTemplate(adapter CustomResourceAdapter) (helm.Template, error) {
 		return nil, err
 	}
 
-	builder, err := helm.NewBuilder(helm.GetChartPath(adapter.ChartVersion()))
+	builder, err := helm.NewBuilder(helm.GitLabChartName, adapter.ChartVersion())
 	if err != nil {
 		return nil, err
 	}

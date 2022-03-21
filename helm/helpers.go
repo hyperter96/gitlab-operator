@@ -3,70 +3,31 @@ package helm
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"regexp"
-	"sort"
 	"strings"
 
-	"github.com/Masterminds/semver"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
+)
+
+const (
+	GitLabChartName = "gitlab"
 )
 
 // AvailableChartVersions lists the version of available GitLab Charts.
-// The values are sorted from newest to oldest (semantic versioning).
 func AvailableChartVersions() []string {
-	versions := []*semver.Version{}
-
-	chartsDir := os.Getenv("HELM_CHARTS")
-	if chartsDir == "" {
-		chartsDir = "/charts"
-	}
-
-	re := regexp.MustCompile(`gitlab\-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\.tgz`)
-
-	_ = filepath.Walk(chartsDir, func(path string, info os.FileInfo, err error) error {
-		submatches := re.FindStringSubmatch(info.Name())
-
-		if len(submatches) > 1 {
-			semver, err := semver.NewVersion(submatches[1])
-			if err != nil {
-				return err
-			}
-
-			versions = append(versions, semver)
-		}
-
-		return nil
-	})
-
-	// Sort versions from newest to oldest.
-	sort.Sort(sort.Reverse(semver.Collection(versions)))
-
-	// Convert list back to strings for compatibility with rest of codebase.
-	// NOTE: We can consider returning SemVer objects if we want to do comparisons.
-	result := make([]string, len(versions))
-	for i, v := range versions {
-		result[i] = v.String()
-	}
-
-	return result
+	return charts.GlobalCatalog().Versions(GitLabChartName)
 }
 
 func ChartVersionSupported(version string) (bool, error) {
-	for _, v := range AvailableChartVersions() {
-		if v == version {
-			return true, nil
-		}
+	result := charts.GlobalCatalog().Query(charts.WithName(GitLabChartName), charts.WithVersion(version)).Empty()
+
+	if result {
+		return false, fmt.Errorf("chart version %s not supported; please use one of the following: %s",
+			version, strings.Join(charts.GlobalCatalog().Versions(GitLabChartName), ", "))
 	}
 
-	return false, fmt.Errorf("chart version %s not supported; please use one of the following: %s", version, strings.Join(AvailableChartVersions(), ", "))
-}
-
-func GetChartPath(chartVersion string) string {
-	return filepath.Join(settings.HelmChartsDirectory,
-		fmt.Sprintf("gitlab-%s.tgz", chartVersion))
+	return true, nil
 }
 
 func GetChartVersion() string {

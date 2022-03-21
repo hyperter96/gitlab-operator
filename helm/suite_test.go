@@ -1,30 +1,20 @@
 package helm
 
 import (
-	"os"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
 )
 
 func loadTemplate() (Template, error) {
-	chartPath := os.Getenv("HELM_CHART")
-	if chartPath == "" {
-		chartPath = "testdata/chart/test"
-	}
-
-	valuesPath := os.Getenv("HELM_VALUES")
-	if valuesPath == "" {
-		valuesPath = "testdata/chart/values.yaml"
-	}
-
 	values := resource.Values{}
-	_ = values.AddFromYAMLFile(valuesPath)
+	_ = values.AddFromYAMLFile("testdata/chart/values.yaml")
 
-	builder, err := NewBuilder(chartPath)
+	builder, err := NewBuilder("test", "0.1.0")
 	if err != nil {
 		return nil, err
 	}
@@ -33,6 +23,9 @@ func loadTemplate() (Template, error) {
 }
 
 func TestHelm(t *testing.T) {
+	_ = charts.PopulateGlobalCatalog(
+		charts.WithSearchPath("testdata/chart"))
+
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Helm Suite")
 }

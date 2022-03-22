@@ -70,7 +70,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
 1. Deploy the GitLab Operator.
 
    ```shell
-   GL_OPERATOR_VERSION=0.5.1 # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases
+   GL_OPERATOR_VERSION=0.6.0 # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases
    PLATFORM=kubernetes # or "openshift"
    kubectl create namespace gitlab-system
    kubectl apply -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
@@ -100,7 +100,7 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
      name: example
    spec:
      chart:
-       version: "X.Y.Z" # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/0.5.1/CHART_VERSIONS
+       version: "X.Y.Z" # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/0.6.0/CHART_VERSIONS
        values:
          global:
            hosts:
@@ -156,7 +156,7 @@ This will remove the GitLab instance, and all associated objects except for (PVC
 ### Uninstall the GitLab Operator
 
 ```shell
-GL_OPERATOR_VERSION=0.5.1 # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases
+GL_OPERATOR_VERSION=0.6.0 # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases
 PLATFORM=kubernetes # or "openshift"
 kubectl delete -f https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/${GL_OPERATOR_VERSION}/gitlab-operator-${PLATFORM}-${GL_OPERATOR_VERSION}.yaml
 ```

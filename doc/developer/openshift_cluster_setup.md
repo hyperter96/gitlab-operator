@@ -47,6 +47,7 @@ Configuration can be applied during runtime by setting environment variables. Al
 |-----------------------|-----------------------------------------------------------|---------|
 | `CLUSTER_NAME`        | Name of cluster                                           | `ocp-$USER` |
 | `BASE_DOMAIN`         | Root domain for cluster                                   | `k8s-ft.win` |
+| `FIPS_ENABLED`        | Enable FIPS cryptography modules                          | `false` |
 | `GCP_PROJECT_ID`      | Google Cloud project ID                                   | `cloud-native-182609` |
 | `GCP_REGION`          | Google Cloud region for cluster                           | `us-central1` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google Cloud service account JSON file | `gcloud.json` |
@@ -59,6 +60,9 @@ Configuration can be applied during runtime by setting environment variables. Al
 
 NOTE:
 The variables `CLUSTER_NAME` and `BASE_DOMAIN` are combined to build the domain name for the cluster.
+
+NOTE:
+Creating a cluster with `FIPS_ENABLED` set to `true` may cause issues with third party software. We are investigating [this in issue](https://gitlab.com/gitlab-org/charts/gitlab/-/issues/3153).
 
 ## Destroy your OpenShift cluster
 

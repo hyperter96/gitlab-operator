@@ -4,9 +4,10 @@
 CLUSTER_NAME="${CLUSTER_NAME:-ocp-$USER}"
 CLUSTER_VERSION="${CLUSTER_VERSION:-4.7.17}"
 BASE_DOMAIN="${BASE_DOMAIN:-k8s-ft.win}"
+FIPS_ENABLED="${FIPS_ENABLED:-false}"
+
 GCP_PROJECT_ID="${GCP_PROJECT_ID:-cloud-native-182609}"
 GCP_REGION="${GCP_REGION:-us-central1}"
-
 GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS:-gcloud.json}"
 GOOGLE_CREDENTIALS="${GOOGLE_CREDENTIALS:-$(cat $GOOGLE_APPLICATION_CREDENTIALS)}"
 
@@ -58,6 +59,7 @@ render_config_file() {
   template_data="$(echo "${template_data//BASE_DOMAIN/$BASE_DOMAIN}")"
   template_data="$(echo "${template_data//GCP_PROJECT_ID/$GCP_PROJECT_ID}")"
   template_data="$(echo "${template_data//GCP_REGION/$GCP_REGION}")"
+  template_data="$(echo "${template_data//FIPS_ENABLED/$FIPS_ENABLED}")"
 
   mkdir -p $INSTALL_DIR
   echo "$template_data" > "$INSTALL_DIR/install-config.yaml"

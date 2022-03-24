@@ -249,6 +249,14 @@ variables:
     # Run environment cleanup
     - ./scripts/test.sh cleanup
   allow_failure: true
+  artifacts:
+    when: always
+    expire_in: 7d
+    paths:
+      # Persist the manifests for debugging purposes.
+      - ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+      - ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+      - ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.no-crd.yaml
   rules:
     - !reference [.skip_if_docs_branch]
     - !reference [.skip_if_release_tag]

@@ -260,8 +260,11 @@ cleanup() {
     set -x
     # delete CR
     kubectl delete -f ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
-    # delete operator resources
-    kubectl delete -f ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+    # delete operator resources (except CustomResourceDefinition)
+    CRD_INDEX=$(${YQ} eval 'select(.kind== "CustomResourceDefinition") | documentIndex' ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml)
+    ${YQ} eval "select(documentIndex != $CRD_INDEX)" ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml > ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.no-crd.yaml
+    kubectl delete -f ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.no-crd.yaml
+    # delete namespace
     kubectl delete ns "$TESTS_NAMESPACE"
     set +x
   else

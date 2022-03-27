@@ -16,3 +16,4 @@ This issue will serve as a checklist and record of the release of the GitLab Ope
 
    * [ ] Operator repo
    * [ ] Chart repo
+1. [ ] [Release to OperatorHub.io](doc/developer/operatorhub_publishing.md)

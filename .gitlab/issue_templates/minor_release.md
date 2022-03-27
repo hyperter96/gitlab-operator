@@ -15,3 +15,4 @@ This issue will serve as a checklist and record of the first release of the GitL
 1. [ ] Update documentation with references to the latest version
    * [ ] Operator repo
    * [ ] Chart repo
+1. [ ] [Release to OperatorHub.io](doc/developer/operatorhub_publishing.md)

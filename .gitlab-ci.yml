@@ -82,7 +82,7 @@ danger-review:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_default_branch]
     - !reference [.skip_if_stable_branch]
-    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_COMMIT_BRANCH && $CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator"'
 
 pull_charts:
   stage: prepare

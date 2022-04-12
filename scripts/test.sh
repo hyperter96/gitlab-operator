@@ -7,7 +7,6 @@ CLEANUP="${CLEANUP:-yes}"
 HOSTSUFFIX="${HOSTSUFFIX:-${TESTS_NAMESPACE}}"
 DOMAIN="${DOMAIN:-example.com}"
 DEBUG_CLEANUP="${DEBUG_CLEANUP:-off}"
-KUBECTL_WAIT_TIMEOUT_SECONDS=${KUBECTL_WAIT_TIMEOUT_SECONDS:-"600s"}
 
 REGISTRY_AUTH_SECRET_NS=${REGISTRY_AUTH_SECRET_NS:-""}
 REGISTRY_AUTH_SECRET=${REGISTRY_AUTH_SECRET:-""}
@@ -222,27 +221,8 @@ copy_certificate() {
 }
 
 verify_gitlab_is_running() {
-  echo 'Verifying that GitLab is running'
-
-  statefulsets=(gitlab-gitaly gitlab-redis-master gitlab-minio gitlab-postgresql)
-  wait_until_exists "statefulset/${statefulsets[0]}"
-  for statefulset in "${statefulsets[@]}"; do
-    kubectl -n "$TESTS_NAMESPACE" rollout status -w --timeout 120s "statefulset/$statefulset"
-    echo "statefulset/$statefulset ok"
-  done
-
-  echo 'Waiting for Migrations...'
-  sleep 5
-  kubectl -n "$TESTS_NAMESPACE" wait --timeout="${KUBECTL_WAIT_TIMEOUT_SECONDS}" --for condition=Complete job -l app=migrations
-
-  echo 'Waiting for Deployments...'
-  sleep 5
-  kubectl -n "$TESTS_NAMESPACE" wait --timeout="${KUBECTL_WAIT_TIMEOUT_SECONDS}" --for condition=Available deployment -l app.kubernetes.io/managed-by=gitlab-operator
-
-  local endpoint="https://gitlab-$HOSTSUFFIX.$DOMAIN"
-  echo "Testing GitLab endpoint: $endpoint"
-  sleep 5
-  curl --retry 5 --retry-delay 10 -fIL "$endpoint"
+  wait_until_gitlab_running
+  test_gitlab_endpoint
 }
 
 cleanup() {
@@ -296,34 +276,42 @@ cleanup() {
   set -e
 }
 
-wait_until_exists() {
-  local resource="$1"
-  local namespace="${2:-$TESTS_NAMESPACE}"
-  local maxattempts="${3:-60}"
+wait_until_gitlab_running() {
+  local sleepSeconds=10
+  local maxattempts=120
   local attempts=0
-  local output
   local exitcode
+  local output
+
+  echo 'Verifying that GitLab is running'
 
   while true; do
+    output="$(kubectl -n "$TESTS_NAMESPACE" get gitlab/gitlab -ojsonpath='{.status.phase}' 2>&1)"
+    exitcode=$?
+
+    if [ $exitcode -ne 0 ]; then
+      echo "$output"; exit $exitcode
+    fi
+
     attempts=$((attempts+1))
     if [ "$attempts" -ge "$maxattempts" ]; then
-      echo "Failed waiting for $resource"; exit 1;
+      echo "Failed waiting for GitLab to be Running, current status is $output"; exit 1;
     fi
 
-    set +e
-    output="$(kubectl -n "$namespace" get "$resource" 2>&1)"
-    exitcode=$?
-    set -e
-    if [ $exitcode -eq 0 ]; then
+    if [[ "$output" == 'Running' ]]; then
       break
-    fi
-
-    if [[ "$output" == *"not found"* ]]; then
-      echo -n '.'; sleep 2
     else
-      echo "$output"; exit 1
+      echo -n '.'; sleep $sleepSeconds
     fi
   done
+}
+
+test_gitlab_endpoint() {
+  local endpoint="https://gitlab-$HOSTSUFFIX.$DOMAIN"
+
+  echo "Testing GitLab endpoint: $endpoint"
+  sleep 5
+  curl --retry 5 --retry-delay 10 -fIL "$endpoint"
 }
 
 # main

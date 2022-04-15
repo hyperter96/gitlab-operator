@@ -26,7 +26,7 @@ metadata:
                   "email": "youremail@domain.com"
                 }
               },
-              "version": "5.7.0"
+              "version": "5.9.1"
             }
           }
         }
@@ -34,13 +34,14 @@ metadata:
     capabilities: Seamless Upgrades
     categories: Integration & Delivery, Developer Tools
     certified: "true"
-    containerImage: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator:0.4.0
+    containerImage: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator:0.6.1
     createdAt: "2020-03-11T13:29:00Z"
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     operatorframework.io/suggested-namespace: gitlab-system
     repository: https://gitlab.com/gitlab-org/cloud-native/gitlab-operator
-  name: gitlab-operator-kubernetes.v0.1.0
+    description: The GitLab operator is responsible for managing the full lifecycle of GitLab instances in your Kubernetes or Openshift container platforms.
+  name: gitlab-operator-kubernetes.v0.6.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -149,4 +150,4 @@ spec:
   provider:
     name: GitLab Inc
     url: https://about.gitlab.com/
-  version: 0.1.0
+  version: 0.6.1

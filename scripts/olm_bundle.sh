@@ -25,7 +25,10 @@ BUNDLE_REGISTRY=${BUNDLE_REGISTRY:-"registry.gitlab.com/dmakovey/gitlab-operator
 BUNDLE_IMAGE_TAG=${BUNDLE_IMAGE_TAG:-"beta1"}
 CATALOG_NAME=${CATALOG_NAME:-"gitlab-catalog"}
 OLM_PACKAGE_VERSION=${OLM_PACKAGE_VERSION:-"0.2.0"}
+## This will need to be set up at runtime to override specific previous version
+# OLM_PACKAGE_VERSION_OLD=""
 COMPILE_ONLY=${COMPILE_ONLY:-"false"}
+AUTO_UPGRADE=${AUTO_UPGRADE:-"false"}
 
 BUILD_DIR=${BUILD_DIR:-.build}
 INSTALL_DIR=${INSTALL_DIR:-.install}
@@ -46,6 +49,7 @@ OPERATOR_SDK_BASE_URL=${OPERATOR_SDK_BASE_URL:-"https://github.com/operator-fram
 OPM_VERSION=${OPM_VERSION:-"1.19.0"}
 OPM_URL=${OPM_URL:-"https://github.com/operator-framework/operator-registry/archive/refs/tags/v${OPM_VERSION}.tar.gz"}
 TARGET_NAMESPACE="gitlab-system"
+OLM_NAMESPACE=${OLM_NAMESPACE:-"olm"}
 OPM_DOCKER=${OPM_DOCKER:-"docker"}
 KIND_CONFIG=${KIND_CONFIG:-""}
 KIND_IMAGE=${KIND_IMAGE:-""}
@@ -106,6 +110,10 @@ patch_bundle(){
     ${OSDK_BASE_DIR}/bundle/manifests/${OLM_PACKAGE_NAME}.clusterserviceversion.yaml
   ${YQ} eval -i '.metadata.annotations.containerImage |= "'${operator_image}'"' \
     ${OSDK_BASE_DIR}/bundle/manifests/${OLM_PACKAGE_NAME}.clusterserviceversion.yaml
+  if [ -n "${OLM_PACKAGE_VERSION_OLD}" ]; then
+    ${YQ} eval -i '.spec.replaces = "'${OLM_PACKAGE_NAME}.v${OLM_PACKAGE_VERSION_OLD}'"' \
+      ${OSDK_BASE_DIR}/bundle/manifests/${OLM_PACKAGE_NAME}.clusterserviceversion.yaml
+  fi
   ## Currently neither OLM nor OperatorSDK can't handle IngressClass presence gracefully
   ## https://github.com/operator-framework/operator-sdk/issues/5491
   # ${YQ} eval '.metadata.name="gitlab-nginx"' ${OPERATOR_HOME_DIR}/config/rbac/nginx_ingressclass.yaml > ${OSDK_BASE_DIR}/bundle/manifests/gitlab-nginx-ingressclass.yaml
@@ -159,14 +167,14 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: ${CATALOG_NAME}
-  namespace: olm
+  namespace: ${OLM_NAMESPACE}
 spec:
   sourceType: grpc
   image: ${CATALOG_IMAGE_NAME}:${CATALOG_IMAGE_TAG}
 EOF_CATALOGSOURCE
 
   kubectl apply -f ${CATALOGSOURCE_YAML}
-  kubectl get catalogsources -n olm
+  kubectl get catalogsources -n ${OLM_NAMESPACE}
   kubectl get packagemanifests | grep -F ${OLM_PACKAGE_NAME}
 }
 
@@ -186,6 +194,12 @@ EOF_OPERATORGROUP
 }
 
 deploy_subscription(){
+  local autoupgrade_stmt
+  if [ "${AUTO_UPGRADE}" == "true" ]; then
+    autoupgrade_stmt=""
+  else 
+    autoupgrade_stmt="installPlanApproval: Manual"
+  fi
   cat > ${SUBSCRIPTION_YAML} << EOF_SUBSCRIPTION
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -197,7 +211,8 @@ spec:
   name: ${OLM_PACKAGE_NAME}
   startingCSV: ${OLM_PACKAGE_NAME}.v${OLM_PACKAGE_VERSION}
   source: ${CATALOG_NAME}
-  sourceNamespace: olm
+  sourceNamespace: ${OLM_NAMESPACE}
+  ${autoupgrade_stmt}
 EOF_SUBSCRIPTION
 
   kubectl apply -f ${SUBSCRIPTION_YAML}

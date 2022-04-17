@@ -1,3 +1,4 @@
+HELM ?= helm
 KUSTOMIZE ?= kustomize
 KUBECTL ?= kubectl
 # Current Operator version
@@ -21,8 +22,9 @@ KUSTOMIZE_FILES=$(shell find config -type f -name \*.yaml)
 TEST_CR_FILES=$(shell find config/test -type f -name \*.yaml)
 
 # Image URL to use all building/pushing image targets
-DEFAULT_IMG := registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
-IMG ?= registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator
+IMG_REGISTRY ?= registry.gitlab.com
+IMG_REPOSITORY ?= gitlab-org/cloud-native
+IMG_NAME ?= gitlab-operator
 TAG ?= latest
 
 # Namespace to deploy operator into
@@ -35,6 +37,8 @@ DOMAIN ?= example.com
 HOSTSUFFIX ?= ""
 # TLS secret name to use for `global.ingress.tls.secretName`
 TLSSECRETNAME ?= ""
+# Resource name prefix for all resources
+NAME_OVERRIDE ?= "gitlab"
 
 # Platform for operator deployment, kubernetes or openshift
 PLATFORM ?= kubernetes
@@ -65,76 +69,58 @@ run: generate fmt vet manifests
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# Build CRDs
-$(BUILD_DIR)/crds.yaml: $(BUILD_DIR) manifests kustomize $(KUSTOMIZE_FILES)
-	$(KUSTOMIZE) build config/crd > $@
-
-build_crds: $(BUILD_DIR)/crds.yaml
-
 $(INSTALL_DIR):
 	mkdir -p $(INSTALL_DIR)
 
-$(INSTALL_DIR)/crds.yaml: $(BUILD_DIR)/crds.yaml $(INSTALL_DIR)
-	$(KUBECTL) apply -f $<
-	cp $< $@
+deploy/chart/Chart.lock:
+	$(HELM) dependency build deploy/chart
 
-# Install CRDs into a cluster
-install_crds: $(INSTALL_DIR)/crds.yaml
+build_chart: deploy/chart/Chart.lock
 
-# Uninstall CRDs from a cluster
-uninstall_crds: manifests kustomize build_crds
-	$(KUBECTL) delete -f $(BUILD_DIR)/crds.yaml
-	rm $(INSTALL_DIR)/crds.yaml
-
-# Suffix operator clusterrolebinding names so they can be installed in parallel
-suffix_clusterrolebinding_names: kustomize
-	cd config/rbac && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
-
-# Suffix operator webhooks names so they can be installed in parallel
-suffix_webhook_names: kustomize
-	cd config/webhook && $(KUSTOMIZE) edit set namesuffix -- "-${NAMESPACE}"
-
-$(BUILD_DIR)/openshift_resources.yaml: $(BUILD_DIR) $(KUSTOMIZE_FILES)
-	cd config/openshift && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	$(KUSTOMIZE) build config/openshift > $@
-
-build_openshift_resources: $(BUILD_DIR)/openshift_resources.yaml
-
-$(INSTALL_DIR)/openshift_resources.yaml: $(BUILD_DIR)/openshift_resources.yaml $(INSTALL_DIR)
-	$(KUBECTL) create namespace ${NAMESPACE} || true
-	$(KUBECTL) label namespace ${NAMESPACE} control-plane=controller-manager || true
-	$(KUBECTL) apply -f $<
-	cp $< $@
-
-deploy_openshift_resources: $(INSTALL_DIR)/openshift_resources.yaml
-
-$(BUILD_DIR)/operator.yaml: $(BUILD_DIR) $(KUSTOMIZE_FILES)
-	cd config/default && $(KUSTOMIZE) edit set namespace ${NAMESPACE}
-	cd config/manager && $(KUSTOMIZE) edit set image $(DEFAULT_IMG)=$(IMG):$(TAG)
-	$(KUSTOMIZE) build config/default > $@
-
-build_operator: $(BUILD_DIR)/operator.yaml
-
-${BUILD_DIR}/yaml-separator:
-	echo "---" > $@
-
-${BUILD_DIR}/operator-openshift.yaml: ${BUILD_DIR}/operator.yaml ${BUILD_DIR}/openshift_resources.yaml ${BUILD_DIR}/yaml-separator
-	cat ${BUILD_DIR}/operator.yaml ${BUILD_DIR}/yaml-separator ${BUILD_DIR}/openshift_resources.yaml > $@
+$(BUILD_DIR)/operator-openshift.yaml: $(BUILD_DIR) build_chart
+	$(HELM) template deploy/chart \
+		--include-crds \
+		--namespace ${NAMESPACE} \
+		--set nameOverride=${NAME_OVERRIDE} \
+		--set image.registry=$(IMG_REGISTRY) \
+		--set image.repository=$(IMG_REPOSITORY) \
+		--set image.name=$(IMG_NAME) \
+		--set image.tag=$(TAG) \
+		--set scc.apiVersion="security.openshift.io/v1" > $@
 
 build_operator_openshift: $(BUILD_DIR)/operator-openshift.yaml
 
+$(BUILD_DIR)/operator.yaml: $(BUILD_DIR) build_chart
+	$(HELM) template deploy/chart \
+		--include-crds \
+		--namespace ${NAMESPACE} \
+		--set nameOverride=${NAME_OVERRIDE} \
+		--set image.registry=$(IMG_REGISTRY) \
+		--set image.repository=$(IMG_REPOSITORY) \
+		--set image.name=$(IMG_NAME) \
+		--set image.tag=$(TAG) > $@
+
+build_operator: $(BUILD_DIR)/operator.yaml
+
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 $(INSTALL_DIR)/operator.yaml: $(BUILD_DIR)/operator.yaml $(INSTALL_DIR)
-	$(KUBECTL) create namespace ${NAMESPACE} || true
-	$(KUBECTL) label namespace ${NAMESPACE} control-plane=controller-manager || true
-	$(KUBECTL) apply -f $<
-	cp $< $@
+	$(HELM) upgrade gitlab-operator deploy/chart \
+		--install \
+		--create-namespace \
+		--namespace ${NAMESPACE} \
+		--set nameOverride=${NAME_OVERRIDE} \
+		--set image.registry=$(IMG_REGISTRY) \
+		--set image.repository=$(IMG_REPOSITORY) \
+		--set image.name=$(IMG_NAME) \
+		--set image.tag=$(TAG) \
+		$(ARGS)
+	$(HELM) -n ${NAMESPACE} get all gitlab-operator > $@
 
 deploy_operator: $(INSTALL_DIR)/operator.yaml
 
 # Delete controller from the configured Kubernetes cluster
-delete_operator: manifests kustomize $(BUILD_DIR)/operator.yaml
-	$(KUBECTL) delete -f $(BUILD_DIR)/operator.yaml
+delete_operator: $(BUILD_DIR)/operator.yaml
+	$(HELM) uninstall --namespace ${NAMESPACE} gitlab-operator
 	rm $(INSTALL_DIR)/operator.yaml
 
 # Deploy test GitLab custom resource to cluster
@@ -162,12 +148,7 @@ delete_test_cr: $(INSTALL_DIR)/test_cr.yaml
 # Restores files that are modified during operator and CR deploy
 restore_kustomize_files:
 	git checkout -q \
-    config/default/kustomization.yaml \
-    config/manager/kustomization.yaml \
-    config/openshift/kustomization.yaml \
-    config/rbac/kustomization.yaml \
-    config/test/kustomization.yaml \
-    config/webhook/kustomization.yaml
+    config/test/kustomization.yaml
 
 # Run go fmt against code
 fmt:
@@ -190,11 +171,11 @@ generate: controller-gen
 # Build the docker image
 docker-build: test # Pending https://github.com/kubernetes-sigs/kubebuilder/pull/1626
 	mkdir -p .go/pkg/mod # for builds outside of CI, this cache directory won't exit
-	podman build . -t $(IMG):$(TAG)
+	podman build . -t $(IMG_REGISTRY)/$(IMG_REPOSITORY)/$(IMG_NAME):$(TAG)
 
 # Push the docker image
 docker-push:
-	podman push $(IMG):$(TAG)
+	podman push $(IMG_REGISTRY)/$(IMG_REPOSITORY)/$(IMG_NAME):$(TAG)
 
 CONTROLLER_GEN = $(shell which controller-gen)
 .PHONY: controller-gen
@@ -217,10 +198,9 @@ clean:
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
-bundle: manifests
+bundle: .build_operator
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image $(IMG)=$(IMG):$(TAG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_OPS) $(BUNDLE_METADATA_OPTS)
+	cat .build/operator-openshift.yaml | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_OPS) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 
 # Build the bundle image.
@@ -234,7 +214,6 @@ deployment-files: bundle
 	cp -av bundle/manifests/*_clusterrole.yaml config/deploy
 	cp -av bundle/manifests/*_clusterrolebinding.yaml config/deploy
 	for rb in `ls config/deploy/*_clusterrolebinding.yaml`; do egrep "  namespace:"  $$rb || echo "  namespace: gitlab-system" >> $$rb; done
-	sed -n -e 's/manager-role/gitlab-manager-role/g;w config/deploy/gitlab-manager-role_rbac.authorization.k8s.io_v1_clusterrole.yaml' config/rbac/role.yaml
 
 define go-get-tool
 @[ -f $(1) ] || { \

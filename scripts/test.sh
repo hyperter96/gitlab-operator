@@ -21,7 +21,7 @@ NO_TRAP=${NO_TRAP:-""}
 # Command for `yq`, expected to be https://github.com/mikefarah/yq
 YQ=${YQ:-"yq"}
 
-export IMG TAG NAMESPACE=${TESTS_NAMESPACE}
+export IMG TAG NAMESPACE=${TESTS_NAMESPACE} NAME_OVERRIDE="g${TESTS_NAMESPACE:0:27}"
 PLATFORM="${PLATFORM:-kubernetes}"
 
 finish() {
@@ -31,8 +31,8 @@ finish() {
 
   if [ $exitcode -ne 0 ]; then
     echo "!!!ERROR!!!"
-    echo "deployment/gitlab-controller-manager logs"
-    kubectl -n "$TESTS_NAMESPACE" logs deployment/gitlab-controller-manager -c manager || true
+    echo "deployment/${NAME_OVERRIDE}-controller-manager logs"
+    kubectl -n "$TESTS_NAMESPACE" logs "deployment/${NAME_OVERRIDE}-controller-manager" -c manager || true
   fi
 
   if [ "$CLEANUP" = "yes" ]; then
@@ -47,40 +47,14 @@ main() {
   [ "$CLEANUP" = "only" ] && { cleanup; exit 0; }
 
   echo 'Starting test'
-  if [ "${CI}" == "true" ] 
-  then
-    # called from pipeline
-    # all artifacts should be in place
-
-    build_kustomized
-
-    deploy_kustomized
-  else
-    install_crds
-    create_namespace
-    install_gitlab_operator
-    verify_operator_is_running
-    copy_certificate
-    build_gitlab_custom_resource
-    install_gitlab_custom_resource
-    verify_gitlab_is_running
-  fi
-}
-
-build_kustomized(){
-  create_kustomization
-  setup_kustomization
-  compile_kustomization
-  build_gitlab_custom_resource
-}
-
-deploy_kustomized(){
   create_namespace
-  setup_kustomization
-  install_kustomization
+  prepare_build_directories
 
+  install_gitlab_operator
   verify_operator_is_running
   copy_certificate
+
+  build_gitlab_custom_resource
   install_gitlab_custom_resource
   verify_gitlab_is_running
 }
@@ -102,91 +76,27 @@ create_namespace() {
   fi
 }
 
-install_crds() {
-  #TODO Deprecate install_crds
-  echo 'Installing operator CRDs'
-  make install_crds
-}
-
-
-create_kustomization() {
-  # create kustomization infrastructure
-  for d in generic openshift
-  do
-    mkdir -p ${BUILD_DIR}/kustomize/${d}
-    cp -r config/ci/* ${BUILD_DIR}/kustomize/${d}/
-    cp ${BUILD_DIR}/operator.yaml ${BUILD_DIR}/kustomize/${d}
-  done
-  cp ${BUILD_DIR}/openshift_resources.yaml ${BUILD_DIR}/kustomize/openshift/
-
-  (
-    cd ${BUILD_DIR}/kustomize/generic
-    if [ -n "${REGISTRY_AUTH_SECRET}" ]
-    then
-      ${YQ} eval -i ".spec.template.spec.imagePullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\"" patches/dev-pullSecret.yaml
-      kustomize edit add patch --kind Deployment --path patches/dev-pullSecret.yaml
-    fi
-    kustomize edit set image ${IMG}:${TAG}
-    kustomize edit set namesuffix -- "-${TESTS_NAMESPACE}"
-    kustomize edit set namespace "${TESTS_NAMESPACE}"
-  )
-  (
-    cd ${BUILD_DIR}/kustomize/openshift
-    if [ -n "${REGISTRY_AUTH_SECRET}" ]
-    then
-      ${YQ} eval -i ".spec.template.spec.imagePullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\"" patches/dev-pullSecret.yaml
-      kustomize edit add patch --kind Deployment --path patches/dev-pullSecret.yaml
-    fi
-    kustomize edit set image ${IMG}:${TAG}
-    kustomize edit set namesuffix -- "-${TESTS_NAMESPACE}"
-    kustomize edit set namespace "${TESTS_NAMESPACE}"
-    kustomize edit add resource openshift_resources.yaml
-  )
-}
-
-setup_kustomization() {
-  if [ "${PLATFORM}" == "openshift" ]
-  then
-    MANIFEST_DIR=${BUILD_DIR}/kustomize/openshift
-  else
-    MANIFEST_DIR=${BUILD_DIR}/kustomize/generic
-  fi
+prepare_build_directories() {
   mkdir -p ${INSTALL_DIR}
   mkdir -p ${BUILD_DIR}
 }
 
-compile_kustomization() {
-  # Needs to have setup_kustomization to be ran first
-  echo "Compiling kustomize'd manifest"
-  pushd ${MANIFEST_DIR}
-  kustomize build > deployment.yaml
-  set -x
-  cp deployment.yaml ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
-  set +x
-  popd
-}
-
-install_kustomization() {
-  echo "Deploying operator"
-  set -x
-  kubectl apply -f ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
-  cp ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml ${INSTALL_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
-  set +x
-}
-
 install_gitlab_operator() {
   echo 'Installing GitLab operator'
-  make suffix_clusterrolebinding_names
-  make suffix_webhook_names
-  if [ "$PLATFORM" == "openshift" ]; then
-    make deploy_openshift_resources
+  if [ -n "${REGISTRY_AUTH_SECRET}" ]
+  then
+    ARGS="--set \"imagePullSecrets[0].name=${REGISTRY_AUTH_SECRET}\"" make deploy_operator
+  else
+    make deploy_operator
   fi
-  make deploy_operator
+  set -x
+  cp ${INSTALL_DIR}/operator.yaml ${INSTALL_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
+  set +x
 }
 
 verify_operator_is_running() {
   echo 'Verifying that operator is running'
-  kubectl wait --for=condition=Available -n "$TESTS_NAMESPACE" deployment/gitlab-controller-manager
+  kubectl wait --for=condition=Available -n "$TESTS_NAMESPACE" "deployment/${NAME_OVERRIDE}-controller-manager"
 }
 
 build_gitlab_custom_resource() {
@@ -199,7 +109,7 @@ build_gitlab_custom_resource() {
     YQ_CMD=".spec.chart.values.global.image.pullSecrets[0].name=\"${REGISTRY_AUTH_SECRET}\""
   ${YQ} eval "${YQ_CMD}" ${BUILD_DIR}/test_cr.yaml  > ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
   [ ${TESTS_NAMESPACE} != "gitlab-system" ] \
-    && ${YQ} -i eval ".spec.chart.values.global.ingress.class=\"gitlab-nginx-${TESTS_NAMESPACE}\"" \
+    && ${YQ} -i eval ".spec.chart.values.global.ingress.class=\"${NAME_OVERRIDE}-nginx\"" \
           ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
   set +x
 }
@@ -232,37 +142,19 @@ cleanup() {
   # Turn off exit immediately if command fails so debug out can get generated
   set +e
 
-  if [ "${CI}" == "true" ]
-  then
-    # make sure we know where manifest is:
-    setup_kustomization
+  # make sure we know where manifest is:
+  prepare_build_directories
 
-    set -x
-    # delete CR
-    kubectl delete -f ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
-    # delete operator resources (except CustomResourceDefinition)
-    CRD_INDEX=$(${YQ} eval 'select(.kind== "CustomResourceDefinition") | documentIndex' ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml)
-    ${YQ} eval "select(documentIndex != $CRD_INDEX)" ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml > ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.no-crd.yaml
-    kubectl delete -f ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.no-crd.yaml
-    # delete namespace
-    kubectl delete ns "$TESTS_NAMESPACE"
-    set +x
-  else
-    set -x
-    kubectl delete ns "$TESTS_NAMESPACE"
-    set +x
-    if [[ $? -ne 0 ]]; then
-      signal_failure=1
-    fi
+  set -x
+  # delete CR
+  kubectl delete -f ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
+  set +x
 
-    results=$(kubectl get clusterrolebindings -o=name | grep $TESTS_NAMESPACE)
-    [[ "$DEBUG_CLEANUP" != "off" ]] && printf "** kubectl get clusterrolebinding results\n$results\n-----"
-    echo "$results" | xargs kubectl delete
+  make delete_operator
 
-    results=$(kubectl get validatingwebhookconfiguration -o name | grep $TESTS_NAMESPACE)
-    [[ "$DEBUG_CLEANUP" != "off" ]] && printf "** kubectl get validatingwebhookconfiguration results\n$results\n-----"
-    echo "$results" | xargs kubectl delete
-  fi
+  set -x
+  kubectl delete ns "$TESTS_NAMESPACE"
+  set +x
 
   if [[ $? -ne 0 ]]; then
     signal_failure=1

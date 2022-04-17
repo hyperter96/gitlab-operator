@@ -115,8 +115,8 @@ Note: `gitlab-operator-ci-gcloud-externaldns.json` is a file containing the cred
 
 Note: timeouts for Jobs can be configured. If the timeout is reached, then the GitLab Controller will return an error that the Job could not be completed in time.
 
-To configure these, modify the values under `spec.template.spec.containers[0].env` in
-[`config/manager/manager.yaml`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/config/manager/manager.yaml).
+To configure these, update the `env` value in
+[`deploy/chart/values.yaml`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/deploy/chart/values.yaml).
 
 ## Kubernetes CI clusters
 

@@ -105,24 +105,20 @@ variables:
         export REGISTRY_AUTH_SECRET_NS="default"
       fi
   # Build manifests
-  - ./scripts/test.sh build_kustomized
-  # Since Artifact paths don't seem to accept dynamic variables we'll have to manually 
+  - ./scripts/test.sh build_gitlab_custom_resource
+  # Since Artifact paths don't seem to accept dynamic variables we'll have to manually
   # drop proper files in place:
   - |
     if [ "${OLD_HOSTSUFFIX}" != "${HOSTSUFFIX}" ]
     then
-      cp .build/glop-${HOSTSUFFIX}.${DOMAIN}.yaml  .build/glop-${OLD_HOSTSUFFIX}.${DOMAIN}.yaml
       cp .build/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml  .build/gitlab-${OLD_HOSTSUFFIX}.${DOMAIN}.yaml
     fi
   artifacts:
     paths:
       #NOTE: this will affect following Jobs providing manifest crafted to be deployed into tests.
       #      where this may backfire is if we push "publish" to happen *after* tests.
-      #NOTE2: we need both .build and .install artifacts for later tear-down jobs as well as troubleshooting
-      - ${BUILD_DIR}/operator.yaml
-      - ${BUILD_DIR}/openshift_resources.yaml
+      #NOTE2: we need .install artifacts for later tear-down jobs as well as troubleshooting
       # In fact here we're getting OLD_HOSTSUFFIX and not the trimmed one:
-      - ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
       - ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
       # Exporting this to simplify further re-export from subsequent jobs
       - deploy_namespace.env
@@ -139,13 +135,12 @@ variables:
   # properly. Has to be done individually for each job extending .create_review_template
   extends: .cache
   stage: review
-  script: 
+  script:
     - echo "Creating deployment environment"
   artifacts:
     reports:
       # we should've received file from "build" so we're going to recycle it
-      dotenv: 
-      - deploy_namespace.env
+      dotenv: deploy_namespace.env
   rules:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]
@@ -169,11 +164,10 @@ variables:
   - |
     if [ "${OLD_HOSTSUFFIX}" != "${HOSTSUFFIX}" ]
     then
-      cp ${BUILD_DIR}/glop-${OLD_HOSTSUFFIX}.${DOMAIN}.yaml  ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
       cp ${BUILD_DIR}/gitlab-${OLD_HOSTSUFFIX}.${DOMAIN}.yaml  ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
     fi
   # Run deployment
-  - ./scripts/test.sh deploy_kustomized
+  - ./scripts/test.sh
   # And we need to copy things around, again
   - |
     if [ "${OLD_HOSTSUFFIX}" != "${HOSTSUFFIX}" ]
@@ -188,7 +182,7 @@ variables:
     paths:
       #NOTE: this will affect following Jobs providing manifest crafted to be deployed into tests.
       #      where this may backfire is if we push "publish" to happen *after* tests.
-      #NOTE2: we need both .build and .install artifacts for later tear-down jobs as well as troubleshooting
+      #NOTE2: we need .install artifacts for troubleshooting
       - ${INSTALL_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
       - ${INSTALL_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
     reports:
@@ -244,7 +238,6 @@ variables:
       if [ "${OLD_HOSTSUFFIX}" != "${HOSTSUFFIX}" ]
       then
         cp ${BUILD_DIR}/gitlab-${OLD_HOSTSUFFIX}.${DOMAIN}.yaml ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
-        cp ${BUILD_DIR}/glop-${OLD_HOSTSUFFIX}.${DOMAIN}.yaml ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
       fi
     # Run environment cleanup
     - ./scripts/test.sh cleanup
@@ -255,8 +248,7 @@ variables:
     paths:
       # Persist the manifests for debugging purposes.
       - ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
-      - ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
-      - ${BUILD_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.no-crd.yaml
+      - ${BUILD_DIR}/operator.yaml
   rules:
     - !reference [.skip_if_docs_branch]
     - !reference [.skip_if_release_tag]

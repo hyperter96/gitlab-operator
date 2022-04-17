@@ -87,6 +87,15 @@ See our [networking and DNS documentation](https://docs.gitlab.com/charts/instal
    Running the Operator at the cluster scope is considered experimental.
    See [issue #100](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/100) for more information.
 
+   Experimental:
+   Alternatively, deploy the GitLab Operator via Helm.
+
+   ```shell
+   helm repo add gitlab-operator https://gitlab.com/api/v4/projects/18899486/packages/helm/stable
+   helm repo update
+   helm install gitlab-operator gitlab-operator/gitlab-operator --create-namespace --namespace gitlab-system
+   ```
+
 1. Create a GitLab custom resource (CR).
 
    Create a new file named something like `mygitlab.yaml`.

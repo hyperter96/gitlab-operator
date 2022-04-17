@@ -1,0 +1,22 @@
+apiVersion: v2
+name: gitlab-operator
+description: The GitLab operator aims to manage the full lifecycle of GitLab instances in your Kubernetes or Openshift container platforms.
+home: https://about.gitlab.com/
+# Replace this GitLab Operator logo 
+icon: https://gitlab.com/gitlab-com/gitlab-artwork/raw/master/logo/logo-square.png
+keywords:
+- gitlab
+- openshift
+maintainers:
+- name: GitLab Inc.
+  email: support@gitlab.com
+sources:
+- https://gitlab.com/gitlab-org/cloud-native/gitlab-operator
+type: application
+version: 0.6.3
+appVersion: 0.6.3
+dependencies:
+- name: cert-manager
+  version: 1.6.1
+  repository: https://charts.jetstack.io/
+  condition: cert-manager.install

@@ -57,8 +57,7 @@ KIND_IMAGE=${KIND_IMAGE:-""}
 OPERATOR_HOME_DIR=$(realpath ${OPERATOR_HOME_DIR})
 
 build_manifests(){
-  make build_operator
-  make build_openshift_resources
+  make build_operator_openshift
   make build_test_cr
   ( cd config/scorecard; kustomize build ) > ${BUILD_DIR}/scorecard.yaml
   mkdir -p ${OSDK_BASE_DIR}
@@ -68,7 +67,7 @@ build_manifests(){
 install_opm(){
   mkdir -p ${BUILD_DIR}
   curl -s -L -o ${BUILD_DIR}/operator-registry-${OPM_VERSION}.tgz https://github.com/operator-framework/operator-registry/archive/refs/tags/v${OPM_VERSION}.tar.gz
-  ( 
+  (
     cd ${BUILD_DIR}
     tar -xzf operator-registry-${OPM_VERSION}.tgz
     cd operator-registry-${OPM_VERSION}
@@ -91,8 +90,8 @@ install_operatorsdk(){
 }
 
 generate_bundle(){
-  ${YQ} eval '.' ${BUILD_DIR}/openshift_resources.yaml ${BUILD_DIR}/operator.yaml ${BUILD_DIR}/test_cr.yaml ${BUILD_DIR}/scorecard.yaml \
-      | ( 
+  ${YQ} eval '.' ${BUILD_DIR}/operator-openshift.yaml ${BUILD_DIR}/test_cr.yaml ${BUILD_DIR}/scorecard.yaml \
+      | (
           cd ${OSDK_BASE_DIR}
           ${OPERATOR_SDK} generate bundle -q --overwrite \
               --extra-service-accounts gitlab-manager,gitlab-nginx-ingress,gitlab-app \
@@ -124,10 +123,10 @@ validate_bundle(){
 }
 
 compile_and_publish_bundle(){
-  ( 
+  (
     cd ${OSDK_BASE_DIR}
-    ${DOCKER} build -t ${BUNDLE_IMAGE_NAME}:${BUNDLE_IMAGE_TAG} -f bundle.Dockerfile . 
-    if [ ${COMPILE_ONLY} != "true" ] 
+    ${DOCKER} build -t ${BUNDLE_IMAGE_NAME}:${BUNDLE_IMAGE_TAG} -f bundle.Dockerfile .
+    if [ ${COMPILE_ONLY} != "true" ]
     then
       ${DOCKER} push ${BUNDLE_IMAGE_NAME}:${BUNDLE_IMAGE_TAG}
     fi
@@ -151,7 +150,7 @@ install_olm(){
 compile_and_publish_catalog(){
   ${OPM} index add -p ${OPM_DOCKER} --bundles ${BUNDLE_IMAGE_NAME}:${BUNDLE_IMAGE_TAG} -t ${CATALOG_IMAGE_NAME}:${CATALOG_IMAGE_TAG}
   ${PODMAN} images
-  if [ ${COMPILE_ONLY} != "true" ] 
+  if [ ${COMPILE_ONLY} != "true" ]
   then
     ${PODMAN} push ${CATALOG_IMAGE_NAME}:${CATALOG_IMAGE_TAG}
   fi
@@ -276,7 +275,7 @@ republish(){
   deploy_subscription
 }
 
-for cmd in "$@" 
+for cmd in "$@"
 do
   $cmd
 done

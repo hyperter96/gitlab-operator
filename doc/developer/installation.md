@@ -40,14 +40,13 @@ Please consult the "Prerequisites" section of the [installation](../installation
    ```shell
    PLATFORM=kubernetes # or "openshift"
    kubectl create namespace gitlab-system
-   [ "${PLATFORM}" = "openshift" ] && make deploy_openshift_resources
-   make deploy_operator
+   make deploy_operator # or "make deploy_operator_openshift"
    ```
 
    This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
    Note: by default, the Operator will only watch the namespace where it is deployed. If you would like it to watch at the cluster scope,
-   modify [`config/manager/kustomization.yaml`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/config/manager/kustomization.yaml) by commenting out the `namespace_scope.yaml` patch.
+   modify [`deploy/chart/values.yaml`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/deploy/chart/values.yaml) by setting `watchCluster` to `true`.
 
 1. Create a GitLab custom resource (CR).
 
@@ -129,9 +128,3 @@ make delete_operator
 ```
 
 This will delete the Operator's resources, including the running Deployment. It will not delete objects associated with a GitLab instance.
-
-### Uninstall CRDs
-
-```shell
-make uninstall_crds
-```

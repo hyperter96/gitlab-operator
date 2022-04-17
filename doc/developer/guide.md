@@ -78,7 +78,6 @@ $ tree -dL 2 .
   The `*_types.go` file inside `api/<api_version>` contains spec definitions and markers used to generate the Custom Resource Definitions and Cluster Service Version file used by OLM.
 - The `config/samples` directory contains an example manifest for the GitLab Custom Resource.
 - The `config/test` directory contains a parametrized GitLab definition used for running integration tests.
-- The `config/rbac` directory contains the roles, role bindings, and service accounts needed for the operator to run. The roles should be updated through RBAC(Role Based Access Control) [markers](https://book.kubebuilder.io/reference/markers/rbac.html) inside your controllers.
 
   An example is shown below:
 

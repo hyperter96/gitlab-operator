@@ -3,68 +3,42 @@ package controllers
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	cm := internal.MinioScriptConfigMap(adapter)
+func (r *GitLabReconciler) reconcileMinioInstance(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+	cm := gitlabctl.MinioConfigMap(adapter, template)
 	if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
 		return err
 	}
 
-	secret := internal.MinioSecret(adapter)
-	if _, err := r.createOrPatch(ctx, secret, adapter); err != nil && errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	appConfigSecret, err := internal.AppConfigConnectionSecret(adapter, *secret)
-	if err != nil {
-		return err
-	}
-
-	if _, err := r.createOrPatch(ctx, appConfigSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	registryConnectionSecret, err := internal.RegistryConnectionSecret(adapter, *secret)
-	if err != nil {
-		return err
-	}
-
-	if _, err := r.createOrPatch(ctx, registryConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	toolboxConnectionSecret := internal.ToolboxConnectionSecret(adapter, *secret)
-	if _, err := r.createOrPatch(ctx, toolboxConnectionSecret, adapter); err != nil && errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	svc := internal.MinioService(adapter)
-	if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
-		return err
-	}
-
-	minio := internal.MinioStatefulSet(adapter)
-	if err := r.annotateSecretsChecksum(ctx, adapter, minio); err != nil {
-		return err
-	}
-
-	_, err = r.createOrPatch(ctx, minio, adapter)
-	if err != nil {
-		return err
-	}
-
-	buckets := internal.BucketCreationJob(adapter)
+	buckets := gitlabctl.MinioJob(adapter, template)
 	if _, err := r.createOrPatch(ctx, buckets, adapter); err != nil {
 		return err
 	}
 
-	ingress := internal.MinioIngress(adapter)
-	if err = r.reconcileIngress(ctx, ingress, adapter); err != nil {
+	svc := gitlabctl.MinioService(adapter, template)
+	if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
+		return err
+	}
+
+	pvc := gitlabctl.MinioPersistentVolumeClaim(adapter, template)
+	if _, err := r.createOrPatch(ctx, pvc, adapter); err != nil {
+		return err
+	}
+
+	minio := gitlabctl.MinioDeployment(adapter, template)
+	if err := r.annotateSecretsChecksum(ctx, adapter, minio); err != nil {
+		return err
+	}
+
+	if _, err := r.createOrPatch(ctx, minio, adapter); err != nil {
+		return err
+	}
+
+	ingress := gitlabctl.MinioIngress(adapter, template)
+	if err := r.reconcileIngress(ctx, ingress, adapter); err != nil {
 		return err
 	}
 

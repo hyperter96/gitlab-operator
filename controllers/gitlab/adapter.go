@@ -3,7 +3,6 @@ package gitlab
 import (
 	"fmt"
 	"hash/fnv"
-	"strconv"
 	"strings"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
@@ -112,11 +111,6 @@ gitlab:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
   toolbox:
-    backups:
-      objectStorage:
-        config:
-          secret: $ToolboxConnectionSecretName
-          key: config
     common:
       labels:
         app.kubernetes.io/component: toolbox
@@ -175,6 +169,11 @@ global:
     create: false
     name: $AppServiceAccount
 
+minio:
+  securityContext:
+    runAsUser: $LocalUser
+    fsGroup: $LocalUser
+
 redis:
   master:
     statefulset:
@@ -209,42 +208,6 @@ nginx-ingress:
   defaultBackend:
     serviceAccount:
       name: $AppServiceAccount
-`
-
-var defaultValuesMinio string = `
-global:
-  minio:
-    enabled: false
-  appConfig:
-    object_store:
-      enabled: true
-      connection:
-        secret: $AppConfigConnectionSecretName
-        key: connection
-    artifacts:
-      bucket: gitlab-artifacts
-    backups:
-      bucket: gitlab-backups
-      tmpBucket: tmp
-    externalDiffs:
-      bucket: gitlab-mr-diffs
-    lfs:
-      bucket: git-lfs
-    packages:
-      bucket: gitlab-packages
-    pseudonymizer:
-      bucket: gitlab-pseudo
-    uploads:
-      bucket: gitlab-uploads
-  registry:
-    bucket: registry
-
-registry:
-  storage:
-    secret: $RegistryConnectionSecretName
-    key: config
-    redirect:
-      disable: $RegistryMinioRedirect
 `
 
 // NewCustomResourceAdapter returns a new adapter for the provided GitLab instance.
@@ -342,32 +305,12 @@ func (a *populatingAdapter) populateValues() {
 		"$LocalUser", settings.LocalUser,
 		"$AppServiceAccount", settings.AppServiceAccount,
 		"$ManagerServiceAccount", settings.ManagerServiceAccount,
-		"$ToolboxConnectionSecretName", settings.ToolboxConnectionSecretName,
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
 		"$NGINXServiceAccount", settings.NGINXServiceAccount,
 		"$GlobalHostsExternalIP", globalHostsExternalIP,
 	).Replace(defaultValues)
 
 	_ = a.values.AddFromYAML(valuesToUse)
-
-	// Need to pass a default value here as we don't yet have the coalesced values from GetTemplate().
-	minioEnabled := a.values.GetBool(globalMinioEnabled, true)
-	if minioEnabled {
-		minioRedirect := a.values.GetBool("registry.minio.redirect")
-		valuesToUse := strings.NewReplacer(
-			"$AppConfigConnectionSecretName", settings.AppConfigConnectionSecretName,
-			"$RegistryConnectionSecretName", settings.RegistryConnectionSecretName,
-			"$RegistryMinioRedirect", strconv.FormatBool(!minioRedirect),
-		).Replace(defaultValuesMinio)
-
-		_ = a.values.AddFromYAML(valuesToUse)
-	}
-
-	// This is a workaround to account for the fact that our "internal" MinIO is actually
-	// implemented as external object storage, meaning `global.minio.enabled` must be
-	// set to `false`. If `internalMinioEnabled=true`, then our "internal" MinIO objects
-	// will be reconciled, and vice versa.
-	_ = a.values.SetValue(internalMinioEnabled, minioEnabled)
 
 	email := a.values.GetString("certmanager-issuer.email")
 	if email == "" {

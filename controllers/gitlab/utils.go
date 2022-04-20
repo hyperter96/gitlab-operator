@@ -71,6 +71,9 @@ const (
 
 	// ToolboxComponentName is the common name of Toolbox.
 	ToolboxComponentName = "toolbox"
+
+	// MinioComponentName is the common name of MinIO.
+	MinioComponentName = "minio"
 )
 
 // RedisSubqueues is the array of possible Redis subqueues.

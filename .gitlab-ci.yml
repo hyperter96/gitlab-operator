@@ -142,7 +142,6 @@ lint_docs_markdown:
       optional: true
   variables:
     HELM_CHARTS: "${CI_PROJECT_DIR}/charts"
-    GITLAB_OPERATOR_ASSETS: "${CI_PROJECT_DIR}/hack/assets"
     KUBECONFIG: "" # to ensure that the CI cluster is not used
     USE_EXISTING_CLUSTER: "false" # to ensure we don't use the $KUBECONFIG value
     KUBEBUILDER_ASSETS: "/usr/local/kubebuilder/bin"

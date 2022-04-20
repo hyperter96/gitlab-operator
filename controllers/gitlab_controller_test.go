@@ -12,6 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
@@ -575,10 +576,12 @@ global:
 	Context("MinIO", func() {
 		When("Bundled MinIO is enabled", func() {
 			releaseName := "minio-enabled"
-			cfgMapName := fmt.Sprintf("%s-minio-script", releaseName)
-			secretName := fmt.Sprintf("%s-minio-secret", releaseName)
-			serviceName := fmt.Sprintf("%s-minio", releaseName)
-			statefulSetName := fmt.Sprintf("%s-minio", releaseName)
+			cfgMapName := fmt.Sprintf("%s-minio-config-cm", releaseName)
+			serviceName := fmt.Sprintf("%s-minio-svc", releaseName)
+			jobName := fmt.Sprintf("%s-minio-create-buckets-1", releaseName)
+			ingressName := fmt.Sprintf("%s-minio", releaseName)
+			pvcName := fmt.Sprintf("%s-minio", releaseName)
+			deploymentName := fmt.Sprintf("%s-minio", releaseName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := resource.Values{}
@@ -591,16 +594,24 @@ global:
 			})
 
 			It("Should create MinIO resources and continue the reconcile loop", func() {
-				By("Checking MinIO Secret exists")
-				Eventually(getObjectPromise(secretName, &corev1.Secret{}),
-					PollTimeout, PollInterval).Should(Succeed())
-
 				By("Checking MinIO Service exists")
 				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
 					PollTimeout, PollInterval).Should(Succeed())
 
-				By("Checking MinIO StatefulSet exists")
-				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+				By("Checking MinIO Job exists")
+				Eventually(getObjectPromise(jobName, &batchv1.Job{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking MinIO Ingress exists")
+				Eventually(getObjectPromise(ingressName, &networkingv1.Ingress{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking MinIO PersristenVolumeClaim exists")
+				Eventually(getObjectPromise(pvcName, &corev1.PersistentVolumeClaim{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking MinIO Deployment exists")
+				Eventually(getObjectPromise(deploymentName, &appsv1.Deployment{}),
 					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Checking MinIO ConfigMap exists")
@@ -615,10 +626,12 @@ global:
 
 		When("Bundled MinIO is disabled", func() {
 			releaseName := "minio-disabled"
-			cfgMapName := fmt.Sprintf("%s-minio-script", releaseName)
-			secretName := fmt.Sprintf("%s-minio-secret", releaseName)
-			serviceName := fmt.Sprintf("%s-minio", releaseName)
-			statefulSetName := fmt.Sprintf("%s-minio", releaseName)
+			cfgMapName := fmt.Sprintf("%s-minio-config-cm", releaseName)
+			jobName := fmt.Sprintf("%s-minio-create-buckets-1", releaseName)
+			ingressName := fmt.Sprintf("%s-minio", releaseName)
+			pvcName := fmt.Sprintf("%s-minio", releaseName)
+			serviceName := fmt.Sprintf("%s-minio-svc", releaseName)
+			deploymentName := fmt.Sprintf("%s-minio", releaseName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := resource.Values{}
@@ -641,16 +654,24 @@ global:
 			})
 
 			It("Should not create MinIO resources and continue the reconcile loop", func() {
-				By("Checking MinIO Secret does not exist")
-				Eventually(getObjectPromise(secretName, &corev1.Secret{}),
-					PollTimeout, PollInterval).ShouldNot(Succeed())
-
 				By("Checking MinIO Service does not exist")
 				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
 					PollTimeout, PollInterval).ShouldNot(Succeed())
 
-				By("Checking MinIO StatefulSet does not exist")
-				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+				By("Checking MinIO Job does not exist")
+				Eventually(getObjectPromise(jobName, &batchv1.Job{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking MinIO Ingress does not exist")
+				Eventually(getObjectPromise(ingressName, &networkingv1.Ingress{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking MinIO PersristenVolumeClaim does not exist")
+				Eventually(getObjectPromise(pvcName, &corev1.PersistentVolumeClaim{}),
+					PollTimeout, PollInterval).ShouldNot(Succeed())
+
+				By("Checking MinIO Deployment does not exist")
+				Eventually(getObjectPromise(deploymentName, &appsv1.StatefulSet{}),
 					PollTimeout, PollInterval).ShouldNot(Succeed())
 
 				By("Checking MinIO ConfigMap does not exist")
@@ -743,7 +764,7 @@ func processSharedSecretsJob(releaseName string) {
 }
 
 func processMinioBucketsJob(releaseName string) {
-	minioQuery := fmt.Sprintf("app.kubernetes.io/instance=%s-%s", releaseName, "bucket")
+	minioQuery := appLabels(releaseName, gitlabctl.MinioComponentName)
 
 	By("Manipulating the MinIO buckets Job to succeed")
 	Eventually(updateJobStatusPromise(minioQuery, true),

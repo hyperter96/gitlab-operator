@@ -3,7 +3,7 @@ module gitlab.com/gitlab-org/cloud-native/gitlab-operator
 go 1.16
 
 require (
-	github.com/Masterminds/semver v1.5.0
+	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/coreos/prometheus-operator v0.41.1
 	github.com/go-logr/logr v0.4.0
 	github.com/imdario/mergo v0.3.12

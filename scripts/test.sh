@@ -278,7 +278,7 @@ cleanup() {
 
 wait_until_gitlab_running() {
   local sleepSeconds=10
-  local maxattempts=120
+  local maxattempts=60
   local attempts=0
   local exitcode
   local output

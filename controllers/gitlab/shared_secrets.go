@@ -14,9 +14,7 @@ import (
 
 const (
 	// SharedSecretsJobDefaultTimeout is the default timeout to wait for Shared Secrets job to finish.
-	// Due to https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/625, this timeout
-	// is temporarily increased from `300 * time.Second` to allow more time for the Job to finish.
-	SharedSecretsJobDefaultTimeout = 20 * time.Minute
+	SharedSecretsJobDefaultTimeout = 300 * time.Second
 )
 
 // SharedSecretsConfigMap returns the ConfigMaps of Shared Secret component.

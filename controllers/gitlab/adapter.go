@@ -10,6 +10,7 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/mitchellh/copystructure"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -372,6 +373,28 @@ func (a *populatingAdapter) populateValues() {
 	email := a.values.GetString("certmanager-issuer.email")
 	if email == "" {
 		_ = a.values.SetValue("certmanager-issuer.email", "admin@example.com")
+	}
+
+	// Per https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/625,
+	// the kubectl image tagged 1.18.20 needed to be patched to include an environment
+	// variable setting HOME=/tmp/kube to work around throttling issues.
+	// This was fixed with https://gitlab.com/gitlab-org/charts/gitlab/-/merge_requests/2486,
+	// but that change won't be available until 5.9.4 (or 5.10.x, whichever comes first).
+	// Versions prior to 5.9.x use an older version of the kubectl image that do not
+	// have this throttling problem.
+
+	needsPatch, err := semver.NewConstraint("5.9.0 - 5.9.3")
+	if err != nil {
+		return
+	}
+
+	currentVersion, err := semver.NewVersion(a.ChartVersion())
+	if err != nil {
+		return
+	}
+
+	if needsPatch.Check(currentVersion) {
+		_ = a.values.SetValue("global.kubectl.image.tag", "1.18.20@sha256:f0bc9adaccd131d993fdabf6aa39fe4ff0e22035c2deca20341074c9e2e40a5b")
 	}
 }
 

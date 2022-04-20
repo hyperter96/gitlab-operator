@@ -185,7 +185,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if gitlabctl.MinioEnabled(adapter) {
-		if err := r.reconcileMinioInstance(ctx, adapter); err != nil {
+		if err := r.reconcileMinioInstance(ctx, adapter, template); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -579,11 +579,6 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 		}
 
 		return true, nil
-	}
-
-	// If Secret and related to MinIO, skip the patch.
-	if existing.GetObjectKind().GroupVersionKind().Kind == "Secret" && existing.GetLabels()["app.kubernetes.io/component"] == "minio" && gitlabctl.MinioEnabled(adapter) {
-		return false, nil
 	}
 
 	mutate := func() error {

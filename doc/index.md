@@ -43,7 +43,3 @@ Below is a list of components that are not yet recommended for production when
 deployed by the GitLab Operator:
 
 - KAS: [#353](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/353)
-
-### Components not sourced from GitLab Helm Charts
-
-- MinIO: [#374](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/374)

@@ -36,9 +36,6 @@ ENV USER_UID=1001 \
 # ADD GITLAB LICENSE
 COPY LICENSE /licenses/GITLAB
 
-# Copy config templates
-COPY hack/assets /
-
 # Add pre-packaged charts for the operator to deploy
 COPY charts ${CHART_DIR}
 

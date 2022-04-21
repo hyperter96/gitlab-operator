@@ -17,3 +17,4 @@ Much of the process is automated by [release-tools](https://gitlab.com/gitlab-or
        [container registry](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/container_registry).
 1. [ ] Update [installation documentation](../../doc/installation.md) with references to the latest version.
 1. [ ] [Release to OperatorHub.io](doc/developer/operatorhub_publishing.md).
+1. [ ] [Release to OpenShift OperatorHub.io](doc/developer/operatorhub_publishing.md)

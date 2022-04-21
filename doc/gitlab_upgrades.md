@@ -90,3 +90,9 @@ gitlab   Running     5.2.4
 ```
 
 Status conditions on the GitLab object itself present more detailed information about the application.
+
+## Additional upgrade considerations
+
+Below are additional topics to consider when before upgrading a GitLab instance.
+
+- [Restoring data when PersistentVolumeClaim configuration changes](troubleshooting.md#restoring-data-when-persistentvolumeclaim-configuration-changes): This was particularly relevant in Operator 0.6.4, when [!419](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/merge_requests/419) replaced the Operator-defined MinIO objects with MinIO objects from the GitLab Helm Charts.

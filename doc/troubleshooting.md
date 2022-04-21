@@ -126,3 +126,34 @@ than the standard Ingresses deployed in OpenShift:
     --type merge \
     -p '{"spec":{"namespaceSelector":{"matchLabels":{"openshift.io/cluster-monitoring":"true"}}}}'
 ```
+
+### Restoring data when PersistentVolumeClaim configuration changes
+
+When working with components such as MinIO for data persistence, it may sometimes be necessary to reconnect
+to a previous PersistentVolume.
+
+For example, [!419](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/merge_requests/419)
+replaced the Operator-defined MinIO components with the MinIO components from the GitLab Helm Charts. As part of
+this change, the object names changed, including the PersistentVolumeClaim. As a result, it was necessary for anyone
+using the Operator-bundled MinIO instance to take extra steps to reconnect to the previous PersistentVolume containing
+the persisted data.
+
+After upgrading to GitLab Operator `0.6.4`, complete the following steps to connect a new PersistentVolumeClaim to a previous PersistentVolume:
+
+1. Delete the `$RELEASE_NAME-minio-secret` Secret. The contents of the Secret will change with `0.6.4` upgrade, but the Secret name will not.
+1. Edit the previous MinIO PersistentVolume, changing `.spec.persistentVolumeReclaimPolicy` from `Delete` to `Retain`.
+1. Delete the previous MinIO StatefulSet, `$RELEASE_NAME-minio`.
+1. Remove `.spec.ClaimRef` from the previous MinIO PersistentVolume to dissociate it from the previous MinIO PersistentVolumeClaim.
+1. Delete the previous MinIO PersistentVolumeClaim, `export-gitlab-minio-0`.
+1. Confirm the previous PersistentVolume status is now `Available`.
+1. Set the following value in the GitLab CustomResource: `minio.persistence.volumeName=<previous PersistentVolume name>`.
+1. Apply the GitLab CustomResource.
+1. Delete the new MinIO PersistentVolumeClaim (and MinIO pod, so that the PersistentVolumeClaim is unbound and can be deleted). The Operator will recreate
+   the PersistentVolumeClaim. This is required because the `.spec` field is immutable.
+1. Confirm that the previous MinIO PersistentVolume is now bound to new MinIO PersistentVolumeClaim.
+1. Confirm that data is restored by navigating in the GitLab UI to issues, artifacts, etc.
+
+For more information on reconnecting to previous PersistentVolumes, see our
+[persistent volumes documentation](https://docs.gitlab.com/charts/advanced/persistent-volumes).
+
+As a reminder, the bundled MinIO instance is [not recommended for production use](https://docs.gitlab.com/charts/charts/minio/#enable-the-sub-chart).

@@ -417,6 +417,7 @@ certification_upload:
   services:
     - docker:dind
   rules:
+    - when: never # See issue 690. First matching rule wins, match all.
     - !reference [.if_release_tag]
     - !reference [.if_redhat_certification]
   retry: 1

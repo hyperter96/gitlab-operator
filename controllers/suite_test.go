@@ -17,7 +17,6 @@ import (
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
-	routev1 "github.com/openshift/api/route/v1"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
@@ -76,9 +75,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = certmanagerv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = routev1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = gitlabv1beta1.AddToScheme(scheme.Scheme)

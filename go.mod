@@ -11,7 +11,6 @@ require (
 	github.com/mitchellh/copystructure v1.1.1
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.15.0
-	github.com/openshift/api v3.9.0+incompatible
 	github.com/pkg/errors v0.9.1
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.7.0

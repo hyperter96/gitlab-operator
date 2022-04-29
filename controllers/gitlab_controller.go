@@ -477,16 +477,19 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 		}
 	}
 
-	service := internal.ExposePrometheusCluster(adapter.Resource())
-	if _, err := r.createOrPatch(ctx, service, adapter); err != nil {
-		return err
+	if internal.PrometheusClusterEnabled(adapter) {
+		service := internal.ExposePrometheusCluster(adapter.Resource())
+		if _, err := r.createOrPatch(ctx, service, adapter); err != nil {
+			return err
+		}
+
+		prometheus := internal.PrometheusCluster(adapter.Resource())
+		if _, err := r.createOrPatch(ctx, prometheus, adapter); err != nil {
+			return err
+		}
 	}
 
-	prometheus := internal.PrometheusCluster(adapter.Resource())
-
-	_, err := r.createOrPatch(ctx, prometheus, adapter)
-
-	return err
+	return nil
 }
 
 var ignoreObjectMetaFields = []string{

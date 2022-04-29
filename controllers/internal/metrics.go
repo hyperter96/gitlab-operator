@@ -7,7 +7,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 )
+
+const (
+	prometheusInstall = "prometheus.install"
+)
+
+// PrometheusEnabled returns `true` if Prometheus is enabled, and `false` if not.
+func PrometheusClusterEnabled(adapter gitlab.CustomResourceAdapter) bool {
+	return adapter.Values().GetBool(prometheusInstall)
+}
 
 // PrometheusCluster returns a prometheus cluster object.
 func PrometheusCluster(cr *gitlabv1beta1.GitLab) *monitoringv1.Prometheus {

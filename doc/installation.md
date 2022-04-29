@@ -1,3 +1,9 @@
+---
+stage: Enablement
+group: Distribution
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/engineering/ux/technical-writing/#assignments
+---
+
 # Installation
 
 NOTE:
@@ -64,6 +70,8 @@ OpenShift ships with [Prometheus Adapter](https://docs.openshift.com/container-p
 You will need an internet-accessible domain to which you can add a DNS record.
 
 See our [networking and DNS documentation](https://docs.gitlab.com/charts/installation/deployment.html#networking-and-dns) for more details on connecting your domain to the GitLab components. You will use the configuration mentioned in this section when defining your GitLab custom resource (CR).
+
+Ingress in OpenShift requires extra consideration. See our [notes on OpenShift Ingress](openshift_ingress.md) for more information.
 
 ## Installing the GitLab Operator
 

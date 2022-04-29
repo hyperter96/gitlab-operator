@@ -1,3 +1,9 @@
+---
+stage: Enablement
+group: Distribution
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/engineering/ux/technical-writing/#assignments
+---
+
 # Troubleshooting the Operator
 
 This document is a collection of notes and tips to assist in troubleshooting
@@ -108,24 +114,6 @@ can be found in the [installation documentation](installation.md#metrics).
 
 An OpenShift cluster has a built in Metrics Server and as a result the
 HPAs should operate correctly.
-
-### Ingress does not show external IP
-
-In an OpenShift environment the NGINX Ingress may receive the hostname of
-the GitLab instance instead of the external IP address. This can be seen in
-the output of `kubectl get ingress -n <namespace>` in the `ADDRESS` column.
-
-This is caused by the OpenShift Router controller updating the Ingress resource
-instead of ignoring it because it is a different Ingress class. The following
-command will instruct the OpenShift Router controller to ignore Ingresses other
-than the standard Ingresses deployed in OpenShift:
-
-```shell
-  kubectl -n openshift-ingress-operator \
-    patch ingresscontroller default \
-    --type merge \
-    -p '{"spec":{"namespaceSelector":{"matchLabels":{"openshift.io/cluster-monitoring":"true"}}}}'
-```
 
 ### Restoring data when PersistentVolumeClaim configuration changes
 

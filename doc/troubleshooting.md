@@ -55,11 +55,6 @@ function properly.
 In addition to the information presented here, one should consult the
 GitLab Helm chart [troubleshooting documentation](https://docs.gitlab.com/charts/troubleshooting/index.html).
 
-- [Core services not ready](#core-services-not-ready)
-- [NGINX Ingress Controller pods missing](#nginx-ingress-controller-pods-missing)
-- [Horizontal pod autoscalers are not scaling](#horizontal-pod-autoscalers-are-not-scaling)
-- [Ingress does not show external IP](#ingress-does-not-show-external-ip)
-
 ### Core services not ready
 
 The GitLab Operator relies on installing instances of Redis, PostgreSQL and

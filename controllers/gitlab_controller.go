@@ -52,6 +52,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 
+const (
+	defaultRequeueDelay = 5 * time.Second
+)
+
 // GitLabReconciler reconciles a GitLab object.
 type GitLabReconciler struct {
 	client.Client
@@ -93,11 +97,11 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	gitlab := &gitlabv1beta1.GitLab{}
 	if err := r.Get(ctx, req.NamespacedName, gitlab); err != nil {
 		if errors.IsNotFound(err) {
-			return ctrl.Result{}, nil
+			return doNotRequeue()
 		}
 
 		// could not get GitLab resource
-		return ctrl.Result{}, err
+		return requeue(err)
 	}
 
 	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
@@ -106,163 +110,162 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	log.V(1).Info("version information", "upgrade", isUpgrade, "current version", adapter.StatusVersion(), "desired version", adapter.ChartVersion())
 
 	if err := r.setStatusCondition(ctx, adapter, ConditionInitialized, false, "GitLab is initializing"); err != nil {
-		return ctrl.Result{}, err
+		return requeue(err)
 	}
 
 	template, err := gitlabctl.GetTemplate(adapter)
 	if err != nil {
 		r.Recorder.Event(adapter.Resource(), "Warning", "ConfigError",
 			fmt.Sprintf("Configuration error detected: %v", err))
-		return ctrl.Result{}, nil // return nil here to prevent further reconcile loops
+		return doNotRequeue() // prevent further reconcile loops
 	}
 
 	if err := r.setStatusCondition(ctx, adapter, ConditionInitialized, true, "GitLab is initialized"); err != nil {
-		return ctrl.Result{}, err
+		return requeue(err)
 	}
 
 	if err := r.setStatusCondition(ctx, adapter, ConditionAvailable, false, "GitLab is starting but not yet available"); err != nil {
-		return ctrl.Result{}, err
+		return requeue(err)
 	}
 
 	if err := r.reconcileServiceAccount(ctx, adapter); err != nil {
-		return ctrl.Result{}, err
+		return requeue(err)
 	}
 
 	if gitlabctl.NGINXEnabled(adapter) {
 		if err := r.reconcileNGINX(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if err := r.runSharedSecretsJob(ctx, adapter, template); err != nil {
-		return ctrl.Result{}, err
+		return requeue(err)
 	}
 
 	if err := r.runSelfSignedCertsJob(ctx, adapter, template); err != nil {
-		return ctrl.Result{}, err
+		return requeue(err)
 	}
 
 	if gitlabctl.PostgresEnabled(adapter) {
 		if err := r.reconcilePostgres(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	} else {
 		if err := r.validateExternalPostgresConfiguration(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.RedisEnabled(adapter) {
 		if err := r.reconcileRedis(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	} else {
 		if err := r.validateExternalRedisConfiguration(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.GitalyEnabled(adapter) {
 		if !gitlabctl.PraefectEnabled(adapter) || !gitlabctl.PraefectReplaceInternalGitalyEnabled(adapter) {
 			if err := r.reconcileGitaly(ctx, adapter, template); err != nil {
-				return ctrl.Result{}, err
+				return requeue(err)
 			}
 		}
 	}
 
 	if gitlabctl.PraefectEnabled(adapter) {
 		if err := r.reconcilePraefect(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 
 		if gitlabctl.GitalyEnabled(adapter) {
 			if err := r.reconcileGitalyPraefect(ctx, adapter, template); err != nil {
-				return ctrl.Result{}, err
+				return requeue(err)
 			}
 		}
 	}
 
 	if gitlabctl.MinioEnabled(adapter) {
 		if err := r.reconcileMinioInstance(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.MailroomEnabled(adapter) {
 		if err := r.reconcileMailroom(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if internal.RequiresCertManagerCertificate(adapter).Any() {
 		if err := r.reconcileCertManagerCertificates(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
-	waitInterval := 5 * time.Second
 	if !r.ifCoreServicesReady(ctx, adapter, template) {
-		log.Info("Core services are not ready. Waiting and retrying", "interval", waitInterval)
-		return ctrl.Result{RequeueAfter: waitInterval}, nil
+		log.Info("Core services are not ready. Waiting and retrying", "interval", defaultRequeueDelay)
+		return requeueWithDelay(defaultRequeueDelay, nil)
 	}
 
 	if gitlabctl.ShellEnabled(adapter) {
 		if err := r.reconcileGitLabShell(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.RegistryEnabled(adapter) {
 		if err := r.reconcileRegistry(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.ToolboxEnabled(adapter) {
 		if err := r.reconcileToolbox(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.ExporterEnabled(adapter) {
 		if err := r.reconcileGitLabExporter(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.PagesEnabled(adapter) {
 		if err := r.reconcilePages(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.KasEnabled(adapter) {
 		if err := r.reconcileKas(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.MigrationsEnabled(adapter) {
 		if err := r.reconcileMigrationsConfigMap(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.SidekiqEnabled(adapter) {
 		if err := r.reconcileSidekiqConfigMaps(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if gitlabctl.WebserviceEnabled(adapter) {
 		if err := r.reconcileWebserviceExceptDeployments(ctx, adapter, template); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if isUpgrade {
 		if err := r.setStatusCondition(ctx, adapter, ConditionUpgrading, true, fmt.Sprintf("GitLab is upgrading from %s to %s", adapter.StatusVersion(), adapter.ChartVersion())); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 
 		if gitlabctl.MigrationsEnabled(adapter) {
@@ -270,31 +273,31 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				// If upgrading with Migrations enabled and Webservice and/or Sidekiq enabled,
 				// then follow the traditional upgrade logic.
 				if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, true, log); err != nil {
-					return ctrl.Result{}, err
+					return requeue(err)
 				}
 
 				log.Info("reconciling pre migrations")
 
 				if err := r.runPreMigrations(ctx, adapter, template); err != nil {
-					return ctrl.Result{}, err
+					return requeue(err)
 				}
 
 				if err := r.unpauseWebserviceAndSidekiqIfEnabled(ctx, adapter, template, log); err != nil {
-					return ctrl.Result{}, err
+					return requeue(err)
 				}
 
 				if err := r.webserviceAndSidekiqRunningIfEnabled(ctx, adapter, template, log); err != nil {
-					return ctrl.Result{}, err
+					return requeue(err)
 				}
 
 				log.Info("reconciling post migrations")
 
 				if err := r.runAllMigrations(ctx, adapter, template); err != nil {
-					return ctrl.Result{}, err
+					return requeue(err)
 				}
 
 				if err := r.rollingUpdateWebserviceAndSidekiqIfEnabled(ctx, adapter, template, log); err != nil {
-					return ctrl.Result{}, err
+					return requeue(err)
 				}
 			} else {
 				// If upgrading with Migrations enabled but neither Webservice nor Sidekiq are enabled,
@@ -302,42 +305,42 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				log.Info("running all migrations")
 
 				if err := r.runAllMigrations(ctx, adapter, template); err != nil {
-					return ctrl.Result{}, err
+					return requeue(err)
 				}
 			}
 		} else {
 			// If upgrading with Migrations disabled, then just reconcile enabled Deployments.
 			if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, false, log); err != nil {
-				return ctrl.Result{}, err
+				return requeue(err)
 			}
 		}
 	} else {
 		// If not upgrading, then run all migrations (if enabled) and reconcile enabled Deployments.
 		if err := r.setStatusCondition(ctx, adapter, ConditionUpgrading, false, "GitLab is not currently upgrading"); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 
 		if gitlabctl.MigrationsEnabled(adapter) {
 			log.Info("running all migrations")
 
 			if err := r.runAllMigrations(ctx, adapter, template); err != nil {
-				return ctrl.Result{}, err
+				return requeue(err)
 			}
 		}
 
 		if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, false, log); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
 	if err := r.setupAutoscaling(ctx, adapter, template); err != nil {
-		return ctrl.Result{}, err
+		return requeue(err)
 	}
 
 	if settings.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
 		// Deploy a prometheus service monitor
 		if err := r.reconcileServiceMonitor(ctx, adapter); err != nil {
-			return ctrl.Result{}, err
+			return requeue(err)
 		}
 	}
 
@@ -866,4 +869,16 @@ func (r *GitLabReconciler) ensureSecret(ctx context.Context, adapter gitlabctl.C
 	}
 
 	return nil
+}
+
+func doNotRequeue() (ctrl.Result, error) {
+	return ctrl.Result{}, nil
+}
+
+func requeue(err error) (ctrl.Result, error) {
+	return ctrl.Result{}, err
+}
+
+func requeueWithDelay(delay time.Duration, err error) (ctrl.Result, error) {
+	return ctrl.Result{RequeueAfter: delay}, err
 }

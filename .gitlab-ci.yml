@@ -287,7 +287,7 @@ build_review_4_8:
 create_review_4_8:
   extends: .create_review_template
   environment: &environment_4_8
-    name: openshift_4_8/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
+    name: &env_4_8_name openshift_4_8/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_8
     on_stop: stop_review_openshift_4_8
     auto_stop_in: 1 hour
@@ -306,7 +306,7 @@ review_4_8:
     # we need build_* dependency to receive appropriate artifacts
     - build_review_4_8
   environment: *environment_4_8
-  resource_group: "openshift_4_8/${CI_COMMIT_REF_NAME}"
+  resource_group: *env_4_8_name
 
 build_review_4_9:
   extends: .build_review_template
@@ -317,7 +317,7 @@ build_review_4_9:
 create_review_4_9:
   extends: .create_review_template
   environment: &environment_4_9
-    name: openshift_4_9/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
+    name: &env_4_9_name openshift_4_9/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_9
     on_stop: stop_review_openshift_4_9
     auto_stop_in: 1 hour
@@ -336,7 +336,7 @@ review_4_9:
     # we need build_* dependency to receive appropriate artifacts
     - build_review_4_9
   environment: *environment_4_9
-  resource_group: "openshift_4_9/${CI_COMMIT_REF_NAME}"
+  resource_group: *env_4_9_name
 
 build_review_gke:
   extends: .build_review_template
@@ -347,7 +347,7 @@ build_review_gke:
 create_review_gke:
   extends: .create_review_template
   environment: &environment_gke
-    name: gke/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
+    name: &env_gke_name gke/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
     url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE
     on_stop: stop_review_gke
     auto_stop_in: 1 hour
@@ -366,6 +366,7 @@ review_gke:
     # we need build_* dependency to receive appropriate artifacts
     - build_review_gke
   environment: *environment_gke
+  resource_group: *env_gke_name
 
 qa_4_8:
   extends: .qa

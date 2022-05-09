@@ -21,7 +21,14 @@ NO_TRAP=${NO_TRAP:-""}
 # Command for `yq`, expected to be https://github.com/mikefarah/yq
 YQ=${YQ:-"yq"}
 
-export IMG TAG NAMESPACE=${TESTS_NAMESPACE} NAME_OVERRIDE="g${TESTS_NAMESPACE:0:27}"
+export IMG TAG NAMESPACE=${TESTS_NAMESPACE}
+
+# Trim name override to leave room for prefixes/suffixes
+NAME_OVERRIDE="g${TESTS_NAMESPACE:0:27}"
+# Trim any hyphens in the suffix
+NAME_OVERRIDE="${NAME_OVERRIDE%-}"
+export NAME_OVERRIDE
+
 PLATFORM="${PLATFORM:-kubernetes}"
 
 finish() {

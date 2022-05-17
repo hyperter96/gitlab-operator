@@ -11,7 +11,7 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
 )
 
@@ -47,7 +47,7 @@ type Builder interface {
 	EnableHooks()
 
 	// Render renders the template with the provided values and parses the objects.
-	Render(values resource.Values) (Template, error)
+	Render(values support.Values) (Template, error)
 }
 
 // NewBuilder creates a new builder interface for Helm template.
@@ -142,7 +142,7 @@ func (b *defaultBuilder) EnableHooks() {
 }
 
 // Render renders the template with the provided values and parses the objects.
-func (b *defaultBuilder) Render(values resource.Values) (Template, error) {
+func (b *defaultBuilder) Render(values support.Values) (Template, error) {
 	b.client.DisableHooks = b.disableHooks
 	b.client.Namespace = b.namespace
 	b.client.ReleaseName = b.releaseName

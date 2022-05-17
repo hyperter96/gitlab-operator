@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("Gitaly resources", func() {
@@ -14,7 +14,7 @@ var _ = Describe("Gitaly resources", func() {
 
 	Context("Gitaly", func() {
 		When("Gitaly is enabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
@@ -40,7 +40,7 @@ var _ = Describe("Gitaly resources", func() {
 		})
 
 		When("Gitaly and Praefect are enabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
 			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
 
@@ -67,7 +67,7 @@ var _ = Describe("Gitaly resources", func() {
 		})
 
 		When("Gitaly and Praefect is enabled and replaceInternalGitaly is false", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
 			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
 			_ = chartValues.SetValue(GlobalPraefectReplaceInternalGitalyEnabled, false)

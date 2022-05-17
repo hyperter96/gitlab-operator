@@ -13,7 +13,7 @@ import (
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 
 	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -28,10 +28,10 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	currentChartVersion := helm.GetChartVersion()
 	os.Setenv("CHART_VERSION", chartVersions[0])
-	mockGitLab1 := CreateMockGitLab(releaseName, namespace, resource.Values{})
+	mockGitLab1 := CreateMockGitLab(releaseName, namespace, support.Values{})
 
 	os.Setenv("CHART_VERSION", chartVersions[1])
-	mockGitLab2 := CreateMockGitLab(releaseName, namespace, resource.Values{})
+	mockGitLab2 := CreateMockGitLab(releaseName, namespace, support.Values{})
 
 	os.Setenv("CHART_VERSION", currentChartVersion)
 
@@ -41,7 +41,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 	 */
 
 	It("populates Chart default values after rendering", func() {
-		userValues := resource.Values{
+		userValues := support.Values{
 			"global": map[string]interface{}{
 				"hosts": map[string]interface{}{
 					"domain": "test.com",
@@ -185,7 +185,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	Context("GitLab Pages", func() {
 		When("Pages is enabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(globalPagesEnabled, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
@@ -213,7 +213,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		})
 
 		When("Pages is disabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(globalPagesEnabled, false)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
@@ -274,7 +274,7 @@ func dumpTemplateToFile(template helm.Template, filename string) error { //nolin
 }
 
 // dumpHelmValues() will output the current values that Helm is using.
-func dumpHelmValues(values resource.Values) string { //nolint:golint,unused
+func dumpHelmValues(values support.Values) string { //nolint:golint,unused
 	output, _ := json.MarshalIndent(values, "", "    ")
 	return string(output)
 }
@@ -282,7 +282,7 @@ func dumpHelmValues(values resource.Values) string { //nolint:golint,unused
 // dumpHelmValuesToFile() will output the current values to a file.
 // Note: the file is written to where the test runs NOT from where the
 //       tests were run from.
-func dumpHelmValuesToFile(values resource.Values, filename string) error { //nolint:golint,deadcode,unused
+func dumpHelmValuesToFile(values support.Values, filename string) error { //nolint:golint,deadcode,unused
 	fh, err := os.Create(filename)
 	if err != nil {
 		return err

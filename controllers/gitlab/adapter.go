@@ -7,7 +7,7 @@ import (
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/mitchellh/copystructure"
@@ -55,7 +55,7 @@ type CustomResourceAdapter interface {
 	IsUpgrade() bool
 
 	// Values returns the set of values that will be used the render GitLab chart.
-	Values() resource.Values
+	Values() support.Values
 
 	// ResetValues re-initializes the values of the adapter with the values of
 	// GitLab resource and Operator defaults.
@@ -223,7 +223,7 @@ func NewCustomResourceAdapter(gitlab *gitlabv1beta1.GitLab) CustomResourceAdapte
 
 type populatingAdapter struct {
 	resource  *gitlabv1beta1.GitLab
-	values    resource.Values
+	values    support.Values
 	hash      string
 	reference string
 }
@@ -260,7 +260,7 @@ func (a *populatingAdapter) ReleaseName() string {
 	return a.resource.Name
 }
 
-func (a *populatingAdapter) Values() resource.Values {
+func (a *populatingAdapter) Values() support.Values {
 	return a.values
 }
 

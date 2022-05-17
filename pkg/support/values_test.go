@@ -1,4 +1,4 @@
-package resource
+package support
 
 import (
 	. "github.com/onsi/ginkgo"

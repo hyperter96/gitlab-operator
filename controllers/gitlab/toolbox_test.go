@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("CustomResourceAdapter", func() {
@@ -17,7 +17,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	Context("Toolbox", func() {
 		When("Toolbox CronJob is disabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
@@ -40,7 +40,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		When("Toolbox CronJob is enabled", func() {
 			key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(key, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
@@ -73,7 +73,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 			gitlabToolboxCronJobEnabled := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName)
 			gitlabToolboxCronJobPersistenceEnabled := fmt.Sprintf(gitlabToolboxCronJobPersistenceEnabled, ToolboxComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(gitlabToolboxCronJobEnabled, true)
 			_ = chartValues.SetValue(gitlabToolboxCronJobPersistenceEnabled, true)
 

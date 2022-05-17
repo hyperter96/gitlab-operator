@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("Gitaly and Praefect resources", func() {
@@ -14,7 +14,7 @@ var _ = Describe("Gitaly and Praefect resources", func() {
 
 	Context("Praefect-managed Gitaly", func() {
 		When("Gitaly and Praefect are enabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
 			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
 
@@ -39,7 +39,7 @@ var _ = Describe("Gitaly and Praefect resources", func() {
 		})
 
 		When("Gitaly is enabled and Praefect is disabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
 			_ = chartValues.SetValue(GlobalPraefectEnabled, false)
 

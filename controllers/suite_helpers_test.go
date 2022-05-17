@@ -15,11 +15,11 @@ import (
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var (
-	emptyValues = resource.Values{}
+	emptyValues = support.Values{}
 )
 
 func createObject(obj client.Object, ignoreAlreadyExists bool) error {
@@ -159,7 +159,7 @@ func appLabels(releaseName, appName string) string {
 	return fmt.Sprintf("release=%s,app=%s", releaseName, appName)
 }
 
-func createGitLabResource(releaseName string, chartValues resource.Values) {
+func createGitLabResource(releaseName string, chartValues support.Values) {
 	By("Creating a new GitLab resource")
 	Expect(createObject(gitlab.CreateMockGitLab(releaseName, Namespace, chartValues), true)).Should(Succeed())
 
@@ -168,11 +168,11 @@ func createGitLabResource(releaseName string, chartValues resource.Values) {
 		PollTimeout, PollInterval).Should(Succeed())
 }
 
-func updateGitLabResource(releaseName string, chartValues resource.Values) {
+func updateGitLabResource(releaseName string, chartValues support.Values) {
 	By("Update the existing GitLab resource")
 	Expect(
 		updateObject(
-			gitlab.CreateMockGitLab(releaseName, Namespace, resource.Values{}),
+			gitlab.CreateMockGitLab(releaseName, Namespace, support.Values{}),
 			func(obj client.Object) error {
 				gitlab := obj.(*gitlabv1beta1.GitLab)
 				gitlab.Spec.Chart.Values.Object = chartValues

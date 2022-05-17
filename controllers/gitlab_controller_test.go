@@ -18,7 +18,7 @@ import (
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("GitLab controller", func() {
@@ -34,7 +34,7 @@ var _ = Describe("GitLab controller", func() {
 		It("Should create a CR with the specified Chart values", func() {
 			releaseName := "crd-testing"
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue("global.hosts.domain", "mydomain.com")
 			_ = chartValues.SetValue("certmanager-issuer.email", "me@mydomain.com")
 
@@ -67,7 +67,7 @@ var _ = Describe("GitLab controller", func() {
 	Context("GitLab CR spec", func() {
 		It("Should change the managed resources when the Chart values change", func() {
 			releaseName := "cr-spec-changes"
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 			sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
 
@@ -125,7 +125,7 @@ var _ = Describe("GitLab controller", func() {
 		When("Both Jobs succeed", func() {
 			releaseName := "jobs-succeeded"
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue("global.ingress.configureCertmanager", false)
 
 			BeforeEach(func() {
@@ -216,7 +216,7 @@ var _ = Describe("GitLab controller", func() {
 			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue("global.gitaly.enabled", true)
 
 			BeforeEach(func() {
@@ -250,7 +250,7 @@ var _ = Describe("GitLab controller", func() {
 			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.GitalyComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			values := `
 global:
   gitaly:
@@ -296,7 +296,7 @@ global:
 			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue("postgresql.install", false)
 
 			BeforeEach(func() {
@@ -340,7 +340,7 @@ global:
 			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue("postgresql.install", true)
 
 			BeforeEach(func() {
@@ -388,7 +388,7 @@ global:
 			statefulSetName := fmt.Sprintf("%s-master", releaseName)
 			nextCfgMapName := releaseName
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			values := `
 redis:
 	install: false
@@ -449,7 +449,7 @@ global:
 			statefulSetName := fmt.Sprintf("%s-master", releaseName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue("redis.install", true)
 
 			BeforeEach(func() {
@@ -494,7 +494,7 @@ global:
 
 		When("External Redis has subqueue with no Secret created", func() {
 			releaseName := "redis-subqueues-no-secret"
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			values := `
 redis:
   install: false
@@ -530,7 +530,7 @@ global:
 		When("External Redis has subqueue with Secret created", func() {
 			releaseName := "redis-subqueues-with-secret"
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			values := `
 redis:
   install: false
@@ -584,7 +584,7 @@ global:
 			deploymentName := fmt.Sprintf("%s-minio", releaseName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue("global.minio.enabled", true)
 
 			BeforeEach(func() {
@@ -634,7 +634,7 @@ global:
 			deploymentName := fmt.Sprintf("%s-minio", releaseName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			values := `
 global:
   minio:
@@ -694,7 +694,7 @@ global:
 			defaultBackendDeploymentName := fmt.Sprintf("%s-%s-%s", releaseName, gitlabctl.NGINXComponentName, defaultBackendComponentName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue("nginx-ingress.enabled", false)
 
 			BeforeEach(func() {
@@ -730,7 +730,7 @@ global:
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			BeforeEach(func() {
-				createGitLabResource(releaseName, resource.Values{})
+				createGitLabResource(releaseName, support.Values{})
 				processSharedSecretsJob(releaseName)
 			})
 

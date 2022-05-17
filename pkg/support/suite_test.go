@@ -1,4 +1,4 @@
-package resource
+package support
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestGitlabOperator(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "GitlabOperator Suite")
+	RunSpecs(t, "GitLab Operator Framework: Support")
 }

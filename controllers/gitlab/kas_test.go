@@ -4,12 +4,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("KAS", func() {
 	When("KAS is disabled", func() {
-		chartValues := resource.Values{}
+		chartValues := support.Values{}
 		mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 		adapter := CreateMockAdapter(mockGitLab)
 		template, err := GetTemplate(adapter)
@@ -31,7 +31,7 @@ var _ = Describe("KAS", func() {
 	})
 
 	When("KAS is enabled", func() {
-		chartValues := resource.Values{}
+		chartValues := support.Values{}
 		_ = chartValues.SetValue("global.kas.enabled", true)
 		_ = chartValues.SetValue("global.kas.service.apiExternalPort", 8153)
 

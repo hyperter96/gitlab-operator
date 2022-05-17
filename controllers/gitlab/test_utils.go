@@ -5,7 +5,7 @@ import (
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -15,7 +15,7 @@ var (
 	namespace   = os.Getenv("HELM_NAMESPACE")
 )
 
-func CreateMockGitLab(releaseName, namespace string, values resource.Values) *gitlabv1beta1.GitLab {
+func CreateMockGitLab(releaseName, namespace string, values support.Values) *gitlabv1beta1.GitLab {
 	return &gitlabv1beta1.GitLab{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps.gitlab.com/v1beta1",

@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("Praefect resources", func() {
@@ -14,7 +14,7 @@ var _ = Describe("Praefect resources", func() {
 
 	Context("Praefect", func() {
 		When("Praefect is enabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
@@ -40,7 +40,7 @@ var _ = Describe("Praefect resources", func() {
 		})
 
 		When("Praefect is disabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GlobalPraefectEnabled, false)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)

@@ -6,12 +6,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
 )
 
 func loadTemplate() (Template, error) {
-	values := resource.Values{}
+	values := support.Values{}
 	_ = values.AddFromYAMLFile("testdata/chart/values.yaml")
 
 	builder, err := NewBuilder("test", "0.1.0")

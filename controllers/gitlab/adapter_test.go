@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("CustomResourceAdapter", func() {
@@ -16,7 +16,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		namespace = "default" //nolint:golint,goconst
 	}
 
-	mockGitLab := CreateMockGitLab(releaseName, namespace, resource.Values{})
+	mockGitLab := CreateMockGitLab(releaseName, namespace, support.Values{})
 
 	It("retrieve the attributes from GitLab CR", func() {
 		adapter := CreateMockAdapter(mockGitLab)
@@ -51,7 +51,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 	It("should reject unsupported chart versions", func() {
 		currentChartVersion := helm.GetChartVersion()
 		os.Setenv("CHART_VERSION", "0.0.0")
-		mockGitLab := CreateMockGitLab(releaseName, namespace, resource.Values{})
+		mockGitLab := CreateMockGitLab(releaseName, namespace, support.Values{})
 		adapter := CreateMockAdapter(mockGitLab)
 		os.Setenv("CHART_VERSION", currentChartVersion)
 
@@ -63,7 +63,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 	})
 
 	It("should accept supported chart versions", func() {
-		mockGitLab := CreateMockGitLab(releaseName, namespace, resource.Values{})
+		mockGitLab := CreateMockGitLab(releaseName, namespace, support.Values{})
 		adapter := CreateMockAdapter(mockGitLab)
 		supported, err := helm.ChartVersionSupported(adapter.ChartVersion())
 

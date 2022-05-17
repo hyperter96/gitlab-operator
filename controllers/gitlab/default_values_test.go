@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("Getting default values from charts", func() {
@@ -42,7 +42,7 @@ var _ = Describe("Getting default values from charts", func() {
 		key := key
 		expectedValue := expectedValue
 
-		chartValues := resource.Values{}
+		chartValues := support.Values{}
 		_ = chartValues.SetValue(key, expectedValue)
 
 		mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)

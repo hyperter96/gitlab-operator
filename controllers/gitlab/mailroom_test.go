@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/resource"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var _ = Describe("CustomResourceAdapter", func() {
@@ -14,7 +14,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	Context("Mailroom", func() {
 		When("Mailroom is enabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GitLabMailroomEnabled, true)
 			_ = chartValues.SetValue(IncomingEmailEnabled, true)
 			_ = chartValues.SetValue(IncomingEmailSecret, "secret_value")
@@ -41,7 +41,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		})
 
 		When("Mailroom is disabled", func() {
-			chartValues := resource.Values{}
+			chartValues := support.Values{}
 			_ = chartValues.SetValue(GitLabMailroomEnabled, false)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)

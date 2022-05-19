@@ -21,7 +21,7 @@ for the full list of available versions of the GitLab Operator.
 For example, if the current Operator version is [release 0.4.0](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases/0.4.0),
 you could upgrade to [release 0.4.1](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases/0.4.1).
 
-## Step 2: Install the desired version
+## Step 3: Install the desired version
 
 The next step is to use `kubectl` to apply the manifest for the desired version of the Operator.
 
@@ -33,12 +33,12 @@ kubectl apply -f \
 
 This command will apply any changes to the related manifests, including the new Deployment image to use.
 
-## Step 3: Confirm that the new version of the Operator becomes the leader
+## Step 4: Confirm that the new version of the Operator becomes the leader
 
 The Operator Deployment should create a new ReplicaSet with this change, which will spawn a new Operator pod. Meanwhile, the previous
 Operator pod will shut down, giving up its leader status. When this happens, the new Operator pod will become the leader.
 
-## Step 4: Update the chart version in the GitLab Custom Resource (CR)
+## Step 5: Update the chart version in the GitLab Custom Resource (CR)
 
 In most cases, the available chart versions will not be identical between versions of the Operator. When the newer version of the
 Operator starts, it will try to reconcile the existing GitLab Custom Resource (CR). You will likely see an error such as:
@@ -51,7 +51,7 @@ To address this, identify a valid version from that release's available chart ve
 
 For example: when upgrading from Operator `0.4.0` to `0.4.1`, update the GitLab CR to an available chart version closest to `5.7.0`, which in this case is `5.7.1`.
 
-## Step 5: Confirm that the Operator reconciles GitLab as expected
+## Step 6: Confirm that the Operator reconciles GitLab as expected
 
 Watch the logs from the new Operator pod. You should see that it performs the upgrade to the chart version you defined.
 

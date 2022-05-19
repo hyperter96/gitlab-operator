@@ -238,3 +238,9 @@ func (v Values) AddFromYAMLFile(filePath string) error {
 
 	return v.AddFromYAMLBuffer(fileContent)
 }
+
+// AsMap converts the values data structure to a plain map. This is useful for
+// passing values to other libaries.
+func (v Values) AsMap() map[string]interface{} {
+	return v
+}

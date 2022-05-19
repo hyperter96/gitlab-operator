@@ -8,6 +8,7 @@ import (
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts/populate"
 )
 
 func loadTemplate() (Template, error) {
@@ -24,7 +25,7 @@ func loadTemplate() (Template, error) {
 
 func TestHelm(t *testing.T) {
 	_ = charts.PopulateGlobalCatalog(
-		charts.WithSearchPath("testdata/chart"))
+		populate.WithSearchPath("testdata/chart"))
 
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Helm Suite")

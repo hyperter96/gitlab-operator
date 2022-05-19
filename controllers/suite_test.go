@@ -22,6 +22,7 @@ import (
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts/populate"
 )
 
 var (
@@ -41,7 +42,7 @@ const (
 func TestAPIs(t *testing.T) {
 	settings.Load()
 	_ = charts.PopulateGlobalCatalog(
-		charts.WithSearchPath(settings.HelmChartsDirectory))
+		populate.WithSearchPath(settings.HelmChartsDirectory))
 
 	RegisterFailHandler(Fail)
 

@@ -35,6 +35,7 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts/populate"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -78,8 +79,8 @@ func main() {
 	logger := zap.New(zap.UseFlagOptions(&opts))
 
 	_ = charts.PopulateGlobalCatalog(
-		charts.WithLogger(logger),
-		charts.WithSearchPath(settings.HelmChartsDirectory),
+		populate.WithLogger(logger),
+		populate.WithSearchPath(settings.HelmChartsDirectory),
 	)
 
 	ctrl.SetLogger(logger)

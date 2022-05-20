@@ -75,7 +75,7 @@ the deployment of the GitLab instance.
 ### NGINX Ingress Controller pods missing
 
 In an OpenShift environment the
-[NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx)
+[NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx/)
 is used in place of OpenShift Routes for directing traffic to the GitLab
 instance (both HTTPS and SSH). If you are having a problem with connecting
 to the GitLab instance, first insure that there is a deployment for the
@@ -137,6 +137,6 @@ After upgrading to GitLab Operator `0.6.4`, complete the following steps to conn
 1. Confirm that data is restored by navigating in the GitLab UI to issues, artifacts, etc.
 
 For more information on reconnecting to previous PersistentVolumes, see our
-[persistent volumes documentation](https://docs.gitlab.com/charts/advanced/persistent-volumes).
+[persistent volumes documentation](https://docs.gitlab.com/charts/advanced/persistent-volumes/).
 
 As a reminder, the bundled MinIO instance is [not recommended for production use](https://docs.gitlab.com/charts/charts/minio/#enable-the-sub-chart).

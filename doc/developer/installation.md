@@ -72,7 +72,7 @@ Please consult the "Prerequisites" section of the [installation](../installation
            email: youremail@example.com # use your real email address here
    ```
 
-   For more details on configuration options to use under `spec.chart.values`, see our [GitLab Helm Chart documentation](https://docs.gitlab.com/charts).
+   For more details on configuration options to use under `spec.chart.values`, see our [GitLab Helm Chart documentation](https://docs.gitlab.com/charts/).
 
 1. Deploy a GitLab instance using your new GitLab CR.
 

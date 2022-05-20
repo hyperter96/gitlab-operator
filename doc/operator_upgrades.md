@@ -2,7 +2,7 @@
 
 Below are instructions to upgrade the GitLab Operator.
 
-Prior to upgrading, it is strongly recommended to [perform a backup](https://docs.gitlab.com/charts/backup-restore).
+Prior to upgrading, it is strongly recommended to [perform a backup](https://docs.gitlab.com/charts/backup-restore/).
 
 ## Step 1: Upgrade to the latest available chart version
 

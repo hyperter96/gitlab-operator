@@ -17,7 +17,7 @@ cloud providers offer.
 Managed OpenShift offerings from
 [Red Hat](https://docs.openshift.com/dedicated/osd_policy/osd-life-cycle.html#rosa-life-cycle-dates_osd-life-cycle),
 [Azure](https://docs.microsoft.com/en-us/azure/openshift/support-lifecycle#azure-red-hat-openshift-release-calendar), and
-[AWS](https://cloud.redhat.com/products/amazon-openshift) were consulted.
+[AWS](https://www.redhat.com/en/technologies/cloud-computing/openshift/aws) were consulted.
 [GCP](https://cloud.google.com/architecture/partners/openshift-on-gcp) does not offer a managed OpenShift service.
 
 ## Decision

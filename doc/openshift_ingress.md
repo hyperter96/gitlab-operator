@@ -180,4 +180,4 @@ GitLab should then be available at `https://gitlab.yourdomain.com`.
 
 In this configuration, OpenShift Routes are created by translating the Ingresses created by the GitLab Operator.
 More information on this translation is available in the
-[Route documentation](https://docs.openshift.com/container-platform/latest/networking/routes/route-configuration.html#nw-ingress-creating-a-route-via-an-ingress_route-configuration).
+[Route documentation](https://docs.openshift.com/container-platform/4.9/networking/routes/route-configuration.html#nw-ingress-creating-a-route-via-an-ingress_route-configuration).

@@ -63,7 +63,7 @@ Install the [metrics server](https://github.com/kubernetes-sigs/metrics-server#i
 
 #### OpenShift
 
-OpenShift ships with [Prometheus Adapter](https://docs.openshift.com/container-platform/4.8/monitoring/understanding-the-monitoring-stack.html#default-monitoring-components_understanding-the-monitoring-stack) by default, so there is no manual action required here.
+OpenShift ships with [Prometheus Adapter](https://docs.openshift.com/container-platform/4.9/monitoring/monitoring-overview.html) by default, so there is no manual action required here.
 
 ### Configure Domain Name Services
 
@@ -129,7 +129,7 @@ Ingress in OpenShift requires extra consideration. See our [notes on OpenShift I
    ```
 
    For more details on configuration options to use under `spec.chart.values`,
-   see the [GitLab Helm Chart documentation](https://docs.gitlab.com/charts/charts).
+   see the [GitLab Helm Chart documentation](https://docs.gitlab.com/charts/charts/).
 
 1. Deploy a GitLab instance using your new GitLab CR.
 

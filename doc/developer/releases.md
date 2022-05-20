@@ -32,6 +32,6 @@ pipeline.
 
 In order to execute the script independently from GitLab CI one needs to
 create the `REDHAT_API_TOKEN` environmental variable. This variable is set
-to the personal token generated on the [Connect portal](https://connect.redhat.com/key-manager).
+to the personal token generated on the [Connect portal](https://connect.redhat.com/account/api-keys).
 The token used by GitLab CI is stored in the 1Password Build vault under the
 "Red HatCertification Token" entry.

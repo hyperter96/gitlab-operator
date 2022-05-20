@@ -5,7 +5,7 @@
 Pods in OpenShift receive permissions based on their security context
 constraints. Security context constraints, often abbreviated _**SCC**_,
 simplify the role based access control mechanism for use in large scale
-deployments. [Administrators may consult the upstream documentation to gain more insight into how security context constraints work and their place in OpenShift](https://docs.openshift.com/container-platform/4.8/authentication/managing-security-context-constraints.html)
+deployments. [Administrators may consult the upstream documentation to gain more insight into how security context constraints work and their place in OpenShift](https://docs.openshift.com/container-platform/4.9/authentication/managing-security-context-constraints.html)
 
 Administrators may also consult the following resources:
 
@@ -60,7 +60,7 @@ documentation to learn more about its security context constraints.
 
 ### SSL encryption
 
-**Operator** deploys the [**cert-manager-operator** from JetStack](https://cert-manager.io/docs/installation/openshift/)
+**Operator** deploys the [**cert-manager-operator** from JetStack](https://cert-manager.io/docs/installation/supported-releases/)
 to manage SSL certificates across the GitLab application. The
 **cert-manager-operator** sets no secure context constraints directly, thus
 OpenShift will apply the _**restricted**_ security context constraint by

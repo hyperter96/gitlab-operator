@@ -117,6 +117,30 @@ The `Makefile` allows us to customize manage different tasks such as:
   make run
   ```
 
+- Run unit tests locally in Docker:
+
+  ```shell
+  make test-in-docker
+  ```
+
+- Run unit tests locally in Docker, skipping the slow controller tests:
+
+  ```shell
+  make unit-tests-in-docker
+  ```
+
+- Run unit tests locally in Docker, focusing on the slow controller tests:
+
+  ```shell
+  make slow-unit-tests-in-docker
+  ```
+
+- Clean up artifacts from local tests in Docker:
+
+  ```shell
+  make test-docker-clean
+  ```
+
 ## Deploying the Operator
 
 For instructions on deploying the operator, see the [installation docs](installation.md).

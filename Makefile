@@ -21,6 +21,11 @@ INSTALL_DIR ?= .install
 KUSTOMIZE_FILES=$(shell find config -type f -name \*.yaml)
 TEST_CR_FILES=$(shell find config/test -type f -name \*.yaml)
 
+# Test-related variables
+TEST_IMG ?= registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
+TEST_ARGS ?= ""
+TEST_PKGS ?= "./..."
+
 # Image URL to use all building/pushing image targets
 IMG_REGISTRY ?= registry.gitlab.com
 IMG_REPOSITORY ?= gitlab-org/cloud-native
@@ -157,6 +162,39 @@ fmt:
 # Run go vet against code
 vet:
 	go vet ./...
+
+# Run all unit tests in Docker
+.PHONY: test-in-docker
+test-in-docker:
+	echo "Testing with $(CHART_VERSION)..."
+	rm -rf coverage && mkdir coverage
+	[ -d $(PWD)/charts ] || $(PWD)/scripts/retrieve_gitlab_charts.sh
+	GOPATH=$(PWD)/.go go mod download
+	docker run --rm -i \
+		-v $(PWD):/test \
+		-w /test \
+		-e CHART_VERSION=$(CHART_VERSION) \
+		-e GOPATH="/test/.go" \
+		-e HELM_CHARTS="/test/charts" \
+		-e KUBECONFIG="" \
+		-e USE_EXISTING_CLUSTER="false" \
+		$(TEST_IMG) \
+		ginkgo -cover -outputdir=coverage $(TEST_PKGS)
+
+# Run unit tests, but skip the slow controller tests
+.PHONY: unit-tests-in-docker
+unit-tests-in-docker: TEST_PKGS=./helm/... ./pkg/...
+unit-tests-in-docker: test-in-docker
+
+# Run unit tests, focusing on only the slow controller tests
+.PHONY: slow-unit-tests-in-docker
+slow-unit-tests-in-docker: TEST_PKGS="./controllers/..."
+slow-unit-tests-in-docker: test-in-docker
+
+.PHONY: test-docker-clean
+test-docker-clean:
+	rm -rf .go coverage
+	docker rmi $(TEST_IMG)
 
 # Generate code
 

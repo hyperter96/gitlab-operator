@@ -2,7 +2,7 @@
 
 ## Review environments
 
-The review environments will be automatically uninstalled after 1 hour. If you need the review environment to stay up longer, you can pin the environment
+The review environments are automatically uninstalled after 1 hour. If you need the review environment to stay up longer, you can pin the environment
 on the [Environments page](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/environments). However, make sure to manually trigger the jobs
 in the `Cleanup` stage when you're done. This helps to ensure that the clusters have enough resources to run review apps for other merge requests.
 

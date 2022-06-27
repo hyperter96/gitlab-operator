@@ -202,6 +202,7 @@ variables:
   - docker:dind
   variables:
     QA_ARTIFACTS_DIR: $CI_PROJECT_DIR
+    QA_CAN_TEST_PRAEFECT: "false"
     EE_LICENSE: $GITLAB_QA_EE_LICENSE
     QA_OPTIONS: "--tag smoke"
     KNAPSACK_REPORT_PATH: "knapsack/master_report.json"

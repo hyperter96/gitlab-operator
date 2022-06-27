@@ -23,6 +23,12 @@ import (
 //   https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#status-subresource
 //
 func SimpleObjectHash(object client.Object) string {
-	return fmt.Sprintf("%s:v%d",
-		object.GetUID(), object.GetGeneration())
+	uid := object.GetUID()
+	gen := object.GetGeneration()
+
+	if uid == "" || gen == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("%s.%d", uid, gen)
 }

@@ -285,6 +285,62 @@ var _ = Describe("Values", func() {
 		})
 	})
 
+	Describe("Coalesce", func() {
+		It("can deep merge another Values", func() {
+			dst := Values{
+				/* scalar */
+				"a": "A",
+				"b": 1,
+				"c": nil,
+				/* nested */
+				"e": map[string]interface{}{
+					"f": "F",
+					"g": map[string]interface{}{
+						"h": "H",
+						"i": 1,
+					},
+					"j": 1,
+				},
+			}
+			src := Values{
+				/* scalar */
+				"b": 2,
+				"c": true,
+				"x": "X",
+				/* nested */
+				"e": map[string]interface{}{
+					"g": map[string]interface{}{
+						"h": "H",
+						"i": 1,
+						"w": "W",
+					},
+					"j": 2,
+					"z": "Z",
+				},
+			}
+			exp := Values{
+				/* scalar */
+				"a": "A",
+				"b": 1,
+				"x": "X",
+				/* nested */
+				"e": map[string]interface{}{
+					"f": "F",
+					"g": map[string]interface{}{
+						"h": "H",
+						"i": 1,
+						"w": "W",
+					},
+					"j": 1,
+					"z": "Z",
+				},
+			}
+
+			dst.Coalesce(src)
+			Expect(dst).To(Equal(exp))
+		})
+	})
+
 	Describe("AddHelmValue", func() {
 		It("supports Helm style key and value format", func() {
 			v := Values{

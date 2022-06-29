@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,21 +15,11 @@ import (
 )
 
 func GetPodTemplateSpec(obj client.Object) (*corev1.PodTemplateSpec, error) {
-	switch obj.GetObjectKind().GroupVersionKind().Kind {
-	case gitlab.DeploymentKind:
-		deployment, ok := obj.(*appsv1.Deployment)
-		if !ok {
-			return nil, helm.NewTypeMistmatchError(deployment, obj)
-		}
-
-		return &deployment.Spec.Template, nil
-	case gitlab.StatefulSetKind:
-		statefulset, ok := obj.(*appsv1.StatefulSet)
-		if !ok {
-			return nil, helm.NewTypeMistmatchError(statefulset, obj)
-		}
-
-		return &statefulset.Spec.Template, nil
+	switch obj := obj.(type) {
+	case *appsv1.Deployment:
+		return &obj.Spec.Template, nil
+	case *appsv1.StatefulSet:
+		return &obj.Spec.Template, nil
 	default:
 		return nil, helm.NewTypeMistmatchError(corev1.PodTemplateSpec{}, obj)
 	}

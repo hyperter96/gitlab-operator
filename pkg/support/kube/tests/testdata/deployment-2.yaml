@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+  namespace: default
+  annotations:
+    source: deployment-2
+spec:
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: runtime
+        image: ruby:latest
+        volumeMounts:
+          - mountPath: /dummy
+            name: dummy
+          - mountPath: /config
+            name: test-config
+          - mountPath: /secrets
+            name: test-secrets
+      volumes:
+      - name: test-secrets
+        projected:
+          sources:
+          - secret:
+              name: test-secret-source
+      - name: test-config
+        configMap:
+          name: test-config-source
+      - name: dummy
+        emptyDir:

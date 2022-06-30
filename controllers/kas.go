@@ -28,7 +28,7 @@ func (r *GitLabReconciler) reconcileKas(ctx context.Context, adapter gitlabctl.C
 }
 
 func (r *GitLabReconciler) reconcileKasConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.KasConfigMap(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.KasConfigMap(template), adapter); err != nil {
 		return err
 	}
 
@@ -46,13 +46,13 @@ func (r *GitLabReconciler) reconcileKasDeployment(ctx context.Context, adapter g
 		return err
 	}
 
-	_, err := r.createOrPatch(ctx, kas, adapter)
+	err := r.createOrPatch(ctx, kas, adapter)
 
 	return err
 }
 
 func (r *GitLabReconciler) reconcileKasService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.KasService(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.KasService(template), adapter); err != nil {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (r *GitLabReconciler) reconcileKasService(ctx context.Context, adapter gitl
 }
 
 func (r *GitLabReconciler) reconcileKasIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.KasIngress(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.KasIngress(template), adapter); err != nil {
 		return err
 	}
 

@@ -28,7 +28,7 @@ func (r *GitLabReconciler) reconcileRegistry(ctx context.Context, adapter gitlab
 }
 
 func (r *GitLabReconciler) reconcileRegistryConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.RegistryConfigMap(adapter, template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.RegistryConfigMap(adapter, template), adapter); err != nil {
 		return err
 	}
 
@@ -46,13 +46,13 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adap
 		return err
 	}
 
-	_, err := r.createOrPatch(ctx, registry, adapter)
+	err := r.createOrPatch(ctx, registry, adapter)
 
 	return err
 }
 
 func (r *GitLabReconciler) reconcileRegistryService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.RegistryService(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.RegistryService(template), adapter); err != nil {
 		return err
 	}
 

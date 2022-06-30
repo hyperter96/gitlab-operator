@@ -10,7 +10,7 @@ import (
 
 func (r *GitLabReconciler) reconcileSidekiqConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, cm := range gitlabctl.SidekiqConfigMaps(template) {
-		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
@@ -34,7 +34,7 @@ func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adap
 			return err
 		}
 
-		if _, err := r.createOrPatch(ctx, sidekiq, adapter); err != nil {
+		if err := r.createOrPatch(ctx, sidekiq, adapter); err != nil {
 			return err
 		}
 	}

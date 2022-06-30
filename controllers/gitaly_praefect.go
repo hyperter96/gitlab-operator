@@ -24,7 +24,7 @@ func (r *GitLabReconciler) reconcileGitalyPraefect(ctx context.Context, adapter 
 }
 
 func (r *GitLabReconciler) reconcileGitalyPraefectConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyPraefectConfigMap(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.GitalyPraefectConfigMap(template), adapter); err != nil {
 		return err
 	}
 
@@ -35,7 +35,7 @@ func (r *GitLabReconciler) reconcileGitalyPraefectServices(ctx context.Context, 
 	gitalyPraefectServices := gitlabctl.GitalyPraefectServices(template)
 
 	for _, gitalyPraefectService := range gitalyPraefectServices {
-		if _, err := r.createOrPatch(ctx, gitalyPraefectService, adapter); err != nil {
+		if err := r.createOrPatch(ctx, gitalyPraefectService, adapter); err != nil {
 			return err
 		}
 	}
@@ -47,7 +47,7 @@ func (r *GitLabReconciler) reconcileGitalyPraefectStatefulSets(ctx context.Conte
 	gitalyPraefectStatefulSets := gitlabctl.GitalyPraefectStatefulSets(template)
 
 	for _, gitalyPraefectStatefulSet := range gitalyPraefectStatefulSets {
-		if _, err := r.createOrPatch(ctx, gitalyPraefectStatefulSet, adapter); err != nil {
+		if err := r.createOrPatch(ctx, gitalyPraefectStatefulSet, adapter); err != nil {
 			return err
 		}
 	}

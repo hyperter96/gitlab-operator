@@ -34,14 +34,14 @@ func (r *GitLabReconciler) reconcileShellDeployment(ctx context.Context, adapter
 		return err
 	}
 
-	_, err := r.createOrPatch(ctx, shell, adapter)
+	err := r.createOrPatch(ctx, shell, adapter)
 
 	return err
 }
 
 func (r *GitLabReconciler) reconcileShellConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, cm := range gitlabctl.ShellConfigMaps(adapter, template) {
-		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
@@ -50,7 +50,7 @@ func (r *GitLabReconciler) reconcileShellConfigMaps(ctx context.Context, adapter
 }
 
 func (r *GitLabReconciler) reconcileShellService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.ShellService(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.ShellService(template), adapter); err != nil {
 		return err
 	}
 

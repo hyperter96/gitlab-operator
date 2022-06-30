@@ -32,7 +32,7 @@ func (r *GitLabReconciler) reconcileToolbox(ctx context.Context, adapter gitlabc
 }
 
 func (r *GitLabReconciler) reconcileToolboxConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.ToolboxConfigMap(adapter, template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.ToolboxConfigMap(adapter, template), adapter); err != nil {
 		return err
 	}
 
@@ -40,7 +40,7 @@ func (r *GitLabReconciler) reconcileToolboxConfigMap(ctx context.Context, adapte
 }
 
 func (r *GitLabReconciler) reconcileToolboxCronJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.ToolboxCronJob(adapter, template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.ToolboxCronJob(adapter, template), adapter); err != nil {
 		return err
 	}
 
@@ -54,13 +54,13 @@ func (r *GitLabReconciler) reconcileToolboxDeployment(ctx context.Context, adapt
 		return err
 	}
 
-	_, err := r.createOrPatch(ctx, deployment, adapter)
+	err := r.createOrPatch(ctx, deployment, adapter)
 
 	return err
 }
 
 func (r *GitLabReconciler) reconcileToolboxPersistentVolumeClaim(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.ToolboxCronJobPersistentVolumeClaim(adapter, template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.ToolboxCronJobPersistentVolumeClaim(adapter, template), adapter); err != nil {
 		return err
 	}
 

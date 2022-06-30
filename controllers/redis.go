@@ -26,7 +26,7 @@ func (r *GitLabReconciler) reconcileRedis(ctx context.Context, adapter gitlabctl
 
 func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, cm := range gitlabctl.RedisConfigMaps(adapter, template) {
-		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
@@ -41,7 +41,7 @@ func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapte
 		return err
 	}
 
-	if _, err := r.createOrPatch(ctx, redis, adapter); err != nil {
+	if err := r.createOrPatch(ctx, redis, adapter); err != nil {
 		return err
 	}
 
@@ -80,7 +80,7 @@ func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Contex
 
 func (r *GitLabReconciler) reconcileRedisServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, svc := range gitlabctl.RedisServices(adapter, template) {
-		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
+		if err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
 		}
 	}

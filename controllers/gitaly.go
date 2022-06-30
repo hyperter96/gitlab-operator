@@ -24,7 +24,7 @@ func (r *GitLabReconciler) reconcileGitaly(ctx context.Context, adapter gitlabct
 }
 
 func (r *GitLabReconciler) reconcileGitalyConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyConfigMap(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.GitalyConfigMap(template), adapter); err != nil {
 		return err
 	}
 
@@ -32,7 +32,7 @@ func (r *GitLabReconciler) reconcileGitalyConfigMap(ctx context.Context, adapter
 }
 
 func (r *GitLabReconciler) reconcileGitalyStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyStatefulSet(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.GitalyStatefulSet(template), adapter); err != nil {
 		return err
 	}
 
@@ -40,7 +40,7 @@ func (r *GitLabReconciler) reconcileGitalyStatefulSet(ctx context.Context, adapt
 }
 
 func (r *GitLabReconciler) reconcileGitalyService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.GitalyService(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.GitalyService(template), adapter); err != nil {
 		return err
 	}
 

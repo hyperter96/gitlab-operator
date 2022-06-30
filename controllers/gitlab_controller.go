@@ -23,8 +23,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/imdario/mergo"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -48,6 +46,8 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/kube"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/kube/apply"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 )
@@ -382,7 +382,7 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job client.Object, timeout time.Duration) error {
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.GetName(), "namespace", job.GetNamespace())
 
-	_, err := r.createOrPatch(ctx, job, adapter)
+	err := r.createOrPatch(ctx, job, adapter)
 	if err != nil {
 		return err
 	}
@@ -473,19 +473,19 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	}
 
 	for _, sm := range servicemonitors {
-		if _, err := r.createOrPatch(ctx, sm, adapter); err != nil {
+		if err := r.createOrPatch(ctx, sm, adapter); err != nil {
 			return err
 		}
 	}
 
 	if internal.PrometheusClusterEnabled(adapter) {
 		service := internal.ExposePrometheusCluster(adapter.Resource())
-		if _, err := r.createOrPatch(ctx, service, adapter); err != nil {
+		if err := r.createOrPatch(ctx, service, adapter); err != nil {
 			return err
 		}
 
 		prometheus := internal.PrometheusCluster(adapter.Resource())
-		if _, err := r.createOrPatch(ctx, prometheus, adapter); err != nil {
+		if err := r.createOrPatch(ctx, prometheus, adapter); err != nil {
 			return err
 		}
 	}
@@ -493,64 +493,8 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	return nil
 }
 
-var ignoreObjectMetaFields = []string{
-	"generateName",
-	"finalizers",
-	"clusterName",
-	"managedFields",
-
-	"uid",
-	"resourceVersion",
-	"generation",
-	"creationTimestamp",
-	"deletionTimestamp",
-	"deletionGracePeriodSeconds",
-	"clusterName",
-}
-
-func mutateObject(source, target client.Object) error {
-	sourceFullName, targetFullName :=
-		fmt.Sprintf("%s/%s", source.GetName(), source.GetNamespace()),
-		fmt.Sprintf("%s/%s", target.GetName(), target.GetNamespace())
-	if sourceFullName != targetFullName {
-		return fmt.Errorf("source and target must refer to the same object: %s, %s",
-			sourceFullName, targetFullName)
-	}
-
-	// Map both source and target to Unstructured for further untyped manipulation.
-	src, err := runtime.DefaultUnstructuredConverter.ToUnstructured(source)
-	if err != nil {
-		return err
-	}
-
-	dst, err := runtime.DefaultUnstructuredConverter.ToUnstructured(target)
-	if err != nil {
-		return err
-	}
-
-	// Remove status from source to make sure that
-	// the source does not have any immutable metadata field.
-	unstructured.RemoveNestedField(src, "status")
-
-	for _, f := range ignoreObjectMetaFields {
-		unstructured.RemoveNestedField(src, "metadata", f)
-	}
-
-	// Merge source into target.
-	if err = mergo.Merge(&dst, src, mergo.WithOverride, mergo.WithSliceDeepCopy); err != nil {
-		return err
-	}
-
-	// Map the target back to type object.
-	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(dst, target); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-//nolint:unparam // The boolean return parameter is unused at the moment, but may be useful in the future.
-func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) (bool, error) {
+// The boolean return parameter is unused at the moment, but may be useful in the future.
+func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) error {
 	if templateObject == nil {
 		r.Log.Info("Controller is not able to delete managed resources. This is a known issue",
 			"gitlab", adapter.Reference())
@@ -565,40 +509,24 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 
 	logger.V(2).Info("Setting controller reference")
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), templateObject, r.Scheme); err != nil {
-		return false, err
+	obj := templateObject.DeepCopyObject().(client.Object)
+
+	if err := controllerutil.SetControllerReference(adapter.Resource(), obj, r.Scheme); err != nil {
+		return err
 	}
 
-	existing := templateObject.DeepCopyObject().(client.Object)
+	outcome, err := kube.ApplyObject(obj, apply.WithContext(ctx),
+		apply.WithClient(r.Client), apply.WithLogger(logger))
 
-	if err := r.Get(ctx, key, existing); err != nil {
-		if !errors.IsNotFound(err) {
-			return false, err
-		}
-
-		logger.V(1).Info("Creating object")
-
-		if err := r.Create(ctx, existing); err != nil {
-			return false, err
-		}
-
-		return true, nil
-	}
-
-	mutate := func() error {
-		return mutateObject(templateObject, existing)
-	}
-
-	result, err := controllerutil.CreateOrPatch(ctx, r.Client, existing, mutate)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	if result != controllerutil.OperationResultNone {
-		logger.V(1).Info("createOrPatch result", "result", result)
+	if outcome != kube.ObjectUnchanged {
+		logger.V(1).Info("CreateOrPatch", "outcome", outcome)
 	}
 
-	return true, nil
+	return nil
 }
 
 func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) (bool, bool, error) {
@@ -683,7 +611,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, obj client.Obje
 	}
 
 	if doPatch {
-		if _, err := r.createOrPatch(ctx, ingress, adapter); err != nil {
+		if err := r.createOrPatch(ctx, ingress, adapter); err != nil {
 			return err
 		}
 	}
@@ -720,7 +648,7 @@ func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter 
 
 func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, hpa := range template.Query().ObjectsByKind(gitlabctl.HorizontalPodAutoscalerKind) {
-		if _, err := r.createOrPatch(ctx, hpa, adapter); err != nil {
+		if err := r.createOrPatch(ctx, hpa, adapter); err != nil {
 			return err
 		}
 	}

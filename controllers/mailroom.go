@@ -20,7 +20,7 @@ func (r *GitLabReconciler) reconcileMailroom(ctx context.Context, adapter gitlab
 }
 
 func (r *GitLabReconciler) reconcileMailroomConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.MailroomConfigMap(adapter, template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.MailroomConfigMap(adapter, template), adapter); err != nil {
 		return err
 	}
 
@@ -33,7 +33,7 @@ func (r *GitLabReconciler) reconcileMailroomDeployment(ctx context.Context, adap
 		return err
 	}
 
-	if _, err := r.createOrPatch(ctx, deployment, adapter); err != nil {
+	if err := r.createOrPatch(ctx, deployment, adapter); err != nil {
 		return err
 	}
 

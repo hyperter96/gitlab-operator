@@ -19,7 +19,7 @@ func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitl
 		return nil
 	}
 
-	if _, err := r.createOrPatch(ctx, cfgMap, adapter); err != nil {
+	if err := r.createOrPatch(ctx, cfgMap, adapter); err != nil {
 		return err
 	}
 

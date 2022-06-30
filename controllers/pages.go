@@ -28,7 +28,7 @@ func (r *GitLabReconciler) reconcilePages(ctx context.Context, adapter gitlabctl
 }
 
 func (r *GitLabReconciler) reconcilePagesConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.PagesConfigMap(adapter, template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.PagesConfigMap(adapter, template), adapter); err != nil {
 		return err
 	}
 
@@ -46,13 +46,13 @@ func (r *GitLabReconciler) reconcilePagesDeployment(ctx context.Context, adapter
 		return err
 	}
 
-	_, err := r.createOrPatch(ctx, pages, adapter)
+	err := r.createOrPatch(ctx, pages, adapter)
 
 	return err
 }
 
 func (r *GitLabReconciler) reconcilePagesService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.PagesService(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.PagesService(template), adapter); err != nil {
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (r *GitLabReconciler) reconcilePagesService(ctx context.Context, adapter gi
 }
 
 func (r *GitLabReconciler) reconcilePagesIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.PagesIngress(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.PagesIngress(template), adapter); err != nil {
 		return err
 	}
 

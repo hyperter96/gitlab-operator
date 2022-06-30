@@ -24,7 +24,7 @@ func (r *GitLabReconciler) reconcilePostgres(ctx context.Context, adapter gitlab
 }
 
 func (r *GitLabReconciler) reconcilePostgresConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.PostgresConfigMap(adapter, template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.PostgresConfigMap(adapter, template), adapter); err != nil {
 		return err
 	}
 
@@ -38,7 +38,7 @@ func (r *GitLabReconciler) reconcilePostgresStatefulSet(ctx context.Context, ada
 		return err
 	}
 
-	if _, err := r.createOrPatch(ctx, ss, adapter); err != nil {
+	if err := r.createOrPatch(ctx, ss, adapter); err != nil {
 		return err
 	}
 
@@ -65,7 +65,7 @@ func (r *GitLabReconciler) validateExternalPostgresConfiguration(ctx context.Con
 
 func (r *GitLabReconciler) reconcilePostgresServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, svc := range gitlabctl.PostgresServices(adapter, template) {
-		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
+		if err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
 		}
 	}

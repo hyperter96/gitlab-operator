@@ -12,7 +12,7 @@ import (
 )
 
 func (r *GitLabReconciler) reconcileMigrationsConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.MigrationsConfigMap(adapter, template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.MigrationsConfigMap(adapter, template), adapter); err != nil {
 		return err
 	}
 

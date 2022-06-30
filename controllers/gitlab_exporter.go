@@ -25,7 +25,7 @@ func (r *GitLabReconciler) reconcileGitLabExporter(ctx context.Context, adapter 
 
 func (r *GitLabReconciler) reconcileGitLabExporterConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, cm := range gitlabctl.ExporterConfigMaps(adapter, template) {
-		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
@@ -40,13 +40,13 @@ func (r *GitLabReconciler) reconcileGitLabExporterDeployment(ctx context.Context
 		return err
 	}
 
-	_, err := r.createOrPatch(ctx, exporter, adapter)
+	err := r.createOrPatch(ctx, exporter, adapter)
 
 	return err
 }
 
 func (r *GitLabReconciler) reconcileGitLabExporterService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if _, err := r.createOrPatch(ctx, gitlabctl.ExporterService(template), adapter); err != nil {
+	if err := r.createOrPatch(ctx, gitlabctl.ExporterService(template), adapter); err != nil {
 		return err
 	}
 

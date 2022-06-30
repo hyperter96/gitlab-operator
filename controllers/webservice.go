@@ -26,7 +26,7 @@ func (r *GitLabReconciler) reconcileWebserviceExceptDeployments(ctx context.Cont
 
 func (r *GitLabReconciler) reconcileWebserviceConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, cm := range gitlabctl.WebserviceConfigMaps(template) {
-		if _, err := r.createOrPatch(ctx, cm, adapter); err != nil {
+		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
 		}
 	}
@@ -36,7 +36,7 @@ func (r *GitLabReconciler) reconcileWebserviceConfigMaps(ctx context.Context, ad
 
 func (r *GitLabReconciler) reconcileWebserviceServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
 	for _, svc := range gitlabctl.WebserviceServices(template) {
-		if _, err := r.createOrPatch(ctx, svc, adapter); err != nil {
+		if err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
 		}
 	}
@@ -66,7 +66,7 @@ func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, a
 			return err
 		}
 
-		if _, err := r.createOrPatch(ctx, webservice, adapter); err != nil {
+		if err := r.createOrPatch(ctx, webservice, adapter); err != nil {
 			return err
 		}
 	}

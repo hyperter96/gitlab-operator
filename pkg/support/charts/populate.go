@@ -73,9 +73,8 @@ func (c *PopulateConfig) populate() error {
 
 func (c *PopulateConfig) processDirEntry(path string, d fs.DirEntry, e error) error {
 	if e != nil {
-		c.Logger.V(2).Error(e,
-			"error occurred while searching directory",
-			"path", path)
+		c.Logger.V(2).Info("error occurred while searching directory",
+			"path", path, "error", e)
 
 		return nil
 	}
@@ -112,10 +111,10 @@ func (c *PopulateConfig) tryEntryAsChart(path string, isDir bool) error {
 
 	chart, err := loader.Load(path)
 	if err != nil {
-		c.Logger.V(2).Error(err,
-			"entry does not contain a chart",
+		c.Logger.V(2).Info("entry does not contain a chart",
 			"path", path,
-			"isDirectory", isDir)
+			"isDirectory", isDir,
+			"error", err)
 	} else {
 		c.Logger.V(2).Info("entry contains a chart",
 			"path", path,

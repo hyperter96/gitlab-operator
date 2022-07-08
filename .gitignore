@@ -106,3 +106,5 @@ gsa-kubeconfig.yaml
 
 deploy/chart/Chart.lock
 deploy/chart/charts/*.tgz
+
+.task/

@@ -27,7 +27,7 @@ KIND_LOCAL_IP=${KIND_LOCAL_IP:-""}
 KUBECTL=${KUBECTL:-'kubectl'}
 HELM=${HELM:-'helm'}
 
-MAKE=${MAKE:-'make'}
+TASK=${TASK:-'task'}
 
 KUBERNETES_TIMEOUT=${KUBERNETES_TIMEOUT:-"300s"}
 
@@ -124,7 +124,7 @@ deploy_pages_cert(){
 deploy_operator(){
   if [ -z "${GITLAB_OPERATOR_MANIFEST}" ]; then
     cd "${GITLAB_OPERATOR_DIR}"
-    $MAKE build_operator
+    $TASK build_operator
     $KUBECTL apply -f .build/operator.yaml
   else
     $KUBECTL apply -f "${GITLAB_OPERATOR_MANIFEST}"

@@ -1,0 +1,346 @@
+# Taskfile to be used with `task` binary.
+# Usage:
+# - Install with `asdf`: `asdf plugin add task`
+# - List available tasks with: `task --list`
+# - Run task with: `task build_chart`
+# Documentation: https://taskfile.dev
+
+version: '3'
+
+env:
+
+  # Binaries
+  HELM: helm
+  KUSTOMIZE: kustomize
+  KUBECTL: kubectl
+  CONTAINER_CLI: podman
+
+  # Directories
+  BUILD_DIR: .build
+  INSTALL_DIR: .install
+
+  # Image configuration
+  IMG_REGISTRY: registry.gitlab.com
+  IMG_REPOSITORY: gitlab-org/cloud-native
+  IMG_NAME: gitlab-operator
+  TAG: latest
+
+  # Build and deploy configuration
+  NAME_OVERRIDE: gitlab
+  NAMESPACE: gitlab-system
+  PLATFORM: kubernetes
+  DOMAIN: example.com
+  HOSTSUFFIX: ""
+  TLSSECRETNAME: ""
+  CHART_VERSION: { sh: head -n1 CHART_VERSIONS }
+  VERSION: 0.2.0
+
+  # Bundle configuration
+  BUNDLE_IMG: registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator-bundle
+  BUNDLE_CHANNELS: --channels=$CHANNELS
+  BUNDLE_DEFAULT_CHANNEL: --default-channel=$DEFAULT_CHANNEL
+  BUNDLE_METADATA_OPTS: "$BUNDLE_CHANNELS $BUNDLE_DEFAULT_CHANNEL"
+  BUNDLE_OPTS: --extra-service-accounts=gitlab-manager,gitlab-nginx-ingress,gitlab-app
+
+  # Testing configuration
+  TEST_IMG: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
+
+tasks:
+
+  default:
+    cmds:
+      - task -l
+    silent: true
+
+  dependencies:
+    desc: Ensures dependencies installed.
+    env:
+      GOBIN: { sh: pwd }
+      GO111MODULE: on
+    cmds:
+      - |
+        workdir=`pwd`
+        function download() {
+          set -e
+          local TMP_DIR=$(mktemp -d)
+          cd $TMP_DIR
+          go mod init tmp
+          GOBIN=$workdir GO111MODULE=on go get sigs.k8s.io/$1
+          cd $workdir
+          rm -rf $TMP_DIR
+          unset TMP_DIR
+        }
+        download controller-tools/cmd/controller-gen@v0.7.0
+        download controller-runtime/tools/setup-envtest@latest
+        download kustomize/kustomize/v3@v3.8.7
+    status:
+      - test -f ./controller-gen
+      - test -f ./kustomize
+      - test -f ./setup-envtest
+
+  generate:
+    desc: Generates Kubernetes API extension resources and code with `controller-gen`.
+    deps:
+      - dependencies
+    cmds:
+      - ./controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+  manifests:
+    desc: Generates manifests for CRD and webhook using `controller-gen`.
+    deps:
+      - dependencies
+    cmds:
+      - ./controller-gen rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+  vet:
+    desc: Vets code using `go vet`.
+    cmds:
+      - go vet ./...
+
+  fmt:
+    desc: Formats code using `go fmt`.
+    cmds:
+      - go fmt ./...
+
+  test:
+    desc: Runs tests.
+    deps:
+      - generate
+      - fmt
+      - vet
+      - manifests
+    cmds:
+      - go test ./... -coverprofile cover.out
+
+  manager:
+    desc: Build the manager binary using `go build`.
+    deps:
+      - generate
+      - fmt
+      - vet
+    cmds:
+      - go build -o bin/manager main.go
+
+  run:
+    desc: Run the manager against the cluster configured in ~/.kube/config.
+    deps:
+      - generate
+      - fmt
+      - vet
+      - manifests
+    cmds:
+      - go run ./main.go
+
+  build_dir:
+    desc: Ensures that the build directory is present.
+    cmds:
+      - mkdir -p $BUILD_DIR
+
+  install_dir:
+    desc: Ensures that the install directory is present.
+    cmds:
+      - mkdir -p $INSTALL_DIR
+
+  build_chart:
+    desc: Build out the charts/ directory from the Chart.lock file.
+    cmds:
+      - "$HELM dependency build deploy/chart"
+    sources:
+      - deploy/chart/Chart.yaml
+    generates:
+      - deploy/chart/Chart.lock
+
+  build_operator:
+    desc: Build the Operator manifest using `$HELM template`.
+    deps:
+      - build_dir
+      - build_chart
+    sources:
+      - deploy/chart/**/*
+    cmds:
+      - >-
+        $HELM template deploy/chart
+        --include-crds
+        --namespace $NAMESPACE
+        --set nameOverride=$NAME_OVERRIDE
+        --set image.registry=$IMG_REGISTRY
+        --set image.repository=$IMG_REPOSITORY
+        --set image.name=$IMG_NAME
+        --set image.tag=$TAG
+        > $BUILD_DIR/operator.yaml
+
+  build_operator_openshift:
+    desc: Build the Operator manifest for OpenShift using `$HELM template`.
+    deps:
+      - build_dir
+      - build_chart
+    sources:
+      - deploy/chart/**/*
+    cmds:
+      - >-
+        $HELM template deploy/chart
+        --include-crds
+        --namespace $NAMESPACE
+        --set nameOverride=$NAME_OVERRIDE
+        --set image.registry=$IMG_REGISTRY
+        --set image.repository=$IMG_REPOSITORY
+        --set image.name=$IMG_NAME
+        --set image.tag=$TAG
+        --set scc.apiVersion="security.openshift.io/v1"
+        > $BUILD_DIR/operator-openshift.yaml
+
+  deploy_operator:
+    desc: Deploy controller in the configured cluster using `$HELM upgrade`.
+    deps:
+      - install_dir
+      - build_operator
+    sources:
+      - deploy/chart/**/*
+    cmds:
+      - >-
+        $HELM upgrade gitlab-operator deploy/chart
+        --install
+        --create-namespace
+        --namespace $NAMESPACE
+        --set nameOverride=$NAME_OVERRIDE
+        --set image.registry=$IMG_REGISTRY
+        --set image.repository=$IMG_REPOSITORY
+        --set image.name=$IMG_NAME
+        --set image.tag=$TAG
+        $ARGS
+      - "$HELM -n $NAMESPACE get all gitlab-operator > $INSTALL_DIR/operator.yaml"
+
+  delete_operator:
+    desc: Delete controller from the configured cluster using `$HELM uninstall`.
+    deps:
+      - install_dir
+      - build_operator
+    cmds:
+      - "$HELM uninstall --namespace $NAMESPACE gitlab-operator"
+      - rm $INSTALL_DIR/operator.yaml
+
+  test_cr_files:
+    desc: List of files used for building the test Custom Resource.
+    vars:
+      TEST_CR_FILES:
+        sh: find config/test -type f -name '*.yaml'
+
+  build_test_cr:
+    desc: Build a test GitLab custom resource using `$KUSTOMIZE build`.
+    deps:
+      - build_dir
+      - test_cr_files
+    sources:
+      - "$TEST_CR_FILES"
+    cmds:
+      - (cd config/test && $KUSTOMIZE edit set namespace $NAMESPACE)
+      - >-
+        $KUSTOMIZE build config/test
+        | sed "s/CHART_VERSION/$CHART_VERSION/g"
+        | sed "s/DOMAIN/$DOMAIN/g"
+        | sed "s/HOSTSUFFIX/$HOSTSUFFIX/g"
+        | sed "s/TLSSECRETNAME/$TLSSECRETNAME/g" > $BUILD_DIR/test_cr.yaml
+
+  deploy_test_cr:
+    desc: Applies the test Custom Resource using `$KUBECTL apply`.
+    deps:
+      - build_test_cr
+    sources:
+      - "$BUILD_DIR/test_cr.yaml"
+    cmds:
+      - "$KUBECTL apply -f $BUILD_DIR/test_cr.yaml"
+      - cp $BUILD_DIR/test_cr.yaml $INSTALL_DIR/
+
+  delete_test_cr:
+    desc: Deletes the test Custom Resource using `$KUBECTL delete`.
+    deps:
+      - build_test_cr
+    cmds:
+      - "$KUBECTL delete -f $INSTALL_DIR/test_cr.yaml"
+
+  restore_kustomize_files:
+    desc: Restores the state of the config/test directory using `git checkout`.
+    cmds:
+      - git checkout -q config/test/kustomization.yaml
+
+  clean:
+    desc: Clean up build and install directories.
+    cmds:
+      - rm -rf $BUILD_DIR $INSTALL_DIR
+
+  bundle:
+    desc: Generate bundle manifests and metadata, and then validate generated files.
+    deps:
+      - build_operator
+    cmds:
+      - operator-sdk generate kustomize manifests -q
+      - cat $BUILD_DIR/operator-openshift.yaml | operator-sdk generate bundle -q --overwrite --version $VERSION $BUNDLE_OPTS $BUNDLE_METADATA_OPTS
+      - operator-sdk bundle validate ./bundle
+
+  bundle-build:
+    desc: Builds the bundle image using `podman build`.
+    cmds:
+      - podman build -f bundle.Dockerfile -t $BUNDLE_IMG:$VERSION
+
+  retrieve-charts:
+    desc: Retrieves GitLab charts at the versions in the CHART_VERSIONS file.
+    sources:
+      - ./scripts/retrieve_gitlab_charts.sh
+      - ./CHART_VERSIONS
+    cmds:
+      - ./scripts/retrieve_gitlab_charts.sh
+
+  docker-build:
+    desc: Build the Docker image using `$CONTAINER_CLI build`.
+    deps:
+      - retrieve-charts
+    cmds:
+      - mkdir -p .go/pkg/mod
+      - $CONTAINER_CLI build . -t $IMG_REGISTRY/$IMG_REPOSITORY/$IMG_NAME:$TAG
+
+  docker-push:
+    desc: Push the Docker image using `$CONTAINER_CLI push`.
+    cmds:
+      - $CONTAINER_CLI push $IMG_REGISTRY/$IMG_REPOSITORY/$IMG_NAME:$TAG
+
+  test-in-docker:
+    desc: Runs tests in a Docker container.
+    deps:
+      - retrieve-charts
+    vars:
+      TEST_PKGS: '{{ default "./..." .TEST_PKGS }}'
+    cmds:
+      - echo "Testing {{.TEST_PKGS}} with $CHART_VERSION on $TEST_IMG..."
+      - rm -rf coverage && mkdir coverage
+      - GOPATH=$PWD/.go go mod download
+      - >-
+        docker run --rm -i
+        -v $PWD:/test
+        -w /test
+        -e CHART_VERSION=$CHART_VERSION
+        -e GOPATH="/test/.go"
+        -e HELM_CHARTS="/test/charts"
+        -e KUBECONFIG=""
+        -e USE_EXISTING_CLUSTER="false"
+        $TEST_IMG
+        ginkgo -cover -outputdir=coverage {{.TEST_PKGS}}
+
+  unit-tests-in-docker:
+    desc: Run unit tests in Docker, but skip the slow controller tests.
+    cmds:
+      - task: test-in-docker
+        vars:
+          TEST_PKGS: ./helm/... ./pkg/...
+
+  slow-unit-tests-in-docker:
+    desc: Run unit tests in Docker, focusing on only the slow controller tests.
+    cmds:
+      - task: test-in-docker
+        vars:
+          TEST_PKGS: ./controllers/...
+
+  test-in-docker-clean:
+    desc: Clean up artifacts from testing in Docker.
+    cmds:
+      - rm -rf .go coverage
+      - docker rmi $TEST_IMG

@@ -57,8 +57,8 @@ KIND_IMAGE=${KIND_IMAGE:-""}
 OPERATOR_HOME_DIR=$(realpath ${OPERATOR_HOME_DIR})
 
 build_manifests(){
-  make build_operator_openshift
-  make build_test_cr
+  task build_operator_openshift
+  task build_test_cr
   ( cd config/scorecard; kustomize build ) > ${BUILD_DIR}/scorecard.yaml
   mkdir -p ${OSDK_BASE_DIR}
   ( cd ${OSDK_BASE_DIR}; ln -sf ${OPERATOR_HOME_DIR}/config )
@@ -71,7 +71,7 @@ install_opm(){
     cd ${BUILD_DIR}
     tar -xzf operator-registry-${OPM_VERSION}.tgz
     cd operator-registry-${OPM_VERSION}
-    make bin/opm
+    task bin/opm
   )
   OPM=$(realpath "${BUILD_DIR}/operator-registry-${OPM_VERSION}/bin/opm")
   ls -l ${OPM}

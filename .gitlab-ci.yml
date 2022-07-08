@@ -484,8 +484,8 @@ build_manifest:
   stage: build
   script:
     - export TAG=${CI_COMMIT_TAG:-${TAG}}
-    - make build_operator
-    - make build_operator_openshift
+    - task build_operator
+    - task build_operator_openshift
   artifacts:
     untracked: false
     expire_in: 30 days

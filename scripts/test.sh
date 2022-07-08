@@ -34,7 +34,7 @@ PLATFORM="${PLATFORM:-kubernetes}"
 finish() {
   local exitcode=$?
 
-  make restore_kustomize_files
+  task restore_kustomize_files
 
   if [ $exitcode -ne 0 ]; then
     echo "!!!ERROR!!!"
@@ -92,9 +92,9 @@ install_gitlab_operator() {
   echo 'Installing GitLab operator'
   if [ -n "${REGISTRY_AUTH_SECRET}" ]
   then
-    ARGS="--set \"imagePullSecrets[0].name=${REGISTRY_AUTH_SECRET}\"" make deploy_operator
+    ARGS="--set \"imagePullSecrets[0].name=${REGISTRY_AUTH_SECRET}\"" task deploy_operator
   else
-    make deploy_operator
+    task deploy_operator
   fi
   set -x
   cp ${INSTALL_DIR}/operator.yaml ${INSTALL_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
@@ -108,7 +108,7 @@ verify_operator_is_running() {
 
 build_gitlab_custom_resource() {
   echo 'Building GitLab custom resource manifest'
-  make build_test_cr
+  task build_test_cr
   set -x
   YQ_CMD="."
   [ -n "${REGISTRY_AUTH_SECRET}" ] && \
@@ -157,7 +157,7 @@ cleanup() {
   kubectl delete -f ${BUILD_DIR}/gitlab-${HOSTSUFFIX}.${DOMAIN}.yaml
   set +x
 
-  make delete_operator
+  task delete_operator
 
   set -x
   kubectl delete ns "$TESTS_NAMESPACE"

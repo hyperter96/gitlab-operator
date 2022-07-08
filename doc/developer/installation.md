@@ -20,7 +20,7 @@ Please consult the "Prerequisites" section of the [installation](../installation
 1. Build CRDs and Operator manifests:
 
    ```shell
-   make build_operator
+   task build_operator
    ```
 
    Note: in some cases, you may run into issues resolving dependencies and see an error message such as:
@@ -40,7 +40,7 @@ Please consult the "Prerequisites" section of the [installation](../installation
    ```shell
    PLATFORM=kubernetes # or "openshift"
    kubectl create namespace gitlab-system
-   make deploy_operator # or "make deploy_operator_openshift"
+   task deploy_operator # or "task deploy_operator_openshift"
    ```
 
    This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
@@ -99,7 +99,7 @@ Please consult the "Prerequisites" section of the [installation](../installation
 Certain operations like file removal under `config/` directory may not trigger rebuild/redeploy, in which cases one should employ:
 
 ```shell
-make clean
+task clean
 ```
 
 This will remove all of the build artifacts and the install record.
@@ -124,7 +124,7 @@ This will remove the GitLab instance, and all associated objects except for (PVC
 ### Uninstall the GitLab Operator
 
 ```shell
-make delete_operator
+task delete_operator
 ```
 
 This will delete the Operator's resources, including the running Deployment. It will not delete objects associated with a GitLab instance.

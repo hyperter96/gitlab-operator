@@ -22,6 +22,9 @@ To setup your system for development of the operator, follow the steps below:
 
    To contribute code to the current GitLab Operator release, you will need at least operator SDK v1.0.0.
 
+1. Install `task` per the [official installation instructions](https://taskfile.dev/#/installation).
+    - We use [`task` in place of `make`](../adr/0016-replace-makefile-with-taskfile.md) for this project.
+
 1. Clone the `gitlab-operator` repository into your GOPATH.
 
    ```shell
@@ -91,30 +94,30 @@ $ tree -dL 2 .
 
 ### Additional Resources
 
-The `Makefile` allows us to customize manage different tasks such as:
+The `Taskfile` allows us to customize manage different tasks such as:
 
 - Creating an Operator Lifecycle Manager bundle
 
   ```shell
-  make bundle
+  task bundle
   ```
 
 - Building a container image for the operator
 
   ```shell
-  make docker-build IMG=quay.io/<username>/gitlab-operator:latest
+  task docker-build IMG=quay.io/<username>/gitlab-operator:latest
   ```
 
 - Pushing the image to a container registry
 
   ```shell
-  make docker-push IMG=quay.io/<username>/gitlab-operator:latest
+  task docker-push IMG=quay.io/<username>/gitlab-operator:latest
   ```
 
 - Run the operator locally to test changes
 
   ```shell
-  make run
+  task run
   ```
 
 - Run unit tests locally in Docker:

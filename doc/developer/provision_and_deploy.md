@@ -28,7 +28,7 @@ Parameters are passed via environment variables:
 | `KIND_LOCAL_IP`| yes, for KinD | | Local IP required to provision Certs etc for the domain `${LOCAL_IP}.nip.io` |
 | `KUBECTL` | no | `kubectl` | path to `kubectl` command |
 | `HELM` | no | `helm` | path to `helm` command |
-| `MAKE` | no | `helm` | path to GNU `make` command |
+| `TASK` | no | `task` | path to `task` command |
 
 ### Tool pointer variables (`$KIND`, `$KUBECTL`, `$HELM`, etc.)
 

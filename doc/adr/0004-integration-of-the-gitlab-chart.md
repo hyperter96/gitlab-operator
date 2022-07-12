@@ -9,7 +9,7 @@ Accepted
 ## Context
 
 Leveraging the GitLab Chart greatly accelerates the progression of the GitLab Operator by capturing the
-objects and logic from the charts. 
+objects and logic from the charts.
 
 ## Decision
 

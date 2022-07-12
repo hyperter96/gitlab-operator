@@ -15,7 +15,7 @@ See also discussion in [merge request 181](https://gitlab.com/gitlab-org/cloud-n
 
 ## Decision
 
-It has been decided to maintain single `Makefile` with all of the original scaffolding and our changes for the time being for simplicity. 
+It has been decided to maintain single `Makefile` with all of the original scaffolding and our changes for the time being for simplicity.
 
 ## Consequences
 

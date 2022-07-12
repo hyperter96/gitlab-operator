@@ -52,13 +52,13 @@ To publish the GitLab Operator to OperatorHub:
 1. Test Operator bundle in local KinD cluster:
 
    1. `BUNDLE_REGISTRY` has to point to a valid public registry (create your own project/registry for that purpose):
-       
+
        ```shell
        export BUNDLE_REGISTRY=registry.gitlab.com/dmakovey/gitlab-operator-bundle
        ```
 
    1. `podman` (or `docker`) has to be logged into `BUNDLE_REGISTRY`
- 
+
    Note that we're temporarily overriding previously set values to have Kind-Specific bundle etc.
 
    ```shell
@@ -97,7 +97,7 @@ To publish the GitLab Operator to OperatorHub:
 
       ```shell
       KIND_CLUSTER_NAME="optest1" GITLAB_CR_DEPLOPOY_MODE="ss" LOCAL_IP=192.168.3.194 GITLAB_CHART_DIR=~/work/gitlab GITLAB_OPERATOR_DOMAIN=192.168.3.194.nip.io GITLAB_OPERATOR_DIR=. scripts/provision_and_deploy.sh  deploy_gitlab
-      ``` 
+      ```
 
    1. Delete KinD cluster:
 

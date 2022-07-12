@@ -10,7 +10,7 @@ Relates to [5. Versioning of the operator](0005-versioning-of-the-operator.md)
 
 ## Context
 
-Repo tagging direcly affects our releases as we derive release version from tags. In the past 
+Repo tagging direcly affects our releases as we derive release version from tags. In the past
 there was a practice to prefix version tags with `v`.
 
 Issue has been brought up in general terms at Distribution Team's weekly meeting on Aug 09, 2021.

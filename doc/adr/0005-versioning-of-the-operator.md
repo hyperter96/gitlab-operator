@@ -13,9 +13,9 @@ Relates to [9. version tagging](0009-version-tagging.md)
 ## Context
 
 The intention is to version the operator matching the version number as the
-GitLab application and be on the same monthly release schedule. 
-There is a need tightly control the SA's of the application, to reduce the impact 
-for the need of AnyUID. There are several hurdles to overcome and achieve matching 
+GitLab application and be on the same monthly release schedule.
+There is a need tightly control the SA's of the application, to reduce the impact
+for the need of AnyUID. There are several hurdles to overcome and achieve matching
 the version numbers.
 
 - Operator needs to support a greater feature parity with GitLab Helm chart

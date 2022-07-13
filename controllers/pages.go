@@ -60,7 +60,7 @@ func (r *GitLabReconciler) reconcilePagesService(ctx context.Context, adapter gi
 }
 
 func (r *GitLabReconciler) reconcilePagesIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
-	if err := r.createOrPatch(ctx, gitlabctl.PagesIngress(template), adapter); err != nil {
+	if err := r.reconcileIngress(ctx, gitlabctl.PagesIngress(template), adapter); err != nil {
 		return err
 	}
 

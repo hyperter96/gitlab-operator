@@ -498,6 +498,7 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 	if templateObject == nil {
 		r.Log.Info("Controller is not able to delete managed resources. This is a known issue",
 			"gitlab", adapter.Reference())
+		return nil
 	}
 
 	key := client.ObjectKeyFromObject(templateObject)
@@ -533,6 +534,7 @@ func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject cl
 	if templateObject == nil {
 		r.Log.Info("Controller is not able to delete managed resources. This is a known issue",
 			"gitlab", adapter.Reference())
+		return false, false, nil
 	}
 
 	key := client.ObjectKeyFromObject(templateObject)
@@ -576,8 +578,17 @@ func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject cl
 	return false, true, nil
 }
 
-func (r *GitLabReconciler) reconcileIngress(ctx context.Context, obj client.Object, adapter gitlabctl.CustomResourceAdapter) error {
-	ingress, err := internal.AsIngress(obj)
+func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) error {
+	if templateObject == nil {
+		r.Log.V(2).Info("Controller received a nil templateObject",
+			"type", "Ingress",
+			"gitlab", adapter.Reference(),
+			"namespace", adapter.Namespace())
+
+		return nil
+	}
+
+	ingress, err := internal.AsIngress(templateObject)
 	if err != nil {
 		return err
 	}

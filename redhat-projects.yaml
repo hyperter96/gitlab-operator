@@ -1,5 +1,5 @@
 ---
 gitlab-operator:
-  ospid: ospid-a369d742-5890-45e9-a303-6926cbe8e171
-  pid: 5e96152f4b2cf9c97fb2cc26
+  ospid: ospid-629f9d952cb3e76438a9d40e
+  pid: 629f9d952cb3e76438a9d40e
   version_variable: OPERATOR_VERSION

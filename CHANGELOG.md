@@ -1,3 +1,9 @@
+## 0.10.0 (2022-07-22)
+
+### other (1 change)
+
+- [Add .task/ to gitignore](gitlab-org/cloud-native/gitlab-operator@318e1a386eca5970960e166dcab053b1efab9b26) ([merge request](gitlab-org/cloud-native/gitlab-operator!481))
+
 ## 0.9.3 (2022-07-19)
 
 No changes.

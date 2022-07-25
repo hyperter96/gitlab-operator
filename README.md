@@ -34,7 +34,7 @@ An example GitLab object is shown below:
 apiVersion: apps.gitlab.com/v1beta1
 kind: GitLab
 metadata:
-  name: example
+  name: gitlab
 spec:
   chart:
     version: "X.Y.Z"

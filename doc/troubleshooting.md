@@ -72,6 +72,35 @@ Issue [#305](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues
 has been created to track the reporting of which core service is stopping
 the deployment of the GitLab instance.
 
+### GitLab UI unreachable (Ingresses have no address and/or CertManager Challenges failing)
+
+The GitLab Operator's installation manifest and Helm Chart use `gitlab` as the prefix
+for all resource names by default unless `nameOverride` is specified in the Helm values.
+
+As a result, the NGINX IngressClass will be named `gitlab-nginx`. If a release name other than
+`gitlab` is specified in the GitLab CustomResource under `metadata.name`, then the default
+IngressClass name must be set explicitly under `global.ingress.class`:
+
+For example: if `metadata.name` is set to `demo`, then set `global.ingress.class=gitlab-nginx`:
+
+```yaml
+apiVersion: apps.gitlab.com/v1beta1
+kind: GitLab
+metadata:
+  name: demo
+spec:
+  chart:
+    version: "X.Y.Z"
+    values:
+      global:
+        ingress:
+          # Use the correct IngressClass name.
+          class: gitlab-nginx
+```
+
+Without this explicit setting, the Ingresses would attempt to find an Ingress named
+`demo-nginx`, which does not exist.
+
 ### NGINX Ingress Controller pods missing
 
 In an OpenShift environment the

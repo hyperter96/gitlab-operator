@@ -114,7 +114,7 @@ Ingress in OpenShift requires extra consideration. See our [notes on OpenShift I
    apiVersion: apps.gitlab.com/v1beta1
    kind: GitLab
    metadata:
-     name: example
+     name: gitlab
    spec:
      chart:
        version: "X.Y.Z" # https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/0.8.1/CHART_VERSIONS

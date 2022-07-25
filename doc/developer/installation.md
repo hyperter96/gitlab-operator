@@ -58,7 +58,7 @@ Please consult the "Prerequisites" section of the [installation](../installation
    apiVersion: apps.gitlab.com/v1beta1
    kind: GitLab
    metadata:
-     name: example
+     name: gitlab
    spec:
      chart:
        version: "X.Y.Z" # select a version from the CHART_VERSIONS file in the root of this project

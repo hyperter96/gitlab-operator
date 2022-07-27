@@ -1,6 +1,9 @@
 package charts
 
 import (
+	"log"
+
+	"github.com/mitchellh/copystructure"
 	"helm.sh/helm/v3/pkg/chart"
 )
 
@@ -22,7 +25,17 @@ func (c Catalog) Query(criteria ...Criterion) Catalog {
 
 	for _, chart := range c {
 		if All(criteria...)(chart) {
-			result = append(result, clone(chart))
+			/*
+			 * NB: We ignore the error because we can not handle it here. When
+			 *     this error occurs it means that a fundamental assumption
+			 *     about Chart data structure is wrong.
+			 */
+			cc, err := clone(chart)
+			if err != nil {
+				log.Printf("WARNING: Chart catalog is unable to clone %s.", chart.Name())
+			}
+
+			result = append(result, cc)
 		}
 	}
 
@@ -130,15 +143,32 @@ func (c Catalog) collect(operator func(*chart.Chart) string) []string {
 	return result
 }
 
-func clone(in *chart.Chart) *chart.Chart {
+func clone(in *chart.Chart) (*chart.Chart, error) {
 	/*
-	 *  CAUTION:
-	 *
-	 *   This does a shallow copy of the incoming Chart structure and a true
-	 *   clone of it. But for our purpose this is enough and we do not use
-	 *   a reflection-based deep copy.
-	 *
+	 *  This is a limited deep copy of a Chart. It only clones the values of
+	 *  a Chart and does the same for its dependencies, including transitive
+	 *  dependencies. As a result the reference to the dependencies changes
+	 *  but all other attributes except values remain the same.
 	 */
 	out := *in
-	return &out
+
+	if v, err := copystructure.Copy(out.Values); err != nil {
+		return &out, err
+	} else {
+		out.Values = v.(map[string]interface{})
+	}
+
+	depList := make([]*chart.Chart, 0, len(out.Dependencies()))
+
+	for _, dep := range out.Dependencies() {
+		if depCopy, err := clone(dep); err != nil {
+			return &out, err
+		} else {
+			depList = append(depList, depCopy)
+		}
+	}
+
+	out.SetDependencies(depList...)
+
+	return &out, nil
 }

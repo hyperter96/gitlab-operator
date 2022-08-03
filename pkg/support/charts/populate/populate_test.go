@@ -40,6 +40,10 @@ var _ = Describe("Populate", func() {
 	})
 })
 
+/*
+ * This is a catalog test but it uses PopulateOptions and is placed here to
+ * avoid circular dependency.
+ */
 var _ = Describe("Query", func() {
 	/* Use the test scaffolding from Populate */
 	c := &charts.Catalog{}
@@ -87,48 +91,60 @@ var _ = Describe("Query", func() {
 		Expect(r[1].Metadata.Name).To(Equal("chart-1"))
 	})
 
-	It("makes a copy of the original Chart", func() {
-		val := map[string]interface{}{
-			"foo": "bar",
-		}
+	It("makes a copy of the original Chart values and its dependencies", func() {
 		chrt := &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    "test",
 				Version: "1.0.0",
 			},
-			Values: val,
-		}
-		dep1 := &chart.Chart{
-			Metadata: &chart.Metadata{
-				Name:    "test-dep-1",
-				Version: "1.0.0",
+			Values: map[string]interface{}{
+				"a": "A",
+				"b": map[string]interface{}{
+					"c": "C",
+				},
 			},
 		}
-		dep2 := &chart.Chart{
+		dep := &chart.Chart{
 			Metadata: &chart.Metadata{
-				Name:    "test-dep-2",
+				Name:    "dependency",
 				Version: "1.0.0",
 			},
+			Values: map[string]interface{}{
+				"a": "A",
+				"b": map[string]interface{}{
+					"c": "C",
+				},
+			},
 		}
-		chrt.SetDependencies(dep1, dep2)
+		chrt.SetDependencies(dep)
+
 		c := &charts.Catalog{
 			chrt,
 		}
 
 		r1 := c.Query(charts.WithName("test")).First()
 
+		Expect(r1).NotTo(BeIdenticalTo(c))
+		Expect(r1.Dependencies()[0]).NotTo(BeIdenticalTo(dep))
+
 		/* imitate Chart rendering with Helm SDK */
-		r1.Values["bar"] = "baz"
-		r1.SetDependencies(dep2)
+		r1.Values["a"] = "A1"
+		r1.Values["x"] = "X"
+		r1.Values["b"].(map[string]interface{})["c"] = "C2"
+		r1.Dependencies()[0].Values["b"].(map[string]interface{})["c"] = "C4"
+
+		Expect(chrt.Values["b"].(map[string]interface{})["c"]).To(Equal("C"))
+		Expect(dep.Values["b"].(map[string]interface{})["c"]).To(Equal("C"))
 
 		r2 := c.Query(charts.WithName("test")).First()
 
-		Expect(r2.Dependencies()).To(ConsistOf(dep1, dep2))
+		Expect(r2).NotTo(BeIdenticalTo(c))
+		Expect(r2.Dependencies()[0]).NotTo(BeIdenticalTo(dep))
 
-		/* Skip these because of shallow copy */
-
-		// Expect(r2.Values).To(HaveKeyWithValue("foo", "bar"))
-		// Expect(r2.Values).NotTo(HaveKeyWithValue("bar", "baz"))
+		Expect(r2.Values).To(HaveKeyWithValue("a", "A"))
+		Expect(r2.Values["b"].(map[string]interface{})["c"]).To(Equal("C"))
+		Expect(r2.Dependencies()[0].Values["b"].(map[string]interface{})["c"]).To(Equal("C"))
+		Expect(r2.Values).NotTo(HaveKeyWithValue("x", "X"))
 	})
 })
 

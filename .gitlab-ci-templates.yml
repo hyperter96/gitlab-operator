@@ -70,9 +70,6 @@
   # so we'll let things fail until it is fixed
   allow_failure: true
 
-variables:
-  REDHAT_PROJECT_JSON: '{"gitlab-operator":{"ospid":"ospid-a369d742-5890-45e9-a303-6926cbe8e171","pid":"5e96152f4b2cf9c97fb2cc26"}}'
-
 .cache:
   variables:
     GOPATH: "${CI_PROJECT_DIR}/.go"

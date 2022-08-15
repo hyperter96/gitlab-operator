@@ -9,6 +9,7 @@ variables:
   DOMAIN_OPENSHIFT_4_8: "apps.ocp-ci-4821.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_9: "apps.ocp-ci-4917.k8s-ft.win"
   DOMAIN_GKE: "gitlab-operator.k8s-ft.win"
+  DOMAIN_GKE122: "gitlab-operator-v122.k8s-ft.win"
   # Namespace built into default manifest
   NAMESPACE: "gitlab-system"
   TAG: ${CI_COMMIT_SHORT_SHA}
@@ -369,6 +370,36 @@ review_gke:
   environment: *environment_gke
   resource_group: *env_gke_name
 
+build_review_gke122:
+  extends: .build_review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE122
+    PLATFORM: kubernetes
+
+create_review_gke122:
+  extends: .create_review_template
+  environment: &environment_gke122
+    name: &env_gke_name122 gke122/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE122
+    on_stop: stop_review_gke122
+    auto_stop_in: 1 hour
+  needs:
+    - build_review_gke122
+
+review_gke122:
+  extends: .review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE122
+    PLATFORM: kubernetes
+  before_script:
+    - export KUBECONFIG="$KUBECONFIG_GKE122"
+  needs:
+    - create_review_gke122
+    # we need build_* dependency to receive appropriate artifacts
+    - build_review_gke122
+  environment: *environment_gke122
+  resource_group: *env_gke_name122
+
 qa_4_8:
   extends: .qa
   stage: qa
@@ -392,6 +423,14 @@ qa_gke:
     DOMAIN: $DOMAIN_GKE
   needs:
     - review_gke
+
+qa_gke122:
+  extends: .qa
+  stage: qa
+  variables:
+    DOMAIN: $DOMAIN_GKE122
+  needs:
+    - review_gke122
 
 stop_review_openshift_4_8:
   extends: .stop_review_template
@@ -428,6 +467,18 @@ stop_review_gke:
     action: stop
   needs:
     - build_review_gke
+
+stop_review_gke122:
+  extends: .stop_review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE122
+  before_script:
+    - export KUBECONFIG="$KUBECONFIG_GKE122"
+  environment:
+    name: *env_gke_name122
+    action: stop
+  needs:
+    - build_review_gke122
 
 image_certification:
   stage: certification

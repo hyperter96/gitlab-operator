@@ -7,6 +7,9 @@
 .if_release_tag_on_dev: &if_release_tag_on_dev
   if: '$CI_SERVER_HOST == "dev.gitlab.org" && $CI_PROJECT_PATH == "gitlab/cloud-native/gitlab-operator" && $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+(-(rc|RC|beta)\d*)?$/'
 
+.if_release_tag_on_canonical: &if_release_tag_on_canonical
+  if: '$CI_SERVER_HOST == "gitlab.com" && $CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator" && $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+(-(rc|RC|beta)\d*)?$/'
+
 .skip_if_release_tag: &skip_if_release_tag
   <<: *if_release_tag
   when: never
@@ -60,9 +63,10 @@
   <<: *if_release_tag
   when: manual
 
-.manual_if_release_tag_on_dev: &manual_if_release_tag_on_dev
+.delayed_if_release_tag_on_dev: &delayed_if_release_tag_on_dev
   <<: *if_release_tag_on_dev
-  when: manual
+  when: delayed
+  start_in: 1 hour
 
 .if_redhat_certification: &if_redhat_certification
   if: '$REDHAT_CERTIFICATION == "true"'

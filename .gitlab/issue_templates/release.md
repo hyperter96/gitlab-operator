@@ -20,5 +20,4 @@ Much of the process is automated by [release-tools](https://gitlab.com/gitlab-or
        [container registry](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/container_registry).
 1. [ ] [Release to OperatorHub.io](doc/developer/operatorhub_publishing.md).
 1. [ ] [Release to OpenShift OperatorHub.io](doc/developer/operatorhub_publishing.md)
-
-/assign @mnielsen @pursultani
+1. [ ] [Submit OLM bundle for OpenShift certification](doc/developer/redhat_certification.md)

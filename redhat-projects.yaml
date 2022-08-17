@@ -3,3 +3,7 @@ gitlab-operator:
   ospid: ospid-629f9d952cb3e76438a9d40e
   pid: 629f9d952cb3e76438a9d40e
   version_variable: OPERATOR_VERSION
+
+gitlab-operator-bundle:
+  ospid: ospid-219d1981-b35e-4a66-84d7-3216ca91ded3
+  pid: 5f6cbaa04fcb1bc3f0425fbf

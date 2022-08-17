@@ -21,3 +21,5 @@ Much of the process is automated by [release-tools](https://gitlab.com/gitlab-or
 1. [ ] [Release to OperatorHub.io](doc/developer/operatorhub_publishing.md).
 1. [ ] [Release to OpenShift OperatorHub.io](doc/developer/operatorhub_publishing.md)
 1. [ ] [Submit OLM bundle for OpenShift certification](doc/developer/redhat_certification.md)
+
+/assign @mnielsen @pursultani

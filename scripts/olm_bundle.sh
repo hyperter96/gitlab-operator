@@ -116,6 +116,8 @@ patch_bundle(){
   ## Currently neither OLM nor OperatorSDK can't handle IngressClass presence gracefully
   ## https://github.com/operator-framework/operator-sdk/issues/5491
   # ${YQ} eval '.metadata.name="gitlab-nginx"' ${OPERATOR_HOME_DIR}/config/rbac/nginx_ingressclass.yaml > ${OSDK_BASE_DIR}/bundle/manifests/gitlab-nginx-ingressclass.yaml
+  rm -rf ${OSDK_BASE_DIR}/bundle/manifests/acme.cert-manager.io*
+  rm -rf ${OSDK_BASE_DIR}/bundle/manifests/cert-manager.io*
 }
 
 validate_bundle(){

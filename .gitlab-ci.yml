@@ -53,6 +53,8 @@ include:
       - if: '$CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator"'
   - local: .gitlab-ci-templates.yml
 
+
+
 default:
   interruptible: true
 
@@ -485,31 +487,37 @@ image_certification:
   stage: certification
   variables:
     DOCKER_AUTH_FILE: /run/containers/0/auth.json
+    REGISTRY_USER: $RH_CERTIFICATION_REGISTRY_USER
+    REGISTRY_PASSWORD: $RH_CERTIFICATION_REGISTRY_PASSWORD 
+    COMPONENT_NAME: gitlab-operator
   image: registry.gitlab.com/gitlab-org/cloud-native/preflight:1.2.1
   retry: 1
   allow_failure: true
   before_script:
-    - podman login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - REGISTRY_USER=${REGISTRY_USER:-${CI_REGISTRY_USER:-unused}}
+    - REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-$CI_REGISTRY_PASSWORD}
+    - podman login -u ${REGISTRY_USER} -p ${REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - '[[ -d reports ]] || mkdir reports'
   script:
     - CERTIFY_TAG=${CI_COMMIT_SHORT_SHA}
     - SUBMIT=""
-    - REDHAT_PID=$(yq eval '.["gitlab-operator"].ospid' redhat-projects.yaml)
+    - REDHAT_PROJECT_ID=${REDHAT_PROJECT_ID:-$(yq eval ".${COMPONENT_NAME}.ospid" redhat-projects.yaml)}
     - |
-      if [ -n "$CI_COMMIT_TAG" -o "${REDHAT_CERTIFICATION}" == "true" ] ; then 
+      if [ -n "$REDHAT_PROJECT_ID" -a -n "$REDHAT_API_TOKEN" ] ; then 
         echo "Image will be submitted to RedHat for Certification"
         SUBMIT="--submit"
         export PFLT_PYXIS_API_TOKEN="${REDHAT_API_TOKEN}"
-        export PFLT_CERTIFICATION_PROJECT_ID="${REDHAT_PID}"
+        export PFLT_CERTIFICATION_PROJECT_ID="${REDHAT_PROJECT_ID}"
         CERTIFY_TAG=${CI_COMMIT_TAG:-${CERTIFY_TAG}}
       fi
     - CERTIFY_IMAGE="${CI_REGISTRY_IMAGE}:${CERTIFY_TAG}"
     - echo "Running preflight certification check for ${CERTIFY_IMAGE}"
-    - preflight check container ${CERTIFY_IMAGE} ${SUBMIT} --docker-config="${DOCKER_AUTH_FILE}" > certification-report.json
-    - test "$(jq .passed certification-report.json)" == 'true' 
+    - preflight check container ${CERTIFY_IMAGE} ${SUBMIT} --docker-config="${DOCKER_AUTH_FILE}" > reports/${COMPONENT_NAME}-cert.json
+    - test "$(jq .passed reports/${COMPONENT_NAME}-cert.json)" == 'true' 
   artifacts:
     untracked: false
     paths:
-      - certification-report.json
+      - reports/*
 
 build_chart:
   stage: build

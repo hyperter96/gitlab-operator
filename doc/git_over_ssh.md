@@ -1,6 +1,6 @@
 # Support for Git over SSH
 
-This document provides configuration guidelines for GitLab's support for Git over SSH on various environments/platforms.
+This document provides configuration guidelines for Git over SSH on various environments/platforms.
 
 ## Overview
 
@@ -21,7 +21,7 @@ Below is a list of Ingress providers along with relevant notes and platform-spec
 
 ### NGINX-Ingress Helm Chart
 
-GitLab's [forked `NGINX-ingress` chart](https://docs.gitlab.com/charts/charts/nginx/fork.html) can be used to deploy NGINX resources that have been modified to support Git over SSH "out of the box".
+GitLab maintains a [forked `NGINX-ingress` chart](https://docs.gitlab.com/charts/charts/nginx/fork.html) that can be used to deploy NGINX resources that have been modified to support Git over SSH "out of the box".
 
 This is the default configuration when using the GitLab Operator, and is controlled via `nginx-ingress.enabled={true,false}` in the GitLab CR. When set to `false`, you can use an [external NGINX instance](https://docs.gitlab.com/charts/advanced/external-nginx/).
 

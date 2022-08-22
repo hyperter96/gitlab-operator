@@ -23,7 +23,8 @@ Please consult the "Prerequisites" section of the [installation](../installation
    task build_operator
    ```
 
-   Note: in some cases, you may run into issues resolving dependencies and see an error message such as:
+   NOTE:
+   In some cases, you may run into issues resolving dependencies and see an error message such as:
 
    ```shell
    go get: github.com/openshift/api@v3.9.0+incompatible: invalid version: unknown revision v3.9.0
@@ -45,7 +46,8 @@ Please consult the "Prerequisites" section of the [installation](../installation
 
    This command first deploys the service accounts, roles and role bindings used by the operator, and then the operator itself.
 
-   Note: by default, the Operator will only watch the namespace where it is deployed. If you would like it to watch at the cluster scope,
+   NOTE:
+   By default, the Operator will only watch the namespace where it is deployed. If you would like it to watch at the cluster scope,
    modify [`deploy/chart/values.yaml`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/deploy/chart/values.yaml) by setting `watchCluster` to `true`.
 
 1. Create a GitLab custom resource (CR).

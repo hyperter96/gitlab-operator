@@ -40,7 +40,7 @@ The security context constraints will be tightened in future releases as the
 full _read/write_ behaviors of the GitLab application are validated within
 the OpenShift security model.
 
-Note:
+NOTE:
 Administrators coming to Cloud Native GitLab from Omnibus should note that
 Omnibus tasks performed with `sudo` are handled by OpenShift and the
 underlying Kubernetes engine. Pods are individual services which, in GitLab

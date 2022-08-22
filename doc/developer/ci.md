@@ -107,13 +107,15 @@ ocp-ci-4717-abcde-worker-c-5gq6r.c.cloud-native-123456.internal   Ready    worke
 - For our `4.8` OpenShift Cluster: `CLUSTER_VERSION=4.8 ENVIRONMENT=openshift GOOGLE_APPLICATION_CREDENTIALS=gitlab-operator-ci-gcloud-externaldns.json ./ci/scripts/install_external_dns.sh`
 - For our `4.9` OpenShift Cluster: `CLUSTER_VERSION=4.9 ENVIRONMENT=openshift GOOGLE_APPLICATION_CREDENTIALS=gitlab-operator-ci-gcloud-externaldns.json ./ci/scripts/install_external_dns.sh`
 
-Note: `gitlab-operator-ci-gcloud-externaldns.json` is a file containing the credentials for the external-dns ServiceAccount created in GCP. You can find this credentials file in 1Password by searching for `externaldns` in the `Cloud Native` vault.
+NOTE:
+`gitlab-operator-ci-gcloud-externaldns.json` is a file containing the credentials for the external-dns ServiceAccount created in GCP. You can find this credentials file in 1Password by searching for `externaldns` in the `Cloud Native` vault.
 
 ## Configuration
 
 ### Job timeouts
 
-Note: timeouts for Jobs can be configured. If the timeout is reached, then the GitLab Controller will return an error that the Job could not be completed in time.
+NOTE:
+Timeouts for Jobs can be configured. If the timeout is reached, then the GitLab Controller will return an error that the Job could not be completed in time.
 
 To configure these, update the `env` value in
 [`deploy/chart/values.yaml`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/deploy/chart/values.yaml).

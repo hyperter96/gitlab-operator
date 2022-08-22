@@ -148,6 +148,9 @@ lint_docs_markdown:
   before_script: []
   dependencies: []
   script:
+    # Lint prose
+    - vale --minAlertLevel error --output=doc/.vale/vale.tmpl doc
+    # Lint Markdown
     - markdownlint --config .markdownlint.yml 'doc/**/*.md'
   rules:
     - !reference [.skip_if_dev_mirror]

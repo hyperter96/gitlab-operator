@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
@@ -69,5 +70,25 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 		Expect(supported).To(BeTrue())
 		Expect(err).To(BeNil())
+	})
+
+	It("should render expected RBAC", func() {
+		mockGitLab := CreateMockGitLab(releaseName, namespace, support.Values{})
+		adapter := CreateMockAdapter(mockGitLab)
+		values := adapter.Values()
+
+		expected := map[string]string{
+			"global.serviceAccount.name":                       settings.AppNonRootServiceAccount,
+			"gitlab.webservice.serviceAccount.name":            settings.AppAnyUIDServiceAccount,
+			"shared-secrets.serviceAccount.name":               settings.ManagerServiceAccount,
+			"redis.serviceAccount.name":                        settings.AppNonRootServiceAccount,
+			"postgresql.serviceAccount.name":                   settings.AppNonRootServiceAccount,
+			"nginx-ingress.serviceAccount.name":                settings.NGINXServiceAccount,
+			"nginx-ingress.defaultBackend.serviceAccount.name": settings.AppNonRootServiceAccount,
+		}
+
+		for key, value := range expected {
+			Expect(values.GetString(key)).To(Equal(value))
+		}
 	})
 })

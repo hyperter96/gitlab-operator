@@ -68,7 +68,6 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
@@ -125,10 +124,6 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if err := r.setStatusCondition(ctx, adapter, ConditionAvailable, false, "GitLab is starting but not yet available"); err != nil {
-		return requeue(err)
-	}
-
-	if err := r.reconcileServiceAccount(ctx, adapter); err != nil {
 		return requeue(err)
 	}
 
@@ -636,25 +631,6 @@ func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context,
 	_, _, err := r.createOrUpdate(ctx, issuer, adapter)
 
 	return err
-}
-
-func (r *GitLabReconciler) reconcileServiceAccount(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
-	sa := internal.ServiceAccount("gitlab-app", adapter.Namespace())
-	found := &corev1.ServiceAccount{}
-	lookupKey := types.NamespacedName{Name: sa.Name, Namespace: adapter.Namespace()}
-
-	if err := r.Get(ctx, lookupKey, found); err != nil {
-		// gitlab-app ServiceAccount not found
-		if errors.IsNotFound(err) {
-			if err := r.Create(ctx, sa); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {

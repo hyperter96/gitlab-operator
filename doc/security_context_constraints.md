@@ -32,8 +32,8 @@ Pods deployed by the Operator to satisfy GitLab custom resources use the
 _**anyuid**_ security context constraint. Security context constraints for
 third party operators and resources are [covered in the next section](#third-party-resource-definitions).
 
-The `gitlab-app` ServiceAccount has no granted privileges. It exists solely
-to bind the _**anyuid**_ security context constraint to GitLab application
+The `gitlab-app-anyuid` and `gitlab-app-nonroot` ServiceAccounts have no granted privileges. They exists solely
+to bind the _**anyuid**_ and _**nonroot**_ security context constraints to GitLab application
 pods.
 
 The security context constraints will be tightened in future releases as the

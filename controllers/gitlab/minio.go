@@ -29,7 +29,7 @@ func MinioJob(adapter CustomResourceAdapter, template helm.Template) client.Obje
 	var rootUser int64
 
 	job := obj.(*batchv1.Job)
-	job.Spec.Template.Spec.ServiceAccountName = settings.AppServiceAccount
+	job.Spec.Template.Spec.ServiceAccountName = settings.AppAnyUIDServiceAccount
 	job.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 		RunAsUser: &rootUser,
 		FSGroup:   &rootUser,
@@ -45,7 +45,7 @@ func MinioDeployment(adapter CustomResourceAdapter, template helm.Template) clie
 	// Set ServiceAccountName, as the Helm Chart does not currently support setting it.
 	// https://gitlab.com/gitlab-org/charts/gitlab/-/issues/3192
 	deployment := obj.(*appsv1.Deployment)
-	deployment.Spec.Template.Spec.ServiceAccountName = settings.AppServiceAccount
+	deployment.Spec.Template.Spec.ServiceAccountName = settings.AppNonRootServiceAccount
 
 	return deployment
 }

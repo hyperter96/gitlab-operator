@@ -17,7 +17,6 @@ import (
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
@@ -136,10 +135,6 @@ var _ = Describe("GitLab controller", func() {
 				cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 				sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
 				postgresQuery := fmt.Sprintf("app.kubernetes.io/instance=%s-%s", releaseName, gitlabctl.PostgresComponentName)
-
-				By("Checking ServiceAccount exists for Shared secrets Job")
-				Eventually(getObjectPromise(settings.AppServiceAccount, &corev1.ServiceAccount{}),
-					PollTimeout, PollInterval).Should(Succeed())
 
 				By("Checking Shared secrets Job and its ConfigMap are created")
 				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),

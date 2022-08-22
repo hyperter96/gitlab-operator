@@ -232,7 +232,7 @@ func addChartDefaultExamples(examples support.Values) {
 
 func addOperatorDefaultExamples(examples support.Values) {
 	examples["certmanager-issuer.email"] = "admin@example.com"
-	examples["global.serviceAccount.name"] = settings.AppServiceAccount
+	examples["global.serviceAccount.name"] = settings.AppNonRootServiceAccount
 	examples["shared-secrets.serviceAccount.name"] = settings.ManagerServiceAccount
 }
 

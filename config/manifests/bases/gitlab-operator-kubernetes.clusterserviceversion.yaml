@@ -53,7 +53,10 @@ spec:
       name: gitlabs.apps.gitlab.com
       resources:
       - kind: ServiceAccount
-        name: gitlab-app
+        name: gitlab-app-nonroot
+        version: v1
+      - kind: ServiceAccount
+        name: gitlab-app-anyuid
         version: v1
       - kind: ServiceAccount
         name: gitlab-manager

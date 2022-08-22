@@ -18,10 +18,17 @@ var (
 	// variable to change it.
 	ManagerServiceAccount = "gitlab-manager"
 
-	// AppServiceAccount is the name of the ServiceAccount that is used by the application.
-	// The default value is "gitlab-manager". Use GITLAB_APP_SERVICE_ACCOUNT environment
+	// AppAnyUIDServiceAccount is the name of the ServiceAccount that is used by GitLab components
+	// that can run under the 'anyuid' SecurityContextConstraint.
+	// The default value is "gitlab-app-anyuid". Use GITLAB_APP_ANYUID_SERVICE_ACCOUNT environment
 	// variable to change it.
-	AppServiceAccount = "gitlab-app"
+	AppAnyUIDServiceAccount = "gitlab-app-anyuid"
+
+	// AppNonRootServiceAccount is the name of the ServiceAccount that is used by GitLab components
+	// that can run under the 'nonroot' SecurityContextConstraint.
+	// The default value is "gitlab-app-nonroot". Use GITLAB_APP_NONROOT_SERVICE_ACCOUNT environment
+	// variable to change it.
+	AppNonRootServiceAccount = "gitlab-app-nonroot"
 
 	// NGINXServiceAccount is the name of the ServiceAccount that is used by NGINX.
 	// The default value is "gitlab-nginx-ingress". Use NGINX_SERVICE_ACCOUNT environment
@@ -51,11 +58,12 @@ var (
 )
 
 const (
-	envHelmChartsDirectory   = "HELM_CHARTS"
-	envManagerServiceAccount = "GITLAB_MANAGER_SERVICE_ACCOUNT"
-	envAppServiceAccount     = "GITLAB_APP_SERVICE_ACCOUNT"
-	envNGINXServiceAccount   = "NGINX_SERVICE_ACCOUNT"
-	envKubeVersion           = "GITLAB_OPERATOR_KUBERNETES_VERSION"
+	envHelmChartsDirectory      = "HELM_CHARTS"
+	envManagerServiceAccount    = "GITLAB_MANAGER_SERVICE_ACCOUNT"
+	envAppAnyUIDServiceAccount  = "GITLAB_APP_ANYUID_SERVICE_ACCOUNT"
+	envAppNonRootServiceAccount = "GITLAB_APP_NONROOT_SERVICE_ACCOUNT"
+	envNGINXServiceAccount      = "NGINX_SERVICE_ACCOUNT"
+	envKubeVersion              = "GITLAB_OPERATOR_KUBERNETES_VERSION"
 )
 
 // Load reads Operator settings from environment variables.
@@ -70,9 +78,14 @@ func Load() {
 		ManagerServiceAccount = mgrServiceAccount
 	}
 
-	appServiceAccount := os.Getenv(envAppServiceAccount)
-	if appServiceAccount != "" {
-		AppServiceAccount = appServiceAccount
+	appAnyUIDServiceAccount := os.Getenv(envAppAnyUIDServiceAccount)
+	if appAnyUIDServiceAccount != "" {
+		AppAnyUIDServiceAccount = appAnyUIDServiceAccount
+	}
+
+	appNonRootServiceAccount := os.Getenv(envAppNonRootServiceAccount)
+	if appNonRootServiceAccount != "" {
+		AppNonRootServiceAccount = appNonRootServiceAccount
 	}
 
 	nginxServiceAccount := os.Getenv(envNGINXServiceAccount)

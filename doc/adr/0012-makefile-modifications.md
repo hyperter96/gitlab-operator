@@ -9,7 +9,7 @@ Accepted
 ## Context
 
 `operator-sdk` have created `Makefile` as part of scaffolding. Throughtout development cycle for operator we needed to modify
-behaviour of existing `Makefile`. One of the options could be maintenance of separate `Makefile.gitlab` to isolate scaffolding code from our own changes.
+behavior of existing `Makefile`. One of the options could be maintenance of separate `Makefile.gitlab` to isolate scaffolding code from our own changes.
 
 See also discussion in [merge request 181](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/merge_requests/181#note_635709947)
 

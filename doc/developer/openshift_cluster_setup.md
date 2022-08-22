@@ -68,7 +68,7 @@ Creating a cluster with `FIPS_ENABLED` set to `true` may cause issues with third
 
 Run `./scripts/destroy_openshift_cluster.sh` to destroy your OpenShift cluster in Google Cloud. This takes around 4 minutes.
 
-The `metadata.json` file in `INSTALL_DIR` is all that is needed to destroy an OpenShift cluster. `metadata.json` files are attached to the cluster's existing 1Password item that  holds the cluster's credentials.
+The `metadata.json` file in `INSTALL_DIR` is all that is needed to destroy an OpenShift cluster. `metadata.json` files are attached to the cluster's existing 1Password item that holds the cluster's credentials.
 
 ### Configuration Options
 

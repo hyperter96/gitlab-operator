@@ -77,7 +77,7 @@ PROJECT="gcp-project-123" CLUSTER_NAME="mydomain" \
 ./provision_and_deploy.sh generic_deploy
 ```
 
-The command above above has been run from the within `scripts/` directory (note the use of `GITLAB_OPERATOR_DIR`).
+The command above has been run from the within `scripts/` directory (note the use of `GITLAB_OPERATOR_DIR`).
 
 One can deploy with self-signed certs, in which case `KIND_LOCAL_IP` should be provided (use "cluster IP") and not `GITLAB_OPERATOR_DOMAIN`.
 

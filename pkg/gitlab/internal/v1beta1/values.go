@@ -106,8 +106,9 @@ func init() {
 
 	defaultValuesTemplate = template.Must(template.New("defaultValues").Parse(defaultValuesSource))
 	appSettings = map[string]string{
-		"AppServiceAccount":     settings.AppServiceAccount,
-		"ManagerServiceAccount": settings.ManagerServiceAccount,
-		"NginxServiceAccount":   settings.NGINXServiceAccount,
+		"AppNonRootServiceAccount": settings.AppNonRootServiceAccount,
+		"AppAnyUIDServiceAccount":  settings.AppAnyUIDServiceAccount,
+		"ManagerServiceAccount":    settings.ManagerServiceAccount,
+		"NginxServiceAccount":      settings.NGINXServiceAccount,
 	}
 }

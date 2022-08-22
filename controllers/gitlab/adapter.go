@@ -127,6 +127,10 @@ gitlab:
     securityContext:
       runAsUser: $LocalUser
       fsGroup: $LocalUser
+    serviceAccount:
+      enabled: true
+      create: false
+      name: $AppAnyUIDServiceAccount
   mailroom:
     common:
     labels:
@@ -168,7 +172,7 @@ global:
   serviceAccount:
     enabled: true
     create: false
-    name: $AppServiceAccount
+    name: $AppNonRootServiceAccount
 
 minio:
   securityContext:
@@ -185,7 +189,7 @@ redis:
         app.kubernetes.io/component: redis
         app.kubernetes.io/instance: $ReleaseName-redis
   serviceAccount:
-    name: $AppServiceAccount
+    name: $AppNonRootServiceAccount
   securityContext:
     runAsUser: $LocalUser
     fsGroup: $LocalUser
@@ -193,7 +197,7 @@ redis:
 postgresql:
   serviceAccount:
     enabled: true
-    name: $AppServiceAccount
+    name: $AppNonRootServiceAccount
   securityContext:
     runAsUser: $LocalUser
     fsGroup: $LocalUser
@@ -208,7 +212,7 @@ nginx-ingress:
       loadBalancerIP: $GlobalHostsExternalIP
   defaultBackend:
     serviceAccount:
-      name: $AppServiceAccount
+      name: $AppNonRootServiceAccount
 `
 
 // NewCustomResourceAdapter returns a new adapter for the provided GitLab instance.
@@ -304,7 +308,8 @@ func (a *populatingAdapter) populateValues() {
 	valuesToUse := strings.NewReplacer(
 		"$ReleaseName", a.ReleaseName(),
 		"$LocalUser", settings.LocalUser,
-		"$AppServiceAccount", settings.AppServiceAccount,
+		"$AppAnyUIDServiceAccount", settings.AppAnyUIDServiceAccount,
+		"$AppNonRootServiceAccount", settings.AppNonRootServiceAccount,
 		"$ManagerServiceAccount", settings.ManagerServiceAccount,
 		"$GlobalIngressAnnotations", globalIngressAnnotations,
 		"$NGINXServiceAccount", settings.NGINXServiceAccount,

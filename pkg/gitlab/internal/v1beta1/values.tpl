@@ -66,6 +66,8 @@ gitlab:
       labels:
         app.kubernetes.io/component: webservice
         app.kubernetes.io/instance: {{ .ReleaseName }}-webservice
+    serviceAccount:
+      name: {{ .Settings.AppAnyUIDServiceAccount }}
 
 global:
   common:
@@ -88,7 +90,7 @@ global:
   serviceAccount:
     enabled: true
     create: false
-    name: {{ .Settings.AppServiceAccount }}
+    name: {{ .Settings.AppNonRootServiceAccount }}
 
 minio:
   common:
@@ -113,7 +115,7 @@ nginx-ingress:
       loadBalancerIP: {{ .ExternalIP }}
   defaultBackend:
     serviceAccount:
-      name: {{ .Settings.AppServiceAccount }}
+      name: {{ .Settings.AppNonrootServiceAccount }}
 
 postgresql:
   commonLabels:
@@ -125,7 +127,7 @@ postgresql:
   serviceAccount:
     enabled: true
     create: false
-    name: {{ .Settings.AppServiceAccount }}
+    name: {{ .Settings.AppNonRootServiceAccount }}
   securityContext:
     fsGroup: 1000
     runAsUser: 1000
@@ -140,7 +142,7 @@ redis:
         app.kubernetes.io/component: redis
         app.kubernetes.io/instance: {{ .ReleaseName }}-redis
   serviceAccount:
-    name: {{ .Settings.AppServiceAccount }}
+    name: {{ .Settings.AppNonrootServiceAccount }}
   securityContext:
     fsGroup: 1000
     runAsUser: 1000

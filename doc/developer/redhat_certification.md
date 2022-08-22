@@ -92,7 +92,7 @@ and add `certified-operators-key.pub`
   - associated `tkn` binary (`$TKN`)
   - associated `oc` binary (`$OC`)
 - GitHub PAT (`$GITHUB_TOKEN_FILE`)
-- Pyxis API Token  (`$PYXIS_API_KEY_FILE`) obtained from RedHat
+- Pyxis API Token (`$PYXIS_API_KEY_FILE`) obtained from RedHat
 - SSH Key pair (`$SSH_KEY_FILE` - private key file)
   - Added as "deployment key" to forked project
 

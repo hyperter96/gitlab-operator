@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -21,14 +20,6 @@ import (
 )
 
 var _ = Describe("GitLab controller", func() {
-	BeforeEach(func() {
-		os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", "1")
-	})
-
-	AfterEach(func() {
-		os.Setenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT", gitlabctl.SharedSecretsJobDefaultTimeout.String())
-	})
-
 	Context("GitLab CRD", func() {
 		It("Should create a CR with the specified Chart values", func() {
 			releaseName := "crd-testing"

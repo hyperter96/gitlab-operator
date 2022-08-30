@@ -134,7 +134,7 @@ func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Cont
 	if gitlabctl.WebserviceEnabled(adapter) {
 		log.Info("ensuring Webservice Deployments are running")
 
-		if !r.webserviceRunningWithRetry(ctx, adapter, template) {
+		if !r.webserviceRunning(ctx, adapter, template) {
 			return fmt.Errorf("Webservice has not started fully")
 		}
 	}
@@ -142,7 +142,7 @@ func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Cont
 	if gitlabctl.SidekiqEnabled(adapter) {
 		log.Info("ensuring Sidekiq Deployments are running")
 
-		if !r.sidekiqRunningWithRetry(ctx, adapter, template) {
+		if !r.sidekiqRunning(ctx, adapter, template) {
 			return fmt.Errorf("Sidekiq has not started fully")
 		}
 	}

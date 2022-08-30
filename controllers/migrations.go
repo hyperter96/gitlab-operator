@@ -19,16 +19,16 @@ func (r *GitLabReconciler) reconcileMigrationsConfigMap(ctx context.Context, ada
 	return nil
 }
 
-func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, skipPostMigrations bool) error {
+func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, skipPostMigrations bool) (bool, error) {
 	migrations, err := gitlabctl.MigrationsJob(adapter, template)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Attention: Type Assertion: Job.Spec is needed
 	job, ok := migrations.DeepCopyObject().(*batchv1.Job)
 	if !ok {
-		return helm.NewTypeMistmatchError(job, migrations)
+		return false, helm.NewTypeMistmatchError(job, migrations)
 	}
 
 	// If `skipPostMigrations=true`, then:
@@ -44,13 +44,17 @@ func (r *GitLabReconciler) runMigrationsJob(ctx context.Context, adapter gitlabc
 		}
 	}
 
-	return r.runJobAndWait(ctx, adapter, job, gitlabctl.MigrationsJobTimeout())
+	if err := r.createOrPatch(ctx, job, adapter); err != nil {
+		return false, err
+	}
+
+	return r.jobFinished(ctx, adapter, job)
 }
 
-func (r *GitLabReconciler) runPreMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) runPreMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) (bool, error) {
 	return r.runMigrationsJob(ctx, adapter, template, true)
 }
 
-func (r *GitLabReconciler) runAllMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) runAllMigrations(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) (bool, error) {
 	return r.runMigrationsJob(ctx, adapter, template, false)
 }

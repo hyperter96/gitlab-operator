@@ -53,7 +53,7 @@ import (
 )
 
 const (
-	defaultRequeueDelay = 5 * time.Second
+	defaultRequeueDelay = 10 * time.Second
 )
 
 // GitLabReconciler reconciles a GitLab object.
@@ -133,12 +133,22 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if err := r.runSharedSecretsJob(ctx, adapter, template); err != nil {
+	finished, err := r.runSharedSecretsJob(ctx, adapter, template)
+	if err != nil {
 		return requeue(err)
 	}
 
-	if err := r.runSelfSignedCertsJob(ctx, adapter, template); err != nil {
+	if !finished {
+		return requeueWithDelay()
+	}
+
+	finished, err = r.runSelfSignedCertsJob(ctx, adapter, template)
+	if err != nil {
 		return requeue(err)
+	}
+
+	if !finished {
+		return requeueWithDelay()
 	}
 
 	if gitlabctl.PostgresEnabled(adapter) {
@@ -201,7 +211,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	if !r.ifCoreServicesReady(ctx, adapter, template) {
 		log.Info("Core services are not ready. Waiting and retrying", "interval", defaultRequeueDelay)
-		return requeueWithDelay(defaultRequeueDelay, nil)
+		return requeueWithDelay()
 	}
 
 	if gitlabctl.ShellEnabled(adapter) {
@@ -273,22 +283,32 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 				log.Info("reconciling pre migrations")
 
-				if err := r.runPreMigrations(ctx, adapter, template); err != nil {
+				finished, err := r.runPreMigrations(ctx, adapter, template)
+				if err != nil {
 					return requeue(err)
+				}
+
+				if !finished {
+					return requeueWithDelay()
 				}
 
 				if err := r.unpauseWebserviceAndSidekiqIfEnabled(ctx, adapter, template, log); err != nil {
-					return requeue(err)
+					return requeueWithDelay()
 				}
 
 				if err := r.webserviceAndSidekiqRunningIfEnabled(ctx, adapter, template, log); err != nil {
-					return requeue(err)
+					return requeueWithDelay()
 				}
 
 				log.Info("reconciling post migrations")
 
-				if err := r.runAllMigrations(ctx, adapter, template); err != nil {
+				finished, err = r.runAllMigrations(ctx, adapter, template)
+				if err != nil {
 					return requeue(err)
+				}
+
+				if !finished {
+					return requeueWithDelay()
 				}
 
 				if err := r.rollingUpdateWebserviceAndSidekiqIfEnabled(ctx, adapter, template, log); err != nil {
@@ -299,8 +319,13 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				// then just run all migrations.
 				log.Info("running all migrations")
 
-				if err := r.runAllMigrations(ctx, adapter, template); err != nil {
+				finished, err := r.runAllMigrations(ctx, adapter, template)
+				if err != nil {
 					return requeue(err)
+				}
+
+				if !finished {
+					return requeueWithDelay()
 				}
 			}
 		} else {
@@ -318,8 +343,13 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if gitlabctl.MigrationsEnabled(adapter) {
 			log.Info("running all migrations")
 
-			if err := r.runAllMigrations(ctx, adapter, template); err != nil {
+			finished, err := r.runAllMigrations(ctx, adapter, template)
+			if err != nil {
 				return requeue(err)
+			}
+
+			if !finished {
+				return requeueWithDelay()
 			}
 		}
 
@@ -374,72 +404,41 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return builder.Complete(r)
 }
 
-func (r *GitLabReconciler) runJobAndWait(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job client.Object, timeout time.Duration) error {
+// jobFinished checks the status of a specified Job.
+// - Returns `true` and `nil` if the Job is finished and has a status of Succeeded.
+// - Returns `true` and an error if the Job is finished and has a status of Failed.
+// - Returns `false` and an error if the Job Status cannot be found.
+// - Returns `false` and `nil` in any other case (meaning the Job is still running with no errors yet).
+func (r *GitLabReconciler) jobFinished(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job client.Object) (bool, error) {
 	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.GetName(), "namespace", job.GetNamespace())
 
-	err := r.createOrPatch(ctx, job, adapter)
-	if err != nil {
-		return err
-	}
+	logger.V(2).Info("Checking the status of Job")
 
-	elapsed := time.Duration(0)
-	waitPeriod := timeout / 100
 	lookupKey := types.NamespacedName{
 		Name:      job.GetName(),
 		Namespace: job.GetNamespace(),
 	}
 
-	var result error = nil
+	lookupVal := &batchv1.Job{}
 
-	for {
-		if elapsed > timeout {
-			result = errors.NewTimeoutError("The Job did not finish in time", int(timeout))
-			logger.Error(result, "Timeout for Job exceeded.",
-				"timeout", timeout)
-
-			break
-		}
-
-		logger.V(2).Info("Checking the status of Job")
-
-		lookupVal := &batchv1.Job{}
-		if err := r.Get(context.Background(), lookupKey, lookupVal); err != nil {
-			logger.V(2).Info("Failed to check the status of Job", "error", err)
-
-			/*
-			 * This will make sure we won't stuck here forever,
-			 * in case the error is recurring.
-			 */
-			clientDelay, _ := errors.SuggestsClientDelay(err)
-			if clientDelay == 0 {
-				clientDelay = 1
-			}
-
-			delay := time.Duration(clientDelay) * time.Second
-			elapsed += delay
-			time.Sleep(delay)
-
-			continue
-		}
-
-		if lookupVal.Status.Succeeded > 0 {
-			logger.V(2).Info("Job succeeded")
-			break
-		}
-
-		if lookupVal.Status.Failed > 0 {
-			result = errors.NewInternalError(
-				fmt.Errorf("job %s has failed, check the logs in %s", job.GetName(), lookupKey))
-			logger.Error(result, "Job failed")
-
-			break
-		}
-
-		elapsed += waitPeriod
-		time.Sleep(waitPeriod)
+	if err := r.Get(ctx, lookupKey, lookupVal); err != nil {
+		logger.V(2).Info("failed to check the status of Job", "error", err)
+		return false, err
 	}
 
-	return result
+	if lookupVal.Status.Succeeded > 0 {
+		logger.V(2).Info("Job succeeded")
+		return true, nil
+	}
+
+	if lookupVal.Status.Failed > 0 {
+		err := errors.NewInternalError(fmt.Errorf("job %s has failed", lookupKey))
+		logger.Error(err, "Job failed")
+
+		return true, err
+	}
+
+	return false, nil
 }
 
 func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
@@ -794,6 +793,6 @@ func requeue(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
-func requeueWithDelay(delay time.Duration, err error) (ctrl.Result, error) {
-	return ctrl.Result{RequeueAfter: delay}, err
+func requeueWithDelay() (ctrl.Result, error) {
+	return ctrl.Result{RequeueAfter: defaultRequeueDelay}, nil
 }

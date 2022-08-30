@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -96,70 +95,6 @@ func (r *GitLabReconciler) webserviceRunning(ctx context.Context, adapter gitlab
 
 func (r *GitLabReconciler) sidekiqAndWebserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
 	return r.sidekiqRunning(ctx, adapter, template) && r.webserviceRunning(ctx, adapter, template)
-}
-
-func (r *GitLabReconciler) sidekiqRunningWithRetry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
-	fn := func() error {
-		if r.sidekiqRunning(ctx, adapter, template) {
-			return nil
-		}
-
-		return fmt.Errorf("sidekiq not fully running")
-	}
-
-	if err := r.runWithRetry(adapter, fn); err != nil {
-		return false
-	}
-
-	return true
-}
-
-func (r *GitLabReconciler) webserviceRunningWithRetry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
-	fn := func() error {
-		if r.webserviceRunning(ctx, adapter, template) {
-			return nil
-		}
-
-		return fmt.Errorf("webservice not fully running")
-	}
-
-	if err := r.runWithRetry(adapter, fn); err != nil {
-		return false
-	}
-
-	return true
-}
-
-func (r *GitLabReconciler) runWithRetry(adapter gitlabctl.CustomResourceAdapter, fn func() error) error {
-	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
-
-	time.Sleep(5 * time.Second)
-
-	timeout := 0
-
-	for {
-		if timeout > 300 {
-			return fmt.Errorf("timeout was longer than 300 seconds")
-		}
-
-		err := fn()
-
-		if err != nil {
-			logger.V(1).Info(err.Error())
-
-			timeout += 10
-
-			time.Sleep(10 * time.Second)
-
-			continue
-		}
-
-		logger.V(1).Info("check passed, proceeding")
-
-		break
-	}
-
-	return nil
 }
 
 func (r *GitLabReconciler) setStatusCondition(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, reason string, status bool, message string) error {

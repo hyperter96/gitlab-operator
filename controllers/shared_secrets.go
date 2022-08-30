@@ -7,36 +7,44 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
 
-func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) runSharedSecretsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) (bool, error) {
 	cfgMap, job, err := gitlabctl.SharedSecretsResources(adapter, template)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if cfgMap == nil || job == nil {
 		r.Log.Info("shared secrets job skipped, not needed per configuration", "gitlab", adapter.Reference())
 
-		return nil
+		return true, nil
 	}
 
 	if err := r.createOrPatch(ctx, cfgMap, adapter); err != nil {
-		return err
+		return false, err
 	}
 
-	return r.runJobAndWait(ctx, adapter, job, gitlabctl.SharedSecretsJobTimeout())
+	if err := r.createOrPatch(ctx, job, adapter); err != nil {
+		return false, err
+	}
+
+	return r.jobFinished(ctx, adapter, job)
 }
 
-func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) runSelfSignedCertsJob(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) (bool, error) {
 	job, err := gitlabctl.SelfSignedCertsJob(adapter, template)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if job == nil {
 		r.Log.Info("self-signed certificates job skipped, not needed per configuration", "gitlab", adapter.Reference())
 
-		return nil
+		return true, nil
 	}
 
-	return r.runJobAndWait(ctx, adapter, job, gitlabctl.SharedSecretsJobTimeout())
+	if err := r.createOrPatch(ctx, job, adapter); err != nil {
+		return false, err
+	}
+
+	return r.jobFinished(ctx, adapter, job)
 }

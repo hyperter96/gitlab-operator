@@ -2,19 +2,11 @@ package gitlab
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-)
-
-const (
-	// SharedSecretsJobDefaultTimeout is the default timeout to wait for Shared Secrets job to finish.
-	SharedSecretsJobDefaultTimeout = 300 * time.Second
 )
 
 // SharedSecretsConfigMap returns the ConfigMaps of Shared Secret component.
@@ -70,17 +62,4 @@ func SharedSecretsResources(adapter CustomResourceAdapter, template helm.Templat
 	}
 
 	return cfgMap, job, nil
-}
-
-// SharedSecretsJobTimeout returns the timeout for shared secrets job to finish.
-func SharedSecretsJobTimeout() time.Duration {
-	s := os.Getenv("GITLAB_OPERATOR_SHARED_SECRETS_JOB_TIMEOUT")
-	if s != "" {
-		i, err := strconv.ParseInt(s, 10, 64)
-		if err == nil {
-			return time.Duration(i) * time.Second
-		}
-	}
-
-	return SharedSecretsJobDefaultTimeout
 }

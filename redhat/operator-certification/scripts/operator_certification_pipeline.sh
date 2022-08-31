@@ -30,8 +30,6 @@ GIT_BRANCH=${GIT_BRANCH:-"main"}
 export KUBECONFIG
 SCRIPT_DIR=$(dirname $(realpath $0))
 PIPELINES_REPO="https://github.com/redhat-openshift-ecosystem/operator-pipelines"
-UPSTREAM_REPO_NAME="${GIT_FORK_REPO_URL#https://github.com/}"
-UPSTREAM_REPO_NAME="${UPSTREAM_REPO_NAME%.git}"
 UPSTREAM_REPO_NAME="redhat-openshift-ecosystem/certified-operators"
 
 BUILD=$(realpath ${BUILD})

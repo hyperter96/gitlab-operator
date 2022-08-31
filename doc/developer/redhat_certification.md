@@ -16,7 +16,7 @@ Pipeline creates convenient artifact that includes auth information for cluster 
 BASEDIR=${HOME}/mycluster
 OC=${BASEDIR}/bin/oc-x.y.z
 TKN=${BASEDIR}/bin/tkn
-KUBECONFIG=${BASEDIR}/auth/kubeconfig
+KUBECONFIG=${BASEDIR}/x.y.z/auth/kubeconfig
 export OC TKN KUBECONFIG
 ```
 
@@ -96,6 +96,15 @@ and add `certified-operators-key.pub`
 - SSH Key pair (`$SSH_KEY_FILE` - private key file)
   - Added as "deployment key" to forked project
 
+**NOTE** make sure files `$GITHUB_TOKEN_FILE` and `$PYXIS_API_KEY_FILE` do not contain newline character (`0x0a` at the end of the file):
+
+```shell
+hexdump -C $GITHUB_TOKEN_FILE
+hexdump -C $PYXIS_API_KEY_FILE
+```
+
+then execute create secrets and install pipeline:
+
 ```shell
 GITHUB_TOKEN_FILE=/path/to/github_token.txt \
   PYXIS_API_KEY_FILE=/path/to/pyxis_api_key.txt \
@@ -120,7 +129,7 @@ OSDK_BASE_DIR=".build/cert" \
 
 ```shell
 BUNDLE_DIR=.build/cert/bundle \
-    bash -x redhat/operator-certification/scripts/configure_bundle.sh adjust_annotations adjust_csv
+    redhat/operator-certification/scripts/configure_bundle.sh adjust_annotations adjust_csv
 ``` 
 
 ## Copy & Push changes into the forked repo
@@ -131,7 +140,9 @@ At this point one needs to copy bundle to it's new location (you'll need value o
 VERSION="0.9.1" # Version to be submitted
 
 cp -r .build/cert/bundle ${CATALOG_REPO_CLONE}/operators/gitlab-operator-kubernetes/${VERSION}
-( cd ${CATALOG_REPO_CLONE} && git commit -am "Add gitlab-operator-${VERSION}" && git push)
+( cd ${CATALOG_REPO_CLONE} && git add operators/gitlab-operator-kubernetes/${VERSION} \ 
+   && git commit -am "Add gitlab-operator-${VERSION}" \
+   && git push origin gitlab-operator-kubernetes-${VERSION})
 ```
 
 ## Run certification pipeline
@@ -151,3 +162,11 @@ GIT_USERNAME="<developer_gh_username>" \
 ```
 
 this will create upstream PR and open submission in RH portal
+
+**NOTE** if you are getting 
+
+```plaintext
+ValueError: Invalid header value b'Bearer XXXXXXXXXXXXXXXXXXXXXXX\n'
+```
+
+in the output - likely one of the Secrets contains unwanted newline: `pyxis-api-secret` or `github-api-token` context of the error should help determine which one.

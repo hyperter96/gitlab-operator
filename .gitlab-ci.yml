@@ -506,7 +506,7 @@ image_certification:
     - SUBMIT=""
     - REDHAT_PROJECT_ID=${REDHAT_PROJECT_ID:-$(yq eval ".${COMPONENT_NAME}.ospid" redhat-projects.yaml)}
     - |
-      if [ -n "$REDHAT_PROJECT_ID" -a -n "$REDHAT_API_TOKEN" ] ; then 
+      if [ -n "$REDHAT_PROJECT_ID" -a -n "$REDHAT_API_TOKEN" -a -n "${CI_COMMIT_TAG}" ] ; then 
         echo "Image will be submitted to RedHat for Certification"
         SUBMIT="--submit"
         export PFLT_PYXIS_API_TOKEN="${REDHAT_API_TOKEN}"

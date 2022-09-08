@@ -7,7 +7,7 @@ import (
 /* GitLabOperation */
 
 func (w *Adapter) IsInstall() bool {
-	return w.source.Status.Version == ""
+	return w.CurrentVersion() == ""
 }
 
 func (w *Adapter) IsUpgrade() bool {
@@ -18,10 +18,18 @@ func (w *Adapter) IsDowngrade() bool {
 	return !w.IsInstall() && (w.compareVersions() < 0)
 }
 
+func (w *Adapter) CurrentVersion() string {
+	return w.source.Status.Version
+}
+
+func (w *Adapter) DesiredVersion() string {
+	return w.source.Spec.Chart.Version
+}
+
 /* Helpers */
 
 func (w *Adapter) chartVersion() *semver.Version {
-	if ver, err := semver.NewVersion(w.source.Spec.Chart.Version); err != nil {
+	if ver, err := semver.NewVersion(w.DesiredVersion()); err != nil {
 		return nil
 	} else {
 		return ver
@@ -29,7 +37,7 @@ func (w *Adapter) chartVersion() *semver.Version {
 }
 
 func (w *Adapter) statusVersion() *semver.Version {
-	if ver, err := semver.NewVersion(w.source.Status.Version); err != nil {
+	if ver, err := semver.NewVersion(w.CurrentVersion()); err != nil {
 		return nil
 	} else {
 		return ver

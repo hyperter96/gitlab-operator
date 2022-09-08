@@ -4,6 +4,10 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
+// ConditionType is an alias type for representing the type of a GitLab status
+// condition.
+type ConditionType string
+
 // Component is an alias type for representing an individual GitLab component.
 type Component string
 
@@ -14,6 +18,11 @@ type Components []Component
 // FeatureCheck is a callback for assessing the availability of a GitLab feature
 // based on the values of specification of a GitLab resource.
 type FeatureCheck func(values support.Values) bool
+
+// Name returns the name of the condition.
+func (c ConditionType) Name() string {
+	return string(c)
+}
 
 // Name returns the name of the component.
 func (c Component) Name() string {

@@ -1,4 +1,11 @@
-# Operator Documentation
+# GitLab Operator
+
+The GitLab Operator is an installation and management method that follows the
+[Kubernetes Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
+
+Use the GitLab Operator to run GitLab in
+[OpenShift](https://docs.gitlab.com/ee/install/openshift_and_gitlab/index.html) or on
+another Kubernetes-compatible platform.
 
 ## Installation
 

@@ -130,7 +130,7 @@ OSDK_BASE_DIR=".build/cert" \
 ```shell
 BUNDLE_DIR=.build/cert/bundle \
     redhat/operator-certification/scripts/configure_bundle.sh adjust_annotations adjust_csv
-``` 
+```
 
 ## Copy & Push changes into the forked repo
 
@@ -140,7 +140,7 @@ At this point one needs to copy bundle to it's new location (you'll need value o
 VERSION="0.9.1" # Version to be submitted
 
 cp -r .build/cert/bundle ${CATALOG_REPO_CLONE}/operators/gitlab-operator-kubernetes/${VERSION}
-( cd ${CATALOG_REPO_CLONE} && git add operators/gitlab-operator-kubernetes/${VERSION} \ 
+( cd ${CATALOG_REPO_CLONE} && git add operators/gitlab-operator-kubernetes/${VERSION} \
    && git commit -am "Add gitlab-operator-${VERSION}" \
    && git push origin gitlab-operator-kubernetes-${VERSION})
 ```
@@ -163,7 +163,7 @@ GIT_USERNAME="<developer_gh_username>" \
 
 this will create upstream PR and open submission in RH portal
 
-**NOTE** if you are getting 
+**NOTE** if you are getting
 
 ```plaintext
 ValueError: Invalid header value b'Bearer XXXXXXXXXXXXXXXXXXXXXXX\n'

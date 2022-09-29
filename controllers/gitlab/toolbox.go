@@ -9,33 +9,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	gitlabToolboxEnabled                   = "gitlab.%s.enabled"
-	gitlabToolboxCronJobEnabled            = "gitlab.%s.backups.cron.enabled"
-	gitlabToolboxCronJobPersistenceEnabled = "gitlab.%s.backups.cron.persistence.enabled"
-)
-
-// ToolboxEnabled returns `true` if Toolbox is enabled, and `false` if not.
-func ToolboxEnabled(adapter gitlab.Adapter) bool {
-	key := fmt.Sprintf(gitlabToolboxEnabled, ToolboxComponentName)
-
-	return adapter.Values().GetBool(key)
-}
-
-// ToolboxCronJobEnabled returns `true` if Toolbox CronJob is enabled, and `false` if not.
-func ToolboxCronJobEnabled(adapter gitlab.Adapter) bool {
-	key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName)
-
-	return adapter.Values().GetBool(key)
-}
-
-// ToolboxCronJobPersistenceEnabled returns `true` if Toolbox CronJob persistence is enabled, and `false` if not.
-func ToolboxCronJobPersistenceEnabled(adapter gitlab.Adapter) bool {
-	key := fmt.Sprintf(gitlabToolboxCronJobPersistenceEnabled, ToolboxComponentName)
-
-	return adapter.Values().GetBool(key)
-}
-
 // ToolboxDeployment returns the Deployment of the Toolbox component.
 func ToolboxDeployment(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(DeploymentKind, ToolboxComponentName)

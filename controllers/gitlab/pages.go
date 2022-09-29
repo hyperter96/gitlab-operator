@@ -9,15 +9,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	globalPagesEnabled = "global.pages.enabled"
-)
-
-// PagesEnabled returns `true` if enabled and `false` if not.
-func PagesEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(globalPagesEnabled)
-}
-
 // PagesConfigMap returns the ConfigMap for the GitLab Pages component.
 func PagesConfigMap(adapter gitlab.Adapter, template helm.Template) client.Object {
 	cfgMapName := fmt.Sprintf("%s-%s", adapter.ReleaseName(), PagesComponentName)

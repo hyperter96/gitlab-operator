@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
@@ -21,7 +22,7 @@ var _ = Describe("Spamcheck", func() {
 		})
 
 		It("SpamcheckEnabled should return false", func() {
-			Expect(SpamcheckEnabled(adapter)).To(BeFalse())
+			Expect(adapter.WantsComponent(component.Spamcheck)).To(BeFalse())
 		})
 
 		It("Spamcheck managed resources must be nil", func() {
@@ -44,7 +45,7 @@ var _ = Describe("Spamcheck", func() {
 		})
 
 		It("Spamcheck managed resources must be available", func() {
-			Expect(SpamcheckEnabled(adapter)).To(BeTrue())
+			Expect(adapter.WantsComponent(component.Spamcheck)).To(BeTrue())
 
 			cfgMap := SpamcheckConfigMap(template)
 			deployment := SpamcheckDeployment(template)

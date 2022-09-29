@@ -42,7 +42,7 @@ import (
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
+	apiv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
@@ -50,6 +50,8 @@ import (
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/adapter"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
+	feature "gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/features"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/status"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/kube"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/kube/apply"
@@ -96,7 +98,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	log.Info("Reconciling GitLab")
 
-	gitlab := &gitlabv1beta1.GitLab{}
+	gitlab := &apiv1beta1.GitLab{}
 	if err := r.Get(ctx, req.NamespacedName, gitlab); err != nil {
 		if errors.IsNotFound(err) {
 			return doNotRequeue()
@@ -133,7 +135,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return requeue(err)
 	}
 
-	if gitlabctl.NGINXEnabled(adapter) {
+	if adapter.WantsComponent(component.NginxIngress) {
 		if err := r.reconcileNGINX(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
@@ -157,7 +159,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return requeueWithDelay()
 	}
 
-	if gitlabctl.PostgresEnabled(adapter) {
+	if adapter.WantsComponent(component.PostgreSQL) {
 		if err := r.reconcilePostgres(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
@@ -167,7 +169,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if gitlabctl.RedisEnabled(adapter) {
+	if adapter.WantsComponent(component.Redis) {
 		if err := r.reconcileRedis(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
@@ -177,39 +179,39 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
-	if gitlabctl.GitalyEnabled(adapter) {
-		if !gitlabctl.PraefectEnabled(adapter) || !gitlabctl.PraefectReplaceInternalGitalyEnabled(adapter) {
+	if adapter.WantsComponent(component.Gitaly) {
+		if !adapter.WantsComponent(component.Praefect) || !adapter.WantsFeature(feature.ReplaceGitalyWithPraefect) {
 			if err := r.reconcileGitaly(ctx, adapter, template); err != nil {
 				return requeue(err)
 			}
 		}
 	}
 
-	if gitlabctl.PraefectEnabled(adapter) {
+	if adapter.WantsComponent(component.Praefect) {
 		if err := r.reconcilePraefect(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 
-		if gitlabctl.GitalyEnabled(adapter) {
+		if adapter.WantsComponent(component.Gitaly) {
 			if err := r.reconcileGitalyPraefect(ctx, adapter, template); err != nil {
 				return requeue(err)
 			}
 		}
 	}
 
-	if gitlabctl.MinioEnabled(adapter) {
+	if adapter.WantsComponent(component.MinIO) {
 		if err := r.reconcileMinioInstance(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.MailroomEnabled(adapter) {
+	if adapter.WantsComponent(component.Mailroom) {
 		if err := r.reconcileMailroom(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.SpamcheckEnabled(adapter) {
+	if adapter.WantsComponent(component.Spamcheck) {
 		if err := r.reconcileSpamcheck(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
@@ -226,55 +228,55 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return requeueWithDelay()
 	}
 
-	if gitlabctl.ShellEnabled(adapter) {
+	if adapter.WantsComponent(component.GitLabShell) {
 		if err := r.reconcileGitLabShell(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.RegistryEnabled(adapter) {
+	if adapter.WantsComponent(component.Registry) {
 		if err := r.reconcileRegistry(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.ToolboxEnabled(adapter) {
+	if adapter.WantsComponent(component.Toolbox) {
 		if err := r.reconcileToolbox(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.ExporterEnabled(adapter) {
+	if adapter.WantsComponent(component.GitLabExporter) {
 		if err := r.reconcileGitLabExporter(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.PagesEnabled(adapter) {
+	if adapter.WantsComponent(component.GitLabPages) {
 		if err := r.reconcilePages(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.KasEnabled(adapter) {
+	if adapter.WantsComponent(component.GitLabKAS) {
 		if err := r.reconcileKas(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.MigrationsEnabled(adapter) {
+	if adapter.WantsComponent(component.Migrations) {
 		if err := r.reconcileMigrationsConfigMap(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.SidekiqEnabled(adapter) {
+	if adapter.WantsComponent(component.Sidekiq) {
 		if err := r.reconcileSidekiqConfigMaps(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
 
-	if gitlabctl.WebserviceEnabled(adapter) {
+	if adapter.WantsComponent(component.Webservice) {
 		if err := r.reconcileWebserviceExceptDeployments(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
@@ -285,8 +287,8 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return requeue(err)
 		}
 
-		if gitlabctl.MigrationsEnabled(adapter) {
-			if gitlabctl.WebserviceEnabled(adapter) || gitlabctl.SidekiqEnabled(adapter) {
+		if adapter.WantsComponent(component.Migrations) {
+			if adapter.WantsComponent(component.Webservice) || adapter.WantsComponent(component.Sidekiq) {
 				// If upgrading with Migrations enabled and Webservice and/or Sidekiq enabled,
 				// then follow the traditional upgrade logic.
 				if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, true, log); err != nil {
@@ -352,7 +354,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return requeue(err)
 		}
 
-		if gitlabctl.MigrationsEnabled(adapter) {
+		if adapter.WantsComponent(component.Migrations) {
 			log.Info("running all migrations")
 
 			finished, err := r.runAllMigrations(ctx, adapter, template)
@@ -389,7 +391,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager configures the custom resource watched resources.
 func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&gitlabv1beta1.GitLab{}).
+		For(&apiv1beta1.GitLab{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&corev1.Service{}).
@@ -477,12 +479,12 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 		workhorse,
 	)
 
-	if gitlabctl.RedisEnabled(adapter) {
+	if adapter.WantsComponent(component.Redis) {
 		redis := internal.RedisServiceMonitor(adapter)
 		servicemonitors = append(servicemonitors, redis)
 	}
 
-	if gitlabctl.PostgresEnabled(adapter) {
+	if adapter.WantsComponent(component.PostgreSQL) {
 		postgres := internal.PostgresqlServiceMonitor(adapter)
 		servicemonitors = append(servicemonitors, postgres)
 	}
@@ -493,7 +495,7 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 		}
 	}
 
-	if internal.PrometheusClusterEnabled(adapter) {
+	if adapter.WantsComponent(component.Prometheus) {
 		service := internal.ExposePrometheusCluster(adapter)
 		if err := r.createOrPatch(ctx, service, adapter); err != nil {
 			return err
@@ -680,32 +682,32 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 }
 
 func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlab.Adapter, template helm.Template) bool {
-	if gitlabctl.PostgresEnabled(adapter) {
+	if adapter.WantsComponent(component.PostgreSQL) {
 		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) {
 			return false
 		}
 	}
 
-	if gitlabctl.RedisEnabled(adapter) {
+	if adapter.WantsComponent(component.Redis) {
 		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter) {
 			return false
 		}
 	}
 
-	if gitlabctl.GitalyEnabled(adapter) {
-		if !gitlabctl.PraefectEnabled(adapter) || !gitlabctl.PraefectReplaceInternalGitalyEnabled(adapter) {
+	if adapter.WantsComponent(component.Gitaly) {
+		if !adapter.WantsComponent(component.Praefect) || !adapter.WantsFeature(feature.ReplaceGitalyWithPraefect) {
 			if !r.isEndpointReady(ctx, gitlabctl.GitalyService(template).GetName(), adapter) {
 				return false
 			}
 		}
 	}
 
-	if gitlabctl.PraefectEnabled(adapter) {
+	if adapter.WantsComponent(component.Praefect) {
 		if !r.isEndpointReady(ctx, gitlabctl.PraefectService(template).GetName(), adapter) {
 			return false
 		}
 
-		if gitlabctl.GitalyEnabled(adapter) {
+		if adapter.WantsComponent(component.Gitaly) {
 			for _, gitalyPraefectService := range gitlabctl.GitalyPraefectServices(template) {
 				if !r.isEndpointReady(ctx, gitalyPraefectService.GetName(), adapter) {
 					return false

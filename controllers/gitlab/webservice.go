@@ -4,17 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
-
-const (
-	gitlabWebserviceEnabled = "gitlab.webservice.enabled"
-)
-
-// WebserviceEnabled returns `true` if Webservice is enabled, and `false` if not.
-func WebserviceEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(gitlabWebserviceEnabled)
-}
 
 // WebserviceDeployments returns the Deployments for the Webservice component.
 func WebserviceDeployments(template helm.Template) []client.Object {

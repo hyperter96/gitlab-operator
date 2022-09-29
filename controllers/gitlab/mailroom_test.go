@@ -4,10 +4,17 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
-var _ = Describe("gitlab.Adapter", func() {
+const (
+	gitLabMailroomEnabled = "gitlab.mailroom.enabled"
+	incomingEmailEnabled  = "global.appConfig.incomingEmail.enabled"
+	incomingEmailSecret   = "global.appConfig.incomingEmail.password.secret" //nolint:golint,gosec
+)
+
+var _ = Describe("CustomResourceAdapter", func() {
 	if namespace == "" {
 		namespace = testNamespace
 	}
@@ -15,15 +22,15 @@ var _ = Describe("gitlab.Adapter", func() {
 	Context("Mailroom", func() {
 		When("Mailroom is enabled", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GitLabMailroomEnabled, true)
-			_ = chartValues.SetValue(IncomingEmailEnabled, true)
-			_ = chartValues.SetValue(IncomingEmailSecret, "secret_value")
+			_ = chartValues.SetValue(gitLabMailroomEnabled, true)
+			_ = chartValues.SetValue(incomingEmailEnabled, true)
+			_ = chartValues.SetValue(incomingEmailSecret, "secret_value")
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := MailroomEnabled(adapter)
+			enabled := adapter.WantsComponent(component.Mailroom)
 			configMap := MailroomConfigMap(adapter, template)
 			deployment := MailroomDeployment(template)
 
@@ -42,13 +49,13 @@ var _ = Describe("gitlab.Adapter", func() {
 
 		When("Mailroom is disabled", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GitLabMailroomEnabled, false)
+			_ = chartValues.SetValue(gitLabMailroomEnabled, false)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := MailroomEnabled(adapter)
+			enabled := adapter.WantsComponent(component.Mailroom)
 			configMap := MailroomConfigMap(adapter, template)
 			deployment := MailroomDeployment(template)
 

@@ -6,6 +6,7 @@ import (
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
+	feature "gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/features"
 )
 
 func (r *GitLabReconciler) reconcileToolbox(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
@@ -13,13 +14,13 @@ func (r *GitLabReconciler) reconcileToolbox(ctx context.Context, adapter gitlab.
 		return err
 	}
 
-	if gitlabctl.ToolboxCronJobEnabled(adapter) {
+	if adapter.WantsFeature(feature.BackupCronJob) {
 		if err := r.reconcileToolboxCronJob(ctx, adapter, template); err != nil {
 			return err
 		}
 	}
 
-	if gitlabctl.ToolboxCronJobPersistenceEnabled(adapter) {
+	if adapter.WantsFeature(feature.BackupCronJobPersistence) {
 		if err := r.reconcileToolboxPersistentVolumeClaim(ctx, adapter, template); err != nil {
 			return err
 		}

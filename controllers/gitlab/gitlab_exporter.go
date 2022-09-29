@@ -9,15 +9,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	gitlabExporterEnabled = "gitlab.gitlab-exporter.enabled"
-)
-
-// ExporterEnabled returns `true` if enabled and `false` if not.
-func ExporterEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(gitlabExporterEnabled)
-}
-
 // ExporterService returns the Service for the GitLab Exporter component.
 func ExporterService(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, GitLabExporterComponentName)

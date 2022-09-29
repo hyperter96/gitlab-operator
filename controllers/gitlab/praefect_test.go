@@ -4,7 +4,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
+)
+
+const (
+	globalPraefectEnabled = "global.praefect.enabled"
 )
 
 var _ = Describe("Praefect resources", func() {
@@ -15,13 +20,13 @@ var _ = Describe("Praefect resources", func() {
 	Context("Praefect", func() {
 		When("Praefect is enabled", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
+			_ = chartValues.SetValue(globalPraefectEnabled, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := PraefectEnabled(adapter)
+			enabled := adapter.WantsComponent(component.Praefect)
 			configMap := PraefectConfigMap(template)
 			service := PraefectService(template)
 			statefulSet := PraefectStatefulSet(template)
@@ -41,13 +46,13 @@ var _ = Describe("Praefect resources", func() {
 
 		When("Praefect is disabled", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GlobalPraefectEnabled, false)
+			_ = chartValues.SetValue(globalPraefectEnabled, false)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := PraefectEnabled(adapter)
+			enabled := adapter.WantsComponent(component.Praefect)
 			configMap := PraefectConfigMap(template)
 			service := PraefectService(template)
 			statefulSet := PraefectStatefulSet(template)

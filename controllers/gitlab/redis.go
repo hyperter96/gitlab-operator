@@ -7,15 +7,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	redisInstall = "redis.install"
-)
-
-// RedisEnabled returns `true` if Redis is enabled, and `false` if not.
-func RedisEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(redisInstall)
-}
-
 // RedisConfigMaps returns the ConfigMaps of the Redis component.
 func RedisConfigMaps(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{

@@ -7,15 +7,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	nginxEnabled = "nginx-ingress.enabled"
-)
-
-// NGINXEnabled returns `true` if NGINX is enabled and `false` if not.
-func NGINXEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(nginxEnabled)
-}
-
 // NGINXConfigMaps returns the ConfigMaps of the NGINX component.
 func NGINXConfigMaps(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{

@@ -4,17 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
-
-const (
-	gitlabSidekiqEnabled = "gitlab.sidekiq.enabled"
-)
-
-// SidekiqEnabled returns `true` if Sidekiq is enabled, and `false` if not.
-func SidekiqEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(gitlabSidekiqEnabled)
-}
 
 // SidekiqDeployments returns the Deployments of the Sidekiq component.
 func SidekiqDeployments(template helm.Template) []client.Object {

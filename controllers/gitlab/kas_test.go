@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
@@ -21,7 +22,7 @@ var _ = Describe("KAS", func() {
 		})
 
 		It("KasEnabled should return false", func() {
-			Expect(KasEnabled(adapter)).To(BeFalse())
+			Expect(adapter.WantsComponent(component.GitLabKAS)).To(BeFalse())
 		})
 
 		It("KAS managed resources must be nil", func() {
@@ -46,7 +47,7 @@ var _ = Describe("KAS", func() {
 		})
 
 		It("KAS managed resources must be available", func() {
-			Expect(KasEnabled(adapter)).To(BeTrue())
+			Expect(adapter.WantsComponent(component.GitLabKAS)).To(BeTrue())
 
 			cfgMap := KasConfigMap(template)
 			deployment := KasDeployment(template)

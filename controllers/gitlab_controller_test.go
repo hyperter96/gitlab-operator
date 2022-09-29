@@ -29,7 +29,7 @@ var _ = Describe("GitLab controller", func() {
 			_ = chartValues.SetValue("certmanager-issuer.email", "me@mydomain.com")
 
 			By("Creating a new GitLab resource")
-			Expect(createObject(gitlabctl.CreateMockGitLab(releaseName, Namespace, chartValues), true)).Should(Succeed())
+			Expect(createObject(CreateMockGitLab(releaseName, Namespace, chartValues), true)).Should(Succeed())
 
 			By("Checking the created GitLab resource")
 			Eventually(func() error {

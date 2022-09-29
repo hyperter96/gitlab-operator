@@ -8,6 +8,10 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
+const (
+	globalPagesEnabled = "global.pages.enabled"
+)
+
 var _ = Describe("Pages", func() {
 	When("Pages is enabled", func() {
 		chartValues := support.Values{}

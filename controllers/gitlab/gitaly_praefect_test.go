@@ -15,8 +15,8 @@ var _ = Describe("Gitaly and Praefect resources", func() {
 	Context("Praefect-managed Gitaly", func() {
 		When("Gitaly and Praefect are enabled", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
-			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
+			_ = chartValues.SetValue(globalGitalyEnabled, true)
+			_ = chartValues.SetValue(globalPraefectEnabled, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
@@ -40,8 +40,8 @@ var _ = Describe("Gitaly and Praefect resources", func() {
 
 		When("Gitaly is enabled and Praefect is disabled", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
-			_ = chartValues.SetValue(GlobalPraefectEnabled, false)
+			_ = chartValues.SetValue(globalGitalyEnabled, true)
+			_ = chartValues.SetValue(globalPraefectEnabled, false)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 
 	. "github.com/onsi/ginkgo"
@@ -9,18 +10,48 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/adapter"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
 var (
 	emptyValues = support.Values{}
 )
+
+func CreateMockGitLab(releaseName, namespace string, values support.Values) *gitlabv1beta1.GitLab {
+	return &gitlabv1beta1.GitLab{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.gitlab.com/v1beta1",
+			Kind:       "GitLab",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      releaseName,
+			Namespace: namespace,
+		},
+		Spec: gitlabv1beta1.GitLabSpec{
+			Chart: gitlabv1beta1.GitLabChartSpec{
+				Version: helm.GetChartVersion(),
+				Values: gitlabv1beta1.ChartValues{
+					Object: values,
+				},
+			},
+		},
+	}
+}
+
+func CreateMockAdapter(mockGitLab *gitlabv1beta1.GitLab) gitlab.Adapter {
+	adapter, _ := adapter.NewV1Beta1(context.TODO(), mockGitLab)
+
+	return adapter
+}
 
 func createObject(obj client.Object, ignoreAlreadyExists bool) error {
 	err := k8sClient.Create(ctx, obj)
@@ -161,7 +192,7 @@ func appLabels(releaseName, appName string) string {
 
 func createGitLabResource(releaseName string, chartValues support.Values) {
 	By("Creating a new GitLab resource")
-	Expect(createObject(gitlab.CreateMockGitLab(releaseName, Namespace, chartValues), true)).Should(Succeed())
+	Expect(createObject(CreateMockGitLab(releaseName, Namespace, chartValues), true)).Should(Succeed())
 
 	By("Checking GitLab resource is created")
 	Eventually(getObjectPromise(releaseName, &gitlabv1beta1.GitLab{}),
@@ -172,7 +203,7 @@ func updateGitLabResource(releaseName string, chartValues support.Values) {
 	By("Update the existing GitLab resource")
 	Expect(
 		updateObject(
-			gitlab.CreateMockGitLab(releaseName, Namespace, support.Values{}),
+			CreateMockGitLab(releaseName, Namespace, support.Values{}),
 			func(obj client.Object) error {
 				gitlab := obj.(*gitlabv1beta1.GitLab)
 				gitlab.Spec.Chart.Values.Object = chartValues

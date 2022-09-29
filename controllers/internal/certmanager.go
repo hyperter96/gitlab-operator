@@ -9,24 +9,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
+	feature "gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/features"
 )
 
 const (
-	globalIngressConfigureCertmanager = "global.ingress.configureCertmanager"
-	specCertIssuerEmail               = "admin@example.com"
-	specCertIssuerServer              = "https://acme-v02.api.letsencrypt.org/directory"
+	specCertIssuerEmail  = "admin@example.com"
+	specCertIssuerServer = "https://acme-v02.api.letsencrypt.org/directory"
 )
-
-// CertManager returns `true` if CertManager is enabled, and `false` if not.
-func CertManagerEnabled(adapter gitlab.Adapter) bool {
-	configureCertmanager := adapter.Values().GetBool(globalIngressConfigureCertmanager)
-
-	return configureCertmanager
-}
 
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource.
 func GetIssuerConfig(adapter gitlab.Adapter) certmanagerv1.IssuerConfig {
-	if CertManagerEnabled(adapter) {
+	if adapter.WantsFeature(feature.ConfigureCertManager) {
 		email := adapter.Values().GetString("certmanager-issuer.email")
 		if email == "" {
 			email = specCertIssuerEmail

@@ -4,17 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
-
-const (
-	GlobalPraefectEnabled = "global.praefect.enabled"
-)
-
-// PraefectEnabled returns `true` if enabled and `false` if not.
-func PraefectEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(GlobalPraefectEnabled)
-}
 
 // PraefectStatefulSet returns the StatefulSet of Praefect component.
 func PraefectStatefulSet(template helm.Template) client.Object {

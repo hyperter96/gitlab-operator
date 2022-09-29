@@ -9,21 +9,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	GitLabMailroomEnabled = "gitlab.mailroom.enabled"
-	IncomingEmailEnabled  = "global.appConfig.incomingEmail.enabled"
-	IncomingEmailSecret   = "global.appConfig.incomingEmail.password.secret" //nolint:golint,gosec
-)
-
-// MailroomEnabled returns `true` if enabled and `false` if not.
-func MailroomEnabled(adapter gitlab.Adapter) bool {
-	mrEnabled := adapter.Values().GetBool(GitLabMailroomEnabled)
-	imEnabled := adapter.Values().GetBool(IncomingEmailEnabled)
-	emSecret := adapter.Values().GetString(IncomingEmailSecret)
-
-	return mrEnabled && imEnabled && emSecret != ""
-}
-
 // MailroomDeployment returns the Deployment for the Mailroom component.
 func MailroomDeployment(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(DeploymentKind, MailroomComponentName)

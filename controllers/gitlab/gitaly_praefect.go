@@ -6,18 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
-
-const (
-	GlobalPraefectVirtualStorages              = "global.praefect.virtualStorages"
-	GlobalPraefectReplaceInternalGitalyEnabled = "global.praefect.replaceInternalGitaly"
-)
-
-// PraefectReplaceInternalGitalyEnabled returns `true` if enabled and `false` if not.
-func PraefectReplaceInternalGitalyEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(GlobalPraefectReplaceInternalGitalyEnabled)
-}
 
 // GitalyPraefectConfigMap returns the Gitaly ConfigMap of Praefect component.
 func GitalyPraefectConfigMap(template helm.Template) client.Object {

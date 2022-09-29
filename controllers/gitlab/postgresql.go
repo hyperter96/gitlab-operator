@@ -10,15 +10,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	postgresInstall = "postgresql.install"
-)
-
-// PostgresEnabled returns `true` if `PostgreSQL` is enabled, and `false` if not.
-func PostgresEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(postgresInstall)
-}
-
 // PostgresServices returns the Services of the Postgres component.
 func PostgresServices(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	results := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{

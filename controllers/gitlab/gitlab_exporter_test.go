@@ -6,7 +6,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
+)
+
+const (
+	gitlabExporterEnabled = "gitlab.gitlab-exporter.enabled"
 )
 
 var _ = Describe("Enabling or disabling GitLab Exporter", func() {
@@ -37,7 +42,7 @@ var _ = Describe("Enabling or disabling GitLab Exporter", func() {
 			mockGitLab := CreateMockGitLab(releaseName, namespace, test.chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
-			enabled := ExporterEnabled(adapter)
+			enabled := adapter.WantsComponent(component.GitLabExporter)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())

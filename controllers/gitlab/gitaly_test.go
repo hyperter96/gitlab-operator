@@ -4,7 +4,14 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
+)
+
+const (
+	globalGitalyEnabled                        = "global.gitaly.enabled"
+	globalPraefectVirtualStorages              = "global.praefect.virtualStorages"
+	globalPraefectReplaceInternalGitalyEnabled = "global.praefect.replaceInternalGitaly"
 )
 
 var _ = Describe("Gitaly resources", func() {
@@ -15,13 +22,13 @@ var _ = Describe("Gitaly resources", func() {
 	Context("Gitaly", func() {
 		When("Gitaly is enabled", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
+			_ = chartValues.SetValue(globalGitalyEnabled, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := GitalyEnabled(adapter)
+			enabled := adapter.WantsComponent(component.Gitaly)
 			configMap := GitalyConfigMap(template)
 			service := GitalyService(template)
 			statefulSet := GitalyStatefulSet(template)
@@ -41,14 +48,14 @@ var _ = Describe("Gitaly resources", func() {
 
 		When("Gitaly and Praefect are enabled", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
-			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
+			_ = chartValues.SetValue(globalGitalyEnabled, true)
+			_ = chartValues.SetValue(globalPraefectEnabled, true)
 
 			mockGitLab := CreateMockGitLab(releaseName, namespace, chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := GitalyEnabled(adapter)
+			enabled := adapter.WantsComponent(component.Gitaly)
 			configMap := GitalyConfigMap(template)
 			service := GitalyService(template)
 			statefulSet := GitalyStatefulSet(template)
@@ -68,11 +75,11 @@ var _ = Describe("Gitaly resources", func() {
 
 		When("Gitaly and Praefect is enabled and replaceInternalGitaly is false", func() {
 			chartValues := support.Values{}
-			_ = chartValues.SetValue(GlobalGitalyEnabled, true)
-			_ = chartValues.SetValue(GlobalPraefectEnabled, true)
-			_ = chartValues.SetValue(GlobalPraefectReplaceInternalGitalyEnabled, false)
+			_ = chartValues.SetValue(globalGitalyEnabled, true)
+			_ = chartValues.SetValue(globalPraefectEnabled, true)
+			_ = chartValues.SetValue(globalPraefectReplaceInternalGitalyEnabled, false)
 
-			_ = chartValues.SetValue(GlobalPraefectVirtualStorages, []map[string]interface{}{
+			_ = chartValues.SetValue(globalPraefectVirtualStorages, []map[string]interface{}{
 				{
 					"name":           "virtualstorage2",
 					"gitalyReplicas": 5,
@@ -84,7 +91,7 @@ var _ = Describe("Gitaly resources", func() {
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := GitalyEnabled(adapter)
+			enabled := adapter.WantsComponent(component.Gitaly)
 			configMap := GitalyConfigMap(template)
 			service := GitalyService(template)
 			statefulSet := GitalyStatefulSet(template)

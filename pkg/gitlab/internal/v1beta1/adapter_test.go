@@ -138,7 +138,7 @@ var _ = Describe("GitLab Adapter [v1beta1]", func() {
 		checkDisabledComponents(a,
 			component.GitLabPages, component.Mailroom, component.Praefect)
 		checkEnabledFeatures(a, ConfigureCertManager)
-		checkDisabledFeatures(a, ReplaceInternalGitalyWithPraefect)
+		checkDisabledFeatures(a, ReplaceGitalyWithPraefect)
 	})
 
 	It("only wants components and features that are specified", func() {
@@ -175,7 +175,7 @@ var _ = Describe("GitLab Adapter [v1beta1]", func() {
 		checkDisabledComponents(a,
 			component.Gitaly, component.Mailroom,
 			component.PostgreSQL, component.Redis)
-		checkEnabledFeatures(a, ReplaceInternalGitalyWithPraefect)
+		checkEnabledFeatures(a, ReplaceGitalyWithPraefect)
 		checkDisabledFeatures(a, ConfigureCertManager)
 	})
 })

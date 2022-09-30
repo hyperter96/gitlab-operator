@@ -5,6 +5,8 @@ import (
 )
 
 var (
-	ReplaceInternalGitalyWithPraefect = v1beta1.ReplaceInternalGitalyWithPraefect
-	ConfigureCertManager              = v1beta1.ConfigureCertManager
+	BackupCronJob             = v1beta1.BackupCronJob
+	BackupCronJobPersistence  = v1beta1.BackupCronJobPersistence
+	ConfigureCertManager      = v1beta1.ConfigureCertManager
+	ReplaceGitalyWithPraefect = v1beta1.ReplaceGitalyWithPraefect
 )

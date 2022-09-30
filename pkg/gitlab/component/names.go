@@ -11,13 +11,14 @@ const (
 	GitLabExporter gitlab.Component = "gitlab-exporter"
 	GitLabPages    gitlab.Component = "gitlab-pages"
 	GitLabShell    gitlab.Component = "gitlab-shell"
-	Kas            gitlab.Component = "kas"
+	GitLabKAS      gitlab.Component = "kas"
 	Mailroom       gitlab.Component = "mailroom"
 	Migrations     gitlab.Component = "migrations"
 	MinIO          gitlab.Component = "minio"
 	NginxIngress   gitlab.Component = "nginx-ingress"
 	PostgreSQL     gitlab.Component = "postgresql"
 	Praefect       gitlab.Component = "praefect"
+	Prometheus     gitlab.Component = "prometheus"
 	Redis          gitlab.Component = "redis"
 	Registry       gitlab.Component = "registry"
 	SharedSecrets  gitlab.Component = "shared-secrets"
@@ -45,7 +46,7 @@ var (
 		GitLabExporter,
 		GitLabPages,
 		GitLabShell,
-		Kas,
+		GitLabKAS,
 		Mailroom,
 		Migrations,
 		MinIO,

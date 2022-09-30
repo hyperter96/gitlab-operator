@@ -7,8 +7,10 @@ import (
 )
 
 var (
-	ReplaceInternalGitalyWithPraefect = newCheckEnabled("global.praefect.enabled", "global.praefect.replaceInternalGitaly")
-	ConfigureCertManager              = newCheckEnabledWithDefault(true, "global.ingress.configureCertmanager")
+	BackupCronJob             = newCheckEnabled("gitlab.toolbox.backups.cron.enabled")
+	BackupCronJobPersistence  = newCheckEnabled("gitlab.toolbox.backups.cron.persistence.enabled")
+	ConfigureCertManager      = newCheckEnabledWithDefault(true, "global.ingress.configureCertmanager")
+	ReplaceGitalyWithPraefect = newCheckEnabled("global.praefect.enabled", "global.praefect.replaceInternalGitaly")
 )
 
 /* GitLabFeatures */
@@ -48,13 +50,14 @@ var mapComponentEnabled = map[gitlab.Component]gitlab.FeatureCheck{
 	component.GitLabExporter: newCheckEnabled("gitlab.gitlab-exporter.enabled"),
 	component.GitLabPages:    newCheckEnabled("global.pages.enabled"),
 	component.GitLabShell:    newCheckEnabled("gitlab.gitlab-shell.enabled"),
-	component.Kas:            newCheckEnabled("global.kas.enabled"),
+	component.GitLabKAS:      newCheckEnabled("global.kas.enabled"),
 	component.Mailroom:       newCheckEnabled("gitlab.mailroom.enabled", "global.appConfig.incomingEmail.enabled"),
 	component.Migrations:     newCheckEnabled("gitlab.migrations.enabled"),
 	component.MinIO:          newCheckEnabled("global.minio.enabled"),
 	component.NginxIngress:   newCheckEnabled("nginx-ingress.enabled"),
 	component.PostgreSQL:     newCheckEnabled("postgresql.install"),
 	component.Praefect:       newCheckEnabled("global.praefect.enabled"),
+	component.Prometheus:     newCheckEnabled("prometheus.install"),
 	component.Redis:          newCheckEnabled("redis.install"),
 	component.Registry:       newCheckEnabled("registry.enabled"),
 	component.Sidekiq:        newCheckEnabled("gitlab.sidekiq.enabled"),

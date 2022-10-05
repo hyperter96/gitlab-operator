@@ -10,7 +10,7 @@ is applicable to the Operator.
 
 ## Migration between Helm-based and Operator-based installations
 
-Backups created in a Helm-based installation can typically be restored in an OpenShift-based installation,
+Backups created in a Helm-based installation can typically be restored in an Operator-based installation,
 and vice-versa.
 
 These flows will be tested more extensively throughout the development of the Operator. See

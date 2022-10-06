@@ -385,9 +385,18 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&batchv1.Job{}).
-		Owns(&batchv1beta1.CronJob{}).
 		Owns(&networkingv1.Ingress{}).
 		WithEventFilter(predicate.GenerationChangedPredicate{})
+
+	if settings.IsGroupVersionKindSupported("batch/v1", "CronJob") {
+		r.Log.Info("Using batch/v1 for CronJob")
+		builder.Owns(&batchv1.CronJob{})
+	}
+
+	if settings.IsGroupVersionKindSupported("batch/v1beta1", "CronJob") {
+		r.Log.Info("Using batch/v1beta1 for CronJob")
+		builder.Owns(&batchv1beta1.CronJob{})
+	}
 
 	if settings.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
 		r.Log.Info("Using monitoring.coreos.com/v1")

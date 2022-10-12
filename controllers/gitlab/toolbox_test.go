@@ -12,7 +12,7 @@ import (
 var _ = Describe("gitlab.Adapter", func() {
 
 	if namespace == "" {
-		namespace = "default"
+		namespace = testNamespace
 	}
 
 	Context("Toolbox", func() {

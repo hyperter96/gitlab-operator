@@ -3,6 +3,8 @@ package gitlab
 import (
 	"fmt"
 	"strings"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -89,7 +91,7 @@ func updateCommonLabels(releaseName, componentName string, labels map[string]str
 	labels["app.kubernetes.io/managed-by"] = "gitlab-operator"
 }
 
-func nameWithHashSuffix(name string, adapter CustomResourceAdapter, n int) string {
+func nameWithHashSuffix(name string, adapter gitlab.Adapter, n int) string {
 	suffix := adapter.Hash()[:n]
 
 	if strings.HasSuffix(name, suffix) {

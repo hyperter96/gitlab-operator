@@ -1,10 +1,13 @@
 package gitlab
 
 import (
+	"context"
 	"os"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/adapter"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +39,7 @@ func CreateMockGitLab(releaseName, namespace string, values support.Values) *git
 	}
 }
 
-func CreateMockAdapter(mockGitLab *gitlabv1beta1.GitLab) CustomResourceAdapter {
-	return NewCustomResourceAdapter(mockGitLab)
+func CreateMockAdapter(mockGitLab *gitlabv1beta1.GitLab) gitlab.Adapter {
+	adapter, _ := adapter.NewV1Beta1(context.TODO(), mockGitLab)
+	return adapter
 }

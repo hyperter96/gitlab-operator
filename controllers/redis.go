@@ -6,9 +6,10 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileRedis(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRedis(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcileRedisConfigMaps(ctx, adapter, template); err != nil {
 		return err
 	}
@@ -24,7 +25,7 @@ func (r *GitLabReconciler) reconcileRedis(ctx context.Context, adapter gitlabctl
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, cm := range gitlabctl.RedisConfigMaps(adapter, template) {
 		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
@@ -34,7 +35,7 @@ func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	redis := gitlabctl.RedisStatefulSet(template)
 
 	if err := r.annotateSecretsChecksum(ctx, adapter, redis); err != nil {
@@ -48,7 +49,7 @@ func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapte
 	return nil
 }
 
-func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Context, adapter gitlab.Adapter) error {
 	defaultRedisSecretName := adapter.Values().GetString("global.redis.password.secret")
 	if defaultRedisSecretName == "" {
 		defaultRedisSecretName = fmt.Sprintf("%s-%s-secret", adapter.ReleaseName(), gitlabctl.RedisComponentName)
@@ -78,7 +79,7 @@ func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Contex
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRedisServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRedisServices(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, svc := range gitlabctl.RedisServices(adapter, template) {
 		if err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err

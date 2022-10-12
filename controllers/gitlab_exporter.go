@@ -5,9 +5,10 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileGitLabExporter(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileGitLabExporter(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcileGitLabExporterConfigMaps(ctx, adapter, template); err != nil {
 		return err
 	}
@@ -23,7 +24,7 @@ func (r *GitLabReconciler) reconcileGitLabExporter(ctx context.Context, adapter 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitLabExporterConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileGitLabExporterConfigMaps(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, cm := range gitlabctl.ExporterConfigMaps(adapter, template) {
 		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
@@ -33,7 +34,7 @@ func (r *GitLabReconciler) reconcileGitLabExporterConfigMaps(ctx context.Context
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitLabExporterDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileGitLabExporterDeployment(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	exporter := gitlabctl.ExporterDeployment(template)
 
 	if err := r.annotateSecretsChecksum(ctx, adapter, exporter); err != nil {
@@ -45,7 +46,7 @@ func (r *GitLabReconciler) reconcileGitLabExporterDeployment(ctx context.Context
 	return err
 }
 
-func (r *GitLabReconciler) reconcileGitLabExporterService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileGitLabExporterService(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.ExporterService(template), adapter); err != nil {
 		return err
 	}

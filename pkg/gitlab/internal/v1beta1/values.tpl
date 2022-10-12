@@ -115,7 +115,7 @@ nginx-ingress:
       loadBalancerIP: {{ .ExternalIP }}
   defaultBackend:
     serviceAccount:
-      name: {{ .Settings.AppNonrootServiceAccount }}
+      name: {{ .Settings.AppNonRootServiceAccount }}
 
 postgresql:
   commonLabels:
@@ -142,7 +142,7 @@ redis:
         app.kubernetes.io/component: redis
         app.kubernetes.io/instance: {{ .ReleaseName }}-redis
   serviceAccount:
-    name: {{ .Settings.AppNonrootServiceAccount }}
+    name: {{ .Settings.AppNonRootServiceAccount }}
   securityContext:
     fsGroup: 1000
     runAsUser: 1000

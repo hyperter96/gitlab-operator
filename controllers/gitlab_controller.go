@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -46,10 +47,12 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/adapter"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/status"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/kube"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/kube/apply"
-
-	"k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
@@ -103,27 +106,30 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return requeue(err)
 	}
 
-	adapter := gitlabctl.NewCustomResourceAdapter(gitlab)
+	adapter, err := adapter.NewV1Beta1(ctx, gitlab)
+	if err != nil {
+		return requeue(err)
+	}
 
 	isUpgrade := adapter.IsUpgrade()
-	log.V(1).Info("version information", "upgrade", isUpgrade, "current version", adapter.StatusVersion(), "desired version", adapter.ChartVersion())
+	log.V(1).Info("version information", "upgrade", isUpgrade, "current version", adapter.CurrentVersion(), "desired version", adapter.DesiredVersion())
 
-	if err := r.setStatusCondition(ctx, adapter, ConditionInitialized, false, "GitLab is initializing"); err != nil {
+	if err := r.setStatusCondition(ctx, adapter, status.ConditionInitialized, false, "GitLab is initializing"); err != nil {
 		return requeue(err)
 	}
 
 	template, err := gitlabctl.GetTemplate(adapter)
 	if err != nil {
-		r.Recorder.Event(adapter.Resource(), "Warning", "ConfigError",
+		r.Recorder.Event(adapter.Origin(), "Warning", "ConfigError",
 			fmt.Sprintf("Configuration error detected: %v", err))
 		return doNotRequeue() // prevent further reconcile loops
 	}
 
-	if err := r.setStatusCondition(ctx, adapter, ConditionInitialized, true, "GitLab is initialized"); err != nil {
+	if err := r.setStatusCondition(ctx, adapter, status.ConditionInitialized, true, "GitLab is initialized"); err != nil {
 		return requeue(err)
 	}
 
-	if err := r.setStatusCondition(ctx, adapter, ConditionAvailable, false, "GitLab is starting but not yet available"); err != nil {
+	if err := r.setStatusCondition(ctx, adapter, status.ConditionAvailable, false, "GitLab is starting but not yet available"); err != nil {
 		return requeue(err)
 	}
 
@@ -269,7 +275,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if isUpgrade {
-		if err := r.setStatusCondition(ctx, adapter, ConditionUpgrading, true, fmt.Sprintf("GitLab is upgrading from %s to %s", adapter.StatusVersion(), adapter.ChartVersion())); err != nil {
+		if err := r.setStatusCondition(ctx, adapter, status.ConditionUpgrading, true, fmt.Sprintf("GitLab is upgrading from %s to %s", adapter.CurrentVersion(), adapter.DesiredVersion())); err != nil {
 			return requeue(err)
 		}
 
@@ -336,7 +342,7 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	} else {
 		// If not upgrading, then run all migrations (if enabled) and reconcile enabled Deployments.
-		if err := r.setStatusCondition(ctx, adapter, ConditionUpgrading, false, "GitLab is not currently upgrading"); err != nil {
+		if err := r.setStatusCondition(ctx, adapter, status.ConditionUpgrading, false, "GitLab is not currently upgrading"); err != nil {
 			return requeue(err)
 		}
 
@@ -418,8 +424,8 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // - Returns `true` and an error if the Job is finished and has a status of Failed.
 // - Returns `false` and an error if the Job Status cannot be found.
 // - Returns `false` and `nil` in any other case (meaning the Job is still running with no errors yet).
-func (r *GitLabReconciler) jobFinished(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, job client.Object) (bool, error) {
-	logger := r.Log.WithValues("gitlab", adapter.Reference(), "job", job.GetName(), "namespace", job.GetNamespace())
+func (r *GitLabReconciler) jobFinished(ctx context.Context, adapter gitlab.Adapter, job client.Object) (bool, error) {
+	logger := r.Log.WithValues("gitlab", adapter.Name(), "job", job.GetName(), "namespace", job.GetNamespace())
 
 	logger.V(2).Info("Checking the status of Job")
 
@@ -450,14 +456,14 @@ func (r *GitLabReconciler) jobFinished(ctx context.Context, adapter gitlabctl.Cu
 	return false, nil
 }
 
-func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlab.Adapter) error {
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
-	gitaly := internal.GitalyServiceMonitor(adapter.Resource())
+	gitaly := internal.GitalyServiceMonitor(adapter)
 
-	gitlab := internal.ExporterServiceMonitor(adapter.Resource())
+	gitlab := internal.ExporterServiceMonitor(adapter)
 
-	workhorse := internal.WebserviceServiceMonitor(adapter.Resource())
+	workhorse := internal.WebserviceServiceMonitor(adapter)
 
 	servicemonitors = append(servicemonitors,
 		gitlab,
@@ -466,12 +472,12 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	)
 
 	if gitlabctl.RedisEnabled(adapter) {
-		redis := internal.RedisServiceMonitor(adapter.Resource())
+		redis := internal.RedisServiceMonitor(adapter)
 		servicemonitors = append(servicemonitors, redis)
 	}
 
 	if gitlabctl.PostgresEnabled(adapter) {
-		postgres := internal.PostgresqlServiceMonitor(adapter.Resource())
+		postgres := internal.PostgresqlServiceMonitor(adapter)
 		servicemonitors = append(servicemonitors, postgres)
 	}
 
@@ -482,12 +488,12 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 	}
 
 	if internal.PrometheusClusterEnabled(adapter) {
-		service := internal.ExposePrometheusCluster(adapter.Resource())
+		service := internal.ExposePrometheusCluster(adapter)
 		if err := r.createOrPatch(ctx, service, adapter); err != nil {
 			return err
 		}
 
-		prometheus := internal.PrometheusCluster(adapter.Resource())
+		prometheus := internal.PrometheusCluster(adapter)
 		if err := r.createOrPatch(ctx, prometheus, adapter); err != nil {
 			return err
 		}
@@ -497,17 +503,17 @@ func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter 
 }
 
 // The boolean return parameter is unused at the moment, but may be useful in the future.
-func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject client.Object, adapter gitlab.Adapter) error {
 	if templateObject == nil {
 		r.Log.Info("Controller is not able to delete managed resources. This is a known issue",
-			"gitlab", adapter.Reference())
+			"gitlab", adapter.Name())
 		return nil
 	}
 
 	key := client.ObjectKeyFromObject(templateObject)
 
 	logger := r.Log.WithValues(
-		"gitlab", adapter.Reference(),
+		"gitlab", adapter.Name(),
 		"type", fmt.Sprintf("%T", templateObject),
 		"reference", key)
 
@@ -515,7 +521,7 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 
 	obj := templateObject.DeepCopyObject().(client.Object)
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), obj, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(adapter.Origin(), obj, r.Scheme); err != nil {
 		return err
 	}
 
@@ -533,23 +539,23 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 	return nil
 }
 
-func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) (bool, bool, error) {
+func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject client.Object, adapter gitlab.Adapter) (bool, bool, error) {
 	if templateObject == nil {
 		r.Log.Info("Controller is not able to delete managed resources. This is a known issue",
-			"gitlab", adapter.Reference())
+			"gitlab", adapter.Name())
 		return false, false, nil
 	}
 
 	key := client.ObjectKeyFromObject(templateObject)
 
 	logger := r.Log.WithValues(
-		"gitlab", adapter.Reference(),
+		"gitlab", adapter.Name(),
 		"type", fmt.Sprintf("%T", templateObject),
 		"reference", key)
 
 	logger.V(2).Info("Setting controller reference")
 
-	if err := controllerutil.SetControllerReference(adapter.Resource(), templateObject, r.Scheme); err != nil {
+	if err := controllerutil.SetControllerReference(adapter.Origin(), templateObject, r.Scheme); err != nil {
 		return false, false, err
 	}
 
@@ -581,12 +587,11 @@ func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject cl
 	return false, true, nil
 }
 
-func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject client.Object, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject client.Object, adapter gitlab.Adapter) error {
 	if templateObject == nil {
 		r.Log.V(2).Info("Controller received a nil templateObject",
 			"type", "Ingress",
-			"gitlab", adapter.Reference(),
-			"namespace", adapter.Namespace())
+			"gitlab", adapter.Name())
 
 		return nil
 	}
@@ -596,10 +601,10 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject 
 		return err
 	}
 
-	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
+	logger := r.Log.WithValues("gitlab", adapter.Name())
 
 	found := &networkingv1.Ingress{}
-	err = r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: adapter.Namespace()}, found)
+	err = r.Get(ctx, types.NamespacedName{Name: ingress.Name, Namespace: adapter.Name().Namespace}, found)
 
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -633,7 +638,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject 
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter gitlabctl.CustomResourceAdapter) error {
+func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter gitlab.Adapter) error {
 	issuer := internal.CertificateIssuer(adapter)
 
 	_, _, err := r.createOrUpdate(ctx, issuer, adapter)
@@ -641,7 +646,7 @@ func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context,
 	return err
 }
 
-func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, hpa := range template.Query().ObjectsByKind(gitlabctl.HorizontalPodAutoscalerKind) {
 		if err := r.createOrPatch(ctx, hpa, adapter); err != nil {
 			return err
@@ -651,11 +656,11 @@ func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlabc
 	return nil
 }
 
-func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlabctl.CustomResourceAdapter) bool {
+func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, adapter gitlab.Adapter) bool {
 	var addresses []corev1.EndpointAddress
 
 	ep := &corev1.Endpoints{}
-	err := r.Get(ctx, types.NamespacedName{Name: service, Namespace: adapter.Namespace()}, ep)
+	err := r.Get(ctx, types.NamespacedName{Name: service, Namespace: adapter.Name().Namespace}, ep)
 
 	if err != nil && errors.IsNotFound(err) {
 		return false
@@ -668,7 +673,7 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 	return len(addresses) > 0
 }
 
-func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
+func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlab.Adapter, template helm.Template) bool {
 	if gitlabctl.PostgresEnabled(adapter) {
 		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) {
 			return false
@@ -743,7 +748,7 @@ func (r *GitLabReconciler) setDeploymentReplica(ctx context.Context, obj client.
 	return nil
 }
 
-func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, obj client.Object) error {
+func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter gitlab.Adapter, obj client.Object) error {
 	template, err := internal.GetPodTemplateSpec(obj)
 	if err != nil {
 		return err
@@ -752,7 +757,7 @@ func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter 
 	secretsInfo := internal.PopulateAttachedSecrets(*template)
 	for secretName, secretKeys := range secretsInfo {
 		secret := &corev1.Secret{}
-		lookupKey := types.NamespacedName{Name: secretName, Namespace: adapter.Namespace()}
+		lookupKey := types.NamespacedName{Name: secretName, Namespace: adapter.Name().Namespace}
 
 		if err := r.Get(ctx, lookupKey, secret); err != nil {
 			if errors.IsNotFound(err) {
@@ -778,9 +783,9 @@ func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter 
 	return nil
 }
 
-func (r *GitLabReconciler) ensureSecret(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, secretName string) error {
+func (r *GitLabReconciler) ensureSecret(ctx context.Context, adapter gitlab.Adapter, secretName string) error {
 	secret := &corev1.Secret{}
-	lookupKey := types.NamespacedName{Name: secretName, Namespace: adapter.Namespace()}
+	lookupKey := types.NamespacedName{Name: secretName, Namespace: adapter.Name().Namespace}
 	err := r.Get(ctx, lookupKey, secret)
 
 	if err != nil {

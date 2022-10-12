@@ -5,9 +5,10 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileKas(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileKas(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcileKasConfigMap(ctx, adapter, template); err != nil {
 		return err
 	}
@@ -27,7 +28,7 @@ func (r *GitLabReconciler) reconcileKas(ctx context.Context, adapter gitlabctl.C
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileKasConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileKasConfigMap(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.KasConfigMap(template), adapter); err != nil {
 		return err
 	}
@@ -35,7 +36,7 @@ func (r *GitLabReconciler) reconcileKasConfigMap(ctx context.Context, adapter gi
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileKasDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileKasDeployment(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	kas := gitlabctl.KasDeployment(template)
 
 	if err := r.setDeploymentReplica(ctx, kas); err != nil {
@@ -51,7 +52,7 @@ func (r *GitLabReconciler) reconcileKasDeployment(ctx context.Context, adapter g
 	return err
 }
 
-func (r *GitLabReconciler) reconcileKasService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileKasService(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.KasService(template), adapter); err != nil {
 		return err
 	}
@@ -59,7 +60,7 @@ func (r *GitLabReconciler) reconcileKasService(ctx context.Context, adapter gitl
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileKasIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileKasIngress(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcileIngress(ctx, gitlabctl.KasIngress(template), adapter); err != nil {
 		return err
 	}

@@ -5,9 +5,10 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileNGINX(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileNGINX(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, cm := range gitlabctl.NGINXConfigMaps(adapter, template) {
 		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err

@@ -4,6 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -11,7 +12,7 @@ const (
 )
 
 // SidekiqEnabled returns `true` if Sidekiq is enabled, and `false` if not.
-func SidekiqEnabled(adapter CustomResourceAdapter) bool {
+func SidekiqEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(gitlabSidekiqEnabled)
 }
 

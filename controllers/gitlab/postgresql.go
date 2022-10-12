@@ -7,6 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -14,12 +15,12 @@ const (
 )
 
 // PostgresEnabled returns `true` if `PostgreSQL` is enabled, and `false` if not.
-func PostgresEnabled(adapter CustomResourceAdapter) bool {
+func PostgresEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(postgresInstall)
 }
 
 // PostgresServices returns the Services of the Postgres component.
-func PostgresServices(adapter CustomResourceAdapter, template helm.Template) []client.Object {
+func PostgresServices(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	results := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": PostgresComponentName,
 	})
@@ -29,19 +30,19 @@ func PostgresServices(adapter CustomResourceAdapter, template helm.Template) []c
 
 		// Temporary fix: patch in the namespace because the version of the PostgreSQL chart
 		// we use does not specify `namespace` in the template.
-		s.SetNamespace(adapter.Namespace())
+		s.SetNamespace(adapter.Name().Namespace)
 	}
 
 	return results
 }
 
 // PostgresStatefulSet returns the StatefulSet of the PostgreSQL component.
-func PostgresStatefulSet(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func PostgresStatefulSet(adapter gitlab.Adapter, template helm.Template) client.Object {
 	result := template.Query().ObjectByKindAndComponent(StatefulSetKind, PostgresComponentName)
 
 	// Temporary fix: patch in the namespace because the version of the PostgreSQL chart
 	// we use does not specify `namespace` in the template.
-	result.SetNamespace(adapter.Namespace())
+	result.SetNamespace(adapter.Name().Namespace)
 
 	updateCommonLabels(adapter.ReleaseName(), PostgresComponentName, result.GetLabels())
 
@@ -52,7 +53,7 @@ func PostgresStatefulSet(adapter CustomResourceAdapter, template helm.Template) 
 }
 
 // PostgresConfigMap returns the ConfigMap of the PostgreSQL component.
-func PostgresConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func PostgresConfigMap(adapter gitlab.Adapter, template helm.Template) client.Object {
 	initDBConfigMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-postgresql-init-db", adapter.ReleaseName()))
 

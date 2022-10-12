@@ -6,9 +6,10 @@ import (
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileSidekiqConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileSidekiqConfigMaps(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, cm := range gitlabctl.SidekiqConfigMaps(template) {
 		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
@@ -18,7 +19,7 @@ func (r *GitLabReconciler) reconcileSidekiqConfigMaps(ctx context.Context, adapt
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, pause bool) error {
+func (r *GitLabReconciler) reconcileSidekiqDeployments(ctx context.Context, adapter gitlab.Adapter, template helm.Template, pause bool) error {
 	sidekiqs := gitlabctl.SidekiqDeployments(template)
 
 	for _, sidekiq := range sidekiqs {

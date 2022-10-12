@@ -5,9 +5,10 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcilePraefect(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcilePraefect(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcilePraefectConfigMap(ctx, adapter, template); err != nil {
 		return err
 	}
@@ -23,7 +24,7 @@ func (r *GitLabReconciler) reconcilePraefect(ctx context.Context, adapter gitlab
 	return nil
 }
 
-func (r *GitLabReconciler) reconcilePraefectConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcilePraefectConfigMap(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.PraefectConfigMap(template), adapter); err != nil {
 		return err
 	}
@@ -31,7 +32,7 @@ func (r *GitLabReconciler) reconcilePraefectConfigMap(ctx context.Context, adapt
 	return nil
 }
 
-func (r *GitLabReconciler) reconcilePraefectStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcilePraefectStatefulSet(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.PraefectStatefulSet(template), adapter); err != nil {
 		return err
 	}
@@ -39,7 +40,7 @@ func (r *GitLabReconciler) reconcilePraefectStatefulSet(ctx context.Context, ada
 	return nil
 }
 
-func (r *GitLabReconciler) reconcilePraefectService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcilePraefectService(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.PraefectService(template), adapter); err != nil {
 		return err
 	}

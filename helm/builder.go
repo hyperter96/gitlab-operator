@@ -51,7 +51,7 @@ type Builder interface {
 }
 
 // NewBuilder creates a new builder interface for Helm template.
-func NewBuilder(name, version string) (Builder, error) {
+func NewBuilder(charts charts.Catalog) (Builder, error) {
 	envSettings := cli.New()
 
 	actionConfig := new(action.Configuration)
@@ -70,11 +70,10 @@ func NewBuilder(name, version string) (Builder, error) {
 	client.KubeVersion = settings.KubeVersion
 	client.APIVersions = settings.GetKubeAPIVersions()
 
-	chart := charts.GlobalCatalog().Query(
-		charts.WithName(name), charts.WithVersion(version)).First()
+	chart := charts.First()
 
 	if chart == nil {
-		return nil, errors.Errorf("chart %s-%s not found", name, version)
+		return nil, errors.Errorf("the specified chart not found")
 	}
 
 	return &defaultBuilder{

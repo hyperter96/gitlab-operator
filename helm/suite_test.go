@@ -15,7 +15,7 @@ func loadTemplate() (Template, error) {
 	values := support.Values{}
 	_ = values.AddFromYAMLFile("testdata/chart/values.yaml")
 
-	builder, err := NewBuilder("test", "0.1.0")
+	builder, err := NewBuilder(charts.GlobalCatalog())
 	if err != nil {
 		return nil, err
 	}

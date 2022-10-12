@@ -4,6 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -11,12 +12,12 @@ const (
 )
 
 // RedisEnabled returns `true` if Redis is enabled, and `false` if not.
-func RedisEnabled(adapter CustomResourceAdapter) bool {
+func RedisEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(redisInstall)
 }
 
 // RedisConfigMaps returns the ConfigMaps of the Redis component.
-func RedisConfigMaps(adapter CustomResourceAdapter, template helm.Template) []client.Object {
+func RedisConfigMaps(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{
 		"app": RedisComponentName,
 	})
@@ -29,7 +30,7 @@ func RedisConfigMaps(adapter CustomResourceAdapter, template helm.Template) []cl
 }
 
 // RedisServices returns the Services of the Redis component.
-func RedisServices(adapter CustomResourceAdapter, template helm.Template) []client.Object {
+func RedisServices(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	results := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": RedisComponentName,
 	})

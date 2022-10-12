@@ -11,6 +11,10 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/charts/populate"
 )
 
+const (
+	testNamespace = "default"
+)
+
 func TestGitLab(t *testing.T) {
 	settings.Load()
 	_ = charts.PopulateGlobalCatalog(

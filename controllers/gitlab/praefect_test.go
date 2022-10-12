@@ -9,7 +9,7 @@ import (
 
 var _ = Describe("Praefect resources", func() {
 	if namespace == "" {
-		namespace = "default"
+		namespace = testNamespace
 	}
 
 	Context("Praefect", func() {

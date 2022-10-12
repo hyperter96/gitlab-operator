@@ -9,7 +9,7 @@ import (
 
 var _ = Describe("Gitaly and Praefect resources", func() {
 	if namespace == "" {
-		namespace = "default"
+		namespace = testNamespace
 	}
 
 	Context("Praefect-managed Gitaly", func() {

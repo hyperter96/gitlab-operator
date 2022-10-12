@@ -9,7 +9,7 @@ import (
 
 var _ = Describe("Gitaly resources", func() {
 	if namespace == "" {
-		namespace = "default"
+		namespace = testNamespace
 	}
 
 	Context("Gitaly", func() {

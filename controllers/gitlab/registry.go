@@ -6,6 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 )
 
 // RegistryEnabled returns `true` if the registry is enabled, and `false` if not.
-func RegistryEnabled(adapter CustomResourceAdapter) bool {
+func RegistryEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(registryEnabled)
 }
 
@@ -28,7 +29,7 @@ func RegistryDeployment(template helm.Template) client.Object {
 }
 
 // RegistryConfigMap returns the ConfigMap of the Registry component.
-func RegistryConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func RegistryConfigMap(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), RegistryComponentName))
 }

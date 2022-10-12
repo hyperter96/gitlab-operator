@@ -20,7 +20,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 	mockGitLab := CreateMockGitLab(releaseName, namespace, support.Values{})
 
 	It("retrieve the attributes from GitLab CR", func() {
-		adapter := CreateMockAdapter(mockGitLab)
+		adapter := NewCustomResourceAdapter(mockGitLab)
 
 		Expect(adapter.Reference()).To(Equal(fmt.Sprintf("test.%s", namespace)))
 		Expect(adapter.Namespace()).To(Equal(namespace))
@@ -29,7 +29,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 	})
 
 	It("should change the hash when values change", func() {
-		adapter := CreateMockAdapter(mockGitLab)
+		adapter := NewCustomResourceAdapter(mockGitLab)
 
 		gitlabCopy := mockGitLab.DeepCopy()
 
@@ -42,7 +42,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 		beforeHash := adapter.Hash()
 
-		adapter = CreateMockAdapter(gitlabCopy)
+		adapter = NewCustomResourceAdapter(gitlabCopy)
 
 		afterHash := adapter.Hash()
 
@@ -53,7 +53,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 		currentChartVersion := helm.GetChartVersion()
 		os.Setenv("CHART_VERSION", "0.0.0")
 		mockGitLab := CreateMockGitLab(releaseName, namespace, support.Values{})
-		adapter := CreateMockAdapter(mockGitLab)
+		adapter := NewCustomResourceAdapter(mockGitLab)
 		os.Setenv("CHART_VERSION", currentChartVersion)
 
 		supported, err := helm.ChartVersionSupported(adapter.ChartVersion())
@@ -65,7 +65,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	It("should accept supported chart versions", func() {
 		mockGitLab := CreateMockGitLab(releaseName, namespace, support.Values{})
-		adapter := CreateMockAdapter(mockGitLab)
+		adapter := NewCustomResourceAdapter(mockGitLab)
 		supported, err := helm.ChartVersionSupported(adapter.ChartVersion())
 
 		Expect(supported).To(BeTrue())
@@ -74,7 +74,7 @@ var _ = Describe("CustomResourceAdapter", func() {
 
 	It("should render expected RBAC", func() {
 		mockGitLab := CreateMockGitLab(releaseName, namespace, support.Values{})
-		adapter := CreateMockAdapter(mockGitLab)
+		adapter := NewCustomResourceAdapter(mockGitLab)
 		values := adapter.Values()
 
 		expected := map[string]string{

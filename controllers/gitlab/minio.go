@@ -8,6 +8,7 @@ import (
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -15,12 +16,12 @@ const (
 )
 
 // MinioEnabled returns `true` if enabled, and `false` if not.
-func MinioEnabled(adapter CustomResourceAdapter) bool {
+func MinioEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(globalMinioEnabled)
 }
 
 // MinioJob returns the Job of the Minio component.
-func MinioJob(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func MinioJob(adapter gitlab.Adapter, template helm.Template) client.Object {
 	obj := template.Query().ObjectByKindAndComponent(JobKind, MinioComponentName)
 
 	// Set ServiceAccountName and SecurityContext, as the Helm Chart does not currently
@@ -39,7 +40,7 @@ func MinioJob(adapter CustomResourceAdapter, template helm.Template) client.Obje
 }
 
 // MinioDeployment returns the Deployment of the Minio component.
-func MinioDeployment(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func MinioDeployment(adapter gitlab.Adapter, template helm.Template) client.Object {
 	obj := template.Query().ObjectByKindAndComponent(DeploymentKind, MinioComponentName)
 
 	// Set ServiceAccountName, as the Helm Chart does not currently support setting it.
@@ -51,21 +52,21 @@ func MinioDeployment(adapter CustomResourceAdapter, template helm.Template) clie
 }
 
 // MinioConfigMap returns the ConfigMap of the Minio component.
-func MinioConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func MinioConfigMap(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ConfigMapKind, MinioComponentName)
 }
 
 // MinioIngress returns the Ingress of the Minio component.
-func MinioIngress(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func MinioIngress(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(IngressKind, MinioComponentName)
 }
 
 // MinioService returns the Service of the Minio component.
-func MinioService(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func MinioService(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, MinioComponentName)
 }
 
 // MinioPersistentVolumeClaim returns the PersistentVolumeClaim of the Minio component.
-func MinioPersistentVolumeClaim(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func MinioPersistentVolumeClaim(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(PersistentVolumeClaimKind, MinioComponentName)
 }

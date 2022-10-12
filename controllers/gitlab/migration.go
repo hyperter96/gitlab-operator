@@ -6,6 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -13,18 +14,18 @@ const (
 )
 
 // MigrationsEnabled returns `true` if enabled and `false` if not.
-func MigrationsEnabled(adapter CustomResourceAdapter) bool {
+func MigrationsEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(gitlabMigrationsEnabled)
 }
 
 // MigrationsConfigMap returns the ConfigMaps of Migrations component.
-func MigrationsConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func MigrationsConfigMap(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MigrationsComponentName))
 }
 
 // MigrationsJob returns the Job for Migrations component.
-func MigrationsJob(adapter CustomResourceAdapter, template helm.Template) (client.Object, error) {
+func MigrationsJob(adapter gitlab.Adapter, template helm.Template) (client.Object, error) {
 	result := template.Query().ObjectByKindAndComponent(JobKind, MigrationsComponentName)
 	result.SetName(nameWithHashSuffix(result.GetName(), adapter, 3))
 

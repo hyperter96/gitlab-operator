@@ -6,6 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -13,12 +14,12 @@ const (
 )
 
 // PagesEnabled returns `true` if enabled and `false` if not.
-func PagesEnabled(adapter CustomResourceAdapter) bool {
+func PagesEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(globalPagesEnabled)
 }
 
 // PagesConfigMap returns the ConfigMap for the GitLab Pages component.
-func PagesConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func PagesConfigMap(adapter gitlab.Adapter, template helm.Template) client.Object {
 	cfgMapName := fmt.Sprintf("%s-%s", adapter.ReleaseName(), PagesComponentName)
 
 	return template.Query().ObjectByKindAndName(ConfigMapKind, cfgMapName)

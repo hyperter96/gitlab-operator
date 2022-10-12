@@ -9,7 +9,7 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
-var _ = Describe("CustomResourceAdapter", func() {
+var _ = Describe("gitlab.Adapter", func() {
 
 	if namespace == "" {
 		namespace = "default"

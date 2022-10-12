@@ -4,6 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -11,12 +12,12 @@ const (
 )
 
 // NGINXEnabled returns `true` if NGINX is enabled and `false` if not.
-func NGINXEnabled(adapter CustomResourceAdapter) bool {
+func NGINXEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(nginxEnabled)
 }
 
 // NGINXConfigMaps returns the ConfigMaps of the NGINX component.
-func NGINXConfigMaps(adapter CustomResourceAdapter, template helm.Template) []client.Object {
+func NGINXConfigMaps(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ConfigMapKind, map[string]string{
 		"app": NGINXComponentName,
 	})
@@ -25,14 +26,14 @@ func NGINXConfigMaps(adapter CustomResourceAdapter, template helm.Template) []cl
 	// When all of Operator's supported CHART_VERSIONS are at or above 5.6.0,
 	// we can remove this override.
 	for _, cm := range result {
-		cm.SetNamespace(adapter.Namespace())
+		cm.SetNamespace(adapter.Name().Namespace)
 	}
 
 	return result
 }
 
 // NGINXServices returns the Services of the NGINX Component.
-func NGINXServices(adapter CustomResourceAdapter, template helm.Template) []client.Object {
+func NGINXServices(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
 		"app": NGINXComponentName,
 	})
@@ -41,14 +42,14 @@ func NGINXServices(adapter CustomResourceAdapter, template helm.Template) []clie
 	// When all of Operator's supported CHART_VERSIONS are at or above 5.6.0,
 	// we can remove this override.
 	for _, svc := range result {
-		svc.SetNamespace(adapter.Namespace())
+		svc.SetNamespace(adapter.Name().Namespace)
 	}
 
 	return result
 }
 
 // NGINXDeployments returns the Deployments of the NGINX Component.
-func NGINXDeployments(adapter CustomResourceAdapter, template helm.Template) []client.Object {
+func NGINXDeployments(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(DeploymentKind, map[string]string{
 		"app": NGINXComponentName,
 	})
@@ -57,7 +58,7 @@ func NGINXDeployments(adapter CustomResourceAdapter, template helm.Template) []c
 	// When all of Operator's supported CHART_VERSIONS are at or above 5.6.0,
 	// we can remove this override.
 	for _, dep := range result {
-		dep.SetNamespace(adapter.Namespace())
+		dep.SetNamespace(adapter.Name().Namespace)
 	}
 
 	return result

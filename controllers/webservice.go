@@ -6,9 +6,10 @@ import (
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/internal"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileWebserviceExceptDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileWebserviceExceptDeployments(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcileWebserviceConfigMaps(ctx, adapter, template); err != nil {
 		return err
 	}
@@ -24,7 +25,7 @@ func (r *GitLabReconciler) reconcileWebserviceExceptDeployments(ctx context.Cont
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceConfigMaps(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileWebserviceConfigMaps(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, cm := range gitlabctl.WebserviceConfigMaps(template) {
 		if err := r.createOrPatch(ctx, cm, adapter); err != nil {
 			return err
@@ -34,7 +35,7 @@ func (r *GitLabReconciler) reconcileWebserviceConfigMaps(ctx context.Context, ad
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceServices(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileWebserviceServices(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, svc := range gitlabctl.WebserviceServices(template) {
 		if err := r.createOrPatch(ctx, svc, adapter); err != nil {
 			return err
@@ -44,8 +45,8 @@ func (r *GitLabReconciler) reconcileWebserviceServices(ctx context.Context, adap
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template, pause bool) error {
-	logger := r.Log.WithValues("gitlab", adapter.Reference(), "namespace", adapter.Namespace())
+func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlab.Adapter, template helm.Template, pause bool) error {
+	logger := r.Log.WithValues("gitlab", adapter.Name)
 
 	webservices := gitlabctl.WebserviceDeployments(template)
 
@@ -74,7 +75,7 @@ func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, a
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileWebserviceIngresses(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileWebserviceIngresses(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	for _, ingress := range gitlabctl.WebserviceIngresses(template) {
 		if err := r.reconcileIngress(ctx, ingress, adapter); err != nil {
 			return err

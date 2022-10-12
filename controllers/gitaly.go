@@ -5,9 +5,10 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileGitaly(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileGitaly(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcileGitalyConfigMap(ctx, adapter, template); err != nil {
 		return err
 	}
@@ -23,7 +24,7 @@ func (r *GitLabReconciler) reconcileGitaly(ctx context.Context, adapter gitlabct
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitalyConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileGitalyConfigMap(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.GitalyConfigMap(template), adapter); err != nil {
 		return err
 	}
@@ -31,7 +32,7 @@ func (r *GitLabReconciler) reconcileGitalyConfigMap(ctx context.Context, adapter
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitalyStatefulSet(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileGitalyStatefulSet(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.GitalyStatefulSet(template), adapter); err != nil {
 		return err
 	}
@@ -39,7 +40,7 @@ func (r *GitLabReconciler) reconcileGitalyStatefulSet(ctx context.Context, adapt
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileGitalyService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileGitalyService(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.GitalyService(template), adapter); err != nil {
 		return err
 	}

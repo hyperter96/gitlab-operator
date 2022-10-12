@@ -6,6 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 )
 
 // PraefectReplaceInternalGitalyEnabled returns `true` if enabled and `false` if not.
-func PraefectReplaceInternalGitalyEnabled(adapter CustomResourceAdapter) bool {
+func PraefectReplaceInternalGitalyEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(GlobalPraefectReplaceInternalGitalyEnabled)
 }
 

@@ -6,6 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -14,7 +15,7 @@ const (
 )
 
 // ShellEnabled returns `true` if enabled, and `false` if not.
-func ShellEnabled(adapter CustomResourceAdapter) bool {
+func ShellEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(gitlabShellEnabled)
 }
 
@@ -24,12 +25,12 @@ func ShellDeployment(template helm.Template) client.Object {
 }
 
 // ShellSshDaemon returns the SSH daemon of GitLab Shell component.
-func ShellSshDaemon(adapter CustomResourceAdapter) string {
+func ShellSshDaemon(adapter gitlab.Adapter) string {
 	return adapter.Values().GetString(gitlabShellSshDaemon)
 }
 
 // ShellConfigMaps returns the ConfigMaps of GitLab Shell component.
-func ShellConfigMaps(adapter CustomResourceAdapter, template helm.Template) []client.Object {
+func ShellConfigMaps(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	shellCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), GitLabShellComponentName))
 	tcpCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,

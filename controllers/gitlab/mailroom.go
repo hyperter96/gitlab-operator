@@ -6,6 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 // MailroomEnabled returns `true` if enabled and `false` if not.
-func MailroomEnabled(adapter CustomResourceAdapter) bool {
+func MailroomEnabled(adapter gitlab.Adapter) bool {
 	mrEnabled := adapter.Values().GetBool(GitLabMailroomEnabled)
 	imEnabled := adapter.Values().GetBool(IncomingEmailEnabled)
 	emSecret := adapter.Values().GetString(IncomingEmailSecret)
@@ -29,7 +30,7 @@ func MailroomDeployment(template helm.Template) client.Object {
 }
 
 // MailroomConfigMapsreturns the ConfigMaps for the Mailroom component.
-func MailroomConfigMap(adapter CustomResourceAdapter, template helm.Template) client.Object {
+func MailroomConfigMap(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), MailroomComponentName))
 }

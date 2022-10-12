@@ -6,8 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -15,20 +14,20 @@ const (
 )
 
 // PrometheusEnabled returns `true` if Prometheus is enabled, and `false` if not.
-func PrometheusClusterEnabled(adapter gitlab.CustomResourceAdapter) bool {
+func PrometheusClusterEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(prometheusInstall)
 }
 
 // PrometheusCluster returns a prometheus cluster object.
-func PrometheusCluster(cr *gitlabv1beta1.GitLab) *monitoringv1.Prometheus {
-	labels := Label(cr.Name, "prometheus", GitlabType)
+func PrometheusCluster(adapter gitlab.Adapter) *monitoringv1.Prometheus {
+	labels := Label(adapter.Name().Name, "prometheus", GitlabType)
 
 	var replicas int32 = 2
 
 	return &monitoringv1.Prometheus{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gitlab-prometheus",
-			Namespace: cr.Namespace,
+			Namespace: adapter.Name().Namespace,
 			Labels:    labels,
 		},
 		Spec: monitoringv1.PrometheusSpec{
@@ -36,7 +35,7 @@ func PrometheusCluster(cr *gitlabv1beta1.GitLab) *monitoringv1.Prometheus {
 				Alertmanagers: []monitoringv1.AlertmanagerEndpoints{
 					{
 						Name:      "alertmanager-main",
-						Namespace: cr.Namespace,
+						Namespace: adapter.Name().Namespace,
 						Port:      intstr.FromString("web"),
 					},
 				},
@@ -49,13 +48,13 @@ func PrometheusCluster(cr *gitlabv1beta1.GitLab) *monitoringv1.Prometheus {
 }
 
 // ExposePrometheusCluster creates a service for Prometheus.
-func ExposePrometheusCluster(cr *gitlabv1beta1.GitLab) *corev1.Service {
-	labels := Label(cr.Name, "prometheus", GitlabType)
+func ExposePrometheusCluster(adapter gitlab.Adapter) *corev1.Service {
+	labels := Label(adapter.Name().Name, "prometheus", GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gitlab-prometheus",
-			Namespace: cr.Namespace,
+			Namespace: adapter.Name().Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -75,13 +74,13 @@ func ExposePrometheusCluster(cr *gitlabv1beta1.GitLab) *corev1.Service {
 }
 
 // ExporterServiceMonitor returns the GitLab exporter service monitor.
-func ExporterServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
-	labels := Label(cr.Name, "gitlab-exporter", GitlabType)
+func ExporterServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
+	labels := Label(adapter.Name().Name, "gitlab-exporter", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: cr.Namespace,
+			Namespace: adapter.Name().Namespace,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Selector: metav1.LabelSelector{
@@ -99,13 +98,13 @@ func ExporterServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonit
 }
 
 // WebserviceServiceMonitor returns the Webservice service monitor.
-func WebserviceServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
-	labels := Label(cr.Name, "webservice", GitlabType)
+func WebserviceServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
+	labels := Label(adapter.Name().Name, "webservice", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: cr.Namespace,
+			Namespace: adapter.Name().Namespace,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Selector: metav1.LabelSelector{
@@ -123,13 +122,13 @@ func WebserviceServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMon
 }
 
 // PostgresqlServiceMonitor returns the Postgres service monitor.
-func PostgresqlServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
-	labels := Label(cr.Name, "postgresql", GitlabType)
+func PostgresqlServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
+	labels := Label(adapter.Name().Name, "postgresql", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: cr.Namespace,
+			Namespace: adapter.Name().Namespace,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Selector: metav1.LabelSelector{
@@ -147,13 +146,13 @@ func PostgresqlServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMon
 }
 
 // RedisServiceMonitor returns the Redis service monitor.
-func RedisServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
-	labels := Label(cr.Name, "redis", GitlabType)
+func RedisServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
+	labels := Label(adapter.Name().Name, "redis", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: cr.Namespace,
+			Namespace: adapter.Name().Namespace,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Selector: metav1.LabelSelector{
@@ -171,13 +170,13 @@ func RedisServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor 
 }
 
 // GitalyServiceMonitor returns the Gitaly service monitor.
-func GitalyServiceMonitor(cr *gitlabv1beta1.GitLab) *monitoringv1.ServiceMonitor {
-	labels := Label(cr.Name, "gitaly", GitlabType)
+func GitalyServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
+	labels := Label(adapter.Name().Name, "gitaly", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: cr.Namespace,
+			Namespace: adapter.Name().Namespace,
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Selector: metav1.LabelSelector{

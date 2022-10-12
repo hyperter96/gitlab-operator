@@ -5,9 +5,10 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-func (r *GitLabReconciler) reconcileRegistry(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRegistry(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcileRegistryConfigMap(ctx, adapter, template); err != nil {
 		return err
 	}
@@ -27,7 +28,7 @@ func (r *GitLabReconciler) reconcileRegistry(ctx context.Context, adapter gitlab
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRegistryConfigMap(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRegistryConfigMap(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.RegistryConfigMap(adapter, template), adapter); err != nil {
 		return err
 	}
@@ -35,7 +36,7 @@ func (r *GitLabReconciler) reconcileRegistryConfigMap(ctx context.Context, adapt
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	registry := gitlabctl.RegistryDeployment(template)
 
 	if err := r.setDeploymentReplica(ctx, registry); err != nil {
@@ -51,7 +52,7 @@ func (r *GitLabReconciler) reconcileRegistryDeployment(ctx context.Context, adap
 	return err
 }
 
-func (r *GitLabReconciler) reconcileRegistryService(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRegistryService(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.createOrPatch(ctx, gitlabctl.RegistryService(template), adapter); err != nil {
 		return err
 	}
@@ -59,7 +60,7 @@ func (r *GitLabReconciler) reconcileRegistryService(ctx context.Context, adapter
 	return nil
 }
 
-func (r *GitLabReconciler) reconcileRegistryIngress(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) error {
+func (r *GitLabReconciler) reconcileRegistryIngress(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
 	if err := r.reconcileIngress(ctx, gitlabctl.RegistryIngress(template), adapter); err != nil {
 		return err
 	}

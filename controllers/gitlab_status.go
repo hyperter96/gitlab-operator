@@ -5,7 +5,6 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -14,35 +13,29 @@ import (
 
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/status"
 )
 
-const (
-	ConditionInitialized = "Initialized"
-	ConditionAvailable   = "Available"
-	ConditionUpgrading   = "Upgrading"
-)
-
-func (r *GitLabReconciler) reconcileGitLabStatus(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) (ctrl.Result, error) {
+func (r *GitLabReconciler) reconcileGitLabStatus(ctx context.Context, adapter gitlab.Adapter, template helm.Template) (ctrl.Result, error) {
 	resultRequeue := ctrl.Result{RequeueAfter: 10 * time.Second}
 	resultNoRequeue := ctrl.Result{}
 	result := resultNoRequeue
 
 	if r.sidekiqAndWebserviceRunning(ctx, adapter, template) {
-		adapter.Resource().Status.Phase = "Running"
-
-		if err := r.setStatusCondition(ctx, adapter, ConditionAvailable, true, "GitLab is running and available to accept requests"); err != nil {
+		if err := r.setStatusCondition(ctx, adapter, status.ConditionAvailable, true, "GitLab is running and available to accept requests"); err != nil {
 			return result, err
 		}
 	} else {
-		adapter.Resource().Status.Phase = "Preparing"
 		result = resultRequeue
 	}
 
 	// Set the version regardless of whether Sidekiq and Webservice are fully running to
 	// ensure we don't trigger the upgrade logic again on the next iteration.
-	adapter.Resource().Status.Version = adapter.ChartVersion()
+	adapter.RecordVersion()
 
-	if err := r.Status().Update(ctx, adapter.Resource()); err != nil {
+	if err := r.Status().Update(ctx, adapter.Origin()); err != nil {
 		return result, err
 	}
 
@@ -60,7 +53,7 @@ func deploymentComplete(deployment *appsv1.Deployment, newStatus *appsv1.Deploym
 		newStatus.ObservedGeneration >= deployment.Generation
 }
 
-func (r *GitLabReconciler) componentRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, deployments []client.Object) bool {
+func (r *GitLabReconciler) componentRunning(ctx context.Context, adapter gitlab.Adapter, deployments []client.Object) bool {
 	running := true
 
 	for _, deployment := range deployments {
@@ -72,7 +65,7 @@ func (r *GitLabReconciler) componentRunning(ctx context.Context, adapter gitlabc
 		webservice := &appsv1.Deployment{}
 		key := types.NamespacedName{
 			Name:      deployment.GetName(),
-			Namespace: adapter.Namespace(),
+			Namespace: adapter.Name().Namespace,
 		}
 
 		err := r.Get(ctx, key, webservice)
@@ -85,31 +78,30 @@ func (r *GitLabReconciler) componentRunning(ctx context.Context, adapter gitlabc
 	return running
 }
 
-func (r *GitLabReconciler) sidekiqRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
+func (r *GitLabReconciler) sidekiqRunning(ctx context.Context, adapter gitlab.Adapter, template helm.Template) bool {
 	return r.componentRunning(ctx, adapter, gitlabctl.SidekiqDeployments(template))
 }
 
-func (r *GitLabReconciler) webserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
+func (r *GitLabReconciler) webserviceRunning(ctx context.Context, adapter gitlab.Adapter, template helm.Template) bool {
 	return r.componentRunning(ctx, adapter, gitlabctl.WebserviceDeployments(template))
 }
 
-func (r *GitLabReconciler) sidekiqAndWebserviceRunning(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, template helm.Template) bool {
+func (r *GitLabReconciler) sidekiqAndWebserviceRunning(ctx context.Context, adapter gitlab.Adapter, template helm.Template) bool {
 	return r.sidekiqRunning(ctx, adapter, template) && r.webserviceRunning(ctx, adapter, template)
 }
 
-func (r *GitLabReconciler) setStatusCondition(ctx context.Context, adapter gitlabctl.CustomResourceAdapter, reason string, status bool, message string) error {
+func (r *GitLabReconciler) setStatusCondition(ctx context.Context, adapter gitlab.Adapter, reason gitlab.ConditionType, status bool, message string) error {
 	statusValue := metav1.ConditionFalse
 	if status {
 		statusValue = metav1.ConditionTrue
 	}
 
-	apimeta.SetStatusCondition(&adapter.Resource().Status.Conditions, metav1.Condition{
-		Type:               reason,
-		Status:             statusValue,
-		Reason:             reason,
-		Message:            message,
-		ObservedGeneration: adapter.Resource().Generation,
+	adapter.SetCondition(metav1.Condition{
+		Type:    reason.Name(),
+		Status:  statusValue,
+		Reason:  reason.Name(),
+		Message: message,
 	})
 
-	return r.Status().Update(ctx, adapter.Resource())
+	return r.Status().Update(ctx, adapter.Origin())
 }

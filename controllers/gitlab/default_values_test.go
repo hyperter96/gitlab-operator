@@ -10,7 +10,7 @@ import (
 )
 
 var _ = Describe("Getting default values from charts", func() {
-	// None of these have defaults configured in the CustomResourceAdapter,
+	// None of these have defaults configured in the gitlab.Adapter,
 	// so their return values should come from the chart defaults.
 	tests := map[string]interface{}{
 		"gitlab.gitlab-exporter.enabled":                  true,

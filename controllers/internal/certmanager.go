@@ -8,7 +8,7 @@ import (
 	certmetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -18,14 +18,14 @@ const (
 )
 
 // CertManager returns `true` if CertManager is enabled, and `false` if not.
-func CertManagerEnabled(adapter gitlab.CustomResourceAdapter) bool {
+func CertManagerEnabled(adapter gitlab.Adapter) bool {
 	configureCertmanager := adapter.Values().GetBool(globalIngressConfigureCertmanager)
 
 	return configureCertmanager
 }
 
 // GetIssuerConfig gets the ACME issuer to use from GitLab resource.
-func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1.IssuerConfig {
+func GetIssuerConfig(adapter gitlab.Adapter) certmanagerv1.IssuerConfig {
 	if CertManagerEnabled(adapter) {
 		email := adapter.Values().GetString("certmanager-issuer.email")
 		if email == "" {
@@ -71,13 +71,13 @@ func GetIssuerConfig(adapter gitlab.CustomResourceAdapter) certmanagerv1.IssuerC
 }
 
 // CertificateIssuer create a certificate generator.
-func CertificateIssuer(adapter gitlab.CustomResourceAdapter) *certmanagerv1.Issuer {
+func CertificateIssuer(adapter gitlab.Adapter) *certmanagerv1.Issuer {
 	labels := Label(adapter.ReleaseName(), "issuer", GitlabType)
 
 	issuer := &certmanagerv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labels["app.kubernetes.io/instance"],
-			Namespace: adapter.Namespace(),
+			Namespace: adapter.Name().Namespace,
 			Labels:    labels,
 		},
 		Spec: certmanagerv1.IssuerSpec{
@@ -98,7 +98,7 @@ type EndpointTLS struct {
 
 // RequiresCertManagerCertificate function returns true an administrator
 // did not provide a TLS ceritificate for an endpoint.
-func RequiresCertManagerCertificate(adapter gitlab.CustomResourceAdapter) EndpointTLS {
+func RequiresCertManagerCertificate(adapter gitlab.Adapter) EndpointTLS {
 	// This implies that Operator can only consume wildcard certificate and individual certificate
 	// per service will be ignored.
 	tlsSecretName := adapter.Values().GetString("global.ingress.tls.secretName")

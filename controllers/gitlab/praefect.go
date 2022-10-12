@@ -4,6 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -11,7 +12,7 @@ const (
 )
 
 // PraefectEnabled returns `true` if enabled and `false` if not.
-func PraefectEnabled(adapter CustomResourceAdapter) bool {
+func PraefectEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(GlobalPraefectEnabled)
 }
 

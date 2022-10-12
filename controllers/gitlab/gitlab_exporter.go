@@ -6,6 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 )
 
 // ExporterEnabled returns `true` if enabled and `false` if not.
-func ExporterEnabled(adapter CustomResourceAdapter) bool {
+func ExporterEnabled(adapter gitlab.Adapter) bool {
 	return adapter.Values().GetBool(gitlabExporterEnabled)
 }
 
@@ -28,7 +29,7 @@ func ExporterDeployment(template helm.Template) client.Object {
 }
 
 // ExporterConfigMaps returns the ConfigMaps for the GitLab Exporter component.
-func ExporterConfigMaps(adapter CustomResourceAdapter, template helm.Template) []client.Object {
+func ExporterConfigMaps(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	exporterCfgMap := template.Query().ObjectByKindAndName(ConfigMapKind,
 		fmt.Sprintf("%s-%s", adapter.ReleaseName(), GitLabExporterComponentName))
 

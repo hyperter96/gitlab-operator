@@ -38,12 +38,6 @@ when using OpenShift.
 
 Below are known limitations of the GitLab Operator.
 
-### Components not supported
-
-Below is a list of unsupported components:
-
-- Spamcheck: [#624](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/624)
-
 ### Components not recommended for production use
 
 Below is a list of components that are not yet recommended for production when

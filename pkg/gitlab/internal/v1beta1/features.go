@@ -61,6 +61,7 @@ var mapComponentEnabled = map[gitlab.Component]gitlab.FeatureCheck{
 	component.Redis:          newCheckEnabled("redis.install"),
 	component.Registry:       newCheckEnabled("registry.enabled"),
 	component.Sidekiq:        newCheckEnabled("gitlab.sidekiq.enabled"),
+	component.Spamcheck:      newCheckEnabled("global.spamcheck.enabled"),
 	component.Toolbox:        newCheckEnabled("gitlab.toolbox.enabled"),
 	component.Webservice:     newCheckEnabled("gitlab.webservice.enabled"),
 }

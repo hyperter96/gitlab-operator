@@ -23,6 +23,7 @@ const (
 	Registry       gitlab.Component = "registry"
 	SharedSecrets  gitlab.Component = "shared-secrets"
 	Sidekiq        gitlab.Component = "sidekiq"
+	Spamcheck      gitlab.Component = "spamcheck"
 	Toolbox        gitlab.Component = "toolbox"
 	Webservice     gitlab.Component = "webservice"
 )

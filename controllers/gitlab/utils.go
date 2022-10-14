@@ -76,6 +76,9 @@ const (
 
 	// MinioComponentName is the common name of MinIO.
 	MinioComponentName = "minio"
+
+	// SpamcheckComponentName is the common name of Spamcheck.
+	SpamcheckComponentName = "spamcheck"
 )
 
 // RedisSubqueues is the array of possible Redis subqueues.

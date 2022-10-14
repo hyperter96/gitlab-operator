@@ -11,15 +11,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	globalMinioEnabled = "global.minio.enabled"
-)
-
-// MinioEnabled returns `true` if enabled, and `false` if not.
-func MinioEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(globalMinioEnabled)
-}
-
 // MinioJob returns the Job of the Minio component.
 func MinioJob(adapter gitlab.Adapter, template helm.Template) client.Object {
 	obj := template.Query().ObjectByKindAndComponent(JobKind, MinioComponentName)

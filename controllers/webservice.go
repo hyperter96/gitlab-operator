@@ -46,7 +46,7 @@ func (r *GitLabReconciler) reconcileWebserviceServices(ctx context.Context, adap
 }
 
 func (r *GitLabReconciler) reconcileWebserviceDeployments(ctx context.Context, adapter gitlab.Adapter, template helm.Template, pause bool) error {
-	logger := r.Log.WithValues("gitlab", adapter.Name)
+	logger := r.Log.WithValues("gitlab", adapter.Name())
 
 	webservices := gitlabctl.WebserviceDeployments(template)
 

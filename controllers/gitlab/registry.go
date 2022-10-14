@@ -9,15 +9,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	registryEnabled = "registry.enabled"
-)
-
-// RegistryEnabled returns `true` if the registry is enabled, and `false` if not.
-func RegistryEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(registryEnabled)
-}
-
 // RegistryService returns the Service of the Registry component.
 func RegistryService(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, RegistryComponentName)

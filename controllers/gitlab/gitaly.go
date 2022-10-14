@@ -6,17 +6,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
-
-const (
-	GlobalGitalyEnabled = "global.gitaly.enabled"
-)
-
-// GitalyEnabled returns `true` if enabled and `false` if not.
-func GitalyEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(GlobalGitalyEnabled)
-}
 
 // GitalyStatefulSet returns the StatefulSet of Gitaly component.
 func GitalyStatefulSet(template helm.Template) client.Object {

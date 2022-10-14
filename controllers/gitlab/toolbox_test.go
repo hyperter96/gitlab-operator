@@ -1,15 +1,19 @@
 package gitlab
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	feature "gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/features"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
 )
 
-var _ = Describe("gitlab.Adapter", func() {
+const (
+	gitlabToolboxCronJobEnabled            = "gitlab.toolbox.backups.cron.enabled"
+	gitlabToolboxCronJobPersistenceEnabled = "gitlab.toolbox.backups.cron.persistence.enabled"
+)
+
+var _ = Describe("CustomResourceAdapter", func() {
 
 	if namespace == "" {
 		namespace = testNamespace
@@ -23,7 +27,7 @@ var _ = Describe("gitlab.Adapter", func() {
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := ToolboxCronJobEnabled(adapter)
+			enabled := adapter.WantsFeature(feature.BackupCronJob)
 			cronJob := ToolboxCronJob(adapter, template)
 
 			It("Should render the template", func() {
@@ -38,7 +42,7 @@ var _ = Describe("gitlab.Adapter", func() {
 		})
 
 		When("Toolbox CronJob is enabled", func() {
-			key := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName)
+			key := gitlabToolboxCronJobEnabled
 
 			chartValues := support.Values{}
 			_ = chartValues.SetValue(key, true)
@@ -47,10 +51,10 @@ var _ = Describe("gitlab.Adapter", func() {
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := ToolboxCronJobEnabled(adapter)
+			enabled := adapter.WantsFeature(feature.BackupCronJob)
 			cronJob := ToolboxCronJob(adapter, template)
 
-			persistenceEnabled := ToolboxCronJobPersistenceEnabled(adapter)
+			persistenceEnabled := adapter.WantsFeature(feature.BackupCronJobPersistence)
 			cronJobPersistentVolumeClaim := ToolboxCronJobPersistentVolumeClaim(adapter, template)
 
 			It("Should render the template", func() {
@@ -70,8 +74,8 @@ var _ = Describe("gitlab.Adapter", func() {
 		})
 
 		When("Toolbox CronJob and CronJob Persistence is enabled", func() {
-			gitlabToolboxCronJobEnabled := fmt.Sprintf(gitlabToolboxCronJobEnabled, ToolboxComponentName)
-			gitlabToolboxCronJobPersistenceEnabled := fmt.Sprintf(gitlabToolboxCronJobPersistenceEnabled, ToolboxComponentName)
+			gitlabToolboxCronJobEnabled := gitlabToolboxCronJobEnabled
+			gitlabToolboxCronJobPersistenceEnabled := gitlabToolboxCronJobPersistenceEnabled
 
 			chartValues := support.Values{}
 			_ = chartValues.SetValue(gitlabToolboxCronJobEnabled, true)
@@ -81,10 +85,10 @@ var _ = Describe("gitlab.Adapter", func() {
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
 
-			enabled := ToolboxCronJobEnabled(adapter)
+			enabled := adapter.WantsFeature(feature.BackupCronJob)
 			cronJob := ToolboxCronJob(adapter, template)
 
-			persistenceEnabled := ToolboxCronJobPersistenceEnabled(adapter)
+			persistenceEnabled := adapter.WantsFeature(feature.BackupCronJobPersistence)
 			cronJobPersistentVolumeClaim := ToolboxCronJobPersistentVolumeClaim(adapter, template)
 
 			It("Should render the template", func() {

@@ -4,13 +4,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
-	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
-
-// KasEnabled returns `true` if KAS is enabled, and `false` if not. By default it returns `false`.
-func KasEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool("global.kas.enabled")
-}
 
 func KasConfigMap(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ConfigMapKind, KasComponentName)

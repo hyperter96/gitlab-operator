@@ -14,6 +14,7 @@ import (
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 )
 
 const (
@@ -92,7 +93,7 @@ func (r *GitLabReconciler) rollingUpdateSidekiqDeployments(ctx context.Context, 
 }
 
 func (r *GitLabReconciler) reconcileWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlab.Adapter, template helm.Template, pause bool, log logr.Logger) error {
-	if gitlabctl.WebserviceEnabled(adapter) {
+	if adapter.WantsComponent(component.Webservice) {
 		log.Info("reconciling Webservice Deployments", "pause", pause)
 
 		if err := r.reconcileWebserviceDeployments(ctx, adapter, template, pause); err != nil {
@@ -100,7 +101,7 @@ func (r *GitLabReconciler) reconcileWebserviceAndSidekiqIfEnabled(ctx context.Co
 		}
 	}
 
-	if gitlabctl.SidekiqEnabled(adapter) {
+	if adapter.WantsComponent(component.Sidekiq) {
 		log.Info("reconciling Sidekiq Deployments", "pause", pause)
 
 		if err := r.reconcileSidekiqDeployments(ctx, adapter, template, pause); err != nil {
@@ -112,7 +113,7 @@ func (r *GitLabReconciler) reconcileWebserviceAndSidekiqIfEnabled(ctx context.Co
 }
 
 func (r *GitLabReconciler) unpauseWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlab.Adapter, template helm.Template, log logr.Logger) error {
-	if gitlabctl.WebserviceEnabled(adapter) {
+	if adapter.WantsComponent(component.Webservice) {
 		log.Info("ensuring Webservice Deployments are unpaused")
 
 		if err := r.unpauseWebserviceDeployments(ctx, adapter, template); err != nil {
@@ -120,7 +121,7 @@ func (r *GitLabReconciler) unpauseWebserviceAndSidekiqIfEnabled(ctx context.Cont
 		}
 	}
 
-	if gitlabctl.SidekiqEnabled(adapter) {
+	if adapter.WantsComponent(component.Sidekiq) {
 		log.Info("ensuring Sidekiq Deployments are unpaused")
 
 		if err := r.unpauseSidekiqDeployments(ctx, adapter, template); err != nil {
@@ -132,7 +133,7 @@ func (r *GitLabReconciler) unpauseWebserviceAndSidekiqIfEnabled(ctx context.Cont
 }
 
 func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Context, adapter gitlab.Adapter, template helm.Template, log logr.Logger) error {
-	if gitlabctl.WebserviceEnabled(adapter) {
+	if adapter.WantsComponent(component.Webservice) {
 		log.Info("ensuring Webservice Deployments are running")
 
 		if !r.webserviceRunning(ctx, adapter, template) {
@@ -140,7 +141,7 @@ func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Cont
 		}
 	}
 
-	if gitlabctl.SidekiqEnabled(adapter) {
+	if adapter.WantsComponent(component.Sidekiq) {
 		log.Info("ensuring Sidekiq Deployments are running")
 
 		if !r.sidekiqRunning(ctx, adapter, template) {
@@ -152,7 +153,7 @@ func (r *GitLabReconciler) webserviceAndSidekiqRunningIfEnabled(ctx context.Cont
 }
 
 func (r *GitLabReconciler) rollingUpdateWebserviceAndSidekiqIfEnabled(ctx context.Context, adapter gitlab.Adapter, template helm.Template, log logr.Logger) error {
-	if gitlabctl.WebserviceEnabled(adapter) {
+	if adapter.WantsComponent(component.Webservice) {
 		log.Info("ensuring Webservice Deployments are running")
 
 		if err := r.rollingUpdateWebserviceDeployments(ctx, adapter, template); err != nil {
@@ -160,7 +161,7 @@ func (r *GitLabReconciler) rollingUpdateWebserviceAndSidekiqIfEnabled(ctx contex
 		}
 	}
 
-	if gitlabctl.SidekiqEnabled(adapter) {
+	if adapter.WantsComponent(component.Sidekiq) {
 		log.Info("ensuring Sidekiq Deployments are running")
 
 		if err := r.rollingUpdateSidekiqDeployments(ctx, adapter, template); err != nil {

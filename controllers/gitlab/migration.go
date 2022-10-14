@@ -9,15 +9,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	gitlabMigrationsEnabled = "gitlab.migrations.enabled"
-)
-
-// MigrationsEnabled returns `true` if enabled and `false` if not.
-func MigrationsEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(gitlabMigrationsEnabled)
-}
-
 // MigrationsConfigMap returns the ConfigMaps of Migrations component.
 func MigrationsConfigMap(adapter gitlab.Adapter, template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndName(ConfigMapKind,

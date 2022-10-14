@@ -10,14 +10,8 @@ import (
 )
 
 const (
-	gitlabShellEnabled   = "gitlab.gitlab-shell.enabled"
 	gitlabShellSshDaemon = "gitlab.gitlab-shell.sshDaemon"
 )
-
-// ShellEnabled returns `true` if enabled, and `false` if not.
-func ShellEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(gitlabShellEnabled)
-}
 
 // ShellDeployment returns the Deployment of GitLab Shell component.
 func ShellDeployment(template helm.Template) client.Object {

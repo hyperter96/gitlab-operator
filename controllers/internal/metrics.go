@@ -9,15 +9,6 @@ import (
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
-const (
-	prometheusInstall = "prometheus.install"
-)
-
-// PrometheusEnabled returns `true` if Prometheus is enabled, and `false` if not.
-func PrometheusClusterEnabled(adapter gitlab.Adapter) bool {
-	return adapter.Values().GetBool(prometheusInstall)
-}
-
 // PrometheusCluster returns a prometheus cluster object.
 func PrometheusCluster(adapter gitlab.Adapter) *monitoringv1.Prometheus {
 	labels := Label(adapter.Name().Name, "prometheus", GitlabType)

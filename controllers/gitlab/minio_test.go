@@ -6,7 +6,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support"
+)
+
+const (
+	globalMinioEnabled = "global.minio.enabled"
 )
 
 var _ = Describe("Enabling or disabling internal MinIO", func() {
@@ -56,7 +61,7 @@ gitlab:
 			mockGitLab := CreateMockGitLab(releaseName, namespace, test.chartValues)
 			adapter := CreateMockAdapter(mockGitLab)
 			template, err := GetTemplate(adapter)
-			enabled := MinioEnabled(adapter)
+			enabled := adapter.WantsComponent(component.MinIO)
 
 			It("Should render the template", func() {
 				Expect(err).To(BeNil())

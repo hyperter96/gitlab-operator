@@ -7,6 +7,7 @@ import (
 	gitlabctl "gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/gitlab"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/component"
 )
 
 func (r *GitLabReconciler) reconcileRedis(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
@@ -56,7 +57,7 @@ func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Contex
 	}
 
 	// If external Redis global password is enabled, ensure it was created.
-	if gitlabctl.RedisEnabled(adapter) {
+	if adapter.WantsComponent(component.Redis) {
 		redisSecretName := adapter.Values().GetString("global.redis.password.secret", defaultRedisSecretName)
 		if err := r.ensureSecret(ctx, adapter, redisSecretName); err != nil {
 			return err

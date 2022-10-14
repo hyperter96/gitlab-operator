@@ -136,7 +136,8 @@ var _ = Describe("GitLab Adapter [v1beta1]", func() {
 			component.PostgreSQL, component.Redis, component.Registry,
 			component.Sidekiq, component.Toolbox, component.Webservice)
 		checkDisabledComponents(a,
-			component.GitLabPages, component.Mailroom, component.Praefect)
+			component.GitLabPages, component.Mailroom,
+			component.Praefect, component.Spamcheck)
 		checkEnabledFeatures(a, ConfigureCertManager)
 		checkDisabledFeatures(a, ReplaceGitalyWithPraefect)
 	})
@@ -154,12 +155,13 @@ var _ = Describe("GitLab Adapter [v1beta1]", func() {
 		_ = values.SetValue("redis.install", false)
 
 		/*
-		 * Enable GitLab Pages, MinIO, and Mailroom.
+		 * Enable GitLab Pages, MinIO, Mailroom, and Spamcheck
 		 * Mailroom requires more conditions and will not be enabled.
 		 */
 		_ = values.SetValue("global.pages.enabled", true)
 		_ = values.SetValue("global.minio.enabled", true)
 		_ = values.SetValue("gitlab.mailroom.enabled", true)
+		_ = values.SetValue("global.spamcheck.enabled", true)
 
 		a, err := NewAdapter(context.TODO(),
 			newGitLabResource(getChartVersion(), values))
@@ -171,7 +173,7 @@ var _ = Describe("GitLab Adapter [v1beta1]", func() {
 			component.GitLabExporter, component.GitLabPages, component.GitLabShell,
 			component.Migrations, component.MinIO, component.NginxIngress,
 			component.Praefect, component.Registry, component.Sidekiq,
-			component.Toolbox, component.Webservice)
+			component.Spamcheck, component.Toolbox, component.Webservice)
 		checkDisabledComponents(a,
 			component.Gitaly, component.Mailroom,
 			component.PostgreSQL, component.Redis)
@@ -221,6 +223,7 @@ func addChartDefaultExamples(examples support.Values) {
 	examples["global.ingress.configureCertmanager"] = true
 	examples["global.ingress.provider"] = "nginx"
 	examples["global.pages.enabled"] = false
+	examples["global.spamcheck.enabled"] = false
 	examples["nginx-ingress.enabled"] = true
 	examples["postgresql.install"] = true
 	examples["redis.install"] = true

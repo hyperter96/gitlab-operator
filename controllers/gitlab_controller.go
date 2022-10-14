@@ -209,6 +209,12 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
+	if gitlabctl.SpamcheckEnabled(adapter) {
+		if err := r.reconcileSpamcheck(ctx, adapter, template); err != nil {
+			return requeue(err)
+		}
+	}
+
 	if internal.RequiresCertManagerCertificate(adapter).Any() {
 		if err := r.reconcileCertManagerCertificates(ctx, adapter); err != nil {
 			return requeue(err)

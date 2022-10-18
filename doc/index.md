@@ -27,6 +27,11 @@ when using OpenShift.
 
 [Backup and restore](backup_and_restore.md) documentation demonstrates how to back up and restore a GitLab instance that is managed by the Operator.
 
+## Using RedHat certified images
+
+[RedHat certified images](certified_images.md) documentation demonstrates how to instruct the GitLab Operator
+to deploy images that have been certified by RedHat.
+
 ## Developer Tooling
 
 - [Developer guide](developer/guide.md): Outlines the project structure and how to contribute.

@@ -14,7 +14,9 @@ func (w *Adapter) SetCondition(condition metav1.Condition) {
 
 	/* Deduce phase from condition type */
 	if condition.Type == status.ConditionAvailable.Name() {
-		w.source.Status.Phase = status.PhaseRunning
+		if condition.Status == metav1.ConditionTrue {
+			w.source.Status.Phase = status.PhaseRunning
+		}
 	} else {
 		w.source.Status.Phase = status.PhasePreparing
 	}

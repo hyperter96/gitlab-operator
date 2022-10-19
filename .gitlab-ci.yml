@@ -521,6 +521,11 @@ image_certification:
     untracked: false
     paths:
       - reports/*
+  rules:
+    - !reference [.skip_if_docs_branch]
+    - !reference [.if_release_tag]
+    - !reference [.if_redhat_certification]
+    - if: "$CI_COMMIT_BRANCH"
 
 build_chart:
   stage: build

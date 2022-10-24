@@ -108,3 +108,4 @@ deploy/chart/Chart.lock
 deploy/chart/charts/*.tgz
 
 .task/
+workspace-template.yml

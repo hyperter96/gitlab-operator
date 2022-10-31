@@ -25,7 +25,6 @@ variables:
   OCP_MANIFEST_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}/gitlab-operator-openshift-${CI_COMMIT_TAG}.yaml"
   # OCP_RESOURCES_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}/openshift-resources-${CI_COMMIT_TAG}.yaml"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}"
-  SECRET_DETECTION_HISTORIC_SCAN: "true"
   ISSUE_BOT_LABELS_EXTRA: "group::distribution"
 
 

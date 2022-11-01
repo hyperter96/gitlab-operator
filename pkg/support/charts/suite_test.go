@@ -5,7 +5,19 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"helm.sh/helm/v3/pkg/chart"
 )
+
+func newTestChart(name, version, appVersion string) *chart.Chart {
+	return &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:       name,
+			Version:    version,
+			AppVersion: appVersion,
+		},
+	}
+}
 
 func TestGitlabOperator(t *testing.T) {
 	RegisterFailHandler(Fail)

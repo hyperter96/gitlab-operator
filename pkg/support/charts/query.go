@@ -31,7 +31,7 @@ func WithAppVersion(appVersion string) Criterion {
 	}
 }
 
-// Any combines the provided Chart query criteria and succeeds when all of them
+// All combines the provided Chart query criteria and succeeds when all of them
 // return true.
 func All(criteria ...Criterion) Criterion {
 	return func(chart *chart.Chart) bool {

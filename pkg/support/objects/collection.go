@@ -22,25 +22,56 @@ func (c Collection) First() client.Object {
 	return nil
 }
 
+// Contains checks if the specified object exists.
+//
+// It compares name, namespaces, and kind (excluding its group and version) of
+// the object.
+func (c Collection) Contains(object client.Object) bool {
+	for _, i := range c {
+		if isMatchingObject(i, object) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Filter returns a new collection of objects that satisfy the predicate.
+func (c Collection) Filter(predicate Selector) Collection {
+	result := Collection{}
+
+	for _, o := range c {
+		if predicate(o) {
+			result.Append(o)
+		}
+	}
+
+	return result
+}
+
 // Query filters the collection with the specified selectors and returns a new
 // collection of matching objects.
 //
 // When multiple selectors are specified an object must match _all_ of them for
 // being selected.
 func (c Collection) Query(selectors ...Selector) Collection {
-	result := Collection{}
-
 	if len(selectors) == 0 {
-		return result
+		return Collection{}
 	}
 
-	for _, o := range c {
-		if All(selectors...)(o) {
-			result.Append(o)
-		}
-	}
+	return c.Filter(All(selectors...))
+}
 
-	return result
+// Intersection returns a new collection with the objects that are in the
+// other collection as well.
+func (c Collection) Intersection(other Collection) Collection {
+	return c.Filter(other.Contains)
+}
+
+// Difference returns a new collection with the objects that are not in the
+// other collection.
+func (c Collection) Difference(other Collection) Collection {
+	return c.Filter(Negate(other.Contains))
 }
 
 // Edit applies changes in-place to all objects of the collection using the
@@ -93,4 +124,11 @@ func (c Collection) Clone() Collection {
 // collection.
 func (c *Collection) Append(objects ...client.Object) {
 	*c = append(*c, objects...)
+}
+
+/* Private */
+
+func isMatchingObject(a, b client.Object) bool {
+	return a.GetName() == b.GetName() && a.GetNamespace() == b.GetNamespace() &&
+		a.GetObjectKind().GroupVersionKind().Kind == b.GetObjectKind().GroupVersionKind().Kind
 }

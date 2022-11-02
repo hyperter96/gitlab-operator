@@ -134,3 +134,10 @@ func None(selectors ...Selector) Selector {
 		return true
 	}
 }
+
+// Negate changes the specified selector and negates its result.
+func Negate(predicate Selector) Selector {
+	return func(o client.Object) bool {
+		return !predicate(o)
+	}
+}

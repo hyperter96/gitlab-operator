@@ -80,17 +80,29 @@ var _ = Describe("Collection", func() {
 			Expect(c.Query(trueSelector, falseSelector).Empty()).To(BeTrue())
 		})
 
+		It("returns an empty collection when there is no selector", func() {
+			c := Collection{
+				newObject("foo.bar/v1", "Test1"),
+				newObject("foo.bar/v1", "Test2"),
+			}
+
+			q := c.Query()
+
+			Expect(q).To(BeEmpty())
+			Expect(q).NotTo(BeIdenticalTo(c))
+		})
+
 		It("returns a new collection with the same objects that match", func() {
 			c := Collection{
 				newObject("foo.bar/v1", "Test1"),
 				newObject("foo.bar/v1", "Test2"),
 			}
 
-			c1 := c.Query(ByKind("Test1"))
+			q := c.Query(ByKind("Test1"))
 
-			Expect(c1).To(HaveLen(1))
-			Expect(c1).NotTo(BeIdenticalTo(c))
-			Expect(c1[0]).To(BeIdenticalTo(c[0]))
+			Expect(q).To(HaveLen(1))
+			Expect(q).NotTo(BeIdenticalTo(c))
+			Expect(q[0]).To(BeIdenticalTo(c[0]))
 		})
 	})
 
@@ -194,6 +206,92 @@ var _ = Describe("Collection", func() {
 			Expect(c[0].GetName()).To(Equal("test-Test1"))
 			Expect(c[1].GetName()).To(Equal("test-Test2"))
 			Expect(c[2].GetName()).To(Equal("test-Test3"))
+		})
+	})
+
+	C1 := Collection{
+		setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "test"),
+		setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "test"),
+	}
+	C2 := Collection{
+		setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "default"),
+		setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "default"),
+	}
+	C3 := Collection{
+		setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "test"),
+		setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "default"),
+	}
+	R1 := Collection{
+		setAnnotations(setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "test"),
+			map[string]string{"index": "1"}),
+		setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "test"),
+		setAnnotations(setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "test"),
+			map[string]string{"index": "2"}),
+	}
+	R2 := Collection{
+		setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "test"),
+		setAnnotations(setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "test"),
+			map[string]string{"index": "1"}),
+		setAnnotations(setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "test"),
+			map[string]string{"index": "2"}),
+	}
+
+	C1C3Intersection := Collection{
+		setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "test"),
+	}
+	C1C2Difference := C1.Clone()
+	C1C3Difference := Collection{
+		setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "test"),
+	}
+	C3C1Difference := Collection{
+		setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "default"),
+	}
+	R1C3Intersection := Collection{
+		setAnnotations(setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "test"),
+			map[string]string{"index": "1"}),
+		setAnnotations(setQualifiedName(newObject("foo.bar/v1", "Test1"), "test1", "test"),
+			map[string]string{"index": "2"}),
+	}
+	R2C3Difference := Collection{
+		setAnnotations(setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "test"),
+			map[string]string{"index": "1"}),
+		setAnnotations(setQualifiedName(newObject("foo.bar/v1", "Test2"), "test2", "test"),
+			map[string]string{"index": "2"}),
+	}
+
+	Describe("Intersection", func() {
+		It("returns an empty collection when there is no intersection", func() {
+			Expect(C1.Intersection(Collection{})).To(BeEmpty())
+			Expect(C1.Intersection(C2)).To(BeEmpty())
+		})
+
+		It("returns the intersecting objects", func() {
+			Expect(C1.Intersection(C3)).To(Equal(C1C3Intersection))
+		})
+
+		It("includes duplicate objects", func() {
+			Expect(R1.Intersection(C3)).To(Equal(R1C3Intersection))
+		})
+	})
+
+	Describe("Difference", func() {
+		It("returns an empty collection when there is no difference", func() {
+			Expect(C1.Difference(C1.Clone())).To(BeEmpty())
+			Expect(Collection{}.Difference(C1)).To(BeEmpty())
+		})
+
+		It("returns the LHS when the one is null", func() {
+			Expect(C1.Difference(Collection{})).To(Equal(C1))
+		})
+
+		It("returns the differing objects", func() {
+			Expect(C1.Difference(C2)).To(Equal(C1C2Difference))
+			Expect(C1.Difference(C3)).To(Equal(C1C3Difference))
+			Expect(C3.Difference(C1)).To(Equal(C3C1Difference))
+		})
+
+		It("includes duplicate objects", func() {
+			Expect(R2.Difference(C3)).To(Equal(R2C3Difference))
 		})
 	})
 

@@ -1,6 +1,12 @@
 # How to publish to OperatorHub.io
 
 OperatorHub.io is a home for the Kubernetes community to share Operators.
+
+NOTE:
+The following process is partially automated in `scripts/tools/publish.sh`.
+You can use `publish.sh ${VERSION} operatorhub` to run this process.
+For more details see the script documentation.
+
 To publish the GitLab Operator to OperatorHub:
 
 1. Fork the [community-operators repository](https://github.com/k8s-operatorhub/community-operators).

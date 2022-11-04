@@ -34,7 +34,7 @@ GitLab Operator supports Kubernetes 1.19 through 1.22, and is tested against 1.2
 
 To create an OpenShift cluster, see the [OpenShift cluster setup docs](developer/openshift_cluster_setup.md) for an example of how to create a _development environment_.
 
-GitLab Operator supports OpenShift 4.6 through 4.9, and is tested against 4.8 and 4.9 in CI.
+GitLab Operator supports OpenShift 4.8 through 4.10, and is tested against 4.8 and 4.9 in CI.
 
 ### Ingress controller
 

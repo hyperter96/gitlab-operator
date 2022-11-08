@@ -90,12 +90,20 @@ prepare_build_directories() {
 
 install_gitlab_operator() {
   echo 'Installing GitLab operator'
+
   if [ -n "${REGISTRY_AUTH_SECRET}" ]
   then
-    ARGS="--set \"imagePullSecrets[0].name=${REGISTRY_AUTH_SECRET}\"" task deploy_operator
-  else
-    task deploy_operator
+    export ARGS="--set image.pullSecrets[0].name=${REGISTRY_AUTH_SECRET}"
   fi
+
+  if [[ "$CI_SERVER_HOST" == 'dev.gitlab.org' ]]
+  then
+    export IMG_REGISTRY='dev.gitlab.org:5005'
+    export IMG_REPOSITORY='gitlab/cloud-native'
+  fi
+
+  task deploy_operator
+
   set -x
   cp ${INSTALL_DIR}/operator.yaml ${INSTALL_DIR}/glop-${HOSTSUFFIX}.${DOMAIN}.yaml
   set +x

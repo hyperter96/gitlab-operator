@@ -2,11 +2,11 @@
 
 This document outlines certification process for OLM bundle submission for RedHat Marketplace. It is based on [Red Hat Software Certification Workflow Guide](https://access.redhat.com/documentation/en-us/red_hat_software_certification/8.49/html/red_hat_software_certification_workflow_guide/assembly-running-the-certification-suite-locally_openshift-sw-cert-workflow-complete-pre-certification-checklist)
 
-Below process outlines **full** setup for certification. 
+Below process outlines **full** setup for certification.
 
 ## Pre-requisites
 
-1. GitHub account is required. 
+1. GitHub account is required.
    1. personal account could be used
    1. service account (like `gl-distribution-oc`) can be used
       1. SSH key pair is necessary for proper operation
@@ -93,7 +93,7 @@ and add `certified-operators-key.pub`
 
 ## Setup environment
 
-Using some of the settings above and settings we'll need later, 
+Using some of the settings above and settings we'll need later,
 it may be useful to create a `my.env` file for shell setup:
 
 ```shell
@@ -176,7 +176,7 @@ export CATALOG_REPO_CLONE=${REPO_HOME}/certified-operators
 
 Navigate to `Gitlab Operator Bundle`, Open `Settings` tab.
 
-Add GitHub user to `Authorized GitHub user accounts` 
+Add GitHub user to `Authorized GitHub user accounts`
 
 ## Setup pipeline
 

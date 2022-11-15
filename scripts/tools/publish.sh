@@ -132,6 +132,7 @@ pull_operators() {
     git fetch --all
     git checkout main
     git rebase upstream/main
+    git push origin main
 }
 
 checkout_publish_branch() {
@@ -193,8 +194,17 @@ commit_publish_branch() {
     local build_dir="${1}"
 
     cd "${build_dir}"
-    git add "operators/${GITLAB_OPERATOR_DIR}/${VERSION}"
+    local target_dir="operators/${GITLAB_OPERATOR_DIR}/${VERSION}"
+    git add "${target_dir}"
     git commit -m "Add GitLab Operator ${VERSION}" --signoff --amend
+
+    # Make sure that only the commit only contains the files that are specific
+    # to the version.
+    if git diff --name-only "${BRANCH_NAME}" upstream/main | grep -vFq "${target_dir}"; then
+        echo "[error] The commit contains excess. Check ${BRANCH_NAME} branch of ${build_dir}."
+        exit 3
+    fi
+
     git push origin "${BRANCH_NAME}" --force
 }
 

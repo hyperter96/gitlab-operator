@@ -132,7 +132,7 @@ pull_operators() {
     git fetch --all
     git checkout main
     git rebase upstream/main
-    git push origin main
+    git push origin main --force
 }
 
 checkout_publish_branch() {
@@ -196,7 +196,7 @@ commit_publish_branch() {
     cd "${build_dir}"
     local target_dir="operators/${GITLAB_OPERATOR_DIR}/${VERSION}"
     git add "${target_dir}"
-    git commit -m "Add GitLab Operator ${VERSION}" --signoff --amend
+    git commit -m "Add GitLab Operator ${VERSION}" --signoff
 
     # Make sure that only the commit only contains the files that are specific
     # to the version.

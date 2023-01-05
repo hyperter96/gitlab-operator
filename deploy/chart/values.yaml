@@ -40,6 +40,11 @@ manager:
     # The name of the service account to use.
     # If not set and create is true, a name is generated using the name template
     # name:
+  webhook:
+    selfSignedCert:
+      # Specifies whether CertManager Issuer and Certificate should be created
+      # to generate a self-signed certificate for the Manager's webhook.
+      create: true
 
 app:
   serviceAccount:

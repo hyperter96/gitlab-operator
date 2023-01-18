@@ -109,3 +109,5 @@ deploy/chart/charts/*.tgz
 
 .task/
 workspace-template.yml
+
+*.env

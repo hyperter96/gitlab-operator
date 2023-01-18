@@ -10,6 +10,7 @@ GITLAB_CR_DEPLOY_MODE=${GITLAB_CR_DEPLOY_MODE:-"selfsigned"}
 GITLAB_OPERATOR_DOMAIN="${GITLAB_OPERATOR_DOMAIN:-$USER.cloud-native.win}"
 GITLAB_HOST=${GITLAB_HOST:-"*.${GITLAB_OPERATOR_DOMAIN}"}
 GITLAB_KEY_FILE=${GITLAB_KEY_FILE:-gitlab.key}
+GITLAB_TLSCERTNAME=${GITLAB_TLSCERTNAME:-"custom-gitlab-tls"}
 GITLAB_CERT_FILE=${GITLAB_CERT_FILE:-gitlab.crt}
 GITLAB_PAGES_HOST=${GITLAB_PAGES_HOST:-"*.pages.${GITLAB_OPERATOR_DOMAIN}"}
 GITLAB_PAGES_KEY_FILE=${GITLAB_PAGES_KEY_FILE:-pages.key}
@@ -23,24 +24,20 @@ KIND=${KIND:-'kind'}
 KIND_CLUSTER_NAME=${KIND_CLUSTER_NAME:-gitlab}
 KIND_IMAGE=${KIND_IMAGE:-'kindest/node:v1.19.7'}
 KIND_LOCAL_IP=${KIND_LOCAL_IP:-""}
+KIND_CONFIG=${KIND_CONFIG:-""}
 
 KUBECTL=${KUBECTL:-'kubectl'}
 HELM=${HELM:-'helm'}
 
 TASK=${TASK:-'task'}
 
+TARGET_NAMESPACE=${TARGET_NAMESPACE:-"gitlab-system"}
+
 KUBERNETES_TIMEOUT=${KUBERNETES_TIMEOUT:-"300s"}
 
 main(){
   if [ "$1" == 'help' ]; then
     help; exit 0;
-  fi
-
-  if [ -z "${GITLAB_CHART_DIR}" ]
-  then
-    echo "Missing one of the required env vars:"
-    echo " GITLAB_CHART_DIR: ${GITLAB_CHART_DIR}"
-    exit 1
   fi
 
   if [ $# -eq 0 ]; then
@@ -90,11 +87,23 @@ runner_deploy(){
 }
 
 create_kind_cluster(){
-  ${KIND} create cluster --name="${KIND_CLUSTER_NAME}" --config="${GITLAB_CHART_DIR}/examples/kind/kind-ssl.yaml" --image="${KIND_IMAGE}"
+  if [ -z "${GITLAB_CHART_DIR+}" -a -z "${KIND_CONFIG+}" ]; then
+    echo "Missing one of the required env vars:"
+    echo " GITLAB_CHART_DIR: ${GITLAB_CHART_DIR+}"
+    echo " KIND_CONFIG: ${KIND_CONFIG+}"
+    echo " auto-generating KIND_CONFIG..."
+    KIND_CONFIG=$(mkdir -p .build; mktemp -p .build kind-ssl.XXXXX)
+    export KIND_CONFIG
+    _cleanup_kind_config="true"
+    curl -o "${KIND_CONFIG}" "${CHART_REPO}/-/raw/master/examples/kind/kind-ssl.yaml"
+  elif [ -n "${GITLAB_CHART_DIR+}" -a -z "${KIND_CONFIG}" ]; then
+    KIND_CONFIG="${GITLAB_CHART_DIR}/examples/kind/kind-ssl.yaml"
+  fi
+  ${KIND} create cluster --name="${KIND_CLUSTER_NAME}" --config="${KIND_CONFIG}" --image="${KIND_IMAGE}"
 }
 
 create_namespace(){
-    $KUBECTL get namespace -o name gitlab-system > /dev/null 2>&1 || $KUBECTL create namespace gitlab-system
+    $KUBECTL get namespace -o name ${TARGET_NAMESPACE} > /dev/null 2>&1 || $KUBECTL create namespace ${TARGET_NAMESPACE}
 }
 
 install_certmanager(){
@@ -108,7 +117,7 @@ create_gitlab_cert(){
 }
 
 deploy_gitlab_cert(){
-  $KUBECTL create secret -n gitlab-system tls custom-gitlab-tls --key="${GITLAB_KEY_FILE}" --cert="${GITLAB_CERT_FILE}"
+  $KUBECTL create secret -n ${TARGET_NAMESPACE} tls ${GITLAB_TLSCERTNAME} --key="${GITLAB_KEY_FILE}" --cert="${GITLAB_CERT_FILE}"
 }
 
 create_pages_cert(){
@@ -118,7 +127,7 @@ create_pages_cert(){
 }
 
 deploy_pages_cert(){
-  $KUBECTL create secret -n gitlab-system tls custom-pages-tls --key="${GITLAB_PAGES_KEY_FILE}" --cert="${GITLAB_PAGES_CERT_FILE}"
+  $KUBECTL create secret -n ${TARGET_NAMESPACE} tls custom-pages-tls --key="${GITLAB_PAGES_KEY_FILE}" --cert="${GITLAB_PAGES_CERT_FILE}"
 }
 
 deploy_operator(){
@@ -134,7 +143,7 @@ deploy_operator(){
 deploy_gitlab(){
   local template=$(cat scripts/manifests/gitlab-cr-${GITLAB_CR_DEPLOY_MODE}.yaml.tpl)
 
-  $KUBECTL -n gitlab-system apply -f <(eval "echo \"$template\"")
+  $KUBECTL -n ${TARGET_NAMESPACE} apply -f <(eval "echo \"$template\"")
 }
 
 install_runner(){
@@ -147,12 +156,12 @@ install_runner(){
 
   local template=$(cat scripts/manifests/gitlab-runner-cr.yaml.tpl)
 
-  $HELM upgrade --install -n gitlab-system gitlab-runner gitlab/gitlab-runner -f <(eval "echo \"$template\"")
+  $HELM upgrade --install -n ${TARGET_NAMESPACE} gitlab-runner gitlab/gitlab-runner -f <(eval "echo \"$template\"")
 }
 
 fetch_runner_token(){
   if [ -z "${GITLAB_RUNNER_TOKEN}" ]; then
-    GITLAB_RUNNER_TOKEN=$($KUBECTL -n gitlab-system get secret gitlab-gitlab-runner-secret -o jsonpath='{.data}' | jq -r '.["runner-registration-token"]' | base64 --decode)
+    GITLAB_RUNNER_TOKEN=$($KUBECTL -n ${TARGET_NAMESPACE} get secret gitlab-gitlab-runner-secret -o jsonpath='{.data}' | jq -r '.["runner-registration-token"]' | base64 --decode)
   fi
 }
 
@@ -172,7 +181,7 @@ _wait_for_resource(){
 }
 
 wait_for_operator(){
-  _wait_for_resource gitlab-system deployment/gitlab-controller-manager
+  _wait_for_resource ${TARGET_NAMESPACE} deployment/gitlab-controller-manager
 }
 
 wait_for_certmanager(){
@@ -182,7 +191,7 @@ wait_for_certmanager(){
 }
 
 wait_for_gitlab(){
-  _wait_for_resource gitlab-system deployment/gitlab-webservice-default
+  _wait_for_resource ${TARGET_NAMESPACE} deployment/gitlab-webservice-default
 }
 
 help(){

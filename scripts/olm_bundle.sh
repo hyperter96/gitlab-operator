@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/bash
 
 # Requirements:
 #  * operator SDK
@@ -48,7 +48,7 @@ OPERATOR_SDK_VERSION=${OPERATOR_SDK_VERSION:-"v1.14.0"}
 OPERATOR_SDK_BASE_URL=${OPERATOR_SDK_BASE_URL:-"https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}"}
 OPM_VERSION=${OPM_VERSION:-"1.19.0"}
 OPM_URL=${OPM_URL:-"https://github.com/operator-framework/operator-registry/archive/refs/tags/v${OPM_VERSION}.tar.gz"}
-TARGET_NAMESPACE="gitlab-system"
+TARGET_NAMESPACE=${TARGET_NAMESPACE:-"gitlab-system"}
 OLM_NAMESPACE=${OLM_NAMESPACE:-"olm"}
 OPM_DOCKER=${OPM_DOCKER:-"docker"}
 KIND_CONFIG=${KIND_CONFIG:-""}

@@ -78,7 +78,7 @@ export BUNDLE_REGISTRY="registry.gitlab.com/dmakovey/gitlab-operator-bundle"
 
 export PREVIOUS_OPERATOR_VERSION="0.9.1"
 export LOCAL_IP="192.168.3.194"
-export DO_NOT_PUBLISH="yes" # do not re-compile and publish bundle/catalog 
+export DO_NOT_PUBLISH="yes" # do not re-compile and publish bundle/catalog
                             # use the ones already published
 ```
 
@@ -139,15 +139,15 @@ Otherwise current `kubectl` context should point to an existing cluster that has
    **Wait** for the upgrade to complete
 
 1. Confirm GitLab is running:
-   
+
    ```shell
    scripts/test_olm.sh check_gitlab
    ```
 
    above will query Operator for GitLab status, alternatively use
-   
+
    ```shell
    scripts/test_olm.sh check_gitlab2
    ```
-   
+
    which bypasses Operator checks and runs checks against GitLab instance itself.

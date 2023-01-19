@@ -23,7 +23,8 @@ To setup your system for development of the operator, follow the steps below:
    To contribute code to the current GitLab Operator release, you will need at least operator SDK v1.0.0.
 
 1. Install `task` per the [official installation instructions](https://taskfile.dev/#/installation).
-    - We use [`task` in place of `make`](../adr/0016-replace-makefile-with-taskfile.md) for this project.
+   We use [`task` in place of `make`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/adr/0016-replace-makefile-with-taskfile.md)
+   for this project.
 
 1. Clone the `gitlab-operator` repository into your GOPATH.
 

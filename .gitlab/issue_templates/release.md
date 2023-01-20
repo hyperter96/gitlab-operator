@@ -9,6 +9,7 @@ Much of the process is automated by [release-tools](https://gitlab.com/gitlab-or
 1. [ ] Confirm that publish jobs in the
        [tag pipeline in Canonical repo](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/pipelines?ref=X.Y.Z)
        has completed.
+1. [ ] [OLM bundle testing](doc/developer/test_olm.md) has been completed
 1. [ ] [Release to OperatorHub.io](doc/developer/operatorhub_publishing.md).
 1. [ ] [Release to OpenShift OperatorHub.io](doc/developer/operatorhub_publishing.md)
 1. [ ] [Submit OLM bundle for OpenShift certification](doc/developer/redhat_certification.md)

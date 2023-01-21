@@ -33,7 +33,7 @@ func NewContext(parent context.Context, options ...ContextOption) context.Contex
 	cfg := &ContextConfig{}
 	cfg.applyOptions(options)
 
-	if cfg.Logger != nil {
+	if cfg.Logger.GetSink() != nil {
 		ctx = logr.NewContext(ctx, cfg.Logger)
 	}
 

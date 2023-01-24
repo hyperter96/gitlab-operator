@@ -25,6 +25,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -98,15 +99,16 @@ func main() {
 	setupLog.Info("setting operator scope", "scope", operatorScope)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "852d23b0.gitlab.com",
-		Namespace:              watchNamespace,
-		HealthProbeBindAddress: settings.HealthProbeBindAddress,
-		ReadinessEndpointName:  settings.ReadinessEndpointName,
-		LivenessEndpointName:   settings.LivenessEndpointName,
+		Scheme:                     scheme,
+		MetricsBindAddress:         metricsAddr,
+		Port:                       9443,
+		LeaderElection:             enableLeaderElection,
+		LeaderElectionResourceLock: resourcelock.LeasesResourceLock,
+		LeaderElectionID:           "852d23b0.gitlab.com",
+		Namespace:                  watchNamespace,
+		HealthProbeBindAddress:     settings.HealthProbeBindAddress,
+		ReadinessEndpointName:      settings.ReadinessEndpointName,
+		LivenessEndpointName:       settings.LivenessEndpointName,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

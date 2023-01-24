@@ -172,3 +172,23 @@ func SecretChecksum(secret v1.Secret, keys map[string]struct{}) string {
 
 	return fmt.Sprintf("%x", hash.Sum(nil))
 }
+
+// Truncate trims a string to a given length.
+// Reqires a positive integer.
+// If provided length is equal to or lower than the
+// provided text length, then the text will be returned
+// unmodified.
+func Truncate(text string, length int) (string, error) {
+	if length < 0 {
+		return "", fmt.Errorf("invalid width size: %d", length)
+	}
+
+	if len(text) <= length {
+		return text, nil
+	}
+
+	r := []rune(text)
+	trunc := r[:length]
+
+	return string(trunc), nil
+}

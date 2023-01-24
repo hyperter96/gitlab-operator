@@ -60,6 +60,7 @@ import (
 
 const (
 	defaultRequeueDelay = 10 * time.Second
+	maxKeyLength        = 63
 )
 
 // GitLabReconciler reconciles a GitLab object.
@@ -792,7 +793,14 @@ func (r *GitLabReconciler) annotateSecretsChecksum(ctx context.Context, adapter 
 			template.ObjectMeta.Annotations = map[string]string{}
 		}
 
-		template.ObjectMeta.Annotations[fmt.Sprintf("checksum/secret-%s", secretName)] = hash
+		key := fmt.Sprintf("checksum/secret-%s", secretName)
+
+		truncatedKey, err := internal.Truncate(key, maxKeyLength)
+		if err != nil {
+			return err
+		}
+
+		template.ObjectMeta.Annotations[truncatedKey] = hash
 	}
 
 	return nil

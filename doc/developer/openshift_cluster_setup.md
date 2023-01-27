@@ -5,7 +5,7 @@ This document walks you through using the automation scripts in this project to 
 ## Preparation
 
 First, you should have a Red Hat account associated with your GitLab email.
-Contact our Red Hat Alliance liason; they will arrange to send you an account invitation email. Once you activate your Red Hat account, you will have access the to licenses and subscriptions needed to run OpenShift.
+Contact our Red Hat Alliance liaison; they will arrange to send you an account invitation email. Once you activate your Red Hat account, you will have access to the licenses and subscriptions needed to run OpenShift.
 
 To launch a cluster in Google Cloud, a public Cloud DNS zone must be connected to a registered domain and configured in Google Cloud DNS. If a domain is not already available, follow the steps [in this guide](https://github.com/openshift/installer/blob/master/docs/user/gcp/dns.md) to create one.
 
@@ -23,13 +23,14 @@ Copy the pull secret to your clipboard and write the content to a file `pull_sec
 
 ### Create a Google Cloud (GCP) Service Account
 
-Follow [these instructions](https://docs.openshift.com/container-platform/4.9/installing/installing_gcp/installing-gcp-account.html) to create a Service Account in the Google Cloud `cloud-native` project. Attach all roles marked as Required in that document.
+Follow [these instructions](https://docs.openshift.com/container-platform/4.11/installing/installing_gcp/installing-gcp-account.html) to create a Service Account in the Google Cloud `cloud-native` project. Attach all roles marked as Required in that document.
 Once the Service Account is created, generate a JSON key and save it as `gcloud.json` in the root of this repository. This file is gitignored.
 
 ## Create your OpenShift cluster
 
+Check [configuration options below](#configuration-options) and ensure that [required API services](https://docs.openshift.com/container-platform/4.11/installing/installing_gcp/installing-gcp-account.html#installation-gcp-enabling-api-services_installing-gcp-account) are enabled in the target GCP project.
 Run `./scripts/create_openshift_cluster.sh` to create your OpenShift cluster in Google Cloud.
-This will be a 6 node cluster with 3 control plane (master) nodes and 3 worker nodes. This takes around 40 minutes. Follow the instructions at the end of the console output to connect to the cluster.
+This will be a 6 node cluster with 3 control plane (master) nodes and 3 worker nodes ([configuration template](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/scripts/install-config.template.yaml)). This takes around 40 minutes. Follow the instructions at the end of the console output to connect to the cluster.
 
 Once created, you should be able to see your cluster registered here: <https://cloud.redhat.com/openshift/>. All installation logs and metadata will be stored in the `install-$CLUSTER_NAME/` directory in this repository. This folder is gitignored.
 
@@ -91,5 +92,5 @@ See [doc/installation.md](installation.md) for instruction on installing the Git
 - `oc` source: <https://github.com/openshift/oc>
 - `openshift-installer` and `oc` packages: <https://mirror.openshift.com/pub/openshift-v4/clients/ocp/>
 - OpenShift Container Project (OCP) architecture docs: <https://docs.openshift.com/container-platform/4.9/architecture/index.html>
-- OpenShift GCP docs: <https://docs.openshift.com/container-platform/4.9/installing/installing_gcp/installing-gcp-account.html>
-- OpenShift troubleshooting guide: <https://docs.openshift.com/container-platform/4.9/support/troubleshooting/troubleshooting-installations.html>
+- OpenShift GCP docs: <https://docs.openshift.com/container-platform/4.11/installing/installing_gcp/installing-gcp-account.html>
+- OpenShift troubleshooting guide: <https://docs.openshift.com/container-platform/4.11/support/troubleshooting/troubleshooting-installations.html>

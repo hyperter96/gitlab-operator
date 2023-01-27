@@ -1,4 +1,4 @@
-image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
+image: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base-golang-1.18
 
 variables:
   # Configuration of K8s
@@ -26,7 +26,7 @@ variables:
   # OCP_RESOURCES_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}/openshift-resources-${CI_COMMIT_TAG}.yaml"
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}"
   ISSUE_BOT_LABELS_EXTRA: "group::distribution"
-
+  GO_VERSION: "1.18"
 
 stages:
   - check
@@ -201,7 +201,7 @@ slow_unit_tests:
   before_script:
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     # Update module cache so it can be saved in CI cache (only the dependencies required to build)
-    - docker run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:1.16 go list ./...
+    - docker run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:${GO_VERSION} go list ./...
   interruptible: false
 
 .podman_build_job:
@@ -213,7 +213,7 @@ slow_unit_tests:
     - podman login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
     # Update module cache so it can be saved in CI cache (only the dependencies required to build)
     - mkdir -p .go
-    - podman run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:1.16 go list ./...
+    - podman run -v "${GOPATH}:/go" -v "${CI_PROJECT_DIR}:/code" -w /code golang:${GO_VERSION} go list ./...
   interruptible: false
 
 build_branch_image:

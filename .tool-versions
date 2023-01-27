@@ -1,4 +1,4 @@
-golang 1.16.15
+golang 1.18.10
 golangci-lint 1.50.1
 helm 3.10.1
 k9s 0.26.7

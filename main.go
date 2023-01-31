@@ -78,13 +78,17 @@ func main() {
 	flag.Parse()
 
 	logger := zap.New(zap.UseFlagOptions(&opts))
+	ctrl.SetLogger(logger)
 
-	_ = charts.PopulateGlobalCatalog(
+	err := charts.PopulateGlobalCatalog(
 		populate.WithLogger(logger),
 		populate.WithSearchPath(settings.HelmChartsDirectory),
 	)
 
-	ctrl.SetLogger(logger)
+	if err != nil {
+		setupLog.Error(err, "unable to populate global catalog")
+		os.Exit(1)
+	}
 
 	operatorScope := "namespace"
 

@@ -38,6 +38,27 @@ var _ = Describe("Populate", func() {
 		Expect(e).ToNot(HaveOccurred())
 		Expect(*c).To(HaveLen(4))
 	})
+
+	It("fails to populate with invalid search path", func() {
+		c := &charts.Catalog{}
+		e := c.Populate(
+			WithSearchPath("/i/do/not/exist"),
+			WithFilePattern("*.tar.gz", "*.tgz"))
+
+		Expect(e).To(HaveOccurred())
+		Expect(e).To(MatchError(ContainSubstring("unable to find any charts")))
+		Expect(*c).To(HaveLen(0))
+	})
+
+	It("does not fail to populate with invalid search path and valid search path", func() {
+		c := &charts.Catalog{}
+		e := c.Populate(
+			WithSearchPath("testdata/charts", "/i/do/not/exist"),
+			WithFilePattern("*.tar.gz", "*.tgz"))
+
+		Expect(e).NotTo(HaveOccurred())
+		Expect(*c).To(HaveLen(4))
+	})
 })
 
 /*

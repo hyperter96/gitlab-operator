@@ -1,6 +1,7 @@
 package charts
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -65,7 +66,13 @@ func (c *PopulateConfig) populate() error {
 		"filePatterns", c.FilePatterns)
 
 	for _, path := range c.SearchPaths {
-		_ = filepath.WalkDir(path, c.processDirEntry)
+		if err := filepath.WalkDir(path, c.processDirEntry); err != nil {
+			c.Logger.V(2).Error(err, "unable to walk SearchPath", "path", path)
+		}
+	}
+
+	if c.catalog.Empty() {
+		return fmt.Errorf("unable to find any charts in search paths %s", c.SearchPaths)
 	}
 
 	return nil

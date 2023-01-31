@@ -22,7 +22,7 @@ The upgrade flow behaves like this:
 1. The controller performs a rolling update on the Webservice and Sidekiq Deployments.
 1. The controller waits for the restarted Webservice and Sidekiq pods to be running.
 
-In future reconcile loops, this branch of logic will be skipped because the desired version (from `spec.chart.version`) will match the current version (from `status.version`).
+In future reconcile loops, this branch of logic is skipped because the desired version (from `spec.chart.version`) matches the current version (from `status.version`).
 
 ## How to update GitLab
 
@@ -71,7 +71,7 @@ $ kubectl -n gitlab-system logs deployment/gitlab-controller-manager -c manager 
 ...
 ```
 
-You will see log entries following the upgrade flow outlined above.
+You see log entries following the upgrade flow outlined above.
 
 You can also view the GitLab CR status in the cluster:
 
@@ -81,7 +81,7 @@ NAME     STATUS        VERSION
 gitlab   Preparing     5.2.4
 ```
 
-When the application is ready and upgraded to the new version, you'll see it reflected in the `STATUS` column.
+When the application is ready and upgraded to the new version, you see it reflected in the `STATUS` column.
 
 ```shell
 $ kubectl -n gitlab-system get gitlab

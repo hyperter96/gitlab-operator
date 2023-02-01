@@ -2,6 +2,7 @@ package support
 
 import (
 	"fmt"
+	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -29,5 +30,18 @@ func SimpleObjectHash(object client.Object) string {
 		return ""
 	}
 
-	return fmt.Sprintf("%s.%d", uid, gen)
+	return fmt.Sprintf("%s-%d", uid, gen)
+}
+
+func NameWithHashSuffix(name, hash string, n int) (string, error) {
+	if n > len(hash) {
+		return "", fmt.Errorf("desired suffix length of %d is longer than the hash length of %d", n, len(hash))
+	}
+
+	suffix := hash[len(hash)-n:]
+	if strings.HasSuffix(name, suffix) {
+		return name, nil
+	}
+
+	return fmt.Sprintf("%s-%s", name, suffix), nil
 }

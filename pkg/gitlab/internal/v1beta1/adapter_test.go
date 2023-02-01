@@ -61,6 +61,7 @@ var _ = Describe("GitLab Adapter [v1beta1]", func() {
 
 		h1 := a.Hash()
 		Expect(h1).NotTo(BeEmpty())
+		Expect(h1).To(Equal("abcdef-1"))
 
 		/* Pretend object is re-populated by with client */
 		g.ObjectMeta.Generation = 2
@@ -68,6 +69,7 @@ var _ = Describe("GitLab Adapter [v1beta1]", func() {
 		h2 := a.Hash()
 		Expect(h2).NotTo(BeEmpty())
 		Expect(h2).NotTo(Equal(h1))
+		Expect(h2).To(Equal("abcdef-2"))
 
 	})
 

@@ -32,6 +32,7 @@ env:
   DOMAIN: example.com
   HOSTSUFFIX: ""
   TLSSECRETNAME: ""
+  HELM_CHARTS: "{{ .ROOT_DIR }}/charts"
   CHART_VERSION: { sh: head -n1 CHART_VERSIONS }
   VERSION: 0.2.0
 
@@ -101,16 +102,6 @@ tasks:
     desc: Formats code using `go fmt`.
     cmds:
       - go fmt ./...
-
-  test:
-    desc: Runs tests.
-    deps:
-      - generate
-      - fmt
-      - vet
-      - manifests
-    cmds:
-      - go test ./... -coverprofile cover.out
 
   manager:
     desc: Build the manager binary using `go build`.
@@ -303,10 +294,41 @@ tasks:
     cmds:
       - $CONTAINER_CLI push $IMG_REGISTRY/$IMG_REPOSITORY/$IMG_NAME:$TAG
 
+  ginkgo:
+    desc: Ensures ginkgo is installed for testing.
+    cmds:
+      - go install github.com/onsi/ginkgo/v2/ginkgo@v2.7.1
+    status:
+      - ginkgo version | grep -q 2.7.1
+
+  unit-tests:
+    desc: Runs unit tests locally, but skip the slow controller tests.
+    deps:
+      - retrieve-charts
+      - ginkgo
+    vars:
+      TEST_PKGS: '{{ default "./..." .TEST_PKGS }}'
+      SKIP_ENVTEST: '{{ default "yes" .SKIP_ENVTEST }}'
+      TEST_UTIL: '{{ default "ginkgo" .TEST_UTIL }}'
+    cmds:
+      - >-
+        CHART_VERSION=$CHART_VERSION
+        SKIP_ENVTEST={{ .SKIP_ENVTEST }}
+        {{ .TEST_UTIL }} -cover -output-dir=coverage {{.TEST_PKGS }}
+
+  slow-unit-tests:
+    desc: Runs unit tests locally, including the slow controller tests.
+    cmds:
+      - task: unit-tests
+        vars:
+          SKIP_ENVTEST: "no"
+          TEST_PKGS: './controllers/...'
+
   test-in-docker:
     desc: Runs tests in a Docker container.
     deps:
       - retrieve-charts
+      - ginkgo
     vars:
       TEST_PKGS: '{{ default "./..." .TEST_PKGS }}'
     cmds:
@@ -314,7 +336,8 @@ tasks:
       - rm -rf coverage && mkdir coverage
       - GOPATH=$PWD/.go go mod download
       - >-
-        docker run --rm -i
+        docker run -i
+        --name operator-unit-tests
         -v $PWD:/test
         -w /test
         -e CHART_VERSION=$CHART_VERSION
@@ -344,3 +367,4 @@ tasks:
     cmds:
       - rm -rf .go coverage
       - docker rmi $TEST_IMG
+      - docker rm operator-unit-tests

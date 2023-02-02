@@ -11,7 +11,7 @@ import (
 
 // PrometheusCluster returns a prometheus cluster object.
 func PrometheusCluster(adapter gitlab.Adapter) *monitoringv1.Prometheus {
-	labels := Label(adapter.Name().Name, "prometheus", GitlabType)
+	labels := ResourceLabels(adapter.Name().Name, "prometheus", GitlabType)
 
 	var replicas int32 = 2
 
@@ -40,7 +40,7 @@ func PrometheusCluster(adapter gitlab.Adapter) *monitoringv1.Prometheus {
 
 // ExposePrometheusCluster creates a service for Prometheus.
 func ExposePrometheusCluster(adapter gitlab.Adapter) *corev1.Service {
-	labels := Label(adapter.Name().Name, "prometheus", GitlabType)
+	labels := ResourceLabels(adapter.Name().Name, "prometheus", GitlabType)
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -66,7 +66,7 @@ func ExposePrometheusCluster(adapter gitlab.Adapter) *corev1.Service {
 
 // ExporterServiceMonitor returns the GitLab exporter service monitor.
 func ExporterServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
-	labels := Label(adapter.Name().Name, "gitlab-exporter", GitlabType)
+	labels := ResourceLabels(adapter.Name().Name, "gitlab-exporter", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -90,7 +90,7 @@ func ExporterServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor
 
 // WebserviceServiceMonitor returns the Webservice service monitor.
 func WebserviceServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
-	labels := Label(adapter.Name().Name, "webservice", GitlabType)
+	labels := ResourceLabels(adapter.Name().Name, "webservice", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -114,7 +114,7 @@ func WebserviceServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonit
 
 // PostgresqlServiceMonitor returns the Postgres service monitor.
 func PostgresqlServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
-	labels := Label(adapter.Name().Name, "postgresql", GitlabType)
+	labels := ResourceLabels(adapter.Name().Name, "postgresql", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -138,7 +138,7 @@ func PostgresqlServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonit
 
 // RedisServiceMonitor returns the Redis service monitor.
 func RedisServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
-	labels := Label(adapter.Name().Name, "redis", GitlabType)
+	labels := ResourceLabels(adapter.Name().Name, "redis", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
@@ -162,7 +162,7 @@ func RedisServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
 
 // GitalyServiceMonitor returns the Gitaly service monitor.
 func GitalyServiceMonitor(adapter gitlab.Adapter) *monitoringv1.ServiceMonitor {
-	labels := Label(adapter.Name().Name, "gitaly", GitlabType)
+	labels := ResourceLabels(adapter.Name().Name, "gitaly", GitlabType)
 
 	return &monitoringv1.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{

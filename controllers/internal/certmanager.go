@@ -65,7 +65,7 @@ func GetIssuerConfig(adapter gitlab.Adapter) certmanagerv1.IssuerConfig {
 
 // CertificateIssuer create a certificate generator.
 func CertificateIssuer(adapter gitlab.Adapter) *certmanagerv1.Issuer {
-	labels := Label(adapter.ReleaseName(), "issuer", GitlabType)
+	labels := ResourceLabels(adapter.ReleaseName(), "issuer", GitlabType)
 
 	issuer := &certmanagerv1.Issuer{
 		ObjectMeta: metav1.ObjectMeta{

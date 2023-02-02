@@ -43,7 +43,7 @@ env:
   BUNDLE_OPTS: --extra-service-accounts=gitlab-manager,gitlab-nginx-ingress,gitlab-app-anyuid,gitlab-app-nonroot
 
   # Testing configuration
-  TEST_IMG: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base
+  TEST_IMG: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base-golang-1.18
 
 tasks:
 
@@ -323,7 +323,7 @@ tasks:
         -e KUBECONFIG=""
         -e USE_EXISTING_CLUSTER="false"
         $TEST_IMG
-        ginkgo -cover -outputdir=coverage {{.TEST_PKGS}}
+        ginkgo2 -cover -outputdir=coverage {{.TEST_PKGS}}
 
   unit-tests-in-docker:
     desc: Run unit tests in Docker, but skip the slow controller tests.

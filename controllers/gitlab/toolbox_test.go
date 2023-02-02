@@ -1,7 +1,7 @@
 package gitlab
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	feature "gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab/features"

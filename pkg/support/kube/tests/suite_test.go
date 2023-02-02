@@ -25,6 +25,11 @@ import (
 )
 
 func TestGitlabOperator(t *testing.T) {
+	if skip := os.Getenv("SKIP_ENVTEST"); skip == "yes" {
+		defer GinkgoRecover()
+		Skip("skipping cluster-related tests")
+	}
+
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "GitLab Operator Framework: Kubernetes Client Support")
 }

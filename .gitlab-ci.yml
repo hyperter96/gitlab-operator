@@ -179,14 +179,14 @@ lint_docs_markdown:
 
 unit_tests:
   extends: .test_job
-  script: /go/bin/ginkgo2 -cover -output-dir=coverage ./helm/... ./pkg/...
+  script: TEST_UTIL=ginkgo2 task unit-tests
   parallel:
     matrix:
       - VERSION_INDEX: ["1", "2", "3"]
 
 slow_unit_tests:
   extends: .test_job
-  script: /go/bin/ginkgo2 -cover -output-dir=coverage ./controllers/...
+  script: TEST_UTIL=ginkgo2 task slow-unit-tests
   parallel:
     matrix:
       - VERSION_INDEX: ["1", "2", "3"]

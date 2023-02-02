@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -40,6 +41,11 @@ const (
 )
 
 func TestAPIs(t *testing.T) {
+	if skip := os.Getenv("SKIP_ENVTEST"); skip == "yes" {
+		defer GinkgoRecover()
+		Skip("skipping cluster-related tests")
+	}
+
 	settings.Load()
 	_ = charts.PopulateGlobalCatalog(
 		populate.WithSearchPath(settings.HelmChartsDirectory))

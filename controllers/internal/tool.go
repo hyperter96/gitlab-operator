@@ -11,8 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-// Label function returns uniform labels for resources.
-func Label(resource, component, resourceType string) map[string]string {
+// ResourceLabels function returns uniform labels for resources.
+func ResourceLabels(resource, component, resourceType string) map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":       resource,
 		"app.kubernetes.io/instance":   strings.Join([]string{resource, component}, "-"),

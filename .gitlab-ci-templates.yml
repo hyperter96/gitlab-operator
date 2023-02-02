@@ -1,3 +1,10 @@
+.if_commit_branch_or_mr_branch: &if_commit_branch_or_mr_branch
+  if: '$CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
+
+.manual_if_commit_branch_or_mr_branch: &manual_if_commit_branch_or_mr_branch
+  <<: *if_commit_branch_or_mr_branch
+  when: manual
+
 .if_on_dev: &if_on_dev
   if: '$CI_SERVER_HOST == "dev.gitlab.org" && $CI_PROJECT_PATH == "gitlab/cloud-native/gitlab-operator"'
 
@@ -129,7 +136,7 @@
   rules:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]
-    - if: '$CI_COMMIT_BRANCH'
+    - !reference [.if_commit_branch_or_mr_branch]
 
 .create_review_template:
   # We `need:` "build" to inherit `artifacts.reports.dotenv`
@@ -145,7 +152,7 @@
   rules:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]
-    - if: '$CI_COMMIT_BRANCH'
+    - !reference [.if_commit_branch_or_mr_branch]
 
 .review_template:
   # We `need:` "build" and "create" to inherit `artifacts.reports.dotenv`
@@ -192,7 +199,7 @@
   rules:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]
-    - if: '$CI_COMMIT_BRANCH'
+    - !reference [.if_commit_branch_or_mr_branch]
 
 .qa:
   # We `need:` "review" to inherit `artifacts.paths.reports.dotenv`
@@ -224,7 +231,7 @@
   rules:
     - !reference [.skip_if_docs_branch]
     - !reference [.skip_if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
+    - !reference [.if_commit_branch_or_mr_branch]
 
 .stop_review_template:
   stage: cleanup
@@ -254,8 +261,7 @@
   rules:
     - !reference [.skip_if_docs_branch]
     - !reference [.skip_if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
-      when: manual
+    - !reference [.manual_if_commit_branch_or_mr_branch]
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: manual
     - <<: *if_stable_branch

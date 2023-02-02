@@ -43,16 +43,26 @@ stages:
   - report
   - followup
 
+workflow:
+  rules:
+    # Avoid duplicate pipeline when an MR is open
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"'
+      when: never
+    # Support Merge Request pipelines
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME'
+    # Run regular pipelines on pushes to branches that does not have an MR open
+    - if: '$CI_COMMIT_BRANCH'
+    # Run pipelines on tag pushes
+    - if: '$CI_COMMIT_TAG'
+
 include:
-  - template: Dependency-Scanning.gitlab-ci.yml
+  - template: Jobs/Dependency-Scanning.latest.gitlab-ci.yml
     rules:
       - if: '$CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator"'
-  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.latest.gitlab-ci.yml
     rules:
       - if: '$CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator"'
   - local: .gitlab-ci-templates.yml
-
-
 
 default:
   interruptible: true
@@ -86,7 +96,7 @@ danger-review:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_default_branch]
     - !reference [.skip_if_stable_branch]
-    - if: '$CI_COMMIT_BRANCH && $CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator"'
+    - if: '($CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME) && $CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator"'
 
 pull_charts:
   stage: prepare
@@ -97,7 +107,7 @@ pull_charts:
   rules:
     - !reference [.skip_if_docs_branch]
     - !reference [.if_release_tag]
-    - if: '$CI_COMMIT_BRANCH'
+    - !reference [.if_commit_branch_or_mr_branch]
   needs:
     - job: danger-review
       optional: true
@@ -116,7 +126,7 @@ lint_code:
     - !reference [.skip_if_dev_mirror]
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]
-    - if: '$CI_COMMIT_BRANCH'
+    - !reference [.if_commit_branch_or_mr_branch]
   needs:
     - job: danger-review
       optional: true
@@ -154,7 +164,7 @@ lint_docs_markdown:
   rules:
     - !reference [.skip_if_dev_mirror]
     - !reference [.skip_if_release_tag]
-    - if: "$CI_COMMIT_BRANCH"
+    - !reference [.if_commit_branch_or_mr_branch]
 
 .test_job:
   extends: .cache
@@ -175,7 +185,7 @@ lint_docs_markdown:
   rules:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]
-    - if: "$CI_COMMIT_BRANCH"
+    - !reference [.if_commit_branch_or_mr_branch]
 
 unit_tests:
   extends: .test_job
@@ -226,7 +236,7 @@ build_branch_image:
     - !reference [.skip_if_docs_branch]
     - !reference [.skip_if_default_branch]
     - !reference [.skip_if_release_tag]
-    - if: "$CI_COMMIT_BRANCH"
+    - !reference [.if_commit_branch_or_mr_branch]
 
 build_tag_image:
   extends: .docker_build_job
@@ -279,8 +289,7 @@ approve_cluster_tests:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_stable_branch]
     - !reference [.skip_if_default_branch]
-    - if: "$CI_COMMIT_BRANCH"
-      when: manual
+    - !reference [.manual_if_commit_branch_or_mr_branch]
   needs:
     - job: danger-review
       optional: true
@@ -524,7 +533,7 @@ image_certification:
     - !reference [.skip_if_docs_branch]
     - !reference [.if_release_tag]
     - !reference [.if_redhat_certification]
-    - if: "$CI_COMMIT_BRANCH"
+    - !reference [.if_commit_branch_or_mr_branch]
 
 build_chart:
   stage: build
@@ -539,7 +548,7 @@ build_chart:
   rules:
     - !reference [.skip_if_docs_branch]
     - !reference [.if_release_tag]
-    - if: "$CI_COMMIT_BRANCH"
+    - !reference [.if_commit_branch_or_mr_branch]
 
 upload_chart:
   stage: publish
@@ -572,7 +581,7 @@ build_manifest:
   rules:
     - !reference [.skip_if_docs_branch]
     - !reference [.if_release_tag]
-    - if: "$CI_COMMIT_BRANCH"
+    - !reference [.if_commit_branch_or_mr_branch]
 
 upload_manifest:
   stage: publish

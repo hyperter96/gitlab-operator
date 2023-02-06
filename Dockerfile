@@ -7,6 +7,7 @@ WORKDIR /workspace
 ENV GOPATH=/go
 COPY .go/pkg/mod/ /go/pkg/mod/
 COPY go.mod go.sum ./
+RUN go mod download
 
 # Copy the go source
 COPY main.go main.go

@@ -2,6 +2,8 @@ package gitlab
 
 import (
 	"fmt"
+
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/gitlab"
 )
 
 const (
@@ -47,8 +49,8 @@ const (
 	// RedisComponentName is the common name of Redis.
 	RedisComponentName = "redis"
 
-	// PostgresComponentName is the common name of PostgreSQL.
-	PostgresComponentName = "postgresql"
+	// DefaultPostgresComponentName is the default common name of PostgreSQL.
+	DefaultPostgresComponentName = "postgresql"
 
 	// NGINXComponentName is the common name of NGINX Ingress.
 	NGINXComponentName = "nginx-ingress"
@@ -81,6 +83,16 @@ const (
 // RedisSubqueues is the array of possible Redis subqueues.
 func RedisSubqueues() [5]string {
 	return [5]string{"cache", "sharedState", "queues", "actioncable", "traceChunks"}
+}
+
+// PostgresComponentName provides the name of the PostgreSQL component taking name overrides into account.
+// Attention: This component name is not part of all PostgreSQL ressource names.
+func PostgresComponentName(adapter gitlab.Adapter) string {
+	if nameOverride := adapter.Values().GetString("postgresql.nameOverride", ""); nameOverride != "" {
+		return nameOverride
+	}
+
+	return DefaultPostgresComponentName
 }
 
 func updateCommonLabels(releaseName, componentName string, labels map[string]string) {

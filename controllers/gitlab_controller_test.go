@@ -125,7 +125,7 @@ var _ = Describe("GitLab controller", func() {
 			It("Should create resources for Jobs and continue the reconcile loop", func() {
 				cfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 				sharedSecretQuery := appLabels(releaseName, gitlabctl.GitLabComponentName)
-				postgresQuery := fmt.Sprintf("app.kubernetes.io/instance=%s-%s", releaseName, gitlabctl.PostgresComponentName)
+				postgresQuery := fmt.Sprintf("app.kubernetes.io/instance=%s-%s", releaseName, gitlabctl.DefaultPostgresComponentName)
 
 				By("Checking Shared secrets Job and its ConfigMap are created")
 				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
@@ -275,11 +275,12 @@ global:
 	Context("PostgreSQL", func() {
 		When("Bundled PostgreSQL is disabled", func() {
 			releaseName := "postgresql-disabled"
-			cfgMapName := fmt.Sprintf("%s-%s-init-db", releaseName, gitlabctl.PostgresComponentName)
-			metricsServiceName := fmt.Sprintf("%s-%s-metrics", releaseName, gitlabctl.PostgresComponentName)
-			headlessServiceName := fmt.Sprintf("%s-%s-headless", releaseName, gitlabctl.PostgresComponentName)
-			serviceName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
-			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
+			pgName := gitlabctl.DefaultPostgresComponentName
+			cfgMapName := fmt.Sprintf("%s-%s-init-db", releaseName, pgName)
+			metricsServiceName := fmt.Sprintf("%s-%s-metrics", releaseName, pgName)
+			headlessServiceName := fmt.Sprintf("%s-%s-headless", releaseName, pgName)
+			serviceName := fmt.Sprintf("%s-%s", releaseName, pgName)
+			statefulSetName := fmt.Sprintf("%s-%s", releaseName, pgName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := support.Values{}
@@ -319,11 +320,12 @@ global:
 
 		When("Bundled PostgreSQL is enabled", func() {
 			releaseName := "postgresql-enabled"
-			cfgMapName := fmt.Sprintf("%s-%s-init-db", releaseName, gitlabctl.PostgresComponentName)
-			metricsServiceName := fmt.Sprintf("%s-%s-metrics", releaseName, gitlabctl.PostgresComponentName)
-			headlessServiceName := fmt.Sprintf("%s-%s-headless", releaseName, gitlabctl.PostgresComponentName)
-			serviceName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
-			statefulSetName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName)
+			pgName := gitlabctl.DefaultPostgresComponentName
+			cfgMapName := fmt.Sprintf("%s-%s-init-db", releaseName, pgName)
+			metricsServiceName := fmt.Sprintf("%s-%s-metrics", releaseName, pgName)
+			headlessServiceName := fmt.Sprintf("%s-%s-headless", releaseName, pgName)
+			serviceName := fmt.Sprintf("%s-%s", releaseName, pgName)
+			statefulSetName := fmt.Sprintf("%s-%s", releaseName, pgName)
 			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
 
 			chartValues := support.Values{}
@@ -335,6 +337,55 @@ global:
 			})
 
 			It("Should create PostgreSQL resources and continue the reconcile loop", func() {
+				By("Checking PostgreSQL Metrics Service exists")
+				Eventually(getObjectPromise(metricsServiceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking PostgreSQL Headless Service exists")
+				Eventually(getObjectPromise(headlessServiceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking PostgreSQL Service exists")
+				Eventually(getObjectPromise(serviceName, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking PostgreSQL StatefulSet exists")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking PostgreSQL ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
+		When("Bundled PostgreSQL has a overridden name", func() {
+			releaseName := "postgresql-name-override"
+			pgComponent := gitlabctl.DefaultPostgresComponentName
+
+			cfgMapName := fmt.Sprintf("%s-%s-init-db", releaseName, pgComponent)
+			metricsServiceName := fmt.Sprintf("%s-%s-metrics", releaseName, pgComponent)
+			headlessServiceName := fmt.Sprintf("%s-%s-headless", releaseName, pgComponent)
+			serviceName := fmt.Sprintf("%s-%s", releaseName, pgComponent)
+
+			nameOverride := "foobar"
+			statefulSetName := fmt.Sprintf("%s-%s", releaseName, nameOverride)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := support.Values{}
+			_ = chartValues.SetValue("postgresql.install", true)
+			_ = chartValues.SetValue("postgresql.nameOverride", nameOverride)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should create PostgreSQL resources with specified name and continue the reconcile loop", func() {
 				By("Checking PostgreSQL Metrics Service exists")
 				Eventually(getObjectPromise(metricsServiceName, &corev1.Service{}),
 					PollTimeout, PollInterval).Should(Succeed())
@@ -508,7 +559,7 @@ global:
 
 			It("Should stop when Secret does not exist", func() {
 				By("Confirming no StatefulSets are created due to missing secrets")
-				Eventually(getObjectPromise(fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName), &appsv1.StatefulSet{}),
+				Eventually(getObjectPromise(fmt.Sprintf("%s-%s", releaseName, gitlabctl.DefaultPostgresComponentName), &appsv1.StatefulSet{}),
 					PollTimeout, PollInterval).ShouldNot(Succeed())
 			})
 		})
@@ -553,7 +604,7 @@ global:
 				Expect(createObject(cacheSecret, false)).Should(Succeed())
 
 				By("Confirming that StatefulSet is created")
-				Eventually(getObjectPromise(fmt.Sprintf("%s-%s", releaseName, gitlabctl.PostgresComponentName), &appsv1.StatefulSet{}),
+				Eventually(getObjectPromise(fmt.Sprintf("%s-%s", releaseName, gitlabctl.DefaultPostgresComponentName), &appsv1.StatefulSet{}),
 					PollTimeout, PollInterval).Should(Succeed())
 			})
 		})

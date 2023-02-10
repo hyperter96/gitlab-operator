@@ -691,7 +691,7 @@ func (r *GitLabReconciler) isEndpointReady(ctx context.Context, service string, 
 
 func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitlab.Adapter, template helm.Template) bool {
 	if adapter.WantsComponent(component.PostgreSQL) {
-		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-postgresql", adapter) {
+		if !r.isEndpointReady(ctx, gitlabctl.PostgresService(adapter, template).GetName(), adapter) {
 			return false
 		}
 	}

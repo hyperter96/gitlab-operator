@@ -85,7 +85,7 @@ To use the NGINX Ingress Controller for Ingress, complete the following:
    ```
 
    NOTE:
-   By default, CertManager will create and manage TLS certificates for the GitLab-related Ingresses.
+   By default, CertManager creates and manages TLS certificates for the GitLab-related Ingresses.
    See the [TLS documentation](https://docs.gitlab.com/charts/installation/tls.html) for more options.
 
 1. Follow the rest of the installation instructions, applying the GitLab CR and confirming that the CR status is eventually `Ready`.

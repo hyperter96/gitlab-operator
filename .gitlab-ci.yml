@@ -132,7 +132,7 @@ lint_code:
       optional: true
 
 docs-lint links:
-  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-html:alpine-3.16-ruby-3.0.5-869cfc5d
+  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-html:alpine-3.16-ruby-3.0.5-2a7e4d1c
   stage: test
   needs:
     - job: danger-review
@@ -149,7 +149,7 @@ docs-lint links:
 
 lint_docs_markdown:
   stage: test
-  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-markdown:alpine-3.16-vale-2.22.0-markdownlint-0.32.2-markdownlint2-0.6.0
+  image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-markdown:alpine-3.16-vale-2.23.0-markdownlint-0.33.0-markdownlint2-0.6.0
   cache: {}
   needs:
     - job: danger-review

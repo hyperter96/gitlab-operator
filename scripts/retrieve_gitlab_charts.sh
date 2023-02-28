@@ -43,9 +43,9 @@ for version in $(cat CHART_VERSIONS); do
     echo "Fetching ${GITLAB_CHART}-${version}"
     while ! $($HELM fetch "${GITLAB_CHART}" --version "${version}" --destination ./charts/ 2> /dev/null); do
         if [ $count -ge "${MAX_CHART_FETCH_ATTEMPTS}" ]; then
-            echo "  Fetch attempts exhausted. Atempting to build from source."
+            echo "  Fetch attempts exhausted. Attempting to build from source."
             if ! build_from_source "$version"; then
-                echo "  Failed to build from source. Existing."
+                echo "  Failed to build from source. Exiting."
                 exit 1;
             else
               break

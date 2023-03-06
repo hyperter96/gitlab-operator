@@ -27,6 +27,7 @@ variables:
   PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/gitlab-operator/${CI_COMMIT_TAG}"
   ISSUE_BOT_LABELS_EXTRA: "group::distribution"
   GO_VERSION: "1.18"
+  QA_FULL_SUITE_OPTIONS: '--tag ~smoke --tag ~skip_live_env --tag ~orchestrated --tag ~transient'
 
 stages:
   - check
@@ -38,6 +39,7 @@ stages:
   - certification
   - cluster_tests_approval
   - review
+  - qa-manual
   - qa
   - cleanup
   - report
@@ -422,6 +424,21 @@ qa_4_8:
   needs:
     - review_4_8
 
+qa_4_8_full_suite_manual_trigger:
+  extends: .qa_full_suite_manual_trigger
+  script: echo 'The job will trigger Full E2E suite against OpenShift 4.8'
+
+qa_4_8_full:
+  extends: .qa
+  stage: qa
+  parallel: 7
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_8
+    QA_OPTIONS: $QA_FULL_SUITE_OPTIONS
+  needs:
+    - review_4_8
+    - qa_4_8_full_suite_manual_trigger
+
 qa_4_9:
   extends: .qa
   stage: qa
@@ -429,6 +446,21 @@ qa_4_9:
     DOMAIN: $DOMAIN_OPENSHIFT_4_9
   needs:
     - review_4_9
+
+qa_4_9_full_suite_manual_trigger:
+  extends: .qa_full_suite_manual_trigger
+  script: echo 'The job will trigger Full E2E suite against OpenShift 4.9'
+
+qa_4_9_full:
+  extends: .qa
+  stage: qa
+  parallel: 7
+  variables:
+    DOMAIN: $DOMAIN_OPENSHIFT_4_9
+    QA_OPTIONS: $QA_FULL_SUITE_OPTIONS
+  needs:
+    - review_4_9
+    - qa_4_9_full_suite_manual_trigger
 
 qa_gke:
   extends: .qa
@@ -438,6 +470,21 @@ qa_gke:
   needs:
     - review_gke
 
+qa_gke_full_suite_manual_trigger:
+  extends: .qa_full_suite_manual_trigger
+  script: echo 'The job will trigger Full E2E suite against GKE'
+
+qa_gke_full:
+  extends: .qa
+  stage: qa
+  parallel: 7
+  variables:
+    DOMAIN: $DOMAIN_GKE
+    QA_OPTIONS: $QA_FULL_SUITE_OPTIONS
+  needs:
+    - review_gke
+    - qa_gke_full_suite_manual_trigger
+
 qa_gke122:
   extends: .qa
   stage: qa
@@ -445,6 +492,21 @@ qa_gke122:
     DOMAIN: $DOMAIN_GKE122
   needs:
     - review_gke122
+
+qa_gke122_full_suite_manual_trigger:
+  extends: .qa_full_suite_manual_trigger
+  script: echo 'The job will trigger Full E2E suite against GKE 1.22'
+
+qa_gke122_full:
+  extends: .qa
+  stage: qa
+  parallel: 7
+  variables:
+    DOMAIN: $DOMAIN_GKE122
+    QA_OPTIONS: $QA_FULL_SUITE_OPTIONS
+  needs:
+    - review_gke122
+    - qa_gke122_full_suite_manual_trigger
 
 stop_review_openshift_4_8:
   extends: .stop_review_template
@@ -499,7 +561,7 @@ image_certification:
   variables:
     DOCKER_AUTH_FILE: /run/containers/0/auth.json
     REGISTRY_USER: $RH_CERTIFICATION_REGISTRY_USER
-    REGISTRY_PASSWORD: $RH_CERTIFICATION_REGISTRY_PASSWORD 
+    REGISTRY_PASSWORD: $RH_CERTIFICATION_REGISTRY_PASSWORD
     COMPONENT_NAME: gitlab-operator
   image: registry.gitlab.com/gitlab-org/cloud-native/preflight:1.2.1
   retry: 1
@@ -514,7 +576,7 @@ image_certification:
     - SUBMIT=""
     - REDHAT_PROJECT_ID=${REDHAT_PROJECT_ID:-$(yq eval ".${COMPONENT_NAME}.ospid" redhat-projects.yaml)}
     - |
-      if [ -n "$REDHAT_PROJECT_ID" -a -n "$REDHAT_API_TOKEN" -a -n "${CI_COMMIT_TAG}" ] ; then 
+      if [ -n "$REDHAT_PROJECT_ID" -a -n "$REDHAT_API_TOKEN" -a -n "${CI_COMMIT_TAG}" ] ; then
         echo "Image will be submitted to RedHat for Certification"
         SUBMIT="--submit"
         export PFLT_PYXIS_API_TOKEN="${REDHAT_API_TOKEN}"
@@ -524,7 +586,7 @@ image_certification:
     - CERTIFY_IMAGE="${CI_REGISTRY_IMAGE}:${CERTIFY_TAG}"
     - echo "Running preflight certification check for ${CERTIFY_IMAGE}"
     - preflight check container ${CERTIFY_IMAGE} ${SUBMIT} --docker-config="${DOCKER_AUTH_FILE}" > reports/${COMPONENT_NAME}-cert.json
-    - test "$(jq .passed reports/${COMPONENT_NAME}-cert.json)" == 'true' 
+    - test "$(jq .passed reports/${COMPONENT_NAME}-cert.json)" == 'true'
   artifacts:
     untracked: false
     paths:

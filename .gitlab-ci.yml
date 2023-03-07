@@ -601,12 +601,25 @@ upload_manifest:
         --upload-file ${BUILD_DIR}/operator-openshift.yaml \
         ${OCP_MANIFEST_URL}?status=default
 
+build_release_description:
+  stage: build
+  script:
+    - ./scripts/add_gitlab_repo.sh
+    - ./scripts/generate_release_message.sh "${CI_COMMIT_TAG}" | tee description.md
+  artifacts:
+    expire_in: 30 days
+    paths:
+      - './description.md'
+  rules:
+    - !reference [.if_release_tag]
+
 publish_release:
   # Caution, as of 2021-02-02 these assets links require a login, see:
   # https://gitlab.com/gitlab-org/gitlab/-/issues/299384
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   needs:
+    - build_release_description
     - upload_manifest
   rules:
     - !reference [.if_release_tag]
@@ -614,7 +627,7 @@ publish_release:
   release:
     name: "Release $CI_COMMIT_TAG"
     tag_name: "$CI_COMMIT_TAG"
-    description: "$CI_COMMIT_TAG"
+    description: "./description.md"
     assets:
       links:
         - name: "gitlab-operator-kubernetes.yaml"

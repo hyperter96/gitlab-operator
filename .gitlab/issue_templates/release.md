@@ -9,9 +9,8 @@ Much of the process is automated by [release-tools](https://gitlab.com/gitlab-or
 1. [ ] Confirm that publish jobs in the
        [tag pipeline in Canonical repo](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/pipelines?ref=X.Y.Z)
        has completed.
-1. [ ] Fill in the Release description with the output of the
-       [generate_release_message](https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/scripts/generate_release_message.sh)
-       script.
+1. [ ] Confirm that the [Release](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases) has been created
+       with the correct content in the tag message and Release description..
 1. [ ] [OLM bundle testing](doc/developer/test_olm.md) has been completed
 1. [ ] [Release to OperatorHub.io](doc/developer/operatorhub_publishing.md).
 1. [ ] [Release to OpenShift OperatorHub.io](doc/developer/operatorhub_publishing.md)

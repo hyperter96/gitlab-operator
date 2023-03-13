@@ -1,3 +1,9 @@
+---
+stage: Systems
+group: Distribution
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+---
+
 # Developer Guide
 
 This developer guide aims to walk a new developer on how to setup up their environment to be able to contribute to this project.

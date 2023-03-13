@@ -1,3 +1,9 @@
+---
+stage: Systems
+group: Distribution
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+---
+
 # Upgrading GitLab
 
 The GitLab Operator is capable of managing upgrades between versions of GitLab. This document includes background context on how the upgrade flow works under the hood, along with instructions to perform a GitLab upgrade.

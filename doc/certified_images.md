@@ -1,3 +1,9 @@
+---
+stage: Systems
+group: Distribution
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+---
+
 # RedHat-certified images
 
 The following table lists the images that the GitLab Operator deploys. The table includes links to the

@@ -1,3 +1,9 @@
+---
+stage: Systems
+group: Distribution
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/product/ux/technical-writing/#assignments
+---
+
 # RedHat Operator Bundle certification process
 
 This document outlines certification process for OLM bundle submission for RedHat Marketplace. It is based on [Red Hat Software Certification Workflow Guide](https://access.redhat.com/documentation/en-us/red_hat_software_certification/8.53/html/red_hat_software_certification_workflow_guide/assembly-running-the-certification-suite-locally_openshift-sw-cert-workflow-complete-pre-certification-checklist)

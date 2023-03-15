@@ -72,8 +72,6 @@ gitlab:
       labels:
         app.kubernetes.io/component: webservice
         app.kubernetes.io/instance: {{ .ReleaseName }}-webservice
-    serviceAccount:
-      name: {{ .Settings.AppAnyUIDServiceAccount }}
 
 global:
   common:

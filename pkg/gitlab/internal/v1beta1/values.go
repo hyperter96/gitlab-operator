@@ -29,45 +29,57 @@ func (w *Adapter) Hash() string {
 
 func (w *Adapter) populate(ctx context.Context) error {
 	return support.ChainedOperation{
-		w.applyUserDefinedValues,
 		w.applyOperatorDefaultValues,
-		w.fillMissingValues,
+		w.applyUserDefinedValues,
+		w.applyOperatorOverrideValues,
 		w.applyChartDefaultValues, // it uses coalesce (set value if not present)
 	}.Run(ctx)
 }
 
 func (w *Adapter) applyUserDefinedValues(_ context.Context) error {
-	val, err := copystructure.Copy(w.source.Spec.Chart.Values.Object)
+	userValues, err := copystructure.Copy(w.source.Spec.Chart.Values.Object)
 	if err != nil {
 		return errors.Wrap(err, "failed to clone user-defined values")
 	}
 
-	w.values = val.(map[string]interface{})
-	if w.values == nil {
-		w.values = support.Values{}
+	if userValues, ok := userValues.(map[string]interface{}); !ok {
+		return errors.New("failed to assert type of user defined values")
+	} else if err := w.values.Merge(userValues); err != nil {
+		return errors.Wrapf(err, "failed to merge user defined values")
 	}
 
 	return nil
 }
 
 func (w *Adapter) applyOperatorDefaultValues(_ context.Context) error {
-	var parameters = map[string]interface{}{
+	return w.loadValuesFromTemplate(defaultValuesTemplate)
+}
+
+func (w *Adapter) applyOperatorOverrideValues(_ context.Context) error {
+	return w.loadValuesFromTemplate(overrideValuesTemplate)
+}
+
+func (w *Adapter) loadValuesFromTemplate(template *template.Template) error {
+	var buf *strings.Builder = &strings.Builder{}
+
+	if err := template.Execute(buf, w.templateParameters()); err != nil {
+		return errors.Wrapf(err, "failed to render: %s", template.Name())
+	}
+
+	if err := w.values.AddFromYAML(buf.String()); err != nil {
+		return errors.Wrapf(err, "can not merge values from: %s", template.Name())
+	}
+
+	return nil
+}
+
+func (w *Adapter) templateParameters() map[string]interface{} {
+	return map[string]interface{}{
 		"ReleaseName":    w.ReleaseName(),
 		"UseCertManager": w.WantsFeature(ConfigureCertManager),
 		"ExternalIP":     w.values.GetString("global.hosts.externalIP"),
 		"Settings":       appSettings,
 	}
-
-	var defaultValues *strings.Builder = &strings.Builder{}
-	if err := defaultValuesTemplate.Execute(defaultValues, parameters); err != nil {
-		return errors.Wrap(err, "failed to render operator default values")
-	}
-
-	if err := w.values.AddFromYAML(defaultValues.String()); err != nil {
-		return errors.Wrap(err, "can not merge operator default values")
-	}
-
-	return nil
 }
 
 func (w *Adapter) applyChartDefaultValues(_ context.Context) error {
@@ -88,27 +100,27 @@ func (w *Adapter) applyChartDefaultValues(_ context.Context) error {
 	return nil
 }
 
-func (w *Adapter) fillMissingValues(_ context.Context) error {
-	if email := w.values.GetString("certmanager-issuer.email"); email == "" {
-		_ = w.values.SetValue("certmanager-issuer.email", defaultCertManagerIssuerEmail)
-	}
+var appSettings map[string]string
 
-	return nil
-}
-
-//go:embed values.tpl
+//go:embed default-values.tpl
 var defaultValuesSource string
 var defaultValuesTemplate *template.Template
-var appSettings map[string]string
+
+//go:embed override-values.tpl
+var overrideValuesSource string
+var overrideValuesTemplate *template.Template
 
 func init() {
 	settings.Load()
 
-	defaultValuesTemplate = template.Must(template.New("defaultValues").Parse(defaultValuesSource))
 	appSettings = map[string]string{
 		"AppNonRootServiceAccount": settings.AppNonRootServiceAccount,
 		"AppAnyUIDServiceAccount":  settings.AppAnyUIDServiceAccount,
+		"CertmanagerIssuerEmail":   defaultCertManagerIssuerEmail,
 		"ManagerServiceAccount":    settings.ManagerServiceAccount,
 		"NginxServiceAccount":      settings.NGINXServiceAccount,
 	}
+
+	defaultValuesTemplate = template.Must(template.New("defaultValues").Parse(defaultValuesSource))
+	overrideValuesTemplate = template.Must(template.New("overrideValues").Parse(overrideValuesSource))
 }

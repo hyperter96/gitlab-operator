@@ -23,4 +23,4 @@ These flows will be tested more extensively throughout the development of the Op
 [issue #320](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/320) for more information.
 
 Note that environments that leverage external services for stateful components like PostgreSQL and Gitaly
-will typically be easier to migrate.
+are typically easier to migrate.

@@ -17,8 +17,8 @@ another Kubernetes-compatible platform.
 
 Instructions on how to install the GitLab Operator can be found our [installation document](installation.md).
 
-We list [known limitations](#known-limitations), and details of how we use
-[Security Context Constraints](security_context_constraints.md) in their respective documents.
+We list details of how we use
+[Security Context Constraints](security_context_constraints.md) in their respective document.
 
 You should also be aware of the [considerations for SSH access to Git](git_over_ssh.md), especially
 when using OpenShift.
@@ -44,14 +44,3 @@ to deploy images that have been certified by RedHat.
 - [Versioning and Release Info](developer/releases.md): Records notes concerning versioning and releasing the operator.
 - [Design decisions](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/adr): This projects makes use of Architecture Decision Records, detailing the structure, functionality, and feature implementation of this Operator.
 - [OpenShift Cluster Setup](developer/openshift_cluster_setup.md): Instructions for creating/configuring OpenShift clusters for *Development* purposes.
-
-## Known limitations
-
-Below are known limitations of the GitLab Operator.
-
-### Components not recommended for production use
-
-Below is a list of components that are not yet recommended for production when
-deployed by the GitLab Operator:
-
-- KAS: [#353](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/353)

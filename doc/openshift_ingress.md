@@ -106,6 +106,10 @@ To use the NGINX Ingress Controller for Ingress, complete the following:
    Creating individual A records rather than a wildcard A record ensures that existing Routes (such as the Route for the OpenShift
    dashboard) continue to work as expected.
 
+   NOTE:
+   These records need to exist in _both_ the public **and** private zones in your cloud provider's network settings.
+   Parity between these zones ensures proper cluster-internal routing and allows CertManager to properly issue Certificates.
+
 GitLab should then be available at `https://gitlab.yourdomain.com`.
 
 ## OpenShift Routes

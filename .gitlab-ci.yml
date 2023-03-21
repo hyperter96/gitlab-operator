@@ -135,7 +135,7 @@ lint_code:
 docs-lint links:
   image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-html:alpine-3.17-ruby-3.2.1-f53af000
   stage: test
-  tags: [ saas-linux-medium-amd64 ]
+  tags: [ gitlab-org ]
   needs:
     - job: danger-review
       optional: true

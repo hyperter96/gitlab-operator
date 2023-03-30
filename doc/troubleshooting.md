@@ -50,6 +50,27 @@ operator needs to be installed with the cluster administrator account. The
 developer accounts do not have the necessary privileges to allow the operator
 function properly.
 
+If [Ingress NGINX Controller](https://github.com/kubernetes/ingress-nginx) Pods are unable to provision due to invalid SCC parameters as described in [this issue](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/762), the proper workaround is to update SCC from the repository to allow Ingress NGINX start in your OpenShift cluster:
+      
+1. Fetch the [latest OpenShift manifest](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases) for the GitLab Operator. You need `gitlab-operator-openshift-VERSION.yaml`
+1. Extract SCC
+
+   ```shell
+   yq eval '. | select(.metadata.name | test(".*scc.*"))' gitlab-operator-openshift-VERSION.yaml > scc.yaml
+   ```
+
+1. Apply `scc.yaml` to your cluster:
+
+   ```shell
+   kubectl apply -f scc.yaml
+   ```
+
+Installing from a released manifest from the GitLab Operator repository's Releases page would not have this problem, since the SCC is included.
+Related issues for objects not being supported in OperatorHubs:
+
+- [Add support for IngressClass CR · Issue #5491 · operator-framework/operator-sdk · GitHub](https://github.com/operator-framework/operator-sdk/issues/5491)
+- [Add support for OpenShift's SCC · Issue #2847 · operator-framework/operator-lifecycle-manager · GitHub](https://github.com/operator-framework/operator-lifecycle-manager/issues/2847)
+
 ## Problems with deployment of GitLab instance
 
 In addition to the information presented here, one should consult the

@@ -105,6 +105,8 @@
   # as per kubernetes/DNS specs
   - source ci/scripts/trim_env.sh
   - ci/scripts/create_trimmed_env_file.sh deploy_namespace.env
+  - DEPLOYMENT_ENV_ID=${CI_JOB_NAME#build_review_}
+  - echo "DEPLOYMENT_ENV_ID=${DEPLOYMENT_ENV_ID}"
   ## -- End of trimming
   - &vars_on_dev_gitlab_org |
       if [ "$CI_SERVER_HOST" = "dev.gitlab.org" ] && [ "$CI_PROJECT_PATH" = "gitlab/cloud-native/gitlab-operator" ]

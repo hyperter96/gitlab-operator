@@ -110,4 +110,7 @@ deploy/chart/charts/*.tgz
 .task/
 workspace-template.yml
 
+# Output from golangci-lint via `task lint`
+gl-code-quality-report.json
+
 *.env

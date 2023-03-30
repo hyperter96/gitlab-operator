@@ -103,6 +103,17 @@ tasks:
     cmds:
       - go fmt ./...
 
+  lint:
+    desc: Lints code using `golangci-lint`.
+    cmds:
+      # Write the code coverage report to gl-code-quality-report.json
+      # and print linting issues to stdout in the format: path/to/file:line description
+      - >-
+        golangci-lint run
+        --timeout 5m0s
+        --print-issued-lines=false
+        --out-format code-climate:gl-code-quality-report.json,line-number
+
   manager:
     desc: Build the manager binary using `go build`.
     deps:

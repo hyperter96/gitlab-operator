@@ -54,7 +54,7 @@ The workaround is to manually delete the GitLab Operator controller Pod. Refer t
 [#315](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/315)
 for more information.
 
-For troubleshooting SCC-related issues blocking creation of NGINX-Ingress Controller, see additional documentation in our [Operator Troubleshooting doc](https://docs.gitlab.com/operator/troubleshooting.html#openshift-specific-problems).
+For troubleshooting SCC-related issues blocking creation of NGINX-Ingress Controller, see additional documentation in our [Operator Troubleshooting doc](troubleshooting.md#openshift-specific-problems).
 
 ### Configuration
 

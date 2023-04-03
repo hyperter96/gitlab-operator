@@ -110,7 +110,7 @@ tasks:
       # and print linting issues to stdout in the format: path/to/file:line description
       - >-
         golangci-lint run
-        --timeout 5m0s
+        --timeout 10m0s
         --print-issued-lines=false
         --out-format code-climate:gl-code-quality-report.json,line-number
 

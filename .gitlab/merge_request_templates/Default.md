@@ -6,10 +6,6 @@
 
 %{first_multiline_commit}
 
-## Related issues
-
-<!-- Link related issues below. Insert the issue link or reference after the word "Closes" if merging this should automatically close it. -->
-
 ## Checklist
 
 See [Definition of done](https://gitlab.com/gitlab-org/omnibus-gitlab/blob/master/CONTRIBUTING.md#definition-of-done).
@@ -29,3 +25,8 @@ For anything in this list which will not be completed, please provide a reason i
 - [ ] Integration tests added to [GitLab QA](https://gitlab.com/gitlab-org/gitlab-qa)
 - [ ] Equivalent MR/issue for [omnibus-gitlab](https://gitlab.com/gitlab-org/omnibus-gitlab) opened
 - [ ] Validate potential values for new configuration settings. Formats such as integer `10`, duration `10s`, URI `scheme://user:passwd@host:port` may require quotation or other special handling when rendered in a template and written to a configuration file.
+
+## Related issues
+
+<!-- Link related issues below. Insert the issue link or reference after the word "Closes" if merging this should automatically close it. -->
+

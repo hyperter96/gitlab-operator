@@ -37,7 +37,7 @@ func (r *GitLabReconciler) reconcileRedisConfigMaps(ctx context.Context, adapter
 }
 
 func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
-	redis := gitlabctl.RedisStatefulSet(template)
+	redis := gitlabctl.RedisStatefulSet(adapter, template)
 
 	if err := r.annotateSecretsChecksum(ctx, adapter, redis); err != nil {
 		return err
@@ -53,7 +53,7 @@ func (r *GitLabReconciler) reconcileRedisStatefulSet(ctx context.Context, adapte
 func (r *GitLabReconciler) validateExternalRedisConfiguration(ctx context.Context, adapter gitlab.Adapter) error {
 	defaultRedisSecretName := adapter.Values().GetString("global.redis.password.secret")
 	if defaultRedisSecretName == "" {
-		defaultRedisSecretName = fmt.Sprintf("%s-%s-secret", adapter.ReleaseName(), gitlabctl.RedisComponentName)
+		defaultRedisSecretName = fmt.Sprintf("%s-%s-secret", adapter.ReleaseName(), gitlabctl.RedisComponentName(adapter))
 	}
 
 	// If external Redis global password is enabled, ensure it was created.

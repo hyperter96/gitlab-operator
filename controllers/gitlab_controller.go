@@ -697,7 +697,7 @@ func (r *GitLabReconciler) ifCoreServicesReady(ctx context.Context, adapter gitl
 	}
 
 	if adapter.WantsComponent(component.Redis) {
-		if !r.isEndpointReady(ctx, adapter.ReleaseName()+"-redis-master", adapter) {
+		if !r.isEndpointReady(ctx, gitlabctl.RedisMasterService(adapter, template).GetName(), adapter) {
 			return false
 		}
 	}

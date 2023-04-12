@@ -529,6 +529,63 @@ global:
 			})
 		})
 
+		When("Bundled Redis has a overridden name", func() {
+			releaseName := "redis-name-override"
+			nameOverride := "foobar"
+
+			cfgMapNameScripts := fmt.Sprintf("%s-%s-scripts", releaseName, nameOverride)
+			cfgMapNameHealth := fmt.Sprintf("%s-%s-health", releaseName, nameOverride)
+			cfgMapName := fmt.Sprintf("%s-%s", releaseName, nameOverride)
+			serviceNameHeadless := fmt.Sprintf("%s-%s-headless", releaseName, nameOverride)
+			serviceNameMetrics := fmt.Sprintf("%s-%s-metrics", releaseName, nameOverride)
+			serviceNameMaster := fmt.Sprintf("%s-%s-master", releaseName, nameOverride)
+			statefulSetName := fmt.Sprintf("%s-%s-master", releaseName, nameOverride)
+			nextCfgMapName := fmt.Sprintf("%s-%s", releaseName, gitlabctl.SharedSecretsComponentName)
+
+			chartValues := support.Values{}
+			_ = chartValues.SetValue("redis.install", true)
+			_ = chartValues.SetValue("redis.nameOverride", nameOverride)
+
+			BeforeEach(func() {
+				createGitLabResource(releaseName, chartValues)
+				processSharedSecretsJob(releaseName)
+			})
+
+			It("Should create Redis resources with the overridden names and continue the reconcile loop", func() {
+				By("Checking Redis Scripts ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapNameScripts, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis Health ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapNameHealth, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis ConfigMap exists")
+				Eventually(getObjectPromise(cfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis Headless Service exists")
+				Eventually(getObjectPromise(serviceNameHeadless, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis Metrics Service exists")
+				Eventually(getObjectPromise(serviceNameMetrics, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis Master Service exists")
+				Eventually(getObjectPromise(serviceNameMaster, &corev1.Service{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking Redis StatefulSet exists")
+				Eventually(getObjectPromise(statefulSetName, &appsv1.StatefulSet{}),
+					PollTimeout, PollInterval).Should(Succeed())
+
+				By("Checking next resources in the reconcile loop, e.g. ConfigMaps")
+				Eventually(getObjectPromise(nextCfgMapName, &corev1.ConfigMap{}),
+					PollTimeout, PollInterval).Should(Succeed())
+			})
+		})
+
 		When("External Redis has subqueue with no Secret created", func() {
 			releaseName := "redis-subqueues-no-secret"
 			chartValues := support.Values{}

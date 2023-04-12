@@ -190,3 +190,15 @@ For more information on reconnecting to previous PersistentVolumes, see our
 [persistent volumes documentation](https://docs.gitlab.com/charts/advanced/persistent-volumes/).
 
 As a reminder, the bundled MinIO instance is [not recommended for production use](https://docs.gitlab.com/charts/charts/minio/#enable-the-sub-chart).
+
+### Disabling or Renaming components
+
+While renaming and disabling of resources is possible via changes to `nameOverride` and combination of various `*.enable: false` values, GitLab Operator does not automatically remove Kubernetes resources that are no longer needed. As
+a result, any of the above operations would require manual
+management of leftover resources.
+
+Deleting an instance of the GitLab custom resource, however, will remove all resources associated with that
+instance as expected.
+
+Issue [!889](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/issues/889) has been
+created to keep track of this.

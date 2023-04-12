@@ -26,7 +26,7 @@ type Query interface {
 	// ObjectByKindAndLabels returns the all objects that match the kind specifier and have the labels.
 	ObjectsByKindAndLabels(kindArg string, labels map[string]string) []client.Object
 
-	// ObjectByKindAndLabels returns the all objects that match the kind specifier and have the labels.
+	// ObjectByKindAndLabels returns the all objects that match the kind specifier and the "app" label.
 	ObjectByKindAndComponent(kindArg, component string) client.Object
 }
 

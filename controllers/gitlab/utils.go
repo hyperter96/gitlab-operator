@@ -46,8 +46,8 @@ const (
 	// SidekiqComponentName is the common name of Sidekiq.
 	SidekiqComponentName = "sidekiq"
 
-	// RedisComponentName is the common name of Redis.
-	RedisComponentName = "redis"
+	// DefaultRedisComponentName is the default common name of Redis.
+	DefaultRedisComponentName = "redis"
 
 	// DefaultPostgresComponentName is the default common name of PostgreSQL.
 	DefaultPostgresComponentName = "postgresql"
@@ -93,6 +93,15 @@ func PostgresComponentName(adapter gitlab.Adapter) string {
 	}
 
 	return DefaultPostgresComponentName
+}
+
+// RedisComponentName provides the name of the Redis component taking name overrides into account.
+func RedisComponentName(adapter gitlab.Adapter) string {
+	if nameOverride := adapter.Values().GetString("redis.nameOverride", ""); nameOverride != "" {
+		return nameOverride
+	}
+
+	return DefaultRedisComponentName
 }
 
 func updateCommonLabels(releaseName, componentName string, labels map[string]string) {

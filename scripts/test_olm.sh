@@ -74,7 +74,7 @@ if [[ -z "${PREVIOUS_CHART_VERSION+}" ]]; then
     PREVIOUS_CHART_VERSION=$(get_chart_version "${PREVIOUS_BUNDLE_VERSION}")
 fi
 
-CHART_REPO="https://gitlab.com/gitlab-org/charts/gitlab"
+GITLAB_CHART_REPO=${GITLAB_CHART_REPO:-"https://gitlab.com/gitlab-org/charts/gitlab"}
 
 CATALOG_TAG_SUFFIX=""
 
@@ -93,7 +93,7 @@ if [ -z "${KIND_CONFIG+}" ]; then
     KIND_CONFIG=$(mktemp -p . kind-ssl.XXXXX)
     export KIND_CONFIG
     _cleanup_kind_config="true"
-    curl -o "${KIND_CONFIG}" "${CHART_REPO}/-/raw/master/examples/kind/kind-ssl.yaml"
+    curl -o "${KIND_CONFIG}" "${GITLAB_CHART_REPO}/-/raw/master/examples/kind/kind-ssl.yaml"
 fi
 export KIND_IMAGE=${KIND_IMAGE:-"kindest/node:v${K8S_VERSION}"}
 

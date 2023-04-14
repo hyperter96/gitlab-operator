@@ -6,35 +6,44 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 
 # GitLab autodeployment for testing
 
+## Requirements
+
+- `openssl` utility
+- `kubectl`
+- cluster interaction tool (one of):
+  - `gcloud`
+  - `kind`
+ 
 ## Parameters
 
 Parameters are passed via environment variables:
 
-| variable name | required | default | description |
-|---------------|----------|---------|-------------|
-| `GITLAB_CHART_VERSION` | no | latest available | Chart version to use. Must align with the charts provided within `TAG` of the operator |
-| `IMG` | no | `registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator` | Operator Container Image Name |
-| `TAG` | no | `master` | Operator Container Image Tag. Needs an override in most cases |
-| `GITLAB_CHART_DIR`| yes | | path to a clone of GitLab Chart repo|
-| `GITLAB_OPERATOR_DIR`| no | `.`| path to a clone of GitLab Operator repo|
-| `GITLAB_OPERATOR_MANIFEST` | no | | Optional reference to manifest for Operator deployment, if empty - auto-generated from `${GITLAB_OPERATOR_DIR}`. To note: to reference proper image and tag set up `IMG` and `TAG` environment variables |
-| `GITLAB_CR_DEPLOY_MODE` | no | `selfsigned` | Select mode of deployment: `selfsigned` or `certmanager` |
-| `GITLAB_OPERATOR_DOMAIN` | no | `${LOCAL_IP}.nip.io` for KinD, `cloud-native.win` for other platforms | Domain for GitLab (operator) deployment |
-| `GITLAB_HOST` | no | `*.${GITLAB_OPERATOR_DOMAIN}` | Common name to use for GitLab endpoint self-signed cert |
-| `GITLAB_KEY_FILE` | no | `gitlab.key` | Self-signed cert key file |
-| `GITLAB_CERT_FILE` | no | `gitlab.crt` | Self-signed cert file |
-| `GITLAB_PAGES_HOST` | no | `*.pages.${GITLAB_OPERATOR_DOMAIN}` | Common name to use for GitLab Pages endpoint self-signed cert |
-| `GITLAB_PAGES_KEY_FILE` | no | `pages.key` | Self-signed cert key file |
-| `GITLAB_PAGES_CERT_FILE` | no | `pages.crt` | Self-signed cert file |
-| `GITLAB_ACME_EMAIL` | no | output of `git config user.email` | Email used for cert-manager. Not necessary in KinD deployments |
-| `GITLAB_RUNNER_TOKEN` | no | | Runner Token, if empty it's auto-retrieved from running GitLab Instance |
-| `KIND` | no | `kind` | command line executable name for KinD |
-| `KIND_CLUSTER_NAME` | no | `gitlab` | KinD cluster name |
-| `KIND_IMAGE` | no | `kindest/node:v1.18.19` | value of `--image` argument for KinD |
-| `KIND_LOCAL_IP`| yes, for KinD | | Local IP required to provision Certs etc for the domain `${LOCAL_IP}.nip.io` |
-| `KUBECTL` | no | `kubectl` | path to `kubectl` command |
-| `HELM` | no | `helm` | path to `helm` command |
-| `TASK` | no | `task` | path to `task` command |
+|       variable name        |   required    |                                default                                |                                                                                               description                                                                                                |
+| -------------------------- | ------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GITLAB_CHART_VERSION`     | no            | latest available                                                      | Chart version to use. Must align with the charts provided within `TAG` of the operator                                                                                                                   |
+| `GITLAB_CHART_REPO`        | no            | `https://gitlab.com/gitlab-org/charts/gitlab`                         | GitLab Helm Chart repository HTTP URI. Mainly used to fetch default KinD configs.                                                                                                                        |
+| `IMG`                      | no            | `registry.gitlab.com/gitlab-org/cloud-native/gitlab-operator`         | Operator Container Image Name                                                                                                                                                                            |
+| `TAG`                      | no            | `master`                                                              | Operator Container Image Tag. Needs an override in most cases                                                                                                                                            |
+| `GITLAB_CHART_DIR`         | yes           |                                                                       | path to a clone of GitLab Chart repo                                                                                                                                                                     |
+| `GITLAB_OPERATOR_DIR`      | no            | `.`                                                                   | path to a clone of GitLab Operator repo                                                                                                                                                                  |
+| `GITLAB_OPERATOR_MANIFEST` | no            |                                                                       | Optional reference to manifest for Operator deployment, if empty - auto-generated from `${GITLAB_OPERATOR_DIR}`. To note: to reference proper image and tag set up `IMG` and `TAG` environment variables |
+| `GITLAB_CR_DEPLOY_MODE`    | no            | `selfsigned`                                                          | Select mode of deployment: `selfsigned` or `certmanager`                                                                                                                                                 |
+| `GITLAB_OPERATOR_DOMAIN`   | no            | `${LOCAL_IP}.nip.io` for KinD, `cloud-native.win` for other platforms | Domain for GitLab (operator) deployment                                                                                                                                                                  |
+| `GITLAB_HOST`              | no            | `*.${GITLAB_OPERATOR_DOMAIN}`                                         | Common name to use for GitLab endpoint self-signed cert                                                                                                                                                  |
+| `GITLAB_KEY_FILE`          | no            | `gitlab.key`                                                          | Self-signed cert key file                                                                                                                                                                                |
+| `GITLAB_CERT_FILE`         | no            | `gitlab.crt`                                                          | Self-signed cert file                                                                                                                                                                                    |
+| `GITLAB_PAGES_HOST`        | no            | `*.pages.${GITLAB_OPERATOR_DOMAIN}`                                   | Common name to use for GitLab Pages endpoint self-signed cert                                                                                                                                            |
+| `GITLAB_PAGES_KEY_FILE`    | no            | `pages.key`                                                           | Self-signed cert key file                                                                                                                                                                                |
+| `GITLAB_PAGES_CERT_FILE`   | no            | `pages.crt`                                                           | Self-signed cert file                                                                                                                                                                                    |
+| `GITLAB_ACME_EMAIL`        | no            | output of `git config user.email`                                     | Email used for cert-manager. Not necessary in KinD deployments                                                                                                                                           |
+| `GITLAB_RUNNER_TOKEN`      | no            |                                                                       | Runner Token, if empty it's auto-retrieved from running GitLab Instance                                                                                                                                  |
+| `KIND`                     | no            | `kind`                                                                | command line executable name for KinD                                                                                                                                                                    |
+| `KIND_CLUSTER_NAME`        | no            | `gitlab`                                                              | KinD cluster name                                                                                                                                                                                        |
+| `KIND_IMAGE`               | no            | `kindest/node:v1.18.19`                                               | value of `--image` argument for KinD                                                                                                                                                                     |
+| `KIND_LOCAL_IP`            | yes, for KinD |                                                                       | Local IP required to provision Certs etc for the domain `${LOCAL_IP}.nip.io`                                                                                                                             |
+| `KUBECTL`                  | no            | `kubectl`                                                             | path to `kubectl` command                                                                                                                                                                                |
+| `HELM`                     | no            | `helm`                                                                | path to `helm` command                                                                                                                                                                                   |
+| `TASK`                     | no            | `task`                                                                | path to `task` command                                                                                                                                                                                   |
 
 ### Tool pointer variables (`$KIND`, `$KUBECTL`, `$HELM`, etc.)
 
@@ -93,34 +102,23 @@ By default deployment is done with Self-Signed cert:
 
 ```shell
 export KIND_CLUSTER_NAME=gitlab \
-        KIND_LOCAL_IP=192.168.3.194 \
-        GITLAB_CHART_DIR=~/work/gitlab \
-export KIND_CLUSTER_NAME=gitlab \
        KIND_LOCAL_IP=192.168.3.194 \
        GITLAB_CHART_DIR=~/work/gitlab
 
 scripts/provision_and_deploy.sh kind_deploy
 ```
 
-Alternatively, use a CR generated by a pipeline (downloaded into `./123-my-branch.yaml`, for example):
+Alternatively, use a CR generated by a pipeline in `build manifest` job (downloaded into `./123-my-branch.yaml`, for example):
 
 ```shell
-cd scripts
-export KIND_CLUSTER_NAME=gitlab \
-        KIND_LOCAL_IP=192.168.3.194 \
-        GITLAB_CHART_DIR=~/work/gitlab \
-        GITLAB_OPERATOR_MANIFEST=./123-my-branch.yaml \
-        GITLAB_OPERATOR_DIR=~/work/gitlab-operator
 export KIND_CLUSTER_NAME=gitlab \
        KIND_LOCAL_IP=192.168.3.194 \
        GITLAB_CHART_DIR=~/work/gitlab \
        GITLAB_OPERATOR_MANIFEST=./123-my-branch.yaml \
        GITLAB_OPERATOR_DIR=~/work/gitlab-operator
 
-./provision_and_deploy.sh kind_deploy
+scripts/provision_and_deploy.sh kind_deploy
 ```
-
-The command above has been run from within the `scripts/` directory (note the use of `GITLAB_OPERATOR_DIR`).
 
 That's it! You should now be able to navigate to `https://gitlab.(your IP).nip.io` and log in with the root password.
 

@@ -3,6 +3,7 @@ set -ueo pipefail
 
 GITLAB_CHART_VERSION=${GITLAB_CHART_VERSION:-$(sed -n 1p CHART_VERSIONS)}
 GITLAB_CHART_DIR=${GITLAB_CHART_DIR:-""}
+GITLAB_CHART_REPO=${GITLAB_CHART_REPO:-"https://gitlab.com/gitlab-org/charts/gitlab"}
 GITLAB_OPERATOR_DIR=${GITLAB_OPERATOR_DIR:-.}
 GITLAB_OPERATOR_MANIFEST=${GITLAB_OPERATOR_MANIFEST:-""}
 GITLAB_CR_DEPLOY_MODE=${GITLAB_CR_DEPLOY_MODE:-"selfsigned"}
@@ -95,7 +96,7 @@ create_kind_cluster(){
     KIND_CONFIG=$(mkdir -p .build; mktemp -p .build kind-ssl.XXXXX)
     export KIND_CONFIG
     _cleanup_kind_config="true"
-    curl -o "${KIND_CONFIG}" "${CHART_REPO}/-/raw/master/examples/kind/kind-ssl.yaml"
+    curl -o "${KIND_CONFIG}" "${GITLAB_CHART_REPO}/-/raw/master/examples/kind/kind-ssl.yaml"
   elif [ -n "${GITLAB_CHART_DIR+}" -a -z "${KIND_CONFIG}" ]; then
     KIND_CONFIG="${GITLAB_CHART_DIR}/examples/kind/kind-ssl.yaml"
   fi

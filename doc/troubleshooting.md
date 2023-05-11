@@ -191,6 +191,13 @@ For more information on reconnecting to previous PersistentVolumes, see our
 
 As a reminder, the bundled MinIO instance is [not recommended for production use](https://docs.gitlab.com/charts/charts/minio/#enable-the-sub-chart).
 
+### Configure multiple database connections
+
+In GitLab 16.0, GitLab defaults to using two database connections that point to the same PostgreSQL database.
+
+If you wish to switch back to single database connection, refer to
+[configuring multiple database connections](https://docs.gitlab.com/charts/charts/globals.html#configure-multiple-database-connections).
+
 ### Disabling or Renaming components
 
 While renaming and disabling of resources is possible via changes to `nameOverride` and combination of various `*.enable: false` values, GitLab Operator does not automatically remove Kubernetes resources that are no longer needed. As

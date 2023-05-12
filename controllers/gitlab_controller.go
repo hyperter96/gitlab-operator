@@ -299,13 +299,31 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if adapter.WantsComponent(component.Webservice) || adapter.WantsComponent(component.Sidekiq) {
 				// If upgrading with Migrations enabled and Webservice and/or Sidekiq enabled,
 				// then follow the traditional upgrade logic.
-				if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, true, log); err != nil {
+				log.Info("reconciling pre migrations")
+
+				job, err := gitlabctl.PreMigrationsJob(adapter, template)
+
+				if err != nil {
 					return requeue(err)
 				}
 
-				log.Info("reconciling pre migrations")
+				exists, err := r.jobExists(ctx, job)
 
-				finished, err := r.runPreMigrations(ctx, adapter, template)
+				if err != nil {
+					return requeue(err)
+				}
+
+				// Scale Webservice and Sidekiq down before running pre migrations.
+				// Only scale them down before once, to avoid pause -> unpause loop.
+				if !exists {
+					log.Info("pre migrations job does not exist")
+
+					if err := r.reconcileWebserviceAndSidekiqIfEnabled(ctx, adapter, template, true, log); err != nil {
+						return requeue(err)
+					}
+				}
+
+				finished, err := r.runPreMigrations(ctx, adapter, job)
 				if err != nil {
 					return requeue(err)
 				}
@@ -445,31 +463,55 @@ func (r *GitLabReconciler) jobFinished(ctx context.Context, adapter gitlab.Adapt
 
 	logger.V(2).Info("Checking the status of Job")
 
-	lookupKey := types.NamespacedName{
-		Name:      job.GetName(),
-		Namespace: job.GetNamespace(),
-	}
+	lookup, err := r.lookupJob(ctx, job)
 
-	lookupVal := &batchv1.Job{}
-
-	if err := r.Get(ctx, lookupKey, lookupVal); err != nil {
+	if err != nil {
 		logger.V(2).Info("failed to check the status of Job", "error", err)
 		return false, err
 	}
 
-	if lookupVal.Status.Succeeded > 0 {
+	if lookup.Status.Succeeded > 0 {
 		logger.V(2).Info("Job succeeded")
 		return true, nil
 	}
 
-	if lookupVal.Status.Failed > 0 {
-		err := errors.NewInternalError(fmt.Errorf("job %s has failed", lookupKey))
+	if lookup.Status.Failed > 0 {
+		err := errors.NewInternalError(fmt.Errorf("job %s has failed", lookup))
 		logger.Error(err, "Job failed")
 
 		return true, err
 	}
 
 	return false, nil
+}
+
+func (r *GitLabReconciler) lookupJob(ctx context.Context, job client.Object) (*batchv1.Job, error) {
+	lookupKey := types.NamespacedName{
+		Name:      job.GetName(),
+		Namespace: job.GetNamespace(),
+	}
+
+	lookup := &batchv1.Job{}
+
+	if err := r.Get(ctx, lookupKey, lookup); err != nil {
+		return nil, err
+	}
+
+	return lookup, nil
+}
+
+func (r *GitLabReconciler) jobExists(ctx context.Context, job client.Object) (bool, error) {
+	_, err := r.lookupJob(ctx, job)
+
+	if err == nil {
+		return true, nil
+	}
+
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
+
+	return false, err
 }
 
 func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlab.Adapter) error {

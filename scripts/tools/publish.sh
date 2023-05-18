@@ -243,6 +243,7 @@ publish_redhat_community() {
     checkout_publish_branch "${RHC_BUILD_DIR}"
     edit_manifest
     create_bundle "${RHC_BUNDLE_DIR}"
+    annotate_bundle "${RHC_BUNDLE_DIR}"
     copy_bundle "${RHC_BUILD_DIR}" "${RHC_BUNDLE_DIR}"
     commit_publish_branch "${RHC_BUILD_DIR}"
 

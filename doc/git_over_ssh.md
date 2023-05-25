@@ -12,7 +12,7 @@ This document provides configuration guidelines for Git over SSH on various envi
 
 The [GitLab Shell Helm chart](https://docs.gitlab.com/charts/charts/gitlab/gitlab-shell/) provides an SSH server configured for Git SSH access to GitLab. This component must be exposed outside of the cluster on port `22`.
 
-The GitLab Operator will deploy `gitlab-shell` when `gitlab.gitlab-shell.enabled` is set to `true`. This is the default setting.
+The GitLab Operator deploys `gitlab-shell` when `gitlab.gitlab-shell.enabled` is set to `true`. This is the default setting.
 
 To summarize the requirements based on the target platform:
 

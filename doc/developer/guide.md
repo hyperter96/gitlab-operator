@@ -12,7 +12,7 @@ This developer guide aims to walk a new developer on how to setup up their envir
 
 To setup your system for development of the operator, follow the steps below:
 
-1. Install [golang](https://go.dev/dl/) in your environment.
+1. Install [Go](https://go.dev/dl/) in your environment.
 
    ```shell
    go version

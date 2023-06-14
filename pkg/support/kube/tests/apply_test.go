@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("ApplyObject", func() {
 	It("uses strategic merge patch meta", func() {
-		obj := readObject("deployment-1")
+		obj := ReadObject("apply/deployment-1")
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectCreated))
@@ -27,10 +27,10 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(d)).Should(Succeed())
+		Eventually(GetObject(d)).Should(Succeed())
 		g := d.ObjectMeta.Generation
 
-		obj = readObject("deployment-2")
+		obj = ReadObject("apply/deployment-2")
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectUpdated))
@@ -41,7 +41,7 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(d, g+1)).Should(Succeed())
+		Eventually(GetObject(d, g+1)).Should(Succeed())
 
 		Expect(d.ObjectMeta.Generation).To(BeNumerically(">", g))
 		Expect(d.Spec.Template.Spec.Volumes).To(HaveLen(3))
@@ -49,12 +49,12 @@ var _ = Describe("ApplyObject", func() {
 		Expect(d.Spec.Template.Spec.Containers[0].VolumeMounts).To(HaveLen(3))
 		Expect(d.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("dummy"))
 
-		Eventually(deleteObject(d)).Should(Succeed())
+		Eventually(DeleteObject(d)).Should(Succeed())
 	})
 
 	It("patches the object when its last configuration is unknown", func() {
-		obj := readObject("deployment-1")
-		Eventually(createObject(obj)).Should(Succeed())
+		obj := ReadObject("apply/deployment-1")
+		Eventually(CreateObject(obj)).Should(Succeed())
 
 		/* wait for the change to be populated */
 		d := &appsv1.Deployment{
@@ -63,10 +63,10 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(d)).Should(Succeed())
+		Eventually(GetObject(d)).Should(Succeed())
 		g := d.ObjectMeta.Generation
 
-		obj = readObject("deployment-1")
+		obj = ReadObject("apply/deployment-1")
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectUpdated))
@@ -78,17 +78,17 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(d, g+1)).Should(Succeed())
+		Eventually(GetObject(d, g+1)).Should(Succeed())
 
 		Expect(d.ObjectMeta.Generation).To(BeNumerically(">", g))
 		Expect(d.Annotations).To(HaveKey(corev1.LastAppliedConfigAnnotation))
 		Expect(d.Annotations[corev1.LastAppliedConfigAnnotation]).NotTo(BeEmpty())
 
-		Eventually(deleteObject(d)).Should(Succeed())
+		Eventually(DeleteObject(d)).Should(Succeed())
 	})
 
 	It("does not patch the object when it is not changed", func() {
-		obj := readObject("job-1")
+		obj := ReadObject("apply/job-1")
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectCreated))
@@ -100,21 +100,21 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(j)).Should(Succeed())
+		Eventually(GetObject(j)).Should(Succeed())
 		g := j.ObjectMeta.Generation
 
-		obj = readObject("job-1")
+		obj = ReadObject("apply/job-1")
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectUnchanged))
 
 		Expect(j.ObjectMeta.Generation).To(Equal(g))
 
-		Eventually(deleteObject(obj)).Should(Succeed())
+		Eventually(DeleteObject(obj)).Should(Succeed())
 	})
 
 	It("does not modify the object when it is not semantically changed", func() {
-		obj := readObject("deployment-1")
+		obj := ReadObject("apply/deployment-1")
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectCreated))
@@ -126,10 +126,10 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(d)).Should(Succeed())
+		Eventually(GetObject(d)).Should(Succeed())
 		g := d.ObjectMeta.Generation
 
-		obj = readObject("deployment-1")
+		obj = ReadObject("apply/deployment-1")
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectUnchanged))
@@ -140,15 +140,15 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(d, g)).Should(Succeed())
+		Eventually(GetObject(d, g)).Should(Succeed())
 
 		Expect(d.ObjectMeta.Generation).To(Equal(g))
 
-		Eventually(deleteObject(d)).Should(Succeed())
+		Eventually(DeleteObject(d)).Should(Succeed())
 	})
 
 	It("can work with unstructured objects", func() {
-		obj := readObject("deployment-1", UnstructuredYAMLCodec)
+		obj := ReadObject("apply/deployment-1", UnstructuredYAMLCodec)
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectCreated))
@@ -160,10 +160,10 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(d)).Should(Succeed())
+		Eventually(GetObject(d)).Should(Succeed())
 		g := d.ObjectMeta.Generation
 
-		obj = readObject("deployment-2", UnstructuredYAMLCodec)
+		obj = ReadObject("apply/deployment-2", UnstructuredYAMLCodec)
 		Expect(
 			kube.ApplyObject(obj, apply.WithManager(Manager)),
 		).To(Equal(kube.ObjectUpdated))
@@ -174,13 +174,13 @@ var _ = Describe("ApplyObject", func() {
 				Namespace: obj.GetNamespace(),
 			},
 		}
-		Eventually(getObject(d, g+1)).Should(Succeed())
+		Eventually(GetObject(d, g+1)).Should(Succeed())
 
 		Expect(d.ObjectMeta.Generation).To(BeNumerically(">", g))
 		Expect(d.Spec.Template.Spec.Volumes).To(HaveLen(3))
 		Expect(d.Spec.Template.Spec.Volumes[2].Name).To(Equal("dummy"))
 
-		Eventually(deleteObject(obj)).Should(Succeed())
+		Eventually(DeleteObject(obj)).Should(Succeed())
 	})
 
 	/*

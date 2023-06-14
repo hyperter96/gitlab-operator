@@ -1,0 +1,11 @@
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: nginx-example
+  ownerReferences:
+    - kind: CronTab
+      apiVersion: stable.example.com/v1
+      name: crontab-1
+      uid: c8428756-ba16-43a3-a3d0-c2649cfea0e2
+spec:
+  controller: k8s.io/ingress-nginx

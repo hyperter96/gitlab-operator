@@ -9,6 +9,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
@@ -21,6 +24,7 @@ import (
 
 	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -40,7 +44,11 @@ var _ = BeforeSuite(func() {
 	By("Starting test environment")
 
 	ctx, cancel = context.WithCancel(context.TODO())
-	env = &envtest.Environment{}
+	env = &envtest.Environment{
+		CRDDirectoryPaths: []string{
+			"testdata/crds",
+		},
+	}
 
 	schemeBuilder := runtime.SchemeBuilder{
 		clientgoscheme.AddToScheme,
@@ -56,6 +64,9 @@ var _ = BeforeSuite(func() {
 			addToScheme(scheme.Scheme),
 		).NotTo(HaveOccurred())
 	}
+
+	ClientSet, err = kubernetes.NewForConfig(cfg)
+	Expect(err).ToNot(HaveOccurred())
 
 	Manager, err = ctrlrt.NewManager(cfg, ctrlrt.Options{
 		Logger: zap.New(
@@ -93,9 +104,28 @@ var (
 var (
 	Manager               manager.Manager
 	UnstructuredYAMLCodec runtime.Serializer
+	ClientSet             *kubernetes.Clientset
 )
 
-func readObject(name string, decoder ...runtime.Codec) client.Object {
+func CreateNamespace(namespace string) {
+	_, err := ClientSet.CoreV1().Namespaces().Get(context.Background(),
+		namespace, metav1.GetOptions{})
+
+	if errors.IsNotFound(err) {
+		spec := &v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespace,
+			},
+		}
+
+		_, err = ClientSet.CoreV1().Namespaces().Create(context.Background(),
+			spec, metav1.CreateOptions{})
+	}
+
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func ReadObject(name string, decoder ...runtime.Codec) client.Object {
 	content, err := os.ReadFile(fmt.Sprintf("testdata/%s.yaml", name))
 	Expect(err).NotTo(HaveOccurred())
 
@@ -120,13 +150,13 @@ func readObject(name string, decoder ...runtime.Codec) client.Object {
 	return result
 }
 
-func createObject(obj client.Object) func() error {
+func CreateObject(obj client.Object) func() error {
 	return func() error {
 		return Manager.GetClient().Create(context.TODO(), obj)
 	}
 }
 
-func getObject(obj client.Object, minGeneration ...int64) func() error {
+func GetObject(obj client.Object, minGeneration ...int64) func() error {
 	return func() error {
 		if err := Manager.GetClient().Get(context.TODO(), client.ObjectKeyFromObject(obj), obj); err != nil {
 			return err
@@ -141,7 +171,7 @@ func getObject(obj client.Object, minGeneration ...int64) func() error {
 	}
 }
 
-func deleteObject(obj client.Object) func() error {
+func DeleteObject(obj client.Object) func() error {
 	return func() error {
 		return Manager.GetClient().Delete(context.TODO(), obj)
 	}

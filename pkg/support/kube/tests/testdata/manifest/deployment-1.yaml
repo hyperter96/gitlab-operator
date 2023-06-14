@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-1
+  ownerReferences:
+    - kind: OtherStuff
+      apiVersion: example.com/v1alpha1
+      name: stuff
+      uid: c8428756-ba16-43a3-a3d0-c2649cfea0e2
+      controller: true
+spec:
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: runtime
+        image: ruby:latest

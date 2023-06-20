@@ -6,8 +6,11 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/objects"
@@ -21,14 +24,16 @@ type OwnerReferenceFilter = func(metav1.OwnerReference) bool
 // the objects that are managed by a controller.
 //
 // The configuration requires a Kubernetes API Client to work properly. It also
-// requires the list of GroupVersionResources.
+// requires the list of GroupVersionResources when auto-discovery is disabled.
 //
 // You can use different options to provide the Client interface via
 // the Manager. Use the available options to configure the runtime behavior of
 // DiscoverManagedObjects.
 type ManagedObjectDiscoveryConfig struct {
+	AutoDiscovery         bool
 	Client                client.Client
 	Context               context.Context
+	DiscoveryClient       discovery.DiscoveryInterface
 	GroupVersionResources []schema.GroupVersionResource
 	Logger                logr.Logger
 
@@ -38,8 +43,10 @@ type ManagedObjectDiscoveryConfig struct {
 // ManagedObjectDiscoveryOption represents an individual option of
 // ManagedObjectDiscoveryOption. The available options are:
 //
+//   - AutoDiscovery
 //   - WithClient
 //   - WithContext
+//   - WithDiscoveryClient
 //   - WithGroupVersionResource
 //   - WithGroupVersionResourceArgs
 //   - WithLogger
@@ -62,10 +69,15 @@ type ManagedObjectDiscoveryOption = func(*ManagedObjectDiscoveryConfig)
 // Note that it ignores cluster-scoped resources and only looks up the objects
 // that are in the namespace of the owner.
 //
-// This function returns the list of API resource types that are provided with the
-// configuration (for details see WithGroupVersionResource and
-// WithGroupVersionResourceArgs). It only looks up the provided resource types
-// and ignores the others.
+// This function operates in two modes. In the default mode, it relies on the
+// list of API resource types that are provided with the configuration (for
+// details see WithGroupVersionResource and WithGroupVersionResourceArgs). It
+// only looks up the provided resource types and ignores the others.
+//
+// Alternatively you can use the auto-discovery mode, where the function looks
+// up the available namespace-scoped API resource types before finding the
+// managed objects. As a result the auto-discovery mode can be inefficient. For
+// auto-discovery mode you need to configure the function with a DiscoveryClient.
 //
 // Note that this function uses PartialObjectMetadata which only contains the
 // resource metadata. It does not retrieve the managed resources in full, hence
@@ -76,6 +88,12 @@ func DiscoverManagedObjects(owner client.Object, options ...ManagedObjectDiscove
 
 	if err := cfg.validate(); err != nil {
 		return nil, err
+	}
+
+	if cfg.AutoDiscovery {
+		if err := cfg.discoverGroupVersionResources(); err != nil {
+			return nil, err
+		}
 	}
 
 	return cfg.findByOwnerReference()
@@ -110,11 +128,67 @@ func (c *ManagedObjectDiscoveryConfig) validate() error {
 		return errors.New("client is required")
 	}
 
-	if len(c.GroupVersionResources) == 0 {
-		return errors.New("list of resources is required")
+	if c.AutoDiscovery && c.DiscoveryClient == nil {
+		return errors.New("discovery client is required when auto-discovery is enabled")
+	}
+
+	if !c.AutoDiscovery && len(c.GroupVersionResources) == 0 {
+		return errors.New("list of resources is required when auto-discovery is not enabled")
 	}
 
 	return nil
+}
+
+func (c *ManagedObjectDiscoveryConfig) discoverGroupVersionResources() error {
+	preferredResources, err := discovery.ServerPreferredResources(c.DiscoveryClient)
+	if !c.isTolerableDiscoveryFailure(err) {
+		return err
+	}
+
+	/* only use namespaced resources that can be retrieved and deleted */
+	usableResources := discovery.FilteredBy(
+		discovery.ResourcePredicateFunc(
+			func(_ string, r *metav1.APIResource) bool {
+				return r.Namespaced &&
+					sets.NewString([]string(r.Verbs)...).HasAll("list", "get")
+			},
+		), preferredResources)
+
+	gvrMap, err := discovery.GroupVersionResources(usableResources)
+	if err != nil {
+		return err
+	}
+
+	c.GroupVersionResources = make([]schema.GroupVersionResource, 0, len(gvrMap))
+	for gvr := range gvrMap {
+		c.GroupVersionResources = append(c.GroupVersionResources, gvr)
+	}
+
+	return nil
+}
+
+func (c *ManagedObjectDiscoveryConfig) isTolerableDiscoveryFailure(err error) bool {
+	if err == nil {
+		return true
+	}
+
+	gvrDiscoveryFailures := map[schema.GroupVersion]error{}
+	groupDiscoveryErr := &discovery.ErrGroupDiscoveryFailed{}
+
+	if errors.As(err, &groupDiscoveryErr) {
+		/* partial discovery is acceptable */
+		for failedGV, err := range groupDiscoveryErr.Groups {
+			if _, alreadyFailed := gvrDiscoveryFailures[failedGV]; !alreadyFailed {
+				gvrDiscoveryFailures[failedGV] = err
+
+				c.Logger.Info("WARNING: could not discover resources", "groupVersion", failedGV)
+			}
+		}
+
+		return true
+	}
+
+	return false
 }
 
 func (c *ManagedObjectDiscoveryConfig) findByOwnerReference() (objects.Collection, error) {

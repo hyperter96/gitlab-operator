@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -12,6 +14,15 @@ import (
 )
 
 /* DiscoverManagedObjects Options */
+
+// AutoDiscovery enables the auto-discovery mode. In auto-discovery mode
+// you need to provide DiscoveryClient as well. See WithDiscoveryClient and
+// WithManager options.
+func AutoDiscovery() kube.ManagedObjectDiscoveryOption {
+	return func(cfg *kube.ManagedObjectDiscoveryConfig) {
+		cfg.AutoDiscovery = true
+	}
+}
 
 // WithClient specifies the Kubernetes API Client that is used for listing
 // object metadata.
@@ -32,6 +43,14 @@ func WithContext(ctx context.Context) kube.ManagedObjectDiscoveryOption {
 	return func(cfg *kube.ManagedObjectDiscoveryConfig) {
 		cfg.Context = ctx
 		cfg.Logger = logr.FromContextOrDiscard(ctx)
+	}
+}
+
+// WithDiscoveryClient configures DiscoverManagedObjects with the specified
+// DiscoveryClient which is required in auto-discovery mode.
+func WithDiscoveryClient(client discovery.DiscoveryInterface) kube.ManagedObjectDiscoveryOption {
+	return func(cfg *kube.ManagedObjectDiscoveryConfig) {
+		cfg.DiscoveryClient = client
 	}
 }
 

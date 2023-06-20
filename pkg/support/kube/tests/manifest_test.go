@@ -40,10 +40,40 @@ var _ = Describe("DiscoverManagedObjects", func() {
 			Expect(kube.DiscoverManagedObjects(dummy)).Error().To(HaveOccurred())
 			Expect(kube.DiscoverManagedObjects(dummy,
 				manifest.WithClient(Manager.GetClient()))).Error().To(HaveOccurred())
+			Expect(kube.DiscoverManagedObjects(dummy,
+				manifest.AutoDiscovery(),
+				manifest.WithClient(Manager.GetClient()))).Error().To(HaveOccurred())
 		})
 	})
 
-	Context("Namespace-scoped Resources", func() {
+	Context("With AutoDiscovery", func() {
+		It("finds objects that reference the owner", func() {
+			namespace, objects, owner := prepareManifestTestFixture("with-auto-discovery", 1)
+
+			deployManifestTestFixture(objects, namespace)
+
+			/* Duplicate the same fixture in another namespace. Discovery only
+			locates the objects within the same namespace as the owner. */
+			deployManifestTestFixture(objects, namespace+"-duplicate")
+
+			children, err := kube.DiscoverManagedObjects(owner,
+				manifest.AutoDiscovery(),
+				manifest.WithManager(Manager),
+				manifest.WithDiscoveryClient(discoveryClient),
+			)
+
+			ownedJobRef := fmt.Sprintf("batch/v1/Job:%s/%s-job", namespace, owner.GetName())
+			ownedConfigMapRef := fmt.Sprintf("v1/ConfigMap:%s/%s-config", namespace, owner.GetName())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(children).To(ConsistOf(
+				WithTransform(objToStr, Equal(ownedJobRef)),
+				WithTransform(objToStr, Equal(ownedConfigMapRef)),
+			))
+		})
+	})
+
+	Context("Without AutoDiscovery", func() {
 		It("finds objects that reference the owner", func() {
 			namespace, objects, owner := prepareManifestTestFixture("without-auto-discovery", 1)
 

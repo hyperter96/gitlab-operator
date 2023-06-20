@@ -187,6 +187,7 @@ lint_docs_markdown:
     - mkdir coverage
     - export CHART_VERSION=$(sed -n ${VERSION_INDEX}p CHART_VERSIONS)
     - echo "Testing with chart version ${CHART_VERSION}"
+  retry: 1
   rules:
     - !reference [.skip_if_release_tag]
     - !reference [.skip_if_docs_branch]

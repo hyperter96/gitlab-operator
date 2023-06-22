@@ -10,6 +10,10 @@ No changes.
 
 No changes.
 
+## 0.20.3 (2023-06-05)
+
+- [Fix PostgreSQL and Redis resource lookup after chart upgrade](gitlab-org/cloud-native/gitlab-operator/@f65e60c6d985e39945224b49bf1fc39b24f7f656) ([merge request](gitlab-org/cloud-native/gitlab-operator!619))
+
 ## 0.20.2 (2023-06-05)
 
 No changes.

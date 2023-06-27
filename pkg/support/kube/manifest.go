@@ -36,6 +36,7 @@ type ManagedObjectDiscoveryConfig struct {
 	DiscoveryClient       discovery.DiscoveryInterface
 	GroupVersionResources []schema.GroupVersionResource
 	Logger                logr.Logger
+	Filters               []OwnerReferenceFilter
 
 	owner client.Object
 }
@@ -106,6 +107,7 @@ func defaultManagedObjectDiscoveryConfig(owner client.Object) *ManagedObjectDisc
 		Context:               context.Background(),
 		GroupVersionResources: []schema.GroupVersionResource{},
 		Logger:                logr.Discard(),
+		Filters:               []OwnerReferenceFilter{},
 
 		owner: owner,
 	}
@@ -244,6 +246,12 @@ func (c *ManagedObjectDiscoveryConfig) examineOwnerReference(item *metav1.Partia
 		}
 
 		refGVK := refGV.WithKind(ownerRef.Kind)
+
+		for _, filter := range c.Filters {
+			if !filter(ownerRef) {
+				continue
+			}
+		}
 
 		if ownerGVK.Group == refGVK.Group && ownerGVK.Version == refGVK.Version && ownerGVK.Kind == refGVK.Kind {
 			if ownerRef.Name == c.owner.GetName() {

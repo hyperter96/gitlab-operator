@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -104,4 +105,24 @@ func WithManager(manager manager.Manager) kube.ManagedObjectDiscoveryOption {
 		cfg.Client = manager.GetClient()
 		cfg.Logger = manager.GetLogger()
 	}
+}
+
+// WithFilters configures DiscoverManagedObjects with the list of OwnerReference
+// filters.
+func WithFilters(filters ...kube.OwnerReferenceFilter) kube.ManagedObjectDiscoveryOption {
+	return func(cfg *kube.ManagedObjectDiscoveryConfig) {
+		cfg.Filters = filters
+	}
+}
+
+// IsController returns true if OwnerReference is pointing to a managing
+// controller.
+//
+// It examines Controller attribute of the the OwnerReference.
+func IsController(ref metav1.OwnerReference) bool {
+	if ref.Controller == nil {
+		return false
+	}
+
+	return *ref.Controller
 }

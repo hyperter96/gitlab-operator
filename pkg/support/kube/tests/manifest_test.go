@@ -116,6 +116,28 @@ var _ = Describe("DiscoverManagedObjects", func() {
 			))
 		})
 	})
+
+	Context("With Filters", func() {
+		It("finds objects that reference the owner", func() {
+			namespace, objects, owner := prepareManifestTestFixture("with-filters", 1)
+
+			deployManifestTestFixture(objects, namespace)
+
+			children, err := kube.DiscoverManagedObjects(owner,
+				manifest.WithGroupVersionResourceArgs("deployment.v1.apps", "job.v1.batch"),
+				manifest.WithManager(Manager),
+				manifest.WithFilters(manifest.IsController),
+			)
+
+			ownedJobRef := fmt.Sprintf("batch/v1/Job:%s/%s-job", namespace, owner.GetName())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(children).To(HaveLen(1))
+			Expect(children.First()).To(
+				WithTransform(objToStr, Equal(ownedJobRef)),
+			)
+		})
+	})
 })
 
 func objToStr(o client.Object) string {
@@ -124,6 +146,7 @@ func objToStr(o client.Object) string {
 	return fmt.Sprintf("%s/%s:%s/%s", apiVersion, kind, o.GetNamespace(), o.GetName())
 }
 
+//nolint:unparam
 func prepareManifestTestFixture(prefix string, index int, resources ...string) (namespace string, objects objects.Collection, owner client.Object) {
 	if len(resources) == 0 {
 		resources = []string{"crontab", "configmap", "deployment", "job"}

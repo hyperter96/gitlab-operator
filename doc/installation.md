@@ -158,6 +158,12 @@ Ingress in OpenShift requires extra consideration. See our [notes on OpenShift I
 
   When the CR is reconciled (the status of the GitLab resource will be `Running`), you can access GitLab in your browser at `https://gitlab.example.com`.
 
+## Recommended next steps
+
+After completing your installation, consider taking the
+[recommended next steps](https://docs.gitlab.com/ee/install/next_steps.html),
+including authentication options and sign-up restrictions.
+
 ## Uninstall the GitLab Operator
 
 Follow the steps below to remove the GitLab Operator and its associated resources.

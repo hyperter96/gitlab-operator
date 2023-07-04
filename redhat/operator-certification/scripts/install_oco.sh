@@ -2,7 +2,7 @@
 
 set -eu
 
-# Based on https://docs.openshift.com/container-platform/4.9/cicd/pipelines/installing-pipelines.html
+# Based on https://docs.openshift.com/container-platform/4.10/cicd/pipelines/installing-pipelines.html
 
 cleanup_files(){
     rm -rf ${MANIFEST}

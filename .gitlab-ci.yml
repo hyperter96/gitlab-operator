@@ -6,7 +6,6 @@ variables:
   TESTS_NAMESPACE: "${CI_COMMIT_SHORT_SHA}-${CI_COMMIT_REF_SLUG}"
   BUILD_DIR: ".build"
   INSTALL_DIR: ".install"
-  DOMAIN_OPENSHIFT_4_9: "apps.ocp-ci-4917.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_11: "apps.ocp-ci-41126.k8s-ft.win"
   DOMAIN_OPENSHIFT_4_12: "apps.ocp-ci-41221.k8s-ft.win"
   DOMAIN_GKE: "gitlab-operator.k8s-ft.win"
@@ -301,37 +300,6 @@ approve_cluster_tests:
     - job: danger-review
       optional: true
 
-# OCP 4.9
-build_review_4_9:
-  extends: .build_review_template
-  variables:
-    DOMAIN: $DOMAIN_OPENSHIFT_4_9
-    PLATFORM: openshift
-
-create_review_4_9:
-  extends: .create_review_template
-  environment: &environment_4_9
-    name: &env_4_9_name openshift_4_9/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
-    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_OPENSHIFT_4_9
-    on_stop: stop_review_openshift_4_9
-    auto_stop_in: 1 hour
-  needs:
-    - build_review_4_9
-
-review_4_9:
-  extends: .review_template
-  variables:
-    DOMAIN: $DOMAIN_OPENSHIFT_4_9
-    PLATFORM: openshift
-  before_script:
-    - export KUBECONFIG="$KUBECONFIG_OCP_4_9"
-  needs:
-    - create_review_4_9
-    # we need build_* dependency to receive appropriate artifacts
-    - build_review_4_9
-  environment: *environment_4_9
-  resource_group: *env_4_9_name
-
 # OCP 4.11
 build_review_4_11:
   extends: .build_review_template
@@ -462,30 +430,6 @@ review_gke122:
   environment: *environment_gke122
   resource_group: *env_gke_name122
 
-# QA OCP 4.9
-qa_4_9:
-  extends: .qa
-  stage: qa
-  variables:
-    DOMAIN: $DOMAIN_OPENSHIFT_4_9
-  needs:
-    - review_4_9
-
-qa_4_9_full_suite_manual_trigger:
-  extends: .qa_full_suite_manual_trigger
-  script: echo 'The job will trigger Full E2E suite against OpenShift 4.9'
-
-qa_4_9_full:
-  extends: .qa
-  stage: qa
-  parallel: 7
-  variables:
-    DOMAIN: $DOMAIN_OPENSHIFT_4_9
-    QA_OPTIONS: $QA_FULL_SUITE_OPTIONS
-  needs:
-    - review_4_9
-    - qa_4_9_full_suite_manual_trigger
-
 # QA OCP 4.11
 qa_4_11:
   extends: .qa
@@ -581,18 +525,6 @@ qa_gke122_full:
   needs:
     - review_gke122
     - qa_gke122_full_suite_manual_trigger
-
-stop_review_openshift_4_9:
-  extends: .stop_review_template
-  variables:
-    DOMAIN: $DOMAIN_OPENSHIFT_4_9
-  before_script:
-    - export KUBECONFIG="$KUBECONFIG_OCP_4_9"
-  environment:
-    name: openshift_4_9/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
-    action: stop
-  needs:
-    - build_review_4_9
 
 stop_review_openshift_4_11:
   extends: .stop_review_template

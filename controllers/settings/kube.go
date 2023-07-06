@@ -3,11 +3,16 @@ package settings
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
+
+	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chartutil"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -90,11 +95,30 @@ func IsGroupVersionKindSupported(groupVersion, kind string) bool {
 	return false
 }
 
-func GetKubeAPIVersions() chartutil.VersionSet {
-	// To force the Helm Chart to use `networking.k8s.io/v1` Ingress objects.
-	networkingAPIVersion := "networking.k8s.io/v1/Ingress"
-
-	return chartutil.VersionSet{
-		networkingAPIVersion,
+func GetKubeCapabilities(actionCfg *action.Configuration) (*chartutil.Capabilities, error) {
+	dc, err := actionCfg.RESTClientGetter.ToDiscoveryClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get Kubernetes discovery client")
 	}
+
+	dc.Invalidate()
+
+	kubeVersion, err := dc.ServerVersion()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get server version from Kubernetes")
+	}
+
+	apiVersions, err := action.GetVersionSet(dc)
+	if err != nil && !discovery.IsGroupDiscoveryFailedError(err) {
+		return nil, errors.Wrap(err, "could not get apiVersions from Kubernetes")
+	}
+
+	return &chartutil.Capabilities{
+		APIVersions: apiVersions,
+		KubeVersion: chartutil.KubeVersion{
+			Version: kubeVersion.GitVersion,
+			Major:   kubeVersion.Major,
+			Minor:   kubeVersion.Minor,
+		},
+	}, nil
 }

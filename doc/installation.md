@@ -165,6 +165,8 @@ Ingress in OpenShift requires extra consideration. See our [notes on OpenShift I
 
   When the CR is reconciled (the status of the GitLab resource will be `Running`), you can access GitLab in your browser at `https://gitlab.example.com`.
 
+To log in you need to retreive the initial root password for your deployment. See the [Helm Chart documentation](https://docs.gitlab.com/charts/installation/deployment.html#initial-login) for further instructions.
+
 ## Recommended next steps
 
 After completing your installation, consider taking the

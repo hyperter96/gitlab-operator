@@ -4,10 +4,12 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/releaseutil"
+
 	"k8s.io/kubectl/pkg/scheme"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
@@ -63,12 +65,20 @@ func NewBuilder(charts charts.Catalog) (Builder, error) {
 		return nil, err
 	}
 
+	kubeVersion := settings.DefaultKubeVersion
+	kubeAPIVersions := settings.DefaultKubeAPIVersions
+
+	if capabilities, err := settings.GetKubeCapabilities(actionConfig); err == nil {
+		kubeVersion = &capabilities.KubeVersion
+		kubeAPIVersions = capabilities.APIVersions
+	}
+
 	client := action.NewInstall(actionConfig)
 	client.DryRun = true
 	client.Replace = true
 	client.ClientOnly = true
-	client.KubeVersion = settings.KubeVersion
-	client.APIVersions = settings.GetKubeAPIVersions()
+	client.KubeVersion = kubeVersion
+	client.APIVersions = kubeAPIVersions
 
 	chart := charts.First()
 

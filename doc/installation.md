@@ -35,6 +35,8 @@ If using OpenShift, these steps normally are handled by OLM (the Operator Lifecy
 To create a traditional Kubernetes cluster, consider using [official tooling](https://kubernetes.io/docs/tasks/tools/) or your preferred method of installation.
 
 GitLab Operator supports Kubernetes 1.19 through 1.22, and is tested against 1.21 and 1.22 in CI.
+[Epic 7599](https://gitlab.com/groups/gitlab-org/-/epics/7599) tracks progress towards supporting 1.25.
+For some components, like the [agent for Kubernetes](https://docs.gitlab.com/ee/user/clusters/agent/#gitlab-agent-for-kubernetes-supported-cluster-versions) and [GitLab Helm Chart](https://docs.gitlab.com/charts/installation/cloud/index.html), GitLab might support different cluster versions.
 
 #### OpenShift
 

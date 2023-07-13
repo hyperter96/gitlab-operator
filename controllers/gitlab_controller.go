@@ -597,54 +597,6 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 	return nil
 }
 
-func (r *GitLabReconciler) createOrUpdate(ctx context.Context, templateObject client.Object, adapter gitlab.Adapter) (bool, bool, error) {
-	if templateObject == nil {
-		r.Log.Info("Controller is not able to delete managed resources. This is a known issue",
-			"gitlab", adapter.Name())
-		return false, false, nil
-	}
-
-	key := client.ObjectKeyFromObject(templateObject)
-
-	logger := r.Log.WithValues(
-		"gitlab", adapter.Name(),
-		"type", fmt.Sprintf("%T", templateObject),
-		"reference", key)
-
-	logger.V(2).Info("Setting controller reference")
-
-	if err := controllerutil.SetControllerReference(adapter.Origin(), templateObject, r.Scheme); err != nil {
-		return false, false, err
-	}
-
-	existing := templateObject.DeepCopyObject().(client.Object)
-
-	if err := r.Get(ctx, key, existing); err != nil {
-		if !errors.IsNotFound(err) {
-			return false, false, err
-		}
-
-		if err := r.Create(ctx, existing); err != nil {
-			return false, false, err
-		}
-
-		logger.V(1).Info("createOrUpdate result", "result", "created")
-
-		return true, false, nil
-	}
-
-	templateObject.SetResourceVersion(existing.GetResourceVersion())
-
-	if err := r.Update(ctx, templateObject); err != nil {
-		logger.Error(err, "unable to update object", "object", templateObject)
-		return false, false, err
-	}
-
-	logger.V(1).Info("createOrUpdate result", "result", "updated")
-
-	return false, true, nil
-}
-
 func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject client.Object, adapter gitlab.Adapter) error {
 	if templateObject == nil {
 		r.Log.V(2).Info("Controller received a nil templateObject",
@@ -697,11 +649,9 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject 
 }
 
 func (r *GitLabReconciler) reconcileCertManagerCertificates(ctx context.Context, adapter gitlab.Adapter) error {
-	issuer := internal.CertificateIssuer(adapter)
-
-	_, _, err := r.createOrUpdate(ctx, issuer, adapter)
-
-	return err
+	return r.createOrPatch(ctx,
+		internal.CertificateIssuer(adapter),
+		adapter)
 }
 
 func (r *GitLabReconciler) setupAutoscaling(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {

@@ -403,9 +403,16 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if settings.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
-		// Deploy a prometheus service monitor
-		if err := r.reconcileServiceMonitor(ctx, adapter); err != nil {
+		if err := r.reconcileServiceMonitors(ctx, adapter); err != nil {
 			return requeue(err)
+		}
+	}
+
+	if adapter.WantsComponent(component.Prometheus) {
+		if prometheusSupported() {
+			if err := r.reconcilePrometheus(ctx, adapter); err != nil {
+				return requeue(err)
+			}
 		}
 	}
 
@@ -441,6 +448,11 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if settings.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
 		r.Log.Info("Using monitoring.coreos.com/v1")
 		builder.Owns(&monitoringv1.ServiceMonitor{})
+	}
+
+	if prometheusSupported() {
+		r.Log.Info("Using monitoring.coreos.com/v1/Prometheus")
+		builder.Owns(&monitoringv1.Prometheus{})
 	}
 
 	if settings.IsGroupVersionSupported("cert-manager.io", "v1") {
@@ -514,45 +526,27 @@ func (r *GitLabReconciler) jobExists(ctx context.Context, job client.Object) (bo
 	return false, err
 }
 
-func (r *GitLabReconciler) reconcileServiceMonitor(ctx context.Context, adapter gitlab.Adapter) error {
+func (r *GitLabReconciler) reconcileServiceMonitors(ctx context.Context, adapter gitlab.Adapter) error {
 	var servicemonitors []*monitoringv1.ServiceMonitor
 
-	gitaly := internal.GitalyServiceMonitor(adapter)
-
-	gitlab := internal.ExporterServiceMonitor(adapter)
-
-	workhorse := internal.WebserviceServiceMonitor(adapter)
-
 	servicemonitors = append(servicemonitors,
-		gitlab,
-		gitaly,
-		workhorse,
+		internal.ExporterServiceMonitor(adapter),
+		internal.GitalyServiceMonitor(adapter),
+		internal.WebserviceServiceMonitor(adapter),
 	)
 
 	if adapter.WantsComponent(component.Redis) {
-		redis := internal.RedisServiceMonitor(adapter)
-		servicemonitors = append(servicemonitors, redis)
+		servicemonitors = append(servicemonitors,
+			internal.RedisServiceMonitor(adapter))
 	}
 
 	if adapter.WantsComponent(component.PostgreSQL) {
-		postgres := internal.PostgresqlServiceMonitor(adapter)
-		servicemonitors = append(servicemonitors, postgres)
+		servicemonitors = append(servicemonitors,
+			internal.PostgresqlServiceMonitor(adapter))
 	}
 
 	for _, sm := range servicemonitors {
 		if err := r.createOrPatch(ctx, sm, adapter); err != nil {
-			return err
-		}
-	}
-
-	if adapter.WantsComponent(component.Prometheus) {
-		service := internal.ExposePrometheusCluster(adapter)
-		if err := r.createOrPatch(ctx, service, adapter); err != nil {
-			return err
-		}
-
-		prometheus := internal.PrometheusCluster(adapter)
-		if err := r.createOrPatch(ctx, prometheus, adapter); err != nil {
 			return err
 		}
 	}

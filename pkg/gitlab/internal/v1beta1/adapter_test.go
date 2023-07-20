@@ -102,7 +102,6 @@ var _ = Describe("GitLab Adapter [v1beta1]", func() {
 		_ = values.SetValue("global.ingress.apiVersion", "networking.k8s.io/v1beta1")
 		_ = values.SetValue("gitlab-runner.install", true)
 		_ = values.SetValue("certmanager.install", true)
-		_ = values.SetValue("gitlab.gitlab-shell.service.type", "NodePort")
 
 		a, err := NewAdapter(context.TODO(),
 			newGitLabResource(getChartVersion(), values))
@@ -228,7 +227,6 @@ func getChartVersion() string {
 
 func addChartDefaultExamples(examples support.Values) {
 	examples["gitlab.gitlab-exporter.enabled"] = true
-	examples["gitlab.gitlab-shell.enabled"] = true
 	examples["gitlab.mailroom.enabled"] = true
 	examples["gitlab.migrations.enabled"] = true
 	examples["gitlab.sidekiq.enabled"] = true
@@ -258,7 +256,6 @@ func addOperatorOverrideExamples(examples support.Values) {
 	examples["global.serviceAccount.name"] = settings.AppNonRootServiceAccount
 	examples["global.ingress.apiVersion"] = "networking.k8s.io/v1" // ""
 	examples["global.serviceAccount.enabled"] = true               // false
-	examples["gitlab.gitlab-shell.service.type"] = ""              // "ClusterIP"
 	examples["certmanager.install"] = false                        // true
 	examples["gitlab-runner.install"] = false                      // true
 	examples["shared-secrets.securityContext.runAsUser"] = ""      // 1000

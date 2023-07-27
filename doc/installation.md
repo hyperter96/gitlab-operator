@@ -8,9 +8,9 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 
 WARNING:
 The default Operator configuration is **not intended for production**.
-The default resource creates a proof of concept (PoC) implementation where all GitLab
-services are deployed in the cluster. For production deployments, you must follow the
-[Cloud Native Hybrid reference architecture](https://docs.gitlab.com/ee/administration/reference_architectures/#cloud-native-hybrid).
+The default resource creates an implementation where _all_ GitLab services are
+deployed in the cluster, which is **not suitable for production workloads**.
+For production deployments, you **must** follow the [Cloud Native Hybrid reference architectures](https://docs.gitlab.com/ee/administration/reference_architectures/#cloud-native-hybrid).
 
 NOTE:
 The GitLab Operator is under active development and is not yet suitable for production use. See our [`Minimal` to `Viable` Epic](https://gitlab.com/groups/gitlab-org/cloud-native/-/epics/23) for more information.

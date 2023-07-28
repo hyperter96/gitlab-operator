@@ -23,10 +23,12 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/strings/slices"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -39,6 +41,8 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 
@@ -416,9 +420,87 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 	}
 
+	currentManagedObjects, err := adapter.CurrentObjects(rtCtx)
+	if err != nil {
+		log.Error(err, "Can not discover the managed resources for GitLab instance")
+		return requeue(err)
+	}
+
+	targetManagedObjects := adapter.TargetObjects()
+	deletePropagation := metav1.DeletePropagationBackground
+
+	for _, obj := range currentManagedObjects.Difference(targetManagedObjects) {
+		canBeDeleted, err := isSafeToDelete(rtCtx, obj)
+
+		if err != nil {
+			log.V(2).Error(err, "Could not determine if it is safe to delete the object",
+				"kind", obj.GetObjectKind().GroupVersionKind(), "name", obj.GetName())
+			continue
+		}
+
+		if !canBeDeleted {
+			log.Info("Can not safely delete the object. Skipping its deletion.",
+				"kind", obj.GetObjectKind().GroupVersionKind(), "name", obj.GetName())
+			continue
+		}
+
+		if err := r.Delete(ctx, obj, &client.DeleteOptions{PropagationPolicy: &deletePropagation}); err == nil {
+			log.Info("Object deleted",
+				"kind", obj.GetObjectKind().GroupVersionKind(), "name", obj.GetName())
+		} else {
+			log.V(2).Error(err, "Could not delete the object",
+				"kind", obj.GetObjectKind().GroupVersionKind(), "name", obj.GetName())
+		}
+	}
+
 	result, err := r.reconcileGitLabStatus(ctx, adapter, template)
 
 	return result, err
+}
+
+func isSafeToDelete(ctx context.Context, obj client.Object) (bool, error) {
+	c := rt.ClientFromContext(ctx)
+	if c == nil {
+		// This should not never happen
+		panic("Can not extract Client from runtime context")
+	}
+
+	gvk := obj.GetObjectKind().GroupVersionKind()
+
+	if !slices.Contains([]string{"Job", "CronJob"}, gvk.Kind) {
+		return true, nil
+	}
+
+	existing := unstructured.Unstructured{}
+	existing.SetGroupVersionKind(obj.GetObjectKind().GroupVersionKind())
+
+	if err := c.Get(ctx, client.ObjectKeyFromObject(obj), &existing); err != nil {
+		if errors.IsNotFound(err) {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	if gvk.Kind == "Job" {
+		numActive, _, err := unstructured.NestedInt64(existing.Object, "status", "active")
+		if err != nil {
+			return false, fmt.Errorf("Can not find number of active Pods for Job %s", obj.GetName())
+		}
+
+		return numActive == 0, nil
+	}
+
+	if gvk.Kind == "CronJob" {
+		lstActive, _, err := unstructured.NestedSlice(existing.Object, "status", "active")
+		if err != nil {
+			return false, fmt.Errorf("Can not find list of active Pods for CronJob %s", obj.GetName())
+		}
+
+		return len(lstActive) == 0, nil
+	}
+
+	return true, nil
 }
 
 // SetupWithManager configures the custom resource watched resources.
@@ -562,6 +644,12 @@ func (r *GitLabReconciler) createOrPatch(ctx context.Context, templateObject cli
 		return nil
 	}
 
+	// NOTE: This keeps track of the managed objects. It will be removed once we
+	//       migrate to the new framework.
+	if err := adapter.PopulateManagedObjects(templateObject); err != nil {
+		return err
+	}
+
 	key := client.ObjectKeyFromObject(templateObject)
 
 	logger := r.Log.WithValues(
@@ -613,7 +701,7 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject 
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logger.V(1).Info("creating ingress", "ingress", ingress.Name)
-			return r.Create(ctx, ingress)
+			return r.createOrPatch(ctx, ingress, adapter)
 		}
 
 		return err

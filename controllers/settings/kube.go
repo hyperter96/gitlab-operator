@@ -95,6 +95,26 @@ func IsGroupVersionKindSupported(groupVersion, kind string) bool {
 	return false
 }
 
+func IsGroupVersionResourceSupported(groupVersion, resource string) bool {
+	client, err := KubernetesConfig().NewKubernetesClient()
+	if err != nil {
+		return false
+	}
+
+	rs, err := client.ServerResourcesForGroupVersion(groupVersion)
+	if err != nil {
+		return false
+	}
+
+	for _, r := range rs.APIResources {
+		if r.Name == resource {
+			return true
+		}
+	}
+
+	return false
+}
+
 func GetKubeCapabilities(actionCfg *action.Configuration) (*chartutil.Capabilities, error) {
 	dc, err := actionCfg.RESTClientGetter.ToDiscoveryClient()
 	if err != nil {

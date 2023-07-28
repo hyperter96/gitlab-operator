@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/runtime"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/pkg/support/kube"
 )
 
@@ -44,6 +45,7 @@ func WithContext(ctx context.Context) kube.ManagedObjectDiscoveryOption {
 	return func(cfg *kube.ManagedObjectDiscoveryConfig) {
 		cfg.Context = ctx
 		cfg.Logger = logr.FromContextOrDiscard(ctx)
+		cfg.Client = runtime.ClientFromContext(ctx)
 	}
 }
 

@@ -114,9 +114,6 @@ nginx-ingress:
   serviceAccount:
     create: false
     name: {{ .Settings.NginxServiceAccount }}
-  controller:
-    service:
-      loadBalancerIP: {{ .ExternalIP }}
   defaultBackend:
     serviceAccount:
       name: {{ .Settings.AppNonRootServiceAccount }}

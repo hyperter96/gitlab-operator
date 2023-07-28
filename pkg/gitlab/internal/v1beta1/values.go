@@ -77,7 +77,6 @@ func (w *Adapter) templateParameters() map[string]interface{} {
 	return map[string]interface{}{
 		"ReleaseName":    w.ReleaseName(),
 		"UseCertManager": w.WantsFeature(ConfigureCertManager),
-		"ExternalIP":     w.values.GetString("global.hosts.externalIP"),
 		"Settings":       appSettings,
 	}
 }

@@ -23,6 +23,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
 )
@@ -42,32 +43,34 @@ func (r *GitLab) SetupWebhookWithManager(mgr ctrl.Manager) error {
 var _ webhook.Validator = &GitLab{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *GitLab) ValidateCreate() error {
+func (r *GitLab) ValidateCreate() (warnings admission.Warnings, err error) {
 	gitlablog.Info("validate create", "name", r.Name)
 
-	if err := r.validateChartVersion(); err != nil {
-		return newError(r.Name, err)
+	if validateErr := r.validateChartVersion(); validateErr != nil {
+		err = newError(r.Name, validateErr)
+		return
 	}
 
-	return nil
+	return
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *GitLab) ValidateUpdate(old runtime.Object) error {
+func (r *GitLab) ValidateUpdate(old runtime.Object) (warnings admission.Warnings, err error) {
 	gitlablog.Info("validate update", "name", r.Name)
 
-	if err := r.validateChartVersion(); err != nil {
-		return newError(r.Name, err)
+	if validateErr := r.validateChartVersion(); validateErr != nil {
+		err = newError(r.Name, validateErr)
+		return
 	}
 
-	return nil
+	return
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *GitLab) ValidateDelete() error {
+func (r *GitLab) ValidateDelete() (warnings admission.Warnings, err error) {
 	gitlablog.Info("validate delete", "name", r.Name)
 
-	return nil
+	return
 }
 
 func (r GitLab) validateChartVersion() *field.Error {

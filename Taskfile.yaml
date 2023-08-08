@@ -44,7 +44,7 @@ env:
   BUNDLE_OPTS: --extra-service-accounts=gitlab-manager,gitlab-nginx-ingress,gitlab-app-anyuid,gitlab-app-nonroot
 
   # Testing configuration
-  TEST_IMG: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base-golang-1.18
+  TEST_IMG: registry.gitlab.com/gitlab-org/gitlab-build-images:gitlab-operator-build-base-golang-1.20
   TEST_CR_FILES_DIR: "config/test/base"
 
 tasks:
@@ -310,9 +310,9 @@ tasks:
   ginkgo:
     desc: Ensures ginkgo is installed for testing.
     cmds:
-      - go install github.com/onsi/ginkgo/v2/ginkgo@v2.7.1
+      - go install github.com/onsi/ginkgo/v2/ginkgo@v2.9.5
     status:
-      - ginkgo version | grep -q 2.7.1
+      - ginkgo version | grep -q 2.9.5
 
   unit-tests:
     desc: Runs unit tests locally, but skip the slow controller tests.

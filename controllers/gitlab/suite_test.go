@@ -9,6 +9,9 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
@@ -56,6 +59,7 @@ func CreateMockAdapter(mockGitLab *gitlabv1beta1.GitLab) gitlab.Adapter {
 }
 
 func TestGitLab(t *testing.T) {
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
 	settings.Load()
 	_ = charts.PopulateGlobalCatalog(
 		populate.WithSearchPath(settings.HelmChartsDirectory))

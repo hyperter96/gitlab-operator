@@ -610,13 +610,13 @@ global:
   redis:
     host: redis.example
     port: 9001
-    password:
+    auth:
       enabled: true
       secret: custom-redis-secret
       key: redis-password
     cache:
       host: cache.redis.example
-      password:
+      auth:
         enabled: true
         secret: custom-cache-secret
         key: cache-password
@@ -646,13 +646,13 @@ global:
   redis:
     host: redis.example
     port: 9001
-    password:
+    auth:
       enabled: true
       secret: custom-redis-secret
       key: redis-password
     cache:
       host: cache.redis.example
-      password:
+      auth:
         enabled: true
         secret: custom-cache-secret
         key: cache-password

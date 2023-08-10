@@ -28,8 +28,6 @@ gitlab:
       labels:
         app.kubernetes.io/component: gitlab-shell
         app.kubernetes.io/instance: {{ .ReleaseName }}-gitlab-shell
-    service:
-      type: ''
 
   kas:
     common:

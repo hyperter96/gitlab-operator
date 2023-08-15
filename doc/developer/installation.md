@@ -45,7 +45,6 @@ Please consult the "Prerequisites" section of the [installation](../installation
 1. Deploy the GitLab Operator.
 
    ```shell
-   PLATFORM=kubernetes # or "openshift"
    kubectl create namespace gitlab-system
    task deploy_operator # or "task deploy_operator_openshift"
    ```

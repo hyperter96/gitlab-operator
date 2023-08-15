@@ -29,8 +29,6 @@ NAME_OVERRIDE="g${TESTS_NAMESPACE:0:27}"
 NAME_OVERRIDE="${NAME_OVERRIDE%-}"
 export NAME_OVERRIDE
 
-PLATFORM="${PLATFORM:-kubernetes}"
-
 finish() {
   local exitcode=$?
 

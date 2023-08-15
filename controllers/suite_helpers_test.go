@@ -64,15 +64,17 @@ func createObject(obj client.Object, ignoreAlreadyExists bool) error {
 
 func updateObject(obj client.Object, mutate func(client.Object) error) error {
 	key := client.ObjectKeyFromObject(obj)
-	if err := k8sClient.Get(ctx, key, obj); err != nil {
+	actual := obj.DeepCopyObject().(client.Object)
+
+	if err := k8sClient.Get(ctx, key, actual); err != nil {
 		return err
 	}
 
-	if err := mutate(obj); err != nil {
+	if err := mutate(actual); err != nil {
 		return err
 	}
 
-	return k8sClient.Update(ctx, obj)
+	return k8sClient.Update(ctx, actual)
 }
 
 func getObject(name string, obj client.Object) error {

@@ -28,7 +28,6 @@ env:
   # Build and deploy configuration
   NAME_OVERRIDE: gitlab
   NAMESPACE: gitlab-system
-  PLATFORM: kubernetes
   DOMAIN: example.com
   HOSTSUFFIX: ""
   TLSSECRETNAME: ""

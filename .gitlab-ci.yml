@@ -305,7 +305,6 @@ build_review_4_11:
   extends: .build_review_template
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_11
-    PLATFORM: openshift
   dependencies:
     - image_certification
 
@@ -323,7 +322,6 @@ review_4_11:
   extends: .review_template
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_11
-    PLATFORM: openshift
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_11"
   needs:
@@ -338,7 +336,6 @@ build_review_4_12:
   extends: .build_review_template
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_12
-    PLATFORM: openshift
     TEST_CR_FILES_DIR: "config/test/overlays/k8s_1_25"
   dependencies:
     - image_certification
@@ -357,7 +354,6 @@ review_4_12:
   extends: .review_template
   variables:
     DOMAIN: $DOMAIN_OPENSHIFT_4_12
-    PLATFORM: openshift
     TEST_CR_FILES_DIR: "config/test/overlays/k8s_1_25"
   before_script:
     - export KUBECONFIG="$KUBECONFIG_OCP_4_12"
@@ -373,7 +369,6 @@ build_review_gke:
   extends: .build_review_template
   variables:
     DOMAIN: $DOMAIN_GKE
-    PLATFORM: kubernetes
 
 create_review_gke:
   extends: .create_review_template
@@ -389,7 +384,6 @@ review_gke:
   extends: .review_template
   variables:
     DOMAIN: $DOMAIN_GKE
-    PLATFORM: kubernetes
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE"
   needs:
@@ -404,7 +398,6 @@ build_review_gke122:
   extends: .build_review_template
   variables:
     DOMAIN: $DOMAIN_GKE122
-    PLATFORM: kubernetes
 
 create_review_gke122:
   extends: .create_review_template
@@ -420,7 +413,6 @@ review_gke122:
   extends: .review_template
   variables:
     DOMAIN: $DOMAIN_GKE122
-    PLATFORM: kubernetes
   before_script:
     - export KUBECONFIG="$KUBECONFIG_GKE122"
   needs:

@@ -15,6 +15,17 @@ env:
   KUBECTL: kubectl
   CONTAINER_CLI: podman
 
+  # Dependencies
+
+  ## Cert Manager
+  # https://cert-manager.io/docs/installation/#default-static-install
+  CERT_MANAGER: 1.6.1
+  CERT_MANAGER_MANIFEST: https://github.com/cert-manager/cert-manager/releases/download/v{{ .CERT_MANAGER }}/cert-manager.yaml
+
+  ## Metrics Server
+  # https://github.com/kubernetes-sigs/metrics-server#installation
+  METRICS_SERVER_MANIFEST: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
   # Directories
   BUILD_DIR: .build
   INSTALL_DIR: .install
@@ -78,6 +89,48 @@ tasks:
       - test -f ./controller-gen
       - test -f ./kustomize
       - test -f ./setup-envtest
+
+  kubectl_template:
+    desc: Template for `kubectl` commands.
+    internal: true
+    vars:
+      ACTION: '{{ default "apply" .ACTION }}'
+    requires:
+      vars: [MANIFEST]
+    cmds:
+      - kubectl {{ .ACTION }} -f {{ .MANIFEST }}
+
+  install_certmanager:
+    desc: Installs Cert Manager from YAML manifest at given version.
+    cmds:
+      - task: kubectl_template
+        vars:
+          ACTION: 'apply'
+          MANIFEST: $CERT_MANAGER_MANIFEST
+
+  uninstall_certmanager:
+    desc: Uninstalls Cert Manager from YAML manifest at given version.
+    cmds:
+      - task: kubectl_template
+        vars:
+          ACTION: 'delete'
+          MANIFEST: $CERT_MANAGER_MANIFEST
+
+  install_metrics_server:
+    desc: Installs Kubernetes Metrics Server.
+    cmds:
+      - task: kubectl_template
+        vars:
+          ACTION: 'apply'
+          MANIFEST: $METRICS_SERVER_MANIFEST
+
+  uninstall_metrics_server:
+    desc: Uninstalls Kubernetes Metrics Server.
+    cmds:
+      - task: kubectl_template
+        vars:
+          ACTION: 'delete'
+          MANIFEST: $METRICS_SERVER_MANIFEST
 
   generate:
     desc: Generates Kubernetes API extension resources and code with `controller-gen`.

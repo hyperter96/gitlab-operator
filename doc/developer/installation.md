@@ -23,25 +23,6 @@ Please consult the "Prerequisites" section of the [installation](../installation
    cd gitlab-operator
    ```
 
-1. Build CRDs and Operator manifests:
-
-   ```shell
-   task build_operator
-   ```
-
-   NOTE:
-   In some cases, you may run into issues resolving dependencies and see an error message such as:
-
-   ```shell
-   go get: github.com/openshift/api@v3.9.0+incompatible: invalid version: unknown revision v3.9.0
-   ```
-
-   To address this, configure `GOPROXY` as mentioned [in this issue](https://github.com/openshift/api/issues/456#issuecomment-576842590):
-
-   ```shell
-   export GOPROXY="https://proxy.golang.org/"
-   ```
-
 1. Deploy the GitLab Operator.
 
    ```shell

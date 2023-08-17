@@ -101,55 +101,9 @@ $ tree -dL 2 .
 
 ### Additional Resources
 
-The `Taskfile` allows us to customize manage different tasks such as:
-
-- Creating an Operator Lifecycle Manager bundle
-
-  ```shell
-  task bundle
-  ```
-
-- Building a container image for the operator
-
-  ```shell
-  task docker-build IMG=quay.io/<username>/gitlab-operator:latest
-  ```
-
-- Pushing the image to a container registry
-
-  ```shell
-  task docker-push IMG=quay.io/<username>/gitlab-operator:latest
-  ```
-
-- Run the operator locally to test changes
-
-  ```shell
-  task run
-  ```
-
-- Run unit tests locally in Docker:
-
-  ```shell
-  make test-in-docker
-  ```
-
-- Run unit tests locally in Docker, skipping the slow controller tests:
-
-  ```shell
-  make unit-tests-in-docker
-  ```
-
-- Run unit tests locally in Docker, focusing on the slow controller tests:
-
-  ```shell
-  make slow-unit-tests-in-docker
-  ```
-
-- Clean up artifacts from local tests in Docker:
-
-  ```shell
-  make test-docker-clean
-  ```
+The [Taskfile](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/Taskfile.yaml?ref_type=heads)
+provides convenient commands for managing the installation of these prerequisites. Run `task` from the root of the repository
+to see available commands.
 
 ## Deploying the Operator
 

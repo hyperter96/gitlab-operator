@@ -40,7 +40,7 @@ For some components and other installation methods, [GitLab might support differ
 
 #### OpenShift
 
-To create an OpenShift cluster, see the [OpenShift cluster setup docs](developer/openshift_cluster_setup.md) for an example of how to create a _development environment_.
+To create an OpenShift cluster, see the [OpenShift cluster setup documentation](developer/openshift_cluster_setup.md) for an example of how to create a _development environment_.
 
 GitLab Operator supports OpenShift 4.10 through 4.12.
 

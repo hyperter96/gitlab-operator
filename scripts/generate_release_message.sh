@@ -35,14 +35,18 @@ get_versions_from_message() {
 find_gitlab_version() {
   chart_version="${1}"
 
-  helm repo update > /dev/null 2>&1
-
-  helm search repo gitlab/gitlab -l -o table \
-    | grep "${chart_version}" \
-    | awk '{print $3}'
+  if [ -f "./charts/gitlab-${chart_version}.tgz" ]; then
+    tar -Oxf "./charts/gitlab-${chart_version}.tgz" 'gitlab/Chart.yaml' | yq eval '.appVersion'
+  else
+    helm search repo gitlab/gitlab -l -o table \
+      | grep "${chart_version}" \
+      | awk '{print $3}'
+  fi
 }
 
 get_version_map() {
+  helm repo update > /dev/null 2>&1
+
   for tag in $(get_versions_from_message); do
     gitlabVersion=$(find_gitlab_version "${tag}")
     printf "%s | %s\n" "${tag}" "${gitlabVersion}"

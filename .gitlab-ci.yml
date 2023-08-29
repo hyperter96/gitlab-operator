@@ -11,6 +11,7 @@ variables:
   DOMAIN_GKE: "gitlab-operator.k8s-ft.win"
   DOMAIN_GKE122: "gitlab-operator-v122.k8s-ft.win"
   DOMAIN_GKE125: "gitlab-operator-v125.helm-charts.win"
+  DOMAIN_GKE126: "gitlab-operator-v126.k8s-ft.win"
   # Namespace built into default manifest
   NAMESPACE: "gitlab-system"
   TAG: ${CI_COMMIT_SHORT_SHA}
@@ -465,6 +466,48 @@ review_gke125:
     - !reference [.skip_if_dev_mirror]
     - !reference [.review_template, rules]
 
+# GKE 1.26
+build_review_gke126:
+  extends: .build_review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE126
+  rules:
+    - !reference [.skip_if_dev_mirror]
+    - !reference [.build_review_template, rules]
+
+create_review_gke126:
+  extends: .create_review_template
+  environment: &environment_gke126
+    name: &env_gke_name126 operator126_review/$CI_COMMIT_SHORT_SHA-$CI_COMMIT_REF_SLUG
+    url: https://gitlab-$TESTS_NAMESPACE.$DOMAIN_GKE126
+    on_stop: stop_review_gke126
+    auto_stop_in: 1 hour
+  needs:
+    - build_review_gke126
+  rules:
+    - !reference [.skip_if_dev_mirror]
+    - !reference [.create_review_template, rules]
+
+review_gke126:
+  extends: .review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE126
+    AGENT_NAME: operator126-ci-cluster
+    AGENT_PROJECT_PATH: gitlab-org/distribution/infrastructure/kube-agents
+  before_script:
+    - kubectl config get-contexts
+    - kubectl config use-context $AGENT_PROJECT_PATH:$AGENT_NAME
+    - kubectl config set-context --current --namespace=$TESTS_NAMESPACE
+  needs:
+    - create_review_gke126
+    # we need build_* dependency to receive appropriate artifacts
+    - build_review_gke126
+  environment: *environment_gke126
+  resource_group: *env_gke_name126
+  rules:
+    - !reference [.skip_if_dev_mirror]
+    - !reference [.review_template, rules]
+
 # QA OCP 4.11
 qa_4_11:
   extends: .qa
@@ -594,6 +637,39 @@ qa_gke125_full:
     - !reference [.skip_if_dev_mirror]
     - !reference [.qa, rules]
 
+# QA GKE 1.26
+qa_gke126:
+  extends: .qa
+  stage: qa
+  variables:
+    DOMAIN: $DOMAIN_GKE126
+  needs:
+    - review_gke126
+  rules:
+    - !reference [.skip_if_dev_mirror]
+    - !reference [.qa, rules]
+
+qa_gke126_full_suite_manual_trigger:
+  extends: .qa_full_suite_manual_trigger
+  script: echo 'The job will trigger Full E2E suite against GKE 1.26'
+  rules:
+    - !reference [.skip_if_dev_mirror]
+    - !reference [.qa_full_suite_manual_trigger, rules]
+
+qa_gke126_full:
+  extends: .qa
+  stage: qa
+  parallel: 7
+  variables:
+    DOMAIN: $DOMAIN_GKE126
+    QA_OPTIONS: $QA_FULL_SUITE_OPTIONS
+  needs:
+    - review_gke126
+    - qa_gke126_full_suite_manual_trigger
+  rules:
+    - !reference [.skip_if_dev_mirror]
+    - !reference [.qa, rules]
+
 stop_review_openshift_4_11:
   extends: .stop_review_template
   variables:
@@ -661,6 +737,24 @@ stop_review_gke125:
     - !reference [.skip_if_dev_mirror]
     - !reference [.stop_review_template, rules]
 
+stop_review_gke126:
+  extends: .stop_review_template
+  variables:
+    DOMAIN: $DOMAIN_GKE126
+    AGENT_NAME: operator126-ci-cluster
+    AGENT_PROJECT_PATH: gitlab-org/distribution/infrastructure/kube-agents
+  before_script:
+    - kubectl config get-contexts
+    - kubectl config use-context $AGENT_PROJECT_PATH:$AGENT_NAME
+    - kubectl config set-context --current --namespace=$TESTS_NAMESPACE
+  environment:
+    name: *env_gke_name126
+    action: stop
+  needs:
+    - build_review_gke126
+  rules:
+    - !reference [.skip_if_dev_mirror]
+    - !reference [.stop_review_template, rules]
 
 image_certification:
   stage: certification

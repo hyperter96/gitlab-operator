@@ -153,7 +153,7 @@ docs-lint links:
     # Check the internal links and anchors (in parallel)
     - "parallel time bundle exec nanoc check ::: internal_links internal_anchors"
 
-lint_docs_markdown:
+docs-lint markdown:
   stage: test
   image: registry.gitlab.com/gitlab-org/gitlab-docs/lint-markdown:alpine-3.18-vale-2.27.0-markdownlint-0.35.0-markdownlint2-0.8.1
   cache: {}
@@ -171,6 +171,54 @@ lint_docs_markdown:
     - !reference [.skip_if_dev_mirror]
     - !reference [.skip_if_release_tag]
     - !reference [.if_commit_branch_or_mr_branch]
+
+.review-docs:
+  image: ruby:3.0-alpine
+  stage: review
+  cache: {}
+  dependencies: []
+  before_script:
+  - gem install gitlab --no-doc
+  # We need to download the script rather than clone the repo since the
+  # review-docs-cleanup job will not be able to run when the branch gets
+  # deleted (when merging the MR).
+  - apk add --update openssl
+  - wget https://gitlab.com/gitlab-org/gitlab/-/raw/master/scripts/trigger-build.rb
+  - chmod 755 trigger-build.rb
+  variables:
+    GIT_STRATEGY: none
+    DOCS_REVIEW_APPS_DOMAIN: docs.gitlab-review.app
+    DOCS_GITLAB_REPO_SUFFIX: operator
+    # By default, deploy the Review App using the `main` branch of the `gitlab-org/gitlab-docs` project
+    DOCS_BRANCH: main
+  when: manual
+  needs:
+    - docs-lint markdown
+    - docs-lint links
+
+# Trigger a docs build in gitlab-docs
+# Useful to preview the docs changes live
+# https://docs.gitlab.com/ee/development/documentation/review_apps.html
+review-docs-deploy:
+  extends:
+  - .review-docs
+  environment:
+    name: review-docs/mr-${CI_MERGE_REQUEST_IID}
+    url: https://${DOCS_BRANCH}-${DOCS_GITLAB_REPO_SUFFIX}-${CI_MERGE_REQUEST_IID}.${DOCS_REVIEW_APPS_DOMAIN}/${DOCS_GITLAB_REPO_SUFFIX}
+    auto_stop_in: 2 weeks
+    on_stop: review-docs-cleanup
+  script:
+  - ./trigger-build.rb docs deploy
+
+# Cleanup remote environment of gitlab-docs
+review-docs-cleanup:
+  extends:
+  - .review-docs
+  environment:
+    name: review-docs/mr-${CI_MERGE_REQUEST_IID}
+    action: stop
+  script:
+  - ./trigger-build.rb docs cleanup
 
 .test_job:
   extends: .cache

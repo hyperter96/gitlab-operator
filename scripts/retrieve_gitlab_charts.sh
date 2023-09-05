@@ -17,7 +17,7 @@ scripts_dir="$(dirname "$0")"
 . "${scripts_dir}/add_gitlab_repo.sh"
 
 build_from_source() {
-    [ -z "${DEV_CHARTS_PAT}" -o -z "${DEV_CHARTS_PROJECT_ID}" ] && return 1
+    [ -z "${DEV_CHARTS_PAT}" ] || [ -z "${DEV_CHARTS_PROJECT_ID}" ] && return 1
 
     local version="${1}"
     local source="/tmp/chart-${version}"
@@ -25,26 +25,27 @@ build_from_source() {
     rm -rf "${source}" && mkdir "${source}"
     curl -fSL \
         -H "PRIVATE-TOKEN:${DEV_CHARTS_PAT}" \
-        "${DEV_API_CHARTS_PROJECT_URL}/repository/archive.tar.gz?sha=v${version}" | \
+        "${DEV_API_CHARTS_PROJECT_URL}/repository/archive.tar.gz?sha=${version}" | \
     tar -xzf - -C "${source}" --strip-component 1
 
     pushd "${source}"
     helm dependency update
-    helm package --version="${version}" .
+    helm package --version="$(yq eval '.version' Chart.yaml)" .
     popd
 
-    mv "${source}/gitlab-${version}.tgz" ./charts && rm -rf "${source}"
+    mv ${source}/gitlab-*.tgz ./charts && rm -rf "${source}"
 }
 
 # Download the charts to the charts directory
 rm -rf charts && mkdir charts
+
 for version in $(cat CHART_VERSIONS); do
     count=0
     echo "Fetching ${GITLAB_CHART}-${version}"
-    while ! $($HELM fetch "${GITLAB_CHART}" --version "${version}" --destination ./charts/ 2> /dev/null); do
+    while ! $HELM fetch "${GITLAB_CHART}" --version "${version}" --destination ./charts/ 2> /dev/null; do
         if [ $count -ge "${MAX_CHART_FETCH_ATTEMPTS}" ]; then
             echo "  Fetch attempts exhausted. Attempting to build from source."
-            if ! build_from_source "$version"; then
+            if ! build_from_source "v$version"; then
                 echo "  Failed to build from source. Exiting."
                 exit 1;
             else
@@ -57,3 +58,7 @@ for version in $(cat CHART_VERSIONS); do
         count=$((count+1))
     done
 done
+
+if [ -n "${DEV_CHART_SHA}" ]; then 
+    build_from_source "${DEV_CHART_SHA}"
+fi

@@ -324,20 +324,6 @@ tasks:
     cmds:
       - rm -rf $BUILD_DIR $INSTALL_DIR
 
-  bundle:
-    desc: Generate bundle manifests and metadata, and then validate generated files.
-    deps:
-      - build_operator
-    cmds:
-      - operator-sdk generate kustomize manifests -q
-      - cat $BUILD_DIR/operator-openshift.yaml | operator-sdk generate bundle -q --overwrite --version $VERSION $BUNDLE_OPTS $BUNDLE_METADATA_OPTS
-      - operator-sdk bundle validate ./bundle
-
-  bundle-build:
-    desc: Builds the bundle image using `podman build`.
-    cmds:
-      - podman build -f bundle.Dockerfile -t $BUNDLE_IMG:$VERSION
-
   retrieve-charts:
     desc: Retrieves GitLab charts at the versions in the CHART_VERSIONS file.
     sources:

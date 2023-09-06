@@ -44,7 +44,6 @@ To publish the GitLab Operator to OperatorHub:
    export OPERATORHUB_DIR="${HOME}/work/community-operators"
    export OPERATORHUB_NAME="gitlab-operator-kubernetes"
    export OSDK_BASE_DIR=".build/operatorhub-io"
-   export OPERATOR_SDK="${HOME}/bin/operator-sdk_linux_amd64"
    # Optional
    # point to local instance of "yq" binary:
    export YQ="yq-go"

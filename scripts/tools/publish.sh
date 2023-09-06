@@ -290,7 +290,6 @@ export OPERATOR_TAG="${VERSION}"
 export OLM_PACKAGE_VERSION=${OPERATOR_TAG}
 export OPERATORHUB_DIR="${BUILD_DIR}/${OH_REPOSITORY}"
 export OPERATORHUB_NAME="${GITLAB_OPERATOR_DIR}"
-export OPERATOR_SDK="$(which operator-sdk)"
 export YQ="$(which yq)"
 
 [ -n "${SSH_KEY_FILE}" ] && export GIT_SSH_COMMAND="ssh -i ${SSH_KEY_FILE} -o IdentitiesOnly=yes"

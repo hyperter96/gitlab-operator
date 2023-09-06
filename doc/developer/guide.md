@@ -12,31 +12,29 @@ This developer guide aims to walk a new developer on how to setup up their envir
 
 To setup your system for development of the operator, follow the steps below:
 
-1. Install [Go](https://go.dev/dl/) in your environment.
-
-   ```shell
-   go version
-   ```
-
-1. Download `operator-sdk`. Current `operator-sdk` [releases](https://github.com/operator-framework/operator-sdk/releases) can be found in the projects repository.
-
-   To check your version of operator SDK run,
-
-   ```shell
-   operator-sdk version
-   ```
-
-   To contribute code to the current GitLab Operator release, you will need at least operator SDK v1.0.0.
-
-1. Install `task` per the [official installation instructions](https://taskfile.dev/#/installation).
-   We use [`task` in place of `make`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/adr/0016-replace-makefile-with-taskfile.md)
-   for this project.
-
 1. Clone the `gitlab-operator` repository into your GOPATH.
 
    ```shell
    git clone git@gitlab.com:gitlab-org/cloud-native/gitlab-operator.git
+   cd gitlab-operator
    ```
+
+1. Install [`asdf`](https://asdf-vm.com) to manage runtime dependencies.
+
+1. Install runtime dependencies.
+
+   ```shell
+   cut -d' ' -f1 .tool-versions | xargs -i asdf plugin add {}
+   asdf plugin add opm https://gitlab.com/dmakovey/asdf-opm.git
+   asdf install
+   ```
+
+1. Run `task` from the root of the repository to see available commands.
+
+   We use [`task` in place of `make`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/adr/0016-replace-makefile-with-taskfile.md)
+   for this project. See
+   [`Taskfile.yaml`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/Taskfile.yaml?ref_type=heads)
+   for more information.
 
 ## Project structure
 
@@ -98,12 +96,6 @@ $ tree -dL 2 .
   Most of the other contents of the config directory are automatically generated but could be modified using `kustomize`.
 
 - The `hack/assets` path contains resources that would need to be pushed inside the operator image when the container image is being built. This is where release files would go.
-
-### Additional Resources
-
-The [Taskfile](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/Taskfile.yaml?ref_type=heads)
-provides convenient commands for managing the installation of these prerequisites. Run `task` from the root of the repository
-to see available commands.
 
 ## Deploying the Operator
 

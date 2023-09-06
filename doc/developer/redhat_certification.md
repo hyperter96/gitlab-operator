@@ -28,9 +28,8 @@ Common cluster infrastructure and common GitHub account ( `gl-distribution-oc` )
    exec $@
    ```
 
-1. `olm-bundle.sh` pre-requisites:
+1. `olm_bundle.sh` pre-requisites:
    1. `task`
-   1. `operator-sdk`
    1. `yq`
    1. `opm`
 

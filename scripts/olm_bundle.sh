@@ -12,7 +12,7 @@
 ## Tools
 set -e
 
-OPERATOR_SDK=${OPERATOR_SDK:-"operator-sdk_linux_amd64"}
+OPERATOR_SDK=${OPERATOR_SDK:-"operator-sdk"}
 OPERATOR_HOME_DIR=${OPERATOR_HOME_DIR:-"."}
 OPM=${OPM:-"opm"}
 YQ=${YQ:-"yq"}
@@ -44,10 +44,6 @@ CATALOGSOURCE_YAML=${OSDK_BASE_DIR}/catalogsource.yaml
 OPERATORGROUP_YAML=${OSDK_BASE_DIR}/operatorgroup.yaml
 SUBSCRIPTION_YAML=${OSDK_BASE_DIR}/subscription.yaml
 OLM_PACKAGE_NAME=${OLM_PACKAGE_NAME:-"gitlab-operator-kubernetes"}
-OPERATOR_SDK_VERSION=${OPERATOR_SDK_VERSION:-"v1.14.0"}
-OPERATOR_SDK_BASE_URL=${OPERATOR_SDK_BASE_URL:-"https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}"}
-OPM_VERSION=${OPM_VERSION:-"1.19.0"}
-OPM_URL=${OPM_URL:-"https://github.com/operator-framework/operator-registry/archive/refs/tags/v${OPM_VERSION}.tar.gz"}
 TARGET_NAMESPACE=${TARGET_NAMESPACE:-"gitlab-system"}
 OLM_NAMESPACE=${OLM_NAMESPACE:-"olm"}
 OPM_DOCKER=${OPM_DOCKER:-"docker"}
@@ -62,31 +58,6 @@ build_manifests(){
   ( cd config/scorecard; kustomize build ) > ${BUILD_DIR}/scorecard.yaml
   mkdir -p ${OSDK_BASE_DIR}
   ( cd ${OSDK_BASE_DIR}; ln -sf ${OPERATOR_HOME_DIR}/config )
-}
-
-install_opm(){
-  mkdir -p ${BUILD_DIR}
-  curl -s -L -o ${BUILD_DIR}/operator-registry-${OPM_VERSION}.tgz https://github.com/operator-framework/operator-registry/archive/refs/tags/v${OPM_VERSION}.tar.gz
-  (
-    cd ${BUILD_DIR}
-    tar -xzf operator-registry-${OPM_VERSION}.tgz
-    cd operator-registry-${OPM_VERSION}
-    task bin/opm
-  )
-  OPM=$(realpath "${BUILD_DIR}/operator-registry-${OPM_VERSION}/bin/opm")
-  ls -l ${OPM}
-  ${OPM} version
-}
-
-install_operatorsdk(){
-  local ARCH
-  local OS
-  ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n $(uname -m) ;; esac)
-  OS=$(uname | awk '{print tolower($0)}')
-  curl -LO ${OPERATOR_SDK_BASE_URL}/operator-sdk_${OS}_${ARCH}
-  OPERATOR_SDK=$(pwd)/operator-sdk_${OS}_${ARCH}
-  chmod +x ${OPERATOR_SDK}
-  ${OPERATOR_SDK} version
 }
 
 generate_bundle(){

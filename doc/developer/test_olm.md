@@ -80,7 +80,6 @@ Make sure to confirm every following customization line reflects **your personal
 
 ```shell
 export OPERATOR_VERSION="0.10.2"
-export OPERATOR_SDK="${HOME}/bin/operator-sdk_linux_amd64"
 export BUNDLE_REGISTRY="registry.gitlab.com/dmakovey/gitlab-operator-bundle"
 
 export PREVIOUS_OPERATOR_VERSION="0.9.1"

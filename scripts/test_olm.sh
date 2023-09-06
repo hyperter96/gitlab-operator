@@ -14,18 +14,6 @@ get_chart_version(){
       | head -n 1
 }
 
-get_opm(){
-  if [ ! -e ".build/opm" ]; then
-    mkdir -p .build
-    ## OpenShift Variant:
-    # curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.10.40/opm-linux.tar.gz  | tar -xzf - -C .build/
-    ## OperatorFramework Variant:
-    curl -o .build/opm -sL "https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/linux-amd64-opm"
-    chmod +x .build/opm
-  fi
-  OPM=$(pwd)/.build/opm
-}
-
 trap cleanup_files EXIT
 
 # shellcheck source=/dev/null
@@ -45,14 +33,7 @@ PROVISION_AND_DEPLOY_SH="scripts/provision_and_deploy.sh"
 
 DEFAULT_NAMESPACE="gitlab-system"
 
-# OPM=${OPM:-"opm"}
-# used by get_opm
-OPM_VERSION=${OPM_VERSION:-"1.26.2"}
-OPM=${OPM:-""}
-if [[ -z "$OPM" ]]; then
-    get_opm
-fi
-
+OPM=${OPM:-"opm"}
 YQ=${YQ:-"yq"}
 
 # export OPERATORHUB_NAME="gitlab-operator-kubernetes"

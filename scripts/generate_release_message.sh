@@ -36,7 +36,7 @@ find_gitlab_version() {
   chart_version="${1}"
 
   if [ -f "./charts/gitlab-${chart_version}.tgz" ]; then
-    tar -Oxf "./charts/gitlab-${chart_version}.tgz" 'gitlab/Chart.yaml' | yq eval '.appVersion'
+    tar -Oxf "./charts/gitlab-${chart_version}.tgz" 'gitlab/Chart.yaml' | yq eval '.appVersion' -
   else
     helm search repo gitlab/gitlab -l -o table \
       | grep "${chart_version}" \

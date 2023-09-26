@@ -48,6 +48,10 @@ GitLab Operator supports OpenShift 4.10 through 4.12.
 
 ::EndTabs
 
+Cluster nodes must use the x86-64 architecture.
+Support for multiple architectures, including AArch64/ARM64, is under active development.
+See [issue 2899](https://gitlab.com/gitlab-org/charts/gitlab/-/issues/2899) for more information.
+
 ### Ingress controller
 
 An Ingress controller is required to provide external access to the application and secure communication between components.

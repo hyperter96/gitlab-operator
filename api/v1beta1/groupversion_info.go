@@ -20,8 +20,13 @@ limitations under the License.
 package v1beta1
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
+
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
 var (
@@ -32,7 +37,14 @@ var (
 	GroupVersion = schema.GroupVersion{Group: "apps.gitlab.com", Version: "v1beta1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme.
-	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+	SchemeBuilder = &scheme.Builder{
+		GroupVersion: GroupVersion,
+		SchemeBuilder: runtime.SchemeBuilder{
+			clientgoscheme.AddToScheme,
+			monitoringv1.AddToScheme,
+			certmanagerv1.AddToScheme,
+		},
+	}
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme

@@ -16,9 +16,11 @@ func PagesConfigMap(adapter gitlab.Adapter, template helm.Template) client.Objec
 	return template.Query().ObjectByKindAndName(ConfigMapKind, cfgMapName)
 }
 
-// PagesService returns the Service for the GitLab Pages component.
-func PagesService(template helm.Template) client.Object {
-	return template.Query().ObjectByKindAndComponent(ServiceKind, PagesComponentName)
+// PagesServices returns the Services for the GitLab Pages component.
+func PagesServices(template helm.Template) []client.Object {
+	return template.Query().ObjectsByKindAndLabels(ServiceKind, map[string]string{
+		"app": PagesComponentName,
+	})
 }
 
 // PagesDeployment returns the Deployment for the GitLab Pages component.

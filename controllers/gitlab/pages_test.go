@@ -23,7 +23,7 @@ var _ = Describe("Pages", func() {
 
 		enabled := adapter.WantsComponent(component.GitLabPages)
 		configMap := PagesConfigMap(adapter, template)
-		service := PagesService(template)
+		services := PagesServices(template)
 		deployment := PagesDeployment(template)
 		ingress := PagesIngress(template)
 
@@ -35,7 +35,7 @@ var _ = Describe("Pages", func() {
 		It("Should contain Pages resources", func() {
 			Expect(enabled).To(BeTrue())
 			Expect(configMap).NotTo(BeNil())
-			Expect(service).NotTo(BeNil())
+			Expect(services).NotTo(BeEmpty())
 			Expect(deployment).NotTo(BeNil())
 			Expect(ingress).NotTo(BeNil())
 		})
@@ -52,7 +52,7 @@ var _ = Describe("Pages", func() {
 
 		enabled := adapter.WantsComponent(component.GitLabPages)
 		configMap := PagesConfigMap(adapter, template)
-		service := PagesService(template)
+		services := PagesServices(template)
 		deployment := PagesDeployment(template)
 		ingress := PagesIngress(template)
 
@@ -64,7 +64,7 @@ var _ = Describe("Pages", func() {
 		It("Should not contain Pages resources", func() {
 			Expect(enabled).To(BeFalse())
 			Expect(configMap).To(BeNil())
-			Expect(service).To(BeNil())
+			Expect(services).To(BeEmpty())
 			Expect(deployment).To(BeNil())
 			Expect(ingress).To(BeNil())
 		})

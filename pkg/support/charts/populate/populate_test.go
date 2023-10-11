@@ -125,7 +125,7 @@ var _ = Describe("Query", func() {
 				},
 			},
 		}
-		dep := &chart.Chart{
+		depChart := &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    "dependency",
 				Version: "1.0.0",
@@ -137,7 +137,14 @@ var _ = Describe("Query", func() {
 				},
 			},
 		}
-		chrt.SetDependencies(dep)
+		depMeta := &chart.Dependency{
+			Name:      depChart.Metadata.Name,
+			Version:   depChart.Metadata.Version,
+			Condition: "dependency.install",
+		}
+
+		chrt.SetDependencies(depChart)
+		chrt.Metadata.Dependencies = append(chrt.Metadata.Dependencies, depMeta)
 
 		c := &charts.Catalog{
 			chrt,
@@ -146,21 +153,26 @@ var _ = Describe("Query", func() {
 		r1 := c.Query(charts.WithName("test")).First()
 
 		Expect(r1).NotTo(BeIdenticalTo(c))
-		Expect(r1.Dependencies()[0]).NotTo(BeIdenticalTo(dep))
+		Expect(r1.Dependencies()[0]).NotTo(BeIdenticalTo(depChart))
+		Expect(r1.Metadata.Dependencies).NotTo(BeIdenticalTo(chrt.Metadata.Dependencies))
 
 		/* imitate Chart rendering with Helm SDK */
 		r1.Values["a"] = "A1"
 		r1.Values["x"] = "X"
 		r1.Values["b"].(map[string]interface{})["c"] = "C2"
 		r1.Dependencies()[0].Values["b"].(map[string]interface{})["c"] = "C4"
+		// Metadata dependencies are removed when their condition is not met
+		r1.Metadata.Dependencies = []*chart.Dependency{}
 
 		Expect(chrt.Values["b"].(map[string]interface{})["c"]).To(Equal("C"))
-		Expect(dep.Values["b"].(map[string]interface{})["c"]).To(Equal("C"))
+		Expect(chrt.Metadata.Dependencies).To(HaveLen(1))
+		Expect(depChart.Values["b"].(map[string]interface{})["c"]).To(Equal("C"))
 
 		r2 := c.Query(charts.WithName("test")).First()
 
 		Expect(r2).NotTo(BeIdenticalTo(c))
-		Expect(r2.Dependencies()[0]).NotTo(BeIdenticalTo(dep))
+		Expect(r2.Dependencies()[0]).NotTo(BeIdenticalTo(depChart))
+		Expect(r2.Metadata.Dependencies).NotTo(BeEmpty())
 
 		Expect(r2.Values).To(HaveKeyWithValue("a", "A"))
 		Expect(r2.Values["b"].(map[string]interface{})["c"]).To(Equal("C"))

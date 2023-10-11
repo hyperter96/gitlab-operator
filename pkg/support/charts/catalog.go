@@ -145,10 +145,10 @@ func (c Catalog) collect(operator func(*chart.Chart) string) []string {
 
 func clone(in *chart.Chart) (*chart.Chart, error) {
 	/*
-	 *  This is a limited deep copy of a Chart. It only clones the values of
-	 *  a Chart and does the same for its dependencies, including transitive
-	 *  dependencies. As a result the reference to the dependencies changes
-	 *  but all other attributes except values remain the same.
+	 *  This is a limited deep copy of a Chart. It only clones the values and
+	 *  metadata of a Chart and does the same for its dependencies, including
+	 *  transitive dependencies. As a result the reference to the dependencies
+	 *  changes but all other attributes except values remain the same.
 	 */
 	out := *in
 
@@ -156,6 +156,14 @@ func clone(in *chart.Chart) (*chart.Chart, error) {
 		return &out, err
 	} else {
 		out.Values = v.(map[string]interface{})
+	}
+
+	// Deep copy the whole metadata as .Metadata.Dependencies is modified during
+	// rendering.
+	if v, err := copystructure.Copy(out.Metadata); err != nil {
+		return &out, err
+	} else {
+		out.Metadata = v.(*chart.Metadata)
 	}
 
 	depList := make([]*chart.Chart, 0, len(out.Dependencies()))

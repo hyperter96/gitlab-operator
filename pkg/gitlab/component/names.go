@@ -26,6 +26,7 @@ const (
 	Spamcheck      gitlab.Component = "spamcheck"
 	Toolbox        gitlab.Component = "toolbox"
 	Webservice     gitlab.Component = "webservice"
+	Zoekt          gitlab.Component = "zoekt"
 )
 
 var (

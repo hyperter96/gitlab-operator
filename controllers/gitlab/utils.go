@@ -10,6 +10,7 @@ import (
 
 const (
 	// Known object kinds.
+	CertificateKind             = "Certificate"
 	ConfigMapKind               = "ConfigMap"
 	CronJobKind                 = "CronJob"
 	DaemonSetKind               = "DaemonSet"
@@ -84,6 +85,9 @@ const (
 
 	// SpamcheckComponentName is the common name of Spamcheck.
 	SpamcheckComponentName = "spamcheck"
+
+	// ZoektComponentName is the common name of Zoekt.
+	ZoektComponentName = "gitlab-zoekt"
 
 	gitlabComponentLabel = "gitlab.io/component"
 	appLabel             = "app"

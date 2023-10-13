@@ -8,9 +8,15 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/kubectl/pkg/scheme"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
+	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	gitlabv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers/settings"
@@ -63,6 +69,11 @@ func TestGitLab(t *testing.T) {
 	settings.Load()
 	_ = charts.PopulateGlobalCatalog(
 		populate.WithSearchPath(settings.HelmChartsDirectory))
+
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme.Scheme))
+	utilruntime.Must(gitlabv1beta1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(monitoringv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(certmanagerv1.AddToScheme(scheme.Scheme))
 
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "GitLab Suite")

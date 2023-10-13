@@ -61,6 +61,8 @@ spec:
           value: {{ include "app.serviceAccount.name" . }}-nonroot
         - name: NGINX_SERVICE_ACCOUNT
           value: {{ include "nginx-ingress.serviceAccount.name" . }}
+        - name: PROMETHEUS_SERVICE_ACCOUNT
+          value: {{ include "prometheus.serviceAccount.server.name" . }}
         livenessProbe:
           httpGet:
             path: /liveness

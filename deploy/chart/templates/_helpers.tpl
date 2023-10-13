@@ -42,6 +42,18 @@ Create the name of the nginx-ingress service account to use
 {{- end }}
 
 {{/*
+Create the name of the prometheus server service account to use
+*/}}
+{{- define "prometheus.serviceAccount.server.name" -}}
+{{- if .Values.prometheus.serviceAccount.server.create }}
+{{-   $name := printf "%s-%s" (include "name" .) "prometheus-server" }}
+{{-   default $name .Values.prometheus.serviceAccount.server.name }}
+{{- else }}
+{{-   default "default" .Values.prometheus.serviceAccount.server.name }}
+{{- end }}
+{{- end }}
+
+{{/*
 SecurityContextConstraints apiVersion
 */}}
 {{- define "scc.apiVersion" -}}

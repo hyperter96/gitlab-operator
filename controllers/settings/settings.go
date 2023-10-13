@@ -36,6 +36,11 @@ var (
 	// variable to change it.
 	NGINXServiceAccount = "gitlab-nginx-ingress"
 
+	// PrometheusServiceAccount is the name of the ServiceAccount that is used by Prometheus.
+	// The default value is "gitlab-prometheus-server". Use PROMETHEUS_SERVICE_ACCOUNT environment
+	// variable to change it.
+	PrometheusServiceAccount = "gitlab-prometheus-server"
+
 	// HealthProbeBindAddress returns the address for hosting health probes.
 	HealthProbeBindAddress = ":6060"
 
@@ -65,6 +70,7 @@ const (
 	envAppAnyUIDServiceAccount  = "GITLAB_APP_ANYUID_SERVICE_ACCOUNT"
 	envAppNonRootServiceAccount = "GITLAB_APP_NONROOT_SERVICE_ACCOUNT"
 	envNGINXServiceAccount      = "NGINX_SERVICE_ACCOUNT"
+	envPrometheusServiceAccount = "PROMETHEUS_SERVICE_ACCOUNT"
 	envKubeVersion              = "GITLAB_OPERATOR_KUBERNETES_VERSION"
 	envKubeAPIVersions          = "GITLAB_OPERATOR_KUBERNETES_API_VERSIONS"
 )
@@ -94,6 +100,11 @@ func Load() {
 	nginxServiceAccount := os.Getenv(envNGINXServiceAccount)
 	if nginxServiceAccount != "" {
 		NGINXServiceAccount = nginxServiceAccount
+	}
+
+	prometheusServiceAccount := os.Getenv(envPrometheusServiceAccount)
+	if prometheusServiceAccount != "" {
+		PrometheusServiceAccount = prometheusServiceAccount
 	}
 
 	kubeVersionStr := os.Getenv(envKubeVersion)

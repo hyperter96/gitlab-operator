@@ -89,7 +89,7 @@ type EndpointTLS struct {
 	minio    bool
 }
 
-// RequiresCertManagerCertificate function returns true an administrator
+// RequiresCertManagerCertificate function returns true when an administrator
 // did not provide a TLS ceritificate for an endpoint.
 func RequiresCertManagerCertificate(adapter gitlab.Adapter) EndpointTLS {
 	// This implies that Operator can only consume wildcard certificate and individual certificate

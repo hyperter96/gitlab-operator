@@ -166,3 +166,8 @@ prometheus:
     pushgateway:
       create: false
       name: {{ .Settings.AppNonRootServiceAccount }}
+
+gitlab-zoekt:
+  serviceAccount:
+    create: false
+    name: {{ .Settings.AppNonRootServiceAccount }}

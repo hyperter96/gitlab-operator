@@ -80,6 +80,7 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs/finalizers,verbs=update
 // +kubebuilder:rbac:groups=apps.gitlab.com,resources=gitlabs/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
@@ -413,10 +414,8 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if adapter.WantsComponent(component.Prometheus) {
-		if prometheusSupported() {
-			if err := r.reconcilePrometheus(ctx, adapter); err != nil {
-				return requeue(err)
-			}
+		if err := r.reconcilePrometheus(ctx, adapter, template); err != nil {
+			return requeue(err)
 		}
 	}
 
@@ -513,6 +512,7 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.PersistentVolumeClaim{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.DaemonSet{}).
 		Owns(&batchv1.Job{}).
 		Owns(&networkingv1.Ingress{}).
 		WithEventFilter(predicate.GenerationChangedPredicate{})
@@ -532,7 +532,7 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		builder.Owns(&monitoringv1.ServiceMonitor{})
 	}
 
-	if prometheusSupported() {
+	if settings.IsGroupVersionKindSupported("monitoring.coreos.com/v1", "Prometheus") {
 		r.Log.Info("Using monitoring.coreos.com/v1/Prometheus")
 		builder.Owns(&monitoringv1.Prometheus{})
 	}

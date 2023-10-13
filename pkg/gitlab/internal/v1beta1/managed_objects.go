@@ -74,6 +74,10 @@ var potentialSupportedGVRs []schema.GroupVersionResource = []schema.GroupVersion
 		Version:  "v1",
 		Resource: "statefulsets",
 	}, {
+		Group:    "apps",
+		Version:  "v1",
+		Resource: "daemonset",
+	}, {
 		Group:    "networking.k8s.io",
 		Version:  "v1",
 		Resource: "ingresses",
@@ -117,6 +121,10 @@ var potentialSupportedGVRs []schema.GroupVersionResource = []schema.GroupVersion
 		Group:    "monitoring.coreos.com",
 		Version:  "v1",
 		Resource: "servicemonitors",
+	}, {
+		Group:    "monitoring.coreos.com",
+		Version:  "v1",
+		Resource: "prometheuses",
 	},
 }
 

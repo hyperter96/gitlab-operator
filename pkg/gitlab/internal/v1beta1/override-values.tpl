@@ -149,3 +149,20 @@ shared-secrets:
   securityContext:
     runAsUser: ''
     fsGroup: ''
+
+prometheus:
+  rbac:
+    create: false
+  serviceAccounts:
+    server:
+      create: false
+      name: {{ .Settings.PrometheusServiceAccount }}
+    alertmanager:
+      create: false
+      name: {{ .Settings.AppNonRootServiceAccount }}
+    nodeExporter:
+      create: false
+      name: {{ .Settings.AppNonRootServiceAccount }}
+    pushgateway:
+      create: false
+      name: {{ .Settings.AppNonRootServiceAccount }}

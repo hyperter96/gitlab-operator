@@ -12,6 +12,7 @@ const (
 	// Known object kinds.
 	ConfigMapKind               = "ConfigMap"
 	CronJobKind                 = "CronJob"
+	DaemonSetKind               = "DaemonSet"
 	DeploymentKind              = "Deployment"
 	HorizontalPodAutoscalerKind = "HorizontalPodAutoscaler"
 	IngressKind                 = "Ingress"
@@ -47,6 +48,9 @@ const (
 
 	// SidekiqComponentName is the common name of Sidekiq.
 	SidekiqComponentName = "sidekiq"
+
+	// PrometheusComponentName is the common name of Prometheus.
+	PrometheusComponentName = "prometheus"
 
 	// DefaultRedisComponentName is the default common name of Redis.
 	DefaultRedisComponentName = "redis"

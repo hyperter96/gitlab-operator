@@ -118,6 +118,7 @@ func init() {
 		"CertmanagerIssuerEmail":   defaultCertManagerIssuerEmail,
 		"ManagerServiceAccount":    settings.ManagerServiceAccount,
 		"NginxServiceAccount":      settings.NGINXServiceAccount,
+		"PrometheusServiceAccount": settings.PrometheusServiceAccount,
 	}
 
 	defaultValuesTemplate = template.Must(template.New("defaultValues").Parse(defaultValuesSource))

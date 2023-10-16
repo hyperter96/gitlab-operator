@@ -17,7 +17,7 @@ func (r *GitLabReconciler) reconcilePages(ctx context.Context, adapter gitlab.Ad
 		return err
 	}
 
-	if err := r.reconcilePagesService(ctx, adapter, template); err != nil {
+	if err := r.reconcilePagesServices(ctx, adapter, template); err != nil {
 		return err
 	}
 
@@ -52,9 +52,11 @@ func (r *GitLabReconciler) reconcilePagesDeployment(ctx context.Context, adapter
 	return err
 }
 
-func (r *GitLabReconciler) reconcilePagesService(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
-	if err := r.createOrPatch(ctx, gitlabctl.PagesService(template), adapter); err != nil {
-		return err
+func (r *GitLabReconciler) reconcilePagesServices(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
+	for _, svc := range gitlabctl.PagesServices(template) {
+		if err := r.createOrPatch(ctx, svc, adapter); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -731,6 +731,11 @@ func (r *GitLabReconciler) reconcileIngress(ctx context.Context, templateObject 
 		if err := r.createOrPatch(ctx, ingress, adapter); err != nil {
 			return err
 		}
+	} else {
+		// Always populate Ingress to make sure it does not get deleted.
+		if err := adapter.PopulateManagedObjects(ingress); err != nil {
+			return err
+		}
 	}
 
 	return nil

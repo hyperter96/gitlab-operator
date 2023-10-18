@@ -21,16 +21,12 @@ import (
 	"fmt"
 	"os"
 
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	kubectlscheme "k8s.io/kubectl/pkg/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	monitoringv1 "github.com/coreos/prometheus-operator/pkg/apis/monitoring/v1"
-	certmanagerv1 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1"
 
 	appsv1beta1 "gitlab.com/gitlab-org/cloud-native/gitlab-operator/api/v1beta1"
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/controllers"
@@ -48,15 +44,7 @@ var (
 //nolint:wsl
 func init() {
 	settings.Load()
-
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(appsv1beta1.AddToScheme(scheme))
-
-	utilruntime.Must(monitoringv1.AddToScheme(scheme))
-
-	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
-
+	runtime.Must(appsv1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

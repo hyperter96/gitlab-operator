@@ -36,6 +36,9 @@ spec:
         {{- if .Values.image.pullPolicy }}
         imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
         {{- end }}
+        {{- if .Values.manager.containerSecurityContext }}
+        securityContext: {{- toYaml .Values.manager.containerSecurityContext | nindent 12 }}
+        {{- end }}
         name: manager
         ports:
         - containerPort: 9443

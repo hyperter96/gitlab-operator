@@ -46,6 +46,18 @@ manager:
       # to generate a self-signed certificate for the Manager's webhook.
       create: true
 
+  ## Controller containers' Security Context (only main container)
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+  containerSecurityContext: {}
+    # Switch to allow priviledge escalation on the Controller container
+    # allowPrivilegeEscalation: 
+    # capabilities
+    #   Linux Kernel capabilities that should be dropped
+    #   drop:
+    #   Linux Kernel capabilities that should be added
+    #   add:
+    # Set container's Security Context runAsNonRoot
+    # runAsNonRoot:
 app:
   serviceAccount:
     # Specifies whether a service account should be created

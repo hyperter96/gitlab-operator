@@ -24,7 +24,7 @@ If using OpenShift, these steps are typically handled by the Operator Lifecycle 
 1. [Create or use an existing Kubernetes or OpenShift cluster](#cluster)
 1. Install pre-requisite services and software
    - [Ingress controller](#ingress-controller)
-   - [Certificate manager](#tls-certificates)
+   - [cert-manager](#tls-certificates)
    - [Metrics server](#metrics)
 1. [Configure Domain Name Services](#configure-domain-name-services)
 
@@ -63,19 +63,17 @@ When configuring the GitLab CR, be sure to set `nginx-ingress.enabled=false` to 
 
 ### TLS certificates
 
-To create a certificate for the Operator's Kubernetes webhook, [Cert Manager](https://cert-manager.io) is used. You should
-use Cert Manager for the GitLab certificates as well.
+To create a certificate for the operator's Kubernetes webhook, [cert-manager](https://cert-manager.io) is used. You should
+use [cert-manager](https://cert-manager.io) for the GitLab certificates as well.
 
-Follow the relevant [installation instructions](https://cert-manager.io/docs/installation/) based on your platform and preferred tooling.
+Because the operator needs a certificate for the Kubernetes webhook, you can't use the cert-manager bundled with the GitLab Chart. Instead, install cert-manager before you install the operator.
 
-Our codebase targets Cert Manager 1.6.1.
+To install cert-manager, see the [installation documentation](https://cert-manager.io/docs/installation/) for your platform and tooling.
+
+Our codebase targets [cert-manager 1.6.1](https://cert-manager.io/v1.6-docs).
 
 NOTE:
-Cert Manager is a prerequisite for the GitLab Operator, while the GitLab Helm chart bundles it.
-
-NOTE:
-Cert Manager [1.6](https://github.com/jetstack/cert-manager/releases/tag/v1.6.0) removed some deprecated APIs. As a result, if
-deploying Cert Manager >= 1.6, you need GitLab Operator >= 0.4.
+Because [cert-manager 1.6](https://github.com/jetstack/cert-manager/releases/tag/v1.6.0) removed some deprecated APIs, if you deploy cert-manager 1.6 or higher, you need at least GitLab Operator 0.4.
 
 ### Metrics
 

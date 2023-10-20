@@ -1,10 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #
 # A helper script to publish GitLab Operator to OperatorHub, RedHat Marketplace,
 # and RedHat Community Operators.
 #
 # Note: Use asdf to install dependencies.
+# Note: Use GNU sed. The script is not portable to MacOS sed.
+# Note: The script uses global Git config such as `user.name` and `user.email`.
 #
 # Usage:
 #
@@ -54,7 +56,6 @@ print_targets
 
 OPERATOR_HOME_DIR="${PWD}"
 BUILD_DIR="${OPERATOR_HOME_DIR}/.build"
-CLUSTER_DIR="${BUILD_DIR}/cluster"
 
 SSH_KEY_FILE="${SSH_KEY_FILE:-${BUILD_DIR}/gl-distribution-oc}"
 GITHUB_ACCOUNT="${GITHUB_ACCOUNT:-gl-distribution-oc}"
@@ -119,10 +120,16 @@ fork_operators() {
     local current_owner=$(gh repo list \
         --fork --json 'name,parent' \
         --jq '.[] | select(.name == "'${repo_name}'") | .parent.owner.login')
+
+    gh config set git_protocol ssh
+
     [ "${current_owner}" != "${repo_owner}" ] && gh repo fork "${repo_owner}/${repo_name}"
     cd "${BUILD_DIR}"
     [ -d "${repo_name}" ] || gh repo clone "${repo_name}"
     cd "${repo_name}"
+
+    git config user.name "${GIT_USERNAME}"
+    git config user.email "${GIT_EMAIL}"
 }
 
 pull_operators() {
@@ -216,7 +223,7 @@ run_redhat_certification_pipeline() {
 
 cleanup_changes() {
     cd "${OPERATOR_HOME_DIR}"
-    git restore ./
+    git restore ./config
 }
 
 publish_operatorhub() {
@@ -285,20 +292,21 @@ publish_redhat_marketplace() {
 
 [ -z "${SKIP_CHECKS:-}" ] && check_requirements
 
+export YQ="$(which yq)"
+export TKN="$(which tkn)"
+
 export GH_TOKEN="$(cat ${GITHUB_TOKEN_FILE})"
 export OPERATOR_TAG="${VERSION}"
 export OLM_PACKAGE_VERSION=${OPERATOR_TAG}
 export OPERATORHUB_DIR="${BUILD_DIR}/${OH_REPOSITORY}"
 export OPERATORHUB_NAME="${GITLAB_OPERATOR_DIR}"
-export YQ="$(which yq)"
 
 [ -n "${SSH_KEY_FILE}" ] && export GIT_SSH_COMMAND="ssh -i ${SSH_KEY_FILE} -o IdentitiesOnly=yes"
-[ -z "${TKN:-}" ] && export TKN="${CLUSTER_DIR}/bin/tkn"
-[ -z "${KUBECONFIG:-}" ] && export KUBECONFIG="${CLUSTER_DIR}/auth/kubeconfig"
+[ -z "${KUBECONFIG:-}" ] && export KUBECONFIG="${BUILD_DIR}/kubeconfig"
+[ -z "${GIT_USERNAME}" ] && export GIT_USERNAME="$(git config --global user.name) (Operator Release)"
+[ -z "${GIT_EMAIL}" ] && export GIT_EMAIL="$(git config --global user.email | sed 's/@/+operator-release@/')"
 
-export GIT_USERNAME="${GITHUB_ACCOUNT}"
-export GIT_EMAIL="dmakovey+operator-certification@gitlab.com"
-export GIT_FORK_REPO_URL="git@github.com:${GIT_USERNAME}/${RH_REPOSITORY}.git"
+export GIT_FORK_REPO_URL="git@github.com:${GITHUB_ACCOUNT}/${RH_REPOSITORY}.git"
 export GIT_BRANCH="${BRANCH_NAME}"
 export OPERATOR_BUNDLE_PATH="operators/${GITLAB_OPERATOR_DIR}/${VERSION}"
 export GITHUB_TOKEN_FILE

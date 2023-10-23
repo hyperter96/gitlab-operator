@@ -15,7 +15,8 @@ fullnameOverride: ""
 
 extraEnvs: []
 
-podAnnotations: {}
+podAnnotations:
+  kubectl.kubernetes.io/default-container: manager
 
 resources:
   limits:
@@ -32,6 +33,14 @@ tolerations: []
 manager:
   debug:
     enabled: true
+  kubeRbacProxy:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 5m
+        memory: 64Mi
   serviceAccount:
     # Specifies whether a service account should be created
     create: true

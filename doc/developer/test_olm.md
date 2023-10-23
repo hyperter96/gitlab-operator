@@ -11,7 +11,7 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 Versions listed are the ones known to work, lower versions may work but were not tested
 
 - `task-3.17.0` (`asdf`)
-- `operator-sdk-1.25.0` (`asdf`)
+- `operator-sdk-1.32.0` (`asdf`)
 - `kubectl-1.25.3` (`asdf`)
 - `helm-3.10.1` (`asdf`)
 - `kustomize-4.5.7` (`asdf`)

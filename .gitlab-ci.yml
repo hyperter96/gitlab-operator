@@ -67,6 +67,9 @@ include:
   - template: Jobs/Secret-Detection.latest.gitlab-ci.yml
     rules:
       - if: '$CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator"'
+  - template: Jobs/SAST.latest.gitlab-ci.yml
+    rules:
+      - if: '$CI_PROJECT_PATH == "gitlab-org/cloud-native/gitlab-operator"'
   - local: .gitlab-ci-templates.yml
 
 default:

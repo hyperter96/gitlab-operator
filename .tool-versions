@@ -7,7 +7,7 @@ kind 0.17.0
 kubebuilder 3.12.0
 kubectl 1.25.3
 kustomize 4.5.7
-operator-sdk 1.25.0
+operator-sdk 1.32.0
 opm 1.26.2 https://gitlab.com/dmakovey/asdf-opm.git
 task 3.17.0
 tekton-cli 0.32.0

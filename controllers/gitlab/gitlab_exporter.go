@@ -14,6 +14,11 @@ func ExporterService(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, GitLabExporterComponentName)
 }
 
+// ExporterServiceMonitor returns the ServiceMonitor for the GitLab Exporter component.
+func ExporterServiceMonitor(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(ServiceMonitorKind, GitLabExporterComponentName)
+}
+
 // ExporterDeployment returns the Deployment for the GitLab Exporter component.
 func ExporterDeployment(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(DeploymentKind, GitLabExporterComponentName)

@@ -1,6 +1,8 @@
 package gitlab
 
 import (
+	"strings"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"gitlab.com/gitlab-org/cloud-native/gitlab-operator/helm"
@@ -33,9 +35,43 @@ func WebserviceServices(template helm.Template) []client.Object {
 	})
 }
 
+// WebserviceServiceMonitor returns the ServiceMonitor for the Webservice component.
+func WebserviceServiceMonitor(template helm.Template) client.Object {
+	serviceMonitors := template.Query().ObjectsByKindAndLabels(ServiceMonitorKind, map[string]string{
+		"app": WebserviceComponentName,
+	})
+
+	for _, result := range serviceMonitors {
+		if !isWorkhorse(result) {
+			return result
+		}
+	}
+
+	return nil
+}
+
+// WebserviceWorkhorseServiceMonitor returns the ServiceMonitor for the Workhorse component.
+func WebserviceWorkhorseServiceMonitor(template helm.Template) client.Object {
+	serviceMonitors := template.Query().ObjectsByKindAndLabels(ServiceMonitorKind, map[string]string{
+		"app": WebserviceComponentName,
+	})
+
+	for _, result := range serviceMonitors {
+		if isWorkhorse(result) {
+			return result
+		}
+	}
+
+	return nil
+}
+
 // WebserviceIngresses returns the Ingresses for the Webservice component.
 func WebserviceIngresses(template helm.Template) []client.Object {
 	return template.Query().ObjectsByKindAndLabels(IngressKind, map[string]string{
 		"app": WebserviceComponentName,
 	})
+}
+
+func isWorkhorse(obj client.Object) bool {
+	return strings.HasSuffix(obj.GetName(), "-workhorse")
 }

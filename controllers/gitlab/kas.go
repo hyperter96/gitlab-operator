@@ -21,3 +21,7 @@ func KasIngress(template helm.Template) client.Object {
 func KasService(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, KasComponentName)
 }
+
+func KasServiceMonitor(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(ServiceMonitorKind, KasComponentName)
+}

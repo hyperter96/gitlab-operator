@@ -25,3 +25,8 @@ func SidekiqConfigMaps(template helm.Template) []client.Object {
 
 	return result
 }
+
+// SidekiqPodMonitor returns the PodMonitor of the Sidekiq component.
+func SidekiqPodMonitor(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(PodMonitorKind, SidekiqComponentName)
+}

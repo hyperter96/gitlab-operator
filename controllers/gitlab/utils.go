@@ -19,8 +19,10 @@ const (
 	IngressKind                 = "Ingress"
 	JobKind                     = "Job"
 	PersistentVolumeClaimKind   = "PersistentVolumeClaim"
+	PodMonitorKind              = "PodMonitor"
 	SecretKind                  = "Secret"
 	ServiceKind                 = "Service"
+	ServiceMonitorKind          = "ServiceMonitor"
 	StatefulSetKind             = "StatefulSet"
 
 	// GitlabComponentName is the com mon name of GitLab.

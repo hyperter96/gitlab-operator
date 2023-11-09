@@ -68,6 +68,19 @@ func RedisMasterService(adapter gitlab.Adapter, template helm.Template) client.O
 	return nil
 }
 
+// RedisServiceMonitor returns the ServiceMonitor of Redis component.
+func RedisServiceMonitor(template helm.Template) client.Object {
+	results := template.Query().ObjectsByKindAndLabels(ServiceMonitorKind, map[string]string{
+		"app.kubernetes.io/name": DefaultRedisComponentName,
+	})
+
+	if len(results) == 0 {
+		return nil
+	}
+
+	return results[0]
+}
+
 // RedisStatefulSet returns the Statefulset of the Redis component.
 func RedisStatefulSet(adapter gitlab.Adapter, template helm.Template) client.Object {
 	nameOverride := RedisComponentName(adapter)

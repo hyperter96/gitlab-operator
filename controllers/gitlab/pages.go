@@ -23,6 +23,11 @@ func PagesServices(template helm.Template) []client.Object {
 	})
 }
 
+// PagesServiceMonitor returns the ServiceMonitor for the GitLab Pages component.
+func PagesServiceMonitor(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(ServiceMonitorKind, PagesComponentName)
+}
+
 // PagesDeployment returns the Deployment for the GitLab Pages component.
 func PagesDeployment(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(DeploymentKind, PagesComponentName)

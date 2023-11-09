@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	testNamespace = "default"
+	testNamespace  = "default"
+	envAPIVersions = "GITLAB_OPERATOR_KUBERNETES_API_VERSIONS"
 )
 
 var (
@@ -61,6 +62,12 @@ func CreateMockAdapter(mockGitLab *gitlabv1beta1.GitLab) gitlab.Adapter {
 }
 
 func TestGitLab(t *testing.T) {
+	// The tests do not have access to a live cluster, so we manually add the
+	// Monitoring API version via an environment variable defined in the
+	// 'settings' package.
+	resetEnv := setAPIVersionsEnv("monitoring.coreos.com/v1")
+	defer resetEnv()
+
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
 	settings.Load()
 
@@ -71,4 +78,20 @@ func TestGitLab(t *testing.T) {
 
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "GitLab Suite")
+}
+
+func setAPIVersionsEnv(value string) func() {
+	beforeVal := os.Getenv(envAPIVersions)
+
+	setEnvOrPanic(envAPIVersions, value)
+
+	return func() {
+		setEnvOrPanic(envAPIVersions, beforeVal)
+	}
+}
+
+func setEnvOrPanic(key, value string) {
+	if err := os.Setenv(key, value); err != nil {
+		panic(err)
+	}
 }

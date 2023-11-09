@@ -14,6 +14,11 @@ func RegistryService(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, RegistryComponentName)
 }
 
+// RegistryServiceMonitor returns the ServiceMonitor of the Registry component.
+func RegistryServiceMonitor(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(ServiceMonitorKind, RegistryComponentName)
+}
+
 // RegistryDeployment returns the Deployment of the Registry component.
 func RegistryDeployment(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(DeploymentKind, RegistryComponentName)

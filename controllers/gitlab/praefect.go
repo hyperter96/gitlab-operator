@@ -20,3 +20,8 @@ func PraefectConfigMap(template helm.Template) client.Object {
 func PraefectService(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, PraefectComponentName)
 }
+
+// PraefectServiceMonitor returns the ServiceMonitor of GitLab Praefect component.
+func PraefectServiceMonitor(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(ServiceMonitorKind, PraefectComponentName)
+}

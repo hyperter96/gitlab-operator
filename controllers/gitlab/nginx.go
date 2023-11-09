@@ -39,6 +39,17 @@ func NGINXServices(adapter gitlab.Adapter, template helm.Template) []client.Obje
 	return result
 }
 
+// NGINXServiceMonitor returns the ServiceMonitor for the NGINX Ingress component.
+func NGINXServiceMonitor(template helm.Template) client.Object {
+	result := template.Query().ObjectByKindAndComponent(ServiceMonitorKind, NGINXComponentName)
+
+	if result != nil {
+		result.SetNamespace(template.Namespace())
+	}
+
+	return result
+}
+
 // NGINXDeployments returns the Deployments of the NGINX Component.
 func NGINXDeployments(adapter gitlab.Adapter, template helm.Template) []client.Object {
 	result := template.Query().ObjectsByKindAndLabels(DeploymentKind, map[string]string{

@@ -124,6 +124,10 @@ var potentialSupportedGVRs []schema.GroupVersionResource = []schema.GroupVersion
 	}, {
 		Group:    "monitoring.coreos.com",
 		Version:  "v1",
+		Resource: "podmonitors",
+	}, {
+		Group:    "monitoring.coreos.com",
+		Version:  "v1",
 		Resource: "prometheuses",
 	},
 }

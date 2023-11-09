@@ -93,6 +93,7 @@ type GitLabReconciler struct {
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheuses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cert-manager.io,resources=issuers,verbs=get;list;watch;create;update;patch;delete
@@ -413,8 +414,20 @@ func (r *GitLabReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return requeue(err)
 	}
 
-	if settings.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
-		if err := r.reconcileServiceMonitors(ctx, adapter); err != nil {
+	if settings.IsGroupVersionKindSupported("monitoring.coreos.com/v1", "ServiceMonitor") {
+		if err := r.reconcileServiceMonitors(ctx, adapter, template); err != nil {
+			return requeue(err)
+		}
+
+		if adapter.WantsComponent(component.PostgreSQL) {
+			if err := r.createOrPatch(ctx, internal.PostgresqlServiceMonitor(adapter), adapter); err != nil {
+				return requeue(err)
+			}
+		}
+	}
+
+	if settings.IsGroupVersionKindSupported("monitoring.coreos.com/v1", "PodMonitor") {
+		if err := r.reconcilePodMonitors(ctx, adapter, template); err != nil {
 			return requeue(err)
 		}
 	}
@@ -533,9 +546,14 @@ func (r *GitLabReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		builder.Owns(&batchv1beta1.CronJob{})
 	}
 
-	if settings.IsGroupVersionSupported("monitoring.coreos.com", "v1") {
-		r.Log.Info("Using monitoring.coreos.com/v1")
+	if settings.IsGroupVersionKindSupported("monitoring.coreos.com/v1", "ServiceMonitor") {
+		r.Log.Info("Using monitoring.coreos.com/v1 for ServiceMonitor")
 		builder.Owns(&monitoringv1.ServiceMonitor{})
+	}
+
+	if settings.IsGroupVersionKindSupported("monitoring.coreos.com/v1", "PodMonitor") {
+		r.Log.Info("Using monitoring.coreos.com/v1 for PodMonitor")
+		builder.Owns(&monitoringv1.PodMonitor{})
 	}
 
 	if settings.IsGroupVersionKindSupported("monitoring.coreos.com/v1", "Prometheus") {
@@ -614,27 +632,19 @@ func (r *GitLabReconciler) jobExists(ctx context.Context, job client.Object) (bo
 	return false, err
 }
 
-func (r *GitLabReconciler) reconcileServiceMonitors(ctx context.Context, adapter gitlab.Adapter) error {
-	var servicemonitors []*monitoringv1.ServiceMonitor
-
-	servicemonitors = append(servicemonitors,
-		internal.ExporterServiceMonitor(adapter),
-		internal.GitalyServiceMonitor(adapter),
-		internal.WebserviceServiceMonitor(adapter),
-	)
-
-	if adapter.WantsComponent(component.Redis) {
-		servicemonitors = append(servicemonitors,
-			internal.RedisServiceMonitor(adapter))
-	}
-
-	if adapter.WantsComponent(component.PostgreSQL) {
-		servicemonitors = append(servicemonitors,
-			internal.PostgresqlServiceMonitor(adapter))
-	}
-
-	for _, sm := range servicemonitors {
+func (r *GitLabReconciler) reconcileServiceMonitors(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
+	for _, sm := range gitlabctl.WantedServiceMonitors(adapter, template) {
 		if err := r.createOrPatch(ctx, sm, adapter); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *GitLabReconciler) reconcilePodMonitors(ctx context.Context, adapter gitlab.Adapter, template helm.Template) error {
+	for _, pm := range gitlabctl.WantedPodMonitors(adapter, template) {
+		if err := r.createOrPatch(ctx, pm, adapter); err != nil {
 			return err
 		}
 	}

@@ -46,3 +46,16 @@ func GitalyService(template helm.Template) client.Object {
 
 	return nil
 }
+
+// GitalyServiceMonitor returns the Service of Gitaly component.
+func GitalyServiceMonitor(template helm.Template) client.Object {
+	results := template.Query().ObjectsByKindAndLabels(ServiceMonitorKind, map[string]string{"app": GitalyComponentName})
+
+	for _, result := range results {
+		if _, hasStorageLabel := result.GetLabels()["storage"]; !hasStorageLabel {
+			return result
+		}
+	}
+
+	return nil
+}

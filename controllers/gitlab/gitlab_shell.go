@@ -48,3 +48,8 @@ func ShellConfigMaps(adapter gitlab.Adapter, template helm.Template) []client.Ob
 func ShellService(template helm.Template) client.Object {
 	return template.Query().ObjectByKindAndComponent(ServiceKind, GitLabShellComponentName)
 }
+
+// ShellServiceMonitor returns the ServiceMonitor of GitLab Shell component.
+func ShellServiceMonitor(template helm.Template) client.Object {
+	return template.Query().ObjectByKindAndComponent(ServiceMonitorKind, GitLabShellComponentName)
+}

@@ -174,7 +174,7 @@ To use OpenShift Routes for Ingress, complete the following:
    ```
 
    NOTE:
-   By default, CertManager will create and manage TLS certificates for the GitLab-related Routes.
+   By default, CertManager creates and manage TLS certificates for the GitLab-related Routes.
    See the [TLS documentation](https://docs.gitlab.com/charts/installation/tls.html) for more options.
    If the OpenShift cluster is secured with a wildcard certificate,
    [option 2](https://docs.gitlab.com/charts/installation/tls.html#option-2-use-your-own-wildcard-certificate)
